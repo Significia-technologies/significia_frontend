@@ -13,7 +13,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { ConfirmModal } from "@/components/shared/ConfirmModal";
 
+import { useRouter } from "next/navigation";
+
 export default function MasterPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [connector, setConnector] = useState<Connector | null>(null);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
@@ -115,7 +118,7 @@ export default function MasterPage() {
               <RefreshCcw className="w-4 h-4" />
               Sync Status
             </Button>
-            <Button className="gap-2 bg-primary/95 hover:bg-primary">
+            <Button className="gap-2 bg-primary/95 hover:bg-primary" onClick={() => router.push("/dashboard/master/ia-master/new")}>
               <PlusCircle className="w-4 h-4" />
               New Entry
             </Button>

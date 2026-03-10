@@ -30,16 +30,16 @@ import {
 import { IAMasterService, IAMaster } from "@/core/services/ia-master.service";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { AddIAMasterModal } from "./AddIAMasterModal";
+import { useRouter } from "next/navigation";
 
 interface IAMasterViewProps {
   connectorId: string;
 }
 
 export function IAMasterView({ connectorId }: IAMasterViewProps) {
+  const router = useRouter();
   const [data, setData] = useState<IAMaster | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -89,17 +89,10 @@ export function IAMasterView({ connectorId }: IAMasterViewProps) {
             You haven't registered your Investment Advisor details yet. 
             Once added, your compliance reports and signatures will be managed here.
           </p>
-          <Button className="gap-2 px-8" onClick={() => setIsModalOpen(true)}>
+          <Button className="gap-2 px-8" onClick={() => router.push("/dashboard/master/ia-master/new")}>
             <Building2 className="w-5 h-5" />
             Register IA Master
           </Button>
-
-          <AddIAMasterModal 
-            isOpen={isModalOpen} 
-            connectorId={connectorId}
-            onClose={() => setIsModalOpen(false)} 
-            onSuccess={fetchData} 
-          />
         </CardContent>
       </Card>
     );
@@ -137,7 +130,7 @@ export function IAMasterView({ connectorId }: IAMasterViewProps) {
               <Download className="w-4 h-4" />
               Export PDF
             </Button>
-            <Button size="sm" className="gap-2 bg-primary hover:bg-primary/90" onClick={() => setIsModalOpen(true)}>
+            <Button size="sm" className="gap-2 bg-primary hover:bg-primary/90" onClick={() => router.push("/dashboard/master/ia-master/new")}>
               <Edit className="w-4 h-4" />
               Update
             </Button>
@@ -251,12 +244,6 @@ export function IAMasterView({ connectorId }: IAMasterViewProps) {
         </Card>
       )}
 
-      <AddIAMasterModal 
-        isOpen={isModalOpen} 
-        connectorId={connectorId}
-        onClose={() => setIsModalOpen(false)} 
-        onSuccess={fetchData} 
-      />
     </div>
   );
 }
