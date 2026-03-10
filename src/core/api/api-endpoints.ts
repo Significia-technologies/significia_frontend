@@ -40,4 +40,26 @@ export const API_ENDPOINTS = {
     DETAIL: (id: string) => `${API_BASE}/users/${id}`,
     UPDATE_PROFILE: `${API_BASE}/users/profile`,
   },
+
+  // ── Connectors ────────────────────────────────────
+  CONNECTORS: {
+    LIST: `${API_BASE}/connectors`,
+    CREATE: `${API_BASE}/connectors`,
+    DETAIL: (id: string) => `${API_BASE}/connectors/${id}`,
+    UPDATE: (id: string) => `${API_BASE}/connectors/${id}`,
+    DELETE: (id: string) => `${API_BASE}/connectors/${id}`,
+    TEST: (id: string) => `${API_BASE}/connectors/${id}/test`,
+    INITIALIZE: (id: string) => `${API_BASE}/connectors/${id}/initialize`,
+  },
+
+  // ── Master Data ──────────────────────────────────
+  MASTER: {
+    CUSTOMERS: {
+      LIST: (connectorId: string) => `${API_BASE}/master/${connectorId}/customers`,
+      CREATE: (connectorId: string) => `${API_BASE}/master/${connectorId}/customers`,
+      DETAIL: (connectorId: string, id: string) => `${API_BASE}/master/${connectorId}/customers/${id}`,
+      UPDATE: (connectorId: string, id: string) => `${API_BASE}/master/${connectorId}/customers/${id}`,
+      DELETE: (connectorId: string, id: string) => `${API_BASE}/master/${connectorId}/customers/${id}`,
+    },
+  },
 } as const;
