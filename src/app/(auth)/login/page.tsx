@@ -62,19 +62,26 @@ export default function LoginPage() {
   };
 
   return (
-    <Card className="w-full border-border/50 shadow-2xl">
-      <CardHeader className="space-y-1 text-center">
-        <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold text-lg">
-          RR
+    <Card className="w-full border-primary/20 shadow-2xl bg-card/50 backdrop-blur-xl overflow-hidden">
+      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-amber-500/50 to-transparent" />
+      <CardHeader className="space-y-3 text-center pt-8 pb-4">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 shadow-lg p-3 transition-transform hover:scale-105 duration-300">
+          <img src="/favicon-32x32.png" alt="Significia Logo" className="w-full h-full object-contain filter drop-shadow-md" />
         </div>
-        <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
-        <CardDescription>
-          Sign in to your RRFinance dashboard
-        </CardDescription>
+        <div>
+          <CardTitle className="text-4xl font-black tracking-tighter">
+            <span className="bg-gradient-to-b from-[#BF953F] via-[#FCF6BA] to-[#B38728] bg-clip-text text-transparent drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]">
+              Significia
+            </span>
+          </CardTitle>
+          <CardDescription className="text-muted-foreground/70 text-xs font-bold uppercase tracking-widest mt-1">
+            Secure Access
+          </CardDescription>
+        </div>
       </CardHeader>
 
       <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 px-8 pb-4">
           {error && (
             <div className="rounded-lg bg-destructive/10 px-4 py-3 text-sm text-destructive">
               {error}
@@ -123,8 +130,8 @@ export default function LoginPage() {
           </div>
         </CardContent>
 
-        <CardFooter className="flex flex-col gap-4">
-          <Button type="submit" className="w-full" disabled={isLoading}>
+        <CardFooter className="flex flex-col gap-4 px-8 pb-8 pt-0">
+          <Button type="submit" className="w-full h-10 text-base font-bold bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20" disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Sign In
           </Button>
