@@ -6,14 +6,14 @@
  * Backend runs on: http://localhost:5000/api/v1
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/v1";
 
 export const API_ENDPOINTS = {
   // ── Auth ──────────────────────────────────────────
   AUTH: {
     LOGIN: `${API_BASE}/auth/login`,
     REGISTER: `${API_BASE}/auth/register`,
-    REFRESH_TOKEN: `${API_BASE}/auth/refresh-token`,
+    REFRESH_TOKEN: `${API_BASE}/auth/refresh`,
     LOGOUT: `${API_BASE}/auth/logout`,
     CURRENT_USER: `${API_BASE}/auth/me`,
   },

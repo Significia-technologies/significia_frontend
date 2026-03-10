@@ -9,10 +9,9 @@ export interface LoginPayload {
 }
 
 export interface RegisterPayload {
-  firstName: string;
-  lastName: string;
   email: string;
   password: string;
+  companyName: string;
 }
 
 /**
@@ -21,34 +20,17 @@ export interface RegisterPayload {
  */
 export interface User {
   id: string;
-  firstName: string;
-  lastName: string;
   email: string;
-  username: string | null;
-  avatarUrl: string | null;
-  phoneNumber: string | null;
-  role: "super_admin" | "admin" | "analyst" | "viewer";
-  isEmailVerified: boolean;
-  emailVerifiedAt: string | null;
-  subscriptionPlan: "free" | "pro" | "enterprise";
-  subscriptionStatus: "trialing" | "active" | "past_due" | "cancelled" | "expired";
-  trialEndsAt: string | null;
-  currentPeriodEndsAt: string | null;
-  isActive: boolean;
-  lastLoginAt: string | null;
-  loginCount: number;
-  createdAt: string;
-  updatedAt: string;
+  role: "owner" | "admin" | "analyst" | "user";
+  tenant_id: string;
+  company_name: string;
+  // Note: Add additional properties if backend adds them
 }
 
-/**
- * Standard backend response shape from ApiResponse class:
- * { statusCode, success, message, data }
- */
 export interface AuthResponse {
   user: User;
   accessToken: string;
-  // refreshToken is set as httpOnly cookie — NOT in response body
+  refreshToken: string;
 }
 
 // ── Auth Service ────────────────────────────────────
@@ -57,55 +39,63 @@ export const AuthService = {
   /**
    * POST /api/v1/auth/login
    * Body: { email, password }
-   * Response: { data: { user, accessToken }, message }
-   * Side effect: backend sets refreshToken as httpOnly cookie
+   * Response: { access_token, refresh_token, token_type }
    */
   async login(payload: LoginPayload): Promise<AuthResponse> {
     const { data } = await httpClient.post(API_ENDPOINTS.AUTH.LOGIN, payload);
-    const result = data?.data as AuthResponse;
+    
+    // Backend returns access_token and refresh_token (snake_case)
+    const accessToken = data.access_token;
+    const refreshToken = data.refresh_token;
 
-    // Only store the access token — refresh token is in httpOnly cookie
-    localStorage.setItem("accessToken", result.accessToken);
+    // Persist explicitly for Axios interceptor usage
+    localStorage.setItem("accessToken", accessToken);
+    localStorage.setItem("refreshToken", refreshToken);
 
-    return result;
+    // After login, we must fetch the user details separately
+    // because the FastAPI login route only returns the tokens.
+    const user = await this.getCurrentUser();
+
+    return { user, accessToken, refreshToken };
   },
 
   /**
    * POST /api/v1/auth/register
-   * Body: { firstName, lastName, email, password }
-   * Response: { data: { user, accessToken }, message }
-   * Side effect: backend sets refreshToken as httpOnly cookie
+   * Body: { email, password, company_name }
+   * Response: { id, email, role, tenant_id }
    */
-  async register(payload: RegisterPayload): Promise<AuthResponse> {
-    const { data } = await httpClient.post(API_ENDPOINTS.AUTH.REGISTER, payload);
-    const result = data?.data as AuthResponse;
-
-    // Only store the access token — refresh token is in httpOnly cookie
-    localStorage.setItem("accessToken", result.accessToken);
-
-    return result;
+  async register(payload: RegisterPayload): Promise<User> {
+    const backendPayload = {
+      email: payload.email,
+      password: payload.password,
+      company_name: payload.companyName,
+    };
+    
+    const { data } = await httpClient.post(API_ENDPOINTS.AUTH.REGISTER, backendPayload);
+    // Registration only returns a User object (201 Created), no tokens anymore
+    return data as User;
   },
 
   /**
    * POST /api/v1/auth/logout
-   * Requires Authorization header (protected route).
-   * Backend clears the refreshToken cookie and nullifies the hash in DB.
    */
   async logout(): Promise<void> {
     try {
-      await httpClient.post(API_ENDPOINTS.AUTH.LOGOUT);
+      // Optional: inform backend
+      // await httpClient.post(API_ENDPOINTS.AUTH.LOGOUT);
     } finally {
       localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
     }
   },
 
   /**
    * GET /api/v1/auth/me
-   * Requires Authorization header (protected route).
-   * Response: { data: { user } }
+   * Requires Authorization header
+   * Response: JSON body is directly the User object
    */
   async getCurrentUser(): Promise<User> {
     const { data } = await httpClient.get(API_ENDPOINTS.AUTH.CURRENT_USER);
-    return data?.data?.user as User;
+    return data as User;
   },
 };

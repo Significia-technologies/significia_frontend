@@ -22,14 +22,14 @@ export default function RegisterPage() {
   const router = useRouter();
   const { setUser } = useAppStore();
 
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
+  const [companyName, setCompanyName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,23 +43,49 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      const result = await AuthService.register({
-        firstName,
-        lastName,
+      await AuthService.register({
         email,
         password,
+        companyName,
       });
-      setUser(result.user);
-      router.push("/dashboard");
+      setSuccess(true);
+      setTimeout(() => {
+        router.push("/login");
+      }, 2000);
     } catch (err: unknown) {
-      const message =
-        (err as { response?: { data?: { message?: string } } })?.response?.data
-          ?.message || "Registration failed. Please try again.";
+      let message = "Registration failed. Please try again.";
+      const errorData = (err as any)?.response?.data;
+      
+      if (typeof errorData?.detail === 'string') {
+        message = errorData.detail;
+      } else if (Array.isArray(errorData?.detail) && errorData.detail.length > 0) {
+        const firstError = errorData.detail[0];
+        message = `${firstError.msg} (${firstError.loc.join(".")})`;
+      } else if (errorData?.message) {
+        message = errorData.message;
+      }
+      
       setError(message);
     } finally {
       setIsLoading(false);
     }
   };
+
+  if (success) {
+    return (
+      <Card className="w-full border-border/50 shadow-2xl">
+        <CardContent className="pt-6 pb-6 text-center space-y-4">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-8 h-8">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold">Registration Successful!</h2>
+          <p className="text-muted-foreground">Redirecting to login...</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full border-border/50 shadow-2xl">
@@ -81,30 +107,16 @@ export default function RegisterPage() {
             </div>
           )}
 
-          {/* First + Last Name side by side */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="firstName">First Name</Label>
-              <Input
-                id="firstName"
-                type="text"
-                placeholder="John"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="lastName">Last Name</Label>
-              <Input
-                id="lastName"
-                type="text"
-                placeholder="Doe"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                required
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="companyName">Company Name</Label>
+            <Input
+              id="companyName"
+              type="text"
+              placeholder="Acme Corp"
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
+              required
+            />
           </div>
 
           <div className="space-y-2">

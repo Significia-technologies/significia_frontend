@@ -38,9 +38,18 @@ export default function LoginPage() {
       setUser(result.user);
       router.push("/dashboard");
     } catch (err: unknown) {
-      const message =
-        (err as { response?: { data?: { message?: string } } })?.response?.data
-          ?.message || "Invalid email or password. Please try again.";
+      let message = "Invalid email or password. Please try again.";
+      const errorData = (err as any)?.response?.data;
+      
+      if (typeof errorData?.detail === 'string') {
+        message = errorData.detail;
+      } else if (Array.isArray(errorData?.detail) && errorData.detail.length > 0) {
+        const firstError = errorData.detail[0];
+        message = `${firstError.msg} (${firstError.loc.join(".")})`;
+      } else if (errorData?.message) {
+        message = errorData.message;
+      }
+      
       setError(message);
     } finally {
       setIsLoading(false);

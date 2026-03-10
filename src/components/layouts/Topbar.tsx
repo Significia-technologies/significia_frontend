@@ -31,10 +31,10 @@ export function Topbar() {
     }
   };
 
-  const displayName = user ? `${user.firstName} ${user.lastName}` : null;
+  const displayName = user ? user.company_name : null;
 
-  const initials = user
-    ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
+  const initials = user && user.company_name
+    ? user.company_name.substring(0, 2).toUpperCase()
     : "U";
 
   return (
