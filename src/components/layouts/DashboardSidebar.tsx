@@ -5,14 +5,18 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
-  ArrowLeftRight,
+  Database,
   BarChart3,
-  Wallet,
+  ShieldCheck,
+  TrendingUp,
+  Activity,
   Users,
+  Archive,
+  Wrench,
+  UserCog,
   Settings,
   ChevronLeft,
   ChevronRight,
-  TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -32,30 +36,50 @@ const NAV_ITEMS = [
     icon: LayoutDashboard,
   },
   {
-    label: "Transactions",
-    href: "/dashboard/transactions",
-    icon: ArrowLeftRight,
+    label: "Master",
+    href: "/dashboard/master",
+    icon: Database,
   },
   {
-    label: "Analytics",
-    href: "/dashboard/analytics",
+    label: "Financial Analysis",
+    href: "/dashboard/financial-analysis",
     icon: BarChart3,
   },
   {
-    label: "Accounts",
-    href: "/dashboard/accounts",
-    icon: Wallet,
+    label: "Security Basket",
+    href: "/dashboard/security",
+    icon: ShieldCheck,
   },
   {
-    label: "Investments",
-    href: "/dashboard/investments",
+    label: "Portfolio",
+    href: "/dashboard/portfolio",
     icon: TrendingUp,
   },
   {
-    label: "Users",
-    href: "/dashboard/users",
-    icon: Users,
+    label: "Operations",
+    href: "/dashboard/operations",
+    icon: Activity,
   },
+  {
+    label:"Accounts",
+    href:"/dashboard/accounts",
+    icon:Users,
+  },
+  {
+    label:"Drawers",
+    href:"/dashboard/drawers",
+    icon:Archive,
+  },
+  {
+    label:"Tools",
+    href:"/dashboard/tools",
+    icon:Wrench,
+  },
+  {
+    label:"Admin",
+    href:"/dashboard/admin",
+    icon:UserCog,
+  }
 ];
 
 const BOTTOM_NAV_ITEMS = [
@@ -75,9 +99,23 @@ export function DashboardSidebar() {
     <aside
       className={cn(
         "fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-border bg-sidebar transition-all duration-300 ease-in-out",
-        sidebarCollapsed ? "w-[68px]" : "w-64"
+        sidebarCollapsed ? "w-[68px]" : "w-60"
       )}
     >
+      {/* ── Collapse Toggle on Border ── */}
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={toggleSidebar}
+        className="absolute -right-3.5 top-1/2 z-50 h-7 w-7 -translate-y-1/2 rounded-full hidden md:flex"
+      >
+        {sidebarCollapsed ? (
+          <ChevronRight className="h-4 w-4" />
+        ) : (
+          <ChevronLeft className="h-4 w-4" />
+        )}
+      </Button>
+
       {/* ── Logo ── */}
       <div className="flex h-16 items-center gap-2 px-4">
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg overflow-hidden bg-primary">
@@ -93,7 +131,7 @@ export function DashboardSidebar() {
       <Separator />
 
       {/* ── Main Nav ── */}
-      <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
+      <nav className="flex-1 space-y-0.5 overflow-y-auto overflow-x-hidden px-2 py-4 [&::-webkit-scrollbar]:hidden scrollbar-none">
         {NAV_ITEMS.map((item) => {
           const isActive =
             pathname === item.href ||
@@ -104,7 +142,7 @@ export function DashboardSidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                "flex items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium transition-colors",
                 isActive
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
@@ -131,7 +169,7 @@ export function DashboardSidebar() {
       </nav>
 
       {/* ── Bottom Nav ── */}
-      <div className="border-t border-border px-3 py-3">
+      <div className="border-t border-border px-2 py-3">
         {BOTTOM_NAV_ITEMS.map((item) => {
           const isActive = pathname === item.href;
 
@@ -140,7 +178,7 @@ export function DashboardSidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                "flex items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium transition-colors",
                 isActive
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
@@ -164,22 +202,6 @@ export function DashboardSidebar() {
 
           return linkContent;
         })}
-      </div>
-
-      {/* ── Collapse Toggle ── */}
-      <div className="border-t border-border p-3">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={toggleSidebar}
-          className="w-full justify-center"
-        >
-          {sidebarCollapsed ? (
-            <ChevronRight className="h-4 w-4" />
-          ) : (
-            <ChevronLeft className="h-4 w-4" />
-          )}
-        </Button>
       </div>
     </aside>
   );
