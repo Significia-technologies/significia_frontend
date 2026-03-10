@@ -36,7 +36,12 @@ export default function LoginPage() {
     try {
       const result = await AuthService.login({ email, password });
       setUser(result.user);
-      router.push("/dashboard");
+      
+      if (result.user.role === "super_admin") {
+        router.push("/admin");
+      } else {
+        router.push("/dashboard");
+      }
     } catch (err: unknown) {
       let message = "Invalid email or password. Please try again.";
       const errorData = (err as any)?.response?.data;

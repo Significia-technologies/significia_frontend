@@ -21,7 +21,7 @@ export interface RegisterPayload {
 export interface User {
   id: string;
   email: string;
-  role: "owner" | "admin" | "analyst" | "user";
+  role: "super_admin" | "owner" | "admin" | "analyst" | "user";
   tenant_id: string;
   company_name: string;
   // Note: Add additional properties if backend adds them

@@ -34,11 +34,20 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           // If token exists but Zustand is empty (e.g. hard refresh), restore session
           const authUser = await AuthService.getCurrentUser();
           setUser(authUser);
+          
+          if (authUser.role === "super_admin") {
+            router.push("/admin");
+            return;
+          }
         } catch (err) {
           console.error("Failed to restore session", err);
           clearUser();
           router.push("/login");
+          return;
         }
+      } else if (user.role === "super_admin") {
+        router.push("/admin");
+        return;
       }
       
       setIsInitializing(false);
