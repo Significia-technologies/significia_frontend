@@ -61,5 +61,11 @@ export const API_ENDPOINTS = {
       UPDATE: (connectorId: string, id: string) => `${API_BASE}/master/${connectorId}/customers/${id}`,
       DELETE: (connectorId: string, id: string) => `${API_BASE}/master/${connectorId}/customers/${id}`,
     },
+    IA_MASTER: {
+      CREATE: (connectorId: string) => `${API_BASE}/ia-master/?connector_id=${connectorId}`,
+      VALIDATE: (connectorId: string, iaNumber: string) => `${API_BASE}/ia-master/validate-remote/${iaNumber}?connector_id=${connectorId}`,
+      LATEST: (connectorId: string) => `${API_BASE}/ia-master/latest?connector_id=${connectorId}`,
+      PDF: (connectorId: string, iaId: string) => `${API_BASE}/ia-master/${iaId}/pdf?connector_id=${connectorId}`,
+    },
   },
-} as const;
+};

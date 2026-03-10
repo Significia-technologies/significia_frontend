@@ -1,14 +1,16 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Database, LayoutGrid, List, PlusCircle, RefreshCcw } from "lucide-react";
+import { Database, LayoutGrid, List, PlusCircle, RefreshCcw, ShieldCheck } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Connector, ConnectorService } from "@/core/services/connector.service";
 import { ConnectorSetup } from "@/features/master/ConnectorSetup";
 import { ProvisioningView } from "@/features/master/ProvisioningView";
 import { CustomerList } from "@/features/master/CustomerList";
+import { IAMasterView } from "@/features/master/IAMasterView";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 
 export default function MasterPage() {
   const [loading, setLoading] = useState(true);
@@ -46,6 +48,30 @@ export default function MasterPage() {
     );
   }
 
+  const handleReinitialize = async () => {
+    if (!connector) return;
+    if (!confirm("Are you sure you want to re-initialize the database? This will ensure all latest tables are present.")) {
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      toast.info("Re-initializing database schema...");
+      const result = await ConnectorService.initialize(connector.id);
+      if (result.status === "success") {
+        toast.success(result.message);
+        await fetchStatus();
+      } else {
+        toast.error(result.message);
+      }
+    } catch (error) {
+      toast.error("Failed to re-initialize database");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // State 0: No Connector exists
   if (!connector) {
     return (
@@ -80,6 +106,10 @@ export default function MasterPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <Button variant="outline" className="gap-2 border-primary/20" onClick={handleReinitialize}>
+            <RefreshCcw className="w-4 h-4" />
+            Reinitialize DB
+          </Button>
           <Button variant="outline" className="gap-2 border-primary/20" onClick={fetchStatus}>
             <RefreshCcw className="w-4 h-4" />
             Sync Status
@@ -92,10 +122,14 @@ export default function MasterPage() {
       </header>
 
       <div className="grid grid-cols-1 gap-8">
-        <Tabs defaultValue="customers" className="w-full">
+        <Tabs defaultValue="ia-master" className="w-full">
           <div className="flex items-center justify-between mb-6">
             <TabsList className="bg-muted/50 border border-primary/10 p-1">
-              <TabsTrigger value="customers" className="gap-2 px-6 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <TabsTrigger value="ia-master" className="gap-2 px-6 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <ShieldCheck className="w-4 h-4" />
+                Investment Advisor
+              </TabsTrigger>
+              <TabsTrigger value="customers" className="gap-2 px-6">
                 <List className="w-4 h-4" />
                 Customers
               </TabsTrigger>
@@ -109,6 +143,10 @@ export default function MasterPage() {
               </TabsTrigger>
             </TabsList>
           </div>
+
+          <TabsContent value="ia-master" className="focus-visible:outline-none focus-visible:ring-0">
+            <IAMasterView connectorId={connector.id} />
+          </TabsContent>
 
           <TabsContent value="customers" className="focus-visible:outline-none focus-visible:ring-0">
             <CustomerList connectorId={connector.id} />
