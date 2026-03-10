@@ -7,12 +7,53 @@ import { Topbar } from "./Topbar";
 import { useAppStore } from "@/store/useAppStore";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
+import { useRouter } from "next/navigation";
+import { AuthService } from "@/core/services/auth.service";
+
 interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
-  const { sidebarCollapsed } = useAppStore();
+  const { user, setUser, clearUser, sidebarCollapsed } = useAppStore();
+  const [isInitializing, setIsInitializing] = React.useState(true);
+  const router = useRouter();
+
+  React.useEffect(() => {
+    const initAuth = async () => {
+      const token = localStorage.getItem("accessToken");
+      
+      if (!token) {
+        clearUser();
+        router.push("/login");
+        return;
+      }
+      
+      if (!user) {
+        try {
+          // If token exists but Zustand is empty (e.g. hard refresh), restore session
+          const authUser = await AuthService.getCurrentUser();
+          setUser(authUser);
+        } catch (err) {
+          console.error("Failed to restore session", err);
+          clearUser();
+          router.push("/login");
+        }
+      }
+      
+      setIsInitializing(false);
+    };
+    
+    initAuth();
+  }, [user, setUser, clearUser, router]);
+
+  if (isInitializing) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <TooltipProvider>
