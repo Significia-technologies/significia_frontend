@@ -80,12 +80,12 @@ export function DashboardSidebar() {
     >
       {/* ── Logo ── */}
       <div className="flex h-16 items-center gap-2 px-4">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm">
-          RR
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg overflow-hidden bg-primary">
+          <img src="/favicon-32x32.png" alt="Significia Logo" className="h-full w-full object-cover" />
         </div>
         {!sidebarCollapsed && (
-          <span className="text-lg font-semibold tracking-tight text-foreground">
-            RRFinance
+          <span className="text-lg font-semibold tracking-tight text-[#D4AF37]">
+            Significia
           </span>
         )}
       </div>
