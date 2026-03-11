@@ -34,13 +34,32 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const result = await AuthService.login({ email, password });
+      const hostname = window.location.hostname;
+      const parts = hostname.split('.');
+      const isSubdomain = parts.length >= 3 || (parts.length >= 2 && hostname.includes('localhost') && parts[0] !== 'www' && parts[0] !== 'app');
+
+      let result;
+      if (isSubdomain) {
+        result = await AuthService.clientLogin({ email, password });
+      } else {
+        result = await AuthService.login({ email, password });
+      }
+      
       setUser(result.user);
       
       if (result.user.role === "super_admin") {
         router.push("/admin");
-      } else {
+      } else if (result.user.role === "client") {
         router.push("/dashboard");
+      } else {
+        if (result.subdomain) {
+          const currentHost = window.location.host;
+          const isLocalhost = currentHost.includes('localhost');
+          const baseDomain = isLocalhost ? 'localhost:3000' : 'significia.com';
+          window.location.href = `${window.location.protocol}//${result.subdomain}.${baseDomain}/dashboard?token=${result.accessToken}&refreshToken=${result.refreshToken}`;
+        } else {
+          router.push("/dashboard");
+        }
       }
     } catch (err: unknown) {
       let message = "Invalid email or password. Please try again.";

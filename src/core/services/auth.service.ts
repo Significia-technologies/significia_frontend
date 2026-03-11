@@ -21,7 +21,7 @@ export interface RegisterPayload {
 export interface User {
   id: string;
   email: string;
-  role: "super_admin" | "owner" | "admin" | "analyst" | "user";
+  role: "super_admin" | "owner" | "admin" | "analyst" | "user" | "client";
   tenant_id: string;
   company_name: string;
   // Note: Add additional properties if backend adds them
@@ -31,6 +31,7 @@ export interface AuthResponse {
   user: User;
   accessToken: string;
   refreshToken: string;
+  subdomain?: string | null;
 }
 
 // ── Auth Service ────────────────────────────────────
@@ -47,6 +48,7 @@ export const AuthService = {
     // Backend returns access_token and refresh_token (snake_case)
     const accessToken = data.access_token;
     const refreshToken = data.refresh_token;
+    const subdomain = data.subdomain;
 
     // Persist explicitly for Axios interceptor usage
     localStorage.setItem("accessToken", accessToken);
@@ -56,7 +58,7 @@ export const AuthService = {
     // because the FastAPI login route only returns the tokens.
     const user = await this.getCurrentUser();
 
-    return { user, accessToken, refreshToken };
+    return { user, accessToken, refreshToken, subdomain };
   },
 
   /**
@@ -97,5 +99,30 @@ export const AuthService = {
   async getCurrentUser(): Promise<User> {
     const { data } = await httpClient.get(API_ENDPOINTS.AUTH.CURRENT_USER);
     return data as User;
+  },
+
+  /**
+   * POST /api/v1/client-auth/login
+   * For tenant clients connecting directly to their subdomain
+   */
+  async clientLogin(payload: LoginPayload): Promise<AuthResponse> {
+    const { data } = await httpClient.post("/client-auth/login", payload);
+    const accessToken = data.access_token;
+    
+    // Persist explicitly for Axios interceptor usage
+    localStorage.setItem("accessToken", accessToken);
+
+    const user = await this.getCurrentClient();
+
+    return { user, accessToken, refreshToken: "", subdomain: null };
+  },
+
+  /**
+   * GET /api/v1/client-auth/me
+   */
+  async getCurrentClient(): Promise<User> {
+    const { data } = await httpClient.get("/client-auth/me");
+    // Coerce client format into our general User footprint so the frontend sees them properly
+    return { ...data, role: "client" } as User;
   },
 };

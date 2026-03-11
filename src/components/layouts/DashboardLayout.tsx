@@ -21,6 +21,21 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   React.useEffect(() => {
     const initAuth = async () => {
+      if (typeof window !== "undefined") {
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlToken = urlParams.get("token");
+        const urlRefreshToken = urlParams.get("refreshToken");
+        
+        if (urlToken) {
+          localStorage.setItem("accessToken", urlToken);
+          if (urlRefreshToken) {
+            localStorage.setItem("refreshToken", urlRefreshToken);
+          }
+          // Clean the URL so tokens don't sit in the browser history
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      }
+
       const token = localStorage.getItem("accessToken");
       
       if (!token) {
@@ -31,8 +46,27 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       
       if (!user) {
         try {
+          const hostname = window.location.hostname;
+          const parts = hostname.split('.');
+          const isSubdomain = parts.length >= 3 || (parts.length >= 2 && hostname.includes('localhost') && parts[0] !== 'www' && parts[0] !== 'app');
+
           // If token exists but Zustand is empty (e.g. hard refresh), restore session
-          const authUser = await AuthService.getCurrentUser();
+          let authUser;
+          if (isSubdomain) {
+            // Might be a client hitting their portal, or an IA master hitting their own portal.
+            // Wait, does getCurrentClient return IA Master? No, getCurrentClient hits the client DB. 
+            // So if `isSubdomain` is true, we should probably try the route that matches their token.
+            // Let's first try `getCurrentUser` for IAMasters visiting their own dashboard, 
+            // if that fails, they might be a client, so try `getCurrentClient`.
+            try {
+               authUser = await AuthService.getCurrentUser();
+            } catch (userErr) {
+               authUser = await AuthService.getCurrentClient();
+            }
+          } else {
+             authUser = await AuthService.getCurrentUser();
+          }
+
           setUser(authUser);
           
           if (authUser.role === "super_admin") {

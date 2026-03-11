@@ -29,6 +29,16 @@ httpClient.interceptors.request.use(
       if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
       }
+      
+      // Extract tenant slug for routing
+      const hostname = window.location.hostname;
+      const parts = hostname.split('.');
+      if (parts.length >= 3 || (parts.length >= 2 && hostname.includes('localhost'))) {
+        const slug = parts[0];
+        if (slug !== 'www' && slug !== 'app' && config.headers) {
+          config.headers['X-Tenant-Slug'] = slug;
+        }
+      }
     }
     return config;
   },
