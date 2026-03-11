@@ -145,10 +145,12 @@ export default function MasterPage() {
               <RefreshCcw className="w-4 h-4" />
               Sync Status
             </Button>
-            <Button className="gap-2 bg-primary/95 hover:bg-primary" onClick={() => router.push("/dashboard/master/ia-master/new")}>
-              <PlusCircle className="w-4 h-4" />
-              New Entry
-            </Button>
+            <div className="flex flex-col items-end">
+              <div className="px-4 py-1.5 rounded-lg bg-primary/10 text-primary text-[10px] font-black border border-primary/30 uppercase tracking-[0.1em] shadow-sm backdrop-blur-sm flex items-center gap-2">
+                <span>Max Client Permitted</span>
+                <span className="bg-primary text-primary-foreground px-2 py-0.5 rounded-md text-xs">10</span>
+              </div>
+            </div>
           </div>
         </header>
 
