@@ -78,6 +78,13 @@ export class MasterDataService {
     return response.data;
   }
 
+  static async getClient(connectorId: string, clientId: string): Promise<ClientCreate> {
+    const response = await httpClient.get<ClientCreate>(
+      API_ENDPOINTS.MASTER.CLIENTS.DETAIL(connectorId, clientId)
+    );
+    return response.data;
+  }
+
   static async createClient(connectorId: string, data: ClientCreate): Promise<Client> {
     const response = await httpClient.post<Client>(
       API_ENDPOINTS.MASTER.CLIENTS.CREATE(connectorId),

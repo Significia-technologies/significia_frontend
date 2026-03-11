@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { UserPlus, Search, Filter, MoreHorizontal, Mail, Phone, MapPin, Trash2, Edit, Database, CheckCircle2 } from "lucide-react";
+import { UserPlus, Search, Filter, MoreHorizontal, Mail, Phone, MapPin, Trash2, Edit, Database, CheckCircle2, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -134,8 +134,13 @@ export function ClientList({ connectorId }: ClientListProps) {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-primary/70 hover:text-primary">
-                          <Edit className="w-4 h-4" />
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 text-primary/70 hover:text-primary"
+                          onClick={() => router.push(`/master/clients/${client.id}`)}
+                        >
+                          <Info className="w-4 h-4" />
                         </Button>
                         <Button 
                           variant="ghost" 
