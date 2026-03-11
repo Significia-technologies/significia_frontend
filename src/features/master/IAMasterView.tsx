@@ -41,6 +41,12 @@ export function IAMasterView({ connectorId }: IAMasterViewProps) {
   const [data, setData] = useState<IAMaster | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const getFileUrl = (path: string | undefined) => {
+    if (!path) return "";
+    if (path.startsWith("http")) return path;
+    return `http://127.0.0.1:8000/${path}`;
+  };
+
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -107,7 +113,7 @@ export function IAMasterView({ connectorId }: IAMasterViewProps) {
           <div className="flex items-center gap-5">
             <div className="w-20 h-20 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center overflow-hidden">
               {data.ia_logo_path ? (
-                <img src={`http://127.0.0.1:8000/${data.ia_logo_path}`} alt="Logo" className="w-full h-full object-cover" />
+                <img src={getFileUrl(data.ia_logo_path)} alt="Logo" className="w-full h-full object-cover" />
               ) : (
                 <Building2 className="w-10 h-10 text-primary" />
               )}
@@ -182,6 +188,21 @@ export function IAMasterView({ connectorId }: IAMasterViewProps) {
                 <span className="font-mono">{data.bank_account_number}</span>
               </div>
             </div>
+            
+            <div className="pt-4 mt-4 border-t border-primary/10 flex gap-3">
+              {data.ia_certificate_path && (
+                <Button variant="outline" size="xs" className="h-7 text-[10px] gap-1.5" onClick={() => window.open(getFileUrl(data.ia_certificate_path), '_blank')}>
+                  <FileText className="w-3 h-3" />
+                  Certificate
+                </Button>
+              )}
+              {data.ia_signature_path && (
+                <Button variant="outline" size="xs" className="h-7 text-[10px] gap-1.5" onClick={() => window.open(getFileUrl(data.ia_signature_path), '_blank')}>
+                  <Edit className="w-3 h-3" />
+                  Signature
+                </Button>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -231,7 +252,7 @@ export function IAMasterView({ connectorId }: IAMasterViewProps) {
                     </TableCell>
                     <TableCell className="text-right">
                       {emp.certificate_path && (
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10" onClick={() => window.open(`http://127.0.0.1:8000/${emp.certificate_path}`, '_blank')}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10" onClick={() => window.open(getFileUrl(emp.certificate_path), '_blank')}>
                           <ExternalLink className="w-4 h-4" />
                         </Button>
                       )}

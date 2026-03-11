@@ -1,7 +1,19 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Loader2, Plus, Trash2, FileCheck, Info, ArrowLeft } from "lucide-react";
+import { 
+  Building2, 
+  ArrowLeft, 
+  Plus, 
+  Trash2, 
+  Database, 
+  ShieldCheck, 
+  Database as DbIcon,
+  Info,
+  FileCheck,
+  ExternalLink,
+  Loader2
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +34,18 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("basic");
   const [iaNumberExists, setIaNumberExists] = useState(false);
+
+  const getFileName = (path: string | undefined) => {
+    if (!path) return "";
+    const cleanPath = path.split('?')[0];
+    return cleanPath.split('/').pop() || "";
+  };
+
+  const getFileUrl = (path: string | undefined) => {
+    if (!path) return "";
+    if (path.startsWith("http")) return path;
+    return `http://127.0.0.1:8000/${path}`;
+  };
 
   const [formData, setFormData] = useState({
     name_of_ia: "",
@@ -342,10 +366,15 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
                       <div className="flex justify-between items-end">
                         <Label className="text-base">IA Registration Certificate *</Label>
                         {initialData?.ia_certificate_path && (
-                          <span className="text-[10px] text-primary font-medium flex items-center gap-1">
-                            <FileCheck className="w-3 h-3" />
-                            Already uploaded: {initialData.ia_certificate_path.split('/').pop()}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-primary font-medium flex items-center gap-1">
+                              <FileCheck className="w-3 h-3" />
+                              Already uploaded: {getFileName(initialData.ia_certificate_path)}
+                            </span>
+                            <Button type="button" variant="ghost" size="icon" className="h-5 w-5 text-primary" onClick={() => window.open(getFileUrl(initialData.ia_certificate_path), '_blank')}>
+                              <ExternalLink className="w-3 h-3" />
+                            </Button>
+                          </div>
                         )}
                       </div>
                       <Input type="file" name="ia_certificate" onChange={handleFileChange} accept=".png,.jpg,.jpeg,.pdf" required={!initialData} className="bg-background/50 file:bg-primary/10 file:text-primary file:border-none file:rounded-md file:mr-4 file:px-4 cursor-pointer" />
@@ -354,10 +383,15 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
                       <div className="flex justify-between items-end">
                         <Label className="text-base">IA Signature *</Label>
                         {initialData?.ia_signature_path && (
-                          <span className="text-[10px] text-primary font-medium flex items-center gap-1">
-                            <FileCheck className="w-3 h-3" />
-                            Already uploaded: {initialData.ia_signature_path.split('/').pop()}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-primary font-medium flex items-center gap-1">
+                              <FileCheck className="w-3 h-3" />
+                              Already uploaded: {getFileName(initialData.ia_signature_path)}
+                            </span>
+                            <Button type="button" variant="ghost" size="icon" className="h-5 w-5 text-primary" onClick={() => window.open(getFileUrl(initialData.ia_signature_path), '_blank')}>
+                              <ExternalLink className="w-3 h-3" />
+                            </Button>
+                          </div>
                         )}
                       </div>
                       <Input type="file" name="ia_signature" onChange={handleFileChange} accept=".png,.jpg,.jpeg" required={!initialData} className="bg-background/50 file:bg-primary/10 file:text-primary file:border-none file:rounded-md file:mr-4 file:px-4 cursor-pointer" />
@@ -366,10 +400,15 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
                       <div className="flex justify-between items-end">
                         <Label className="text-base">IA Logo *</Label>
                         {initialData?.ia_logo_path && (
-                          <span className="text-[10px] text-primary font-medium flex items-center gap-1">
-                            <FileCheck className="w-3 h-3" />
-                            Already uploaded: {initialData.ia_logo_path.split('/').pop()}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-primary font-medium flex items-center gap-1">
+                              <FileCheck className="w-3 h-3" />
+                              Already uploaded: {getFileName(initialData.ia_logo_path)}
+                            </span>
+                            <Button type="button" variant="ghost" size="icon" className="h-5 w-5 text-primary" onClick={() => window.open(getFileUrl(initialData.ia_logo_path), '_blank')}>
+                              <ExternalLink className="w-3 h-3" />
+                            </Button>
+                          </div>
                         )}
                       </div>
                       <Input type="file" name="ia_logo" onChange={handleFileChange} accept=".png,.jpg,.jpeg" required={!initialData} className="bg-background/50 file:bg-primary/10 file:text-primary file:border-none file:rounded-md file:mr-4 file:px-4 cursor-pointer" />
@@ -439,10 +478,15 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
                               <div className="flex justify-between items-center mb-1">
                                 <Label>Employee IA Certificate</Label>
                                 {emp.certificate_path && (
-                                  <span className="text-[10px] text-primary font-medium flex items-center gap-1">
-                                    <FileCheck className="w-3 h-3" />
-                                    Existing: {emp.certificate_path.split('/').pop()}
-                                  </span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-[10px] text-primary font-medium flex items-center gap-1">
+                                      <FileCheck className="w-3 h-3" />
+                                      Existing: {getFileName(emp.certificate_path)}
+                                    </span>
+                                    <Button type="button" variant="ghost" size="icon" className="h-5 w-5 text-primary" onClick={() => window.open(getFileUrl(emp.certificate_path), '_blank')}>
+                                      <ExternalLink className="w-3 h-3" />
+                                    </Button>
+                                  </div>
                                 )}
                               </div>
                               <Input 

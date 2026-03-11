@@ -5,7 +5,9 @@ import { Database, LayoutGrid, List, PlusCircle, RefreshCcw, ShieldCheck } from 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Connector, ConnectorService } from "@/core/services/connector.service";
+import { StorageConnector, StorageService } from "@/core/services/storage.service";
 import { ConnectorSetup } from "@/features/master/ConnectorSetup";
+import { StorageSetup } from "@/features/master/StorageSetup";
 import { ProvisioningView } from "@/features/master/ProvisioningView";
 import { CustomerList } from "@/features/master/CustomerList";
 import { IAMasterView } from "@/features/master/IAMasterView";
@@ -19,6 +21,7 @@ export default function MasterPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [connector, setConnector] = useState<Connector | null>(null);
+  const [storageConnector, setStorageConnector] = useState<StorageConnector | null>(null);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [isReinitializing, setIsReinitializing] = useState(false);
 
@@ -32,8 +35,19 @@ export default function MasterPage() {
       const connectors = await ConnectorService.list();
       if (connectors && connectors.length > 0) {
         setConnector(connectors[0]);
+        // Also fetch storage status
+        const storageConnectors = await StorageService.list(connectors[0].id);
+        if (storageConnectors && storageConnectors.length > 0) {
+          // Prioritize READY status, then active, then first in list
+          const readyStorage = storageConnectors.find(c => c.status === "READY");
+          const activeStorage = storageConnectors.find(c => c.is_active);
+          setStorageConnector(readyStorage || activeStorage || storageConnectors[0]);
+        } else {
+          setStorageConnector(null);
+        }
       } else {
         setConnector(null);
+        setStorageConnector(null);
       }
     } catch (error) {
       console.error("Failed to fetch connector status", error);
@@ -90,6 +104,19 @@ export default function MasterPage() {
     return (
       <div className="max-w-7xl mx-auto py-12 px-4">
         <ProvisioningView connector={connector} onSuccess={fetchStatus} />
+      </div>
+    );
+  }
+
+  // State 2: DB Ready but No Storage Connected
+  if (!storageConnector || storageConnector.status !== "READY") {
+    return (
+      <div className="max-w-7xl mx-auto py-12 px-4">
+        <div className="mb-8 text-center">
+          <h2 className="text-2xl font-bold text-foreground">Next Step: Isolated Storage</h2>
+          <p className="text-muted-foreground mt-2">Database is ready! Now connect your cloud storage for advisor-owned documents.</p>
+        </div>
+        <StorageSetup connectorId={connector.id} onSuccess={fetchStatus} />
       </div>
     );
   }

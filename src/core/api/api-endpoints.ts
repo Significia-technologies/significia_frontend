@@ -68,4 +68,11 @@ export const API_ENDPOINTS = {
       PDF: (connectorId: string, iaId: string) => `${API_BASE}/ia-master/${iaId}/pdf?connector_id=${connectorId}`,
     },
   },
+
+  // ── Storage ───────────────────────────────────────
+  STORAGE: {
+    LIST: `${API_BASE}/storage`,
+    CREATE: `${API_BASE}/storage`,
+    VERIFY: (id: string) => `${API_BASE}/storage/${id}/verify`,
+  },
 };
