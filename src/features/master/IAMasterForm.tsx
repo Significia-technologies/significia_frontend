@@ -111,6 +111,10 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
     }
   }, [initialData]);
 
+  const isSinglePersonEntity = formData.nature_of_entity === "individual" || formData.nature_of_entity === "proprietorship";
+  const personLabel = formData.nature_of_entity === "body" ? "Employee" : "Partner";
+  const personLabelPlural = formData.nature_of_entity === "body" ? "Employees" : "Partners";
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -248,10 +252,10 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
                   </TabsTrigger>
                   <TabsTrigger 
                     value="employees" 
-                    disabled={formData.nature_of_entity === "individual"}
+                    disabled={isSinglePersonEntity}
                     className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent pb-3 px-1 text-sm font-semibold"
                   >
-                    Employees
+                    {personLabelPlural}
                   </TabsTrigger>
                 </TabsList>
               </div>
@@ -419,20 +423,20 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
                 <TabsContent value="employees" className="space-y-6 mt-0">
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <h3 className="text-xl font-bold">Associated Employees</h3>
+                      <h3 className="text-xl font-bold">Associated {personLabelPlural}</h3>
                       <p className="text-sm text-muted-foreground">List of certified investment advisory representatives.</p>
                     </div>
                     <Button type="button" variant="outline" size="sm" onClick={addEmployee} className="gap-2 border-primary/20 bg-primary/5 hover:bg-primary/10">
                       <Plus className="w-4 h-4" />
-                      Add Employee
+                      Add {personLabel}
                     </Button>
                   </div>
 
                   {employees.length === 0 ? (
                     <div className="text-center py-16 border-2 border-dashed border-primary/10 rounded-2xl bg-muted/5">
-                      <p className="text-muted-foreground">No employees added yet.</p>
+                      <p className="text-muted-foreground">No {personLabelPlural.toLowerCase()} added yet.</p>
                       <Button type="button" variant="ghost" className="mt-4 text-primary" onClick={addEmployee}>
-                        Add your first employee record
+                        Add your first {personLabel.toLowerCase()} record
                       </Button>
                     </div>
                   ) : (
@@ -440,7 +444,7 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
                       {employees.map((emp, index) => (
                         <Card key={index} className="border-primary/10 bg-primary/5 overflow-hidden">
                           <CardHeader className="py-3 px-6 bg-primary/10 border-b border-primary/10 flex flex-row items-center justify-between">
-                            <CardTitle className="text-sm font-bold uppercase tracking-wider text-primary">Employee Record #{index + 1}</CardTitle>
+                            <CardTitle className="text-sm font-bold uppercase tracking-wider text-primary">{personLabel} Record #{index + 1}</CardTitle>
                             <Button type="button" variant="ghost" size="icon" onClick={() => removeEmployee(index)} className="text-destructive h-8 w-8 hover:bg-destructive/10">
                               <Trash2 className="w-4 h-4" />
                             </Button>
@@ -476,7 +480,7 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
 
                             <div className="space-y-2 pt-2 border-t border-primary/5">
                               <div className="flex justify-between items-center mb-1">
-                                <Label>Employee IA Certificate</Label>
+                                <Label>{personLabel} IA Certificate</Label>
                                 {emp.certificate_path && (
                                   <div className="flex items-center gap-2">
                                     <span className="text-[10px] text-primary font-medium flex items-center gap-1">
@@ -534,8 +538,8 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
                       onClick={() => {
                         const tabs = ["basic", "bank", "docs", "employees"];
                         const nextIndex = tabs.indexOf(activeTab) + 1;
-                        if (formData.nature_of_entity === "individual" && tabs[nextIndex] === "employees") {
-                           // Skip employees if individual
+                        if (isSinglePersonEntity && tabs[nextIndex] === "employees") {
+                           // Skip employees if individual/proprietorship
                            handleSubmit(new Event('submit') as any);
                            return;
                         }
@@ -546,7 +550,7 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
                       Next Step
                     </Button>
                   )}
-                  {(activeTab === "employees" || (activeTab === "docs" && formData.nature_of_entity === "individual")) && (
+                  {(activeTab === "employees" || (activeTab === "docs" && isSinglePersonEntity)) && (
                     <Button type="submit" className="gap-2 px-10 bg-primary hover:bg-primary/90 text-lg py-6" disabled={loading || iaNumberExists}>
                       {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <FileCheck className="w-5 h-5" />}
                       {loading ? "Saving Records..." : "Save Master Entry"}
