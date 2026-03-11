@@ -14,41 +14,41 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { MasterDataService, Customer } from "@/core/services/master.service";
+import { MasterDataService, Client } from "@/core/services/master.service";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AddCustomerModal } from "./AddCustomerModal";
+import { AddClientModal } from "./AddClientModal";
 
-interface CustomerListProps {
+interface ClientListProps {
   connectorId: string;
 }
 
-export function CustomerList({ connectorId }: CustomerListProps) {
-  const [customers, setCustomers] = useState<Customer[]>([]);
+export function ClientList({ connectorId }: ClientListProps) {
+  const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    fetchCustomers();
+    fetchClients();
   }, [connectorId]);
 
-  const fetchCustomers = async () => {
+  const fetchClients = async () => {
     try {
-      const data = await MasterDataService.listCustomers(connectorId);
-      setCustomers(data);
+      const data = await MasterDataService.listClients(connectorId);
+      setClients(data);
     } catch (error) {
-      toast.error("Failed to load customers from your private database");
+      toast.error("Failed to load clients from your private database");
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this customer?")) return;
+    if (!confirm("Are you sure you want to delete this client?")) return;
     try {
-      await MasterDataService.deleteCustomer(connectorId, id);
-      toast.success("Customer removed from private storage");
-      fetchCustomers();
+      await MasterDataService.deleteClient(connectorId, id);
+      toast.success("Client removed from private storage");
+      fetchClients();
     } catch (error) {
       toast.error("Delete failed");
     }
@@ -59,7 +59,7 @@ export function CustomerList({ connectorId }: CustomerListProps) {
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
         <div className="relative w-full md:w-96">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Search customers in private DB..." className="pl-10 bg-background/50 border-primary/20" />
+          <Input placeholder="Search clients in private DB..." className="pl-10 bg-background/50 border-primary/20" />
         </div>
         <div className="flex items-center gap-3 w-full md:w-auto">
           <Button variant="outline" className="gap-2 border-primary/20">
@@ -68,7 +68,7 @@ export function CustomerList({ connectorId }: CustomerListProps) {
           </Button>
           <Button className="gap-2 bg-primary hover:bg-primary/90" onClick={() => setIsModalOpen(true)}>
             <UserPlus className="w-4 h-4" />
-            Add Customer
+            Add Client
           </Button>
         </div>
       </div>
@@ -78,7 +78,7 @@ export function CustomerList({ connectorId }: CustomerListProps) {
           <Table>
             <TableHeader className="bg-primary/5">
               <TableRow>
-                <TableHead className="font-semibold text-primary">Customer Name</TableHead>
+                <TableHead className="font-semibold text-primary">Client Name</TableHead>
                 <TableHead className="font-semibold text-primary">Contact Info</TableHead>
                 <TableHead className="font-semibold text-primary">Address</TableHead>
                 <TableHead className="font-semibold text-primary">Status</TableHead>
@@ -96,40 +96,40 @@ export function CustomerList({ connectorId }: CustomerListProps) {
                     <TableCell><Skeleton className="h-5 w-20 float-right" /></TableCell>
                   </TableRow>
                 ))
-              ) : customers.length === 0 ? (
-                <TableRow>
+              ) : clients.length === 0 ? (
+                  <TableRow>
                   <TableCell colSpan={5} className="h-64 text-center">
                     <div className="flex flex-col items-center justify-center text-muted-foreground">
                       <div className="p-4 rounded-full bg-muted/50 mb-4">
                         <Database className="w-8 h-8 opacity-20" />
                       </div>
                       <p className="text-lg font-medium">No results found in your private database</p>
-                      <p className="text-sm">Start by adding your first customer above.</p>
+                      <p className="text-sm">Start by adding your first client above.</p>
                     </div>
                   </TableCell>
                 </TableRow>
               ) : (
-                customers.map((customer) => (
-                  <TableRow key={customer.id} className="hover:bg-primary/5 transition-colors">
-                    <TableCell className="font-medium">{customer.name}</TableCell>
+                clients.map((client) => (
+                  <TableRow key={client.id} className="hover:bg-primary/5 transition-colors">
+                    <TableCell className="font-medium">{client.name}</TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-1 text-sm">
                         <span className="flex items-center gap-1.5 text-muted-foreground">
-                          <Mail className="w-3 h-3" /> {customer.email || 'N/A'}
+                          <Mail className="w-3 h-3" /> {client.email || 'N/A'}
                         </span>
                         <span className="flex items-center gap-1.5 text-muted-foreground">
-                          <Phone className="w-3 h-3" /> {customer.phone || 'N/A'}
+                          <Phone className="w-3 h-3" /> {client.phone || 'N/A'}
                         </span>
                       </div>
                     </TableCell>
                     <TableCell>
                       <span className="flex items-center gap-1.5 text-sm text-muted-foreground italic">
-                        <MapPin className="w-3 h-3 shrink-0" /> {customer.address || 'No address provided'}
+                        <MapPin className="w-3 h-3 shrink-0" /> {client.address || 'No address provided'}
                       </span>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={customer.status === 'active' ? 'default' : 'secondary'} className="capitalize bg-primary/20 text-primary border-primary/20">
-                        {customer.status}
+                      <Badge variant={client.status === 'active' ? 'default' : 'secondary'} className="capitalize bg-primary/20 text-primary border-primary/20">
+                        {client.status}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
@@ -141,7 +141,7 @@ export function CustomerList({ connectorId }: CustomerListProps) {
                           variant="ghost" 
                           size="icon" 
                           className="h-8 w-8 text-destructive/70 hover:text-destructive hover:bg-destructive/10"
-                          onClick={() => handleDelete(customer.id)}
+                          onClick={() => handleDelete(client.id)}
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -155,9 +155,9 @@ export function CustomerList({ connectorId }: CustomerListProps) {
         </CardContent>
       </Card>
       
-      {!loading && customers.length > 0 && (
+      {!loading && clients.length > 0 && (
         <div className="flex items-center justify-between text-sm text-muted-foreground px-2">
-          <p>Showing {customers.length} customers from your private database.</p>
+          <p>Showing {clients.length} clients from your private database.</p>
           <div className="flex items-center gap-1 p-1 rounded-md bg-green-500/10 border border-green-500/20 text-[10px] text-green-600 font-bold uppercase tracking-widest px-2">
             <CheckCircle2 className="w-3 h-3" />
             Live Remote Storage
@@ -165,10 +165,10 @@ export function CustomerList({ connectorId }: CustomerListProps) {
         </div>
       )}
 
-      <AddCustomerModal 
+      <AddClientModal 
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onSuccess={fetchCustomers}
+        onSuccess={fetchClients}
         connectorId={connectorId}
       />
     </div>

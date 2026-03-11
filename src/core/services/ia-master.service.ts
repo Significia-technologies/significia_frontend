@@ -32,6 +32,8 @@ export interface IAMaster {
   ia_certificate_path?: string;
   ia_signature_path?: string;
   ia_logo_path?: string;
+  max_client_permit: number;
+  current_client_count: number;
   created_at: string;
   updated_at: string;
   employees: Employee[];
@@ -78,5 +80,13 @@ export class IAMasterService {
     document.body.appendChild(link);
     link.click();
     link.remove();
+  }
+
+  static async updateClientPermit(connectorId: string, iaId: string, maxPermit: number): Promise<IAMaster> {
+    const response = await httpClient.patch<IAMaster>(
+      API_ENDPOINTS.MASTER.IA_MASTER.UPDATE_PERMIT(connectorId, iaId),
+      { max_client_permit: maxPermit }
+    );
+    return response.data;
   }
 }

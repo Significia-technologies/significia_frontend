@@ -1,7 +1,7 @@
 import { API_ENDPOINTS } from "../api/api-endpoints";
 import httpClient from "../api/http-client";
 
-export interface Customer {
+export interface Client {
   id: string;
   name: string;
   email: string | null;
@@ -12,7 +12,7 @@ export interface Customer {
   updated_at: string;
 }
 
-export interface CustomerCreate {
+export interface ClientCreate {
   name: string;
   email?: string;
   phone?: string;
@@ -21,24 +21,24 @@ export interface CustomerCreate {
 }
 
 export class MasterDataService {
-  static async listCustomers(connectorId: string): Promise<Customer[]> {
-    const response = await httpClient.get<Customer[]>(
-      API_ENDPOINTS.MASTER.CUSTOMERS.LIST(connectorId)
+  static async listClients(connectorId: string): Promise<Client[]> {
+    const response = await httpClient.get<Client[]>(
+      API_ENDPOINTS.MASTER.CLIENTS.LIST(connectorId)
     );
     return response.data;
   }
 
-  static async createCustomer(connectorId: string, data: CustomerCreate): Promise<Customer> {
-    const response = await httpClient.post<Customer>(
-      API_ENDPOINTS.MASTER.CUSTOMERS.CREATE(connectorId),
+  static async createClient(connectorId: string, data: ClientCreate): Promise<Client> {
+    const response = await httpClient.post<Client>(
+      API_ENDPOINTS.MASTER.CLIENTS.CREATE(connectorId),
       data
     );
     return response.data;
   }
 
-  static async deleteCustomer(connectorId: string, customerId: string): Promise<void> {
+  static async deleteClient(connectorId: string, clientId: string): Promise<void> {
     await httpClient.delete(
-      API_ENDPOINTS.MASTER.CUSTOMERS.DELETE(connectorId, customerId)
+      API_ENDPOINTS.MASTER.CLIENTS.DELETE(connectorId, clientId)
     );
   }
 }

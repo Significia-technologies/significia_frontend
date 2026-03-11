@@ -54,18 +54,19 @@ export const API_ENDPOINTS = {
 
   // ── Master Data ──────────────────────────────────
   MASTER: {
-    CUSTOMERS: {
-      LIST: (connectorId: string) => `${API_BASE}/master/${connectorId}/customers`,
-      CREATE: (connectorId: string) => `${API_BASE}/master/${connectorId}/customers`,
-      DETAIL: (connectorId: string, id: string) => `${API_BASE}/master/${connectorId}/customers/${id}`,
-      UPDATE: (connectorId: string, id: string) => `${API_BASE}/master/${connectorId}/customers/${id}`,
-      DELETE: (connectorId: string, id: string) => `${API_BASE}/master/${connectorId}/customers/${id}`,
+    CLIENTS: {
+      LIST: (connectorId: string) => `${API_BASE}/master/${connectorId}/clients`,
+      CREATE: (connectorId: string) => `${API_BASE}/master/${connectorId}/clients`,
+      DETAIL: (connectorId: string, id: string) => `${API_BASE}/master/${connectorId}/clients/${id}`,
+      UPDATE: (connectorId: string, id: string) => `${API_BASE}/master/${connectorId}/clients/${id}`,
+      DELETE: (connectorId: string, id: string) => `${API_BASE}/master/${connectorId}/clients/${id}`,
     },
     IA_MASTER: {
       CREATE: (connectorId: string) => `${API_BASE}/ia-master/?connector_id=${connectorId}`,
       VALIDATE: (connectorId: string, iaNumber: string) => `${API_BASE}/ia-master/validate-remote/${iaNumber}?connector_id=${connectorId}`,
       LATEST: (connectorId: string) => `${API_BASE}/ia-master/latest?connector_id=${connectorId}`,
       PDF: (connectorId: string, iaId: string) => `${API_BASE}/ia-master/${iaId}/pdf?connector_id=${connectorId}`,
+      UPDATE_PERMIT: (connectorId: string, iaId: string) => `${API_BASE}/ia-master/${iaId}/client-permit?connector_id=${connectorId}`,
     },
   },
 

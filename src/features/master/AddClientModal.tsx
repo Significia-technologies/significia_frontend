@@ -14,19 +14,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { MasterDataService, CustomerCreate } from "@/core/services/master.service";
+import { MasterDataService, ClientCreate } from "@/core/services/master.service";
 import { toast } from "sonner";
 
-interface AddCustomerModalProps {
+interface AddClientModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
   connectorId: string;
 }
 
-export function AddCustomerModal({ isOpen, onClose, onSuccess, connectorId }: AddCustomerModalProps) {
+export function AddClientModal({ isOpen, onClose, onSuccess, connectorId }: AddClientModalProps) {
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState<CustomerCreate>({
+  const [formData, setFormData] = useState<ClientCreate>({
     name: "",
     email: "",
     phone: "",
@@ -43,8 +43,8 @@ export function AddCustomerModal({ isOpen, onClose, onSuccess, connectorId }: Ad
     e.preventDefault();
     setLoading(true);
     try {
-      await MasterDataService.createCustomer(connectorId, formData);
-      toast.success("Customer added to your private database!");
+      await MasterDataService.createClient(connectorId, formData);
+      toast.success("Client added to your private database!");
       onSuccess();
       onClose();
       // Reset form
@@ -56,7 +56,7 @@ export function AddCustomerModal({ isOpen, onClose, onSuccess, connectorId }: Ad
         status: "active",
       });
     } catch (error: any) {
-      toast.error(error.message || "Failed to add customer");
+      toast.error(error.message || "Failed to add client");
     } finally {
       setLoading(false);
     }
@@ -68,7 +68,7 @@ export function AddCustomerModal({ isOpen, onClose, onSuccess, connectorId }: Ad
         <DialogHeader>
           <DialogTitle className="text-2xl flex items-center gap-2">
             <UserPlus className="w-6 h-6 text-primary" />
-            Add New Customer
+            Add New Client
           </DialogTitle>
           <DialogDescription>
             This information will be stored exclusively in your private database.
@@ -133,7 +133,7 @@ export function AddCustomerModal({ isOpen, onClose, onSuccess, connectorId }: Ad
               ) : (
                 <UserPlus className="w-4 h-4" />
               )}
-              {loading ? "Adding..." : "Add Customer"}
+              {loading ? "Adding..." : "Add Client"}
             </Button>
           </DialogFooter>
         </form>

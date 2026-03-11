@@ -9,8 +9,9 @@ import { StorageConnector, StorageService } from "@/core/services/storage.servic
 import { ConnectorSetup } from "@/features/master/ConnectorSetup";
 import { StorageSetup } from "@/features/master/StorageSetup";
 import { ProvisioningView } from "@/features/master/ProvisioningView";
-import { CustomerList } from "@/features/master/CustomerList";
+import { ClientList } from "@/features/master/ClientList";
 import { IAMasterView } from "@/features/master/IAMasterView";
+import { IAMasterService, IAMaster } from "@/core/services/ia-master.service";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { ConfirmModal } from "@/components/shared/ConfirmModal";
@@ -22,6 +23,7 @@ export default function MasterPage() {
   const [loading, setLoading] = useState(true);
   const [connector, setConnector] = useState<Connector | null>(null);
   const [storageConnector, setStorageConnector] = useState<StorageConnector | null>(null);
+  const [iaMaster, setIaMaster] = useState<IAMaster | null>(null);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [isReinitializing, setIsReinitializing] = useState(false);
 
@@ -45,6 +47,15 @@ export default function MasterPage() {
         } else {
           setStorageConnector(null);
         }
+
+        // Fetch IA Master details for the client permit count
+        try {
+          const latestIa = await IAMasterService.getLatest(connectors[0].id);
+          setIaMaster(latestIa);
+        } catch (e) {
+          console.error("Failed to fetch IA master for permit limits", e);
+        }
+
       } else {
         setConnector(null);
         setStorageConnector(null);
@@ -145,12 +156,6 @@ export default function MasterPage() {
               <RefreshCcw className="w-4 h-4" />
               Sync Status
             </Button>
-            <div className="flex flex-col items-end">
-              <div className="px-4 py-1.5 rounded-lg bg-primary/10 text-primary text-[10px] font-black border border-primary/30 uppercase tracking-[0.1em] shadow-sm backdrop-blur-sm flex items-center gap-2">
-                <span>Max Client Permitted</span>
-                <span className="bg-primary text-primary-foreground px-2 py-0.5 rounded-md text-xs">10</span>
-              </div>
-            </div>
           </div>
         </header>
 
@@ -162,9 +167,9 @@ export default function MasterPage() {
                   <ShieldCheck className="w-4 h-4" />
                   Investment Advisor
                 </TabsTrigger>
-                <TabsTrigger value="customers" className="gap-2 px-6">
+                <TabsTrigger value="clients" className="gap-2 px-6">
                   <List className="w-4 h-4" />
-                  Customers
+                  Clients
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -173,8 +178,8 @@ export default function MasterPage() {
               <IAMasterView connectorId={connector.id} />
             </TabsContent>
 
-            <TabsContent value="customers" className="focus-visible:outline-none focus-visible:ring-0">
-              <CustomerList connectorId={connector.id} />
+            <TabsContent value="clients" className="focus-visible:outline-none focus-visible:ring-0">
+              <ClientList connectorId={connector.id} />
             </TabsContent>
           </Tabs>
         </div>

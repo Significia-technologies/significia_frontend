@@ -14,9 +14,14 @@ import {
   CreditCard,
   ExternalLink,
   Edit,
-  Database
+  Database,
+  Pencil,
+  Loader2,
+  Save,
+  X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -40,6 +45,9 @@ export function IAMasterView({ connectorId }: IAMasterViewProps) {
   const router = useRouter();
   const [data, setData] = useState<IAMaster | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isEditingPermit, setIsEditingPermit] = useState(false);
+  const [newPermitLimit, setNewPermitLimit] = useState("");
+  const [isSavingPermit, setIsSavingPermit] = useState(false);
 
   const getFileUrl = (path: string | undefined) => {
     if (!path) return "";
@@ -71,6 +79,40 @@ export function IAMasterView({ connectorId }: IAMasterViewProps) {
       toast.success("PDF report downloaded successfully");
     } catch (error) {
       toast.error("Failed to generate PDF report");
+    }
+  };
+
+  const handleSavePermit = async () => {
+    if (!data) return;
+    const maxPermit = parseInt(newPermitLimit, 10);
+    
+    if (isNaN(maxPermit) || maxPermit <= 0) {
+      toast.error("Please enter a valid number greater than 0");
+      return;
+    }
+
+    if (maxPermit < data.current_client_count) {
+      toast.error(`Cannot set limit below current client count (${data.current_client_count})`);
+      return;
+    }
+
+    setIsSavingPermit(true);
+    try {
+      const updatedData = await IAMasterService.updateClientPermit(connectorId, data.id, maxPermit);
+      setData(updatedData);
+      setIsEditingPermit(false);
+      toast.success("Client limit updated successfully");
+    } catch (error: any) {
+      toast.error(error.response?.data?.detail || "Failed to update client limit");
+    } finally {
+      setIsSavingPermit(false);
+    }
+  };
+
+  const startEditingPermit = () => {
+    if (data) {
+      setNewPermitLimit((data.max_client_permit ?? 10).toString());
+      setIsEditingPermit(true);
     }
   };
 
@@ -131,15 +173,53 @@ export function IAMasterView({ connectorId }: IAMasterViewProps) {
               </CardDescription>
             </div>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="gap-2 border-primary/20 hover:bg-primary/5" onClick={handleDownloadPdf}>
-              <Download className="w-4 h-4" />
-              Export PDF
-            </Button>
-            <Button size="sm" className="gap-2 bg-primary hover:bg-primary/90" onClick={() => router.push("/dashboard/master/ia-master/new")}>
-              <Edit className="w-4 h-4" />
-              Update
-            </Button>
+          <div className="flex flex-col items-end gap-3">
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" className="gap-2 border-primary/20 hover:bg-primary/5" onClick={handleDownloadPdf}>
+                <Download className="w-4 h-4" />
+                Export PDF
+              </Button>
+              <Button size="sm" className="gap-2 bg-primary hover:bg-primary/90" onClick={() => router.push("/dashboard/master/ia-master/new")}>
+                <Edit className="w-4 h-4" />
+                Update
+              </Button>
+            </div>
+            
+            {/* Client Limit Section */}
+            <div className="bg-background/80 backdrop-blur-sm border border-primary/20 rounded-lg p-3 shadow-sm flex items-center gap-4">
+              <div className="flex flex-col">
+                <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mb-1">Client Limit Usage</span>
+                <div className="text-sm font-medium flex items-center">
+                  <span className="text-primary">{data.current_client_count ?? 0}</span>
+                  <span className="text-muted-foreground mx-2">/</span>
+                  {isEditingPermit ? (
+                    <div className="inline-flex items-center gap-2">
+                      <Input 
+                        value={newPermitLimit}
+                        onChange={(e) => setNewPermitLimit(e.target.value)}
+                        className="w-16 h-7 text-xs px-2 py-0"
+                        type="number"
+                        min={data.current_client_count ?? 0}
+                        disabled={isSavingPermit}
+                      />
+                      <Button size="icon" variant="ghost" className="h-6 w-6 text-green-600 hover:text-green-700 hover:bg-green-100" onClick={handleSavePermit} disabled={isSavingPermit}>
+                        {isSavingPermit ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-6 w-6 text-muted-foreground hover:text-foreground" onClick={() => setIsEditingPermit(false)} disabled={isSavingPermit}>
+                        <X className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="font-bold flex items-center gap-2">
+                      <span>{data.max_client_permit ?? 10}</span>
+                      <Button size="icon" variant="ghost" className="h-5 w-5 opacity-50 hover:opacity-100" onClick={startEditingPermit}>
+                        <Pencil className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="grid md:grid-cols-3 gap-8 pt-4">
