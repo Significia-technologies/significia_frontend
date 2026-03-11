@@ -25,7 +25,7 @@ export function UnderConstruction({ pageName }: UnderConstructionProps) {
       
       <div className="flex items-center gap-4">
         <Button asChild variant="default" className="gap-2 px-6">
-          <Link href="/dashboard">
+          <Link href="/">
             <ArrowLeft className="w-4 h-4" />
             Back to Dashboard
           </Link>

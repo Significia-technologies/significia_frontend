@@ -34,8 +34,8 @@ export default function AdminRouteLayout({
                 Clients & Tenants
               </Link>
               <Link 
-                href="/dashboard"
-                className="flex mt-4 items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted"
+                href="/" 
+                className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
               >
                 &larr; Exit to Dashboard
               </Link>

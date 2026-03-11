@@ -137,7 +137,7 @@ export function IAMasterView({ connectorId }: IAMasterViewProps) {
             You haven't registered your Investment Advisor details yet. 
             Once added, your compliance reports and signatures will be managed here.
           </p>
-          <Button className="gap-2 px-8" onClick={() => router.push("/dashboard/master/ia-master/new")}>
+          <Button className="gap-2 px-8" onClick={() => router.push("/master/ia-master/new")}>
             <Building2 className="w-5 h-5" />
             Register IA Master
           </Button>
@@ -179,7 +179,7 @@ export function IAMasterView({ connectorId }: IAMasterViewProps) {
                 <Download className="w-4 h-4" />
                 Export PDF
               </Button>
-              <Button size="sm" className="gap-2 bg-primary hover:bg-primary/90" onClick={() => router.push("/dashboard/master/ia-master/new")}>
+              <Button size="sm" className="gap-2 bg-primary hover:bg-primary/90" onClick={() => router.push("/master/ia-master/new")}>
                 <Edit className="w-4 h-4" />
                 Update
               </Button>

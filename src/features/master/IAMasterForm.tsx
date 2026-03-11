@@ -203,7 +203,7 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
 
       await IAMasterService.create(connectorId, data);
       toast.success("Investment Advisor record saved successfully!");
-      router.push("/dashboard/master");
+      router.push("/master");
     } catch (error: any) {
       toast.error(error.response?.data?.detail || "Failed to save IA record");
     } finally {

@@ -21,11 +21,10 @@ export function SuperAdminGuard({ children }: SuperAdminGuardProps) {
       return; 
     }
 
-    if (user.role === "super_admin") {
+    if (user.role === ("super_admin" as any)) {
       setIsAuthorized(true);
-    } else {
-      console.warn("Access Denied: User is not a super_admin.");
-      router.replace("/dashboard");
+    } else if (user && user.role !== "super_admin") {
+      router.replace("/");
     }
   }, [user, router]);
 

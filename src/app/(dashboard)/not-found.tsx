@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { Hammer, ArrowLeft, Construction } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Home, Construction, Hammer } from "lucide-react";
 import { Button } from '@/components/ui/button';
 
 export default function DashboardNotFound() {
@@ -20,9 +20,9 @@ export default function DashboardNotFound() {
       </p>
       
       <div className="flex items-center gap-4">
-        <Button asChild variant="default" className="gap-2 px-6">
-          <Link href="/dashboard">
-            <ArrowLeft className="w-4 h-4" />
+        <Button asChild className="gap-2" variant="default">
+          <Link href="/">
+            <Home className="h-4 w-4" />
             Back to Dashboard
           </Link>
         </Button>
