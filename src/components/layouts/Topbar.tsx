@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAppStore } from "@/store/useAppStore";
 import { AuthService } from "@/core/services/auth.service";
+import { ThemeToggle } from "@/components/shared/ThemeToggle";
 
 export function Topbar() {
   const router = useRouter();
@@ -50,6 +51,8 @@ export function Topbar() {
 
       {/* ── Right Actions ── */}
       <div className="flex items-center gap-3">
+        <ThemeToggle />
+        
         {/* Notifications */}
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-4 w-4" />
