@@ -17,16 +17,16 @@ import { Badge } from "@/components/ui/badge";
 import { MasterDataService, Client } from "@/core/services/master.service";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AddClientModal } from "./AddClientModal";
+import { useRouter } from "next/navigation";
 
 interface ClientListProps {
   connectorId: string;
 }
 
 export function ClientList({ connectorId }: ClientListProps) {
+  const router = useRouter();
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     fetchClients();
@@ -66,7 +66,7 @@ export function ClientList({ connectorId }: ClientListProps) {
             <Filter className="w-4 h-4" />
             Filters
           </Button>
-          <Button className="gap-2 bg-primary hover:bg-primary/90" onClick={() => setIsModalOpen(true)}>
+          <Button className="gap-2 bg-primary hover:bg-primary/90" onClick={() => router.push("/master/clients/new")}>
             <UserPlus className="w-4 h-4" />
             Add Client
           </Button>
@@ -111,14 +111,14 @@ export function ClientList({ connectorId }: ClientListProps) {
               ) : (
                 clients.map((client) => (
                   <TableRow key={client.id} className="hover:bg-primary/5 transition-colors">
-                    <TableCell className="font-medium">{client.name}</TableCell>
+                    <TableCell className="font-medium">{client.client_name}</TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-1 text-sm">
                         <span className="flex items-center gap-1.5 text-muted-foreground">
                           <Mail className="w-3 h-3" /> {client.email || 'N/A'}
                         </span>
                         <span className="flex items-center gap-1.5 text-muted-foreground">
-                          <Phone className="w-3 h-3" /> {client.phone || 'N/A'}
+                          <Phone className="w-3 h-3" /> {client.phone_number || 'N/A'}
                         </span>
                       </div>
                     </TableCell>
@@ -128,8 +128,8 @@ export function ClientList({ connectorId }: ClientListProps) {
                       </span>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={client.status === 'active' ? 'default' : 'secondary'} className="capitalize bg-primary/20 text-primary border-primary/20">
-                        {client.status}
+                      <Badge variant={client.is_active ? 'default' : 'secondary'} className="capitalize bg-primary/20 text-primary border-primary/20">
+                        {client.is_active ? 'Active' : 'Deactivated'}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
@@ -164,13 +164,6 @@ export function ClientList({ connectorId }: ClientListProps) {
           </div>
         </div>
       )}
-
-      <AddClientModal 
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSuccess={fetchClients}
-        connectorId={connectorId}
-      />
     </div>
   );
 }

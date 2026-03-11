@@ -89,4 +89,9 @@ export class IAMasterService {
     );
     return response.data;
   }
+
+  static async listConnectors(): Promise<any[]> {
+    const response = await httpClient.get<any[]>(API_ENDPOINTS.CONNECTORS.LIST);
+    return response.data;
+  }
 }
