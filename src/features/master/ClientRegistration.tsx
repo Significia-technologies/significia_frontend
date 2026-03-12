@@ -46,29 +46,38 @@ export default function ClientRegistrationForm({ connectorId }: ClientRegistrati
     gender: "",
     marital_status: "",
     nationality: "Indian",
-    residential_status: "Resident",
+    residential_status: "Resident Individual",
     tax_residency: "India",
-    pep_status: "No",
+    pep_status: "Not a PEP",
     father_name: "",
     mother_name: "",
     spouse_name: "",
     annual_income: 0,
     net_worth: 0,
     income_source: "",
-    fatca_compliance: "Yes",
+    fatca_compliance: "FATCA Compliant",
+    existing_portfolio_value: 0,
+    existing_portfolio_composition: "",
     bank_account_number: "",
     bank_name: "",
     bank_branch: "",
     ifsc_code: "",
+    demat_account_number: "",
+    trading_account_number: "",
     risk_profile: "Moderate",
-    investment_experience: "0-2 Years",
+    investment_experience: "Beginner",
     investment_objectives: "",
-    investment_horizon: "1-3 Years",
-    liquidity_needs: "Low",
+    investment_horizon: "Medium Term",
+    liquidity_needs: "Medium",
     advisor_name: "",
+    advisor_registration_number: "",
+    client_date: new Date().toISOString().split('T')[0],
     nominee_name: "",
     nominee_relationship: "",
+    previous_advisor_name: "",
+    referral_source: "",
     declaration_signed: true,
+    declaration_date: new Date().toISOString().split('T')[0],
     assigned_employee_id: "",
   });
 
@@ -98,6 +107,22 @@ export default function ClientRegistrationForm({ connectorId }: ClientRegistrati
     e.preventDefault();
     setLoading(true);
     try {
+      // Age Validation
+      if (formData.date_of_birth) {
+        const birthDate = new Date(formData.date_of_birth);
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const m = today.getMonth() - birthDate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+          age--;
+        }
+        if (age < 18) {
+          toast.error("Client must be at least 18 years old.");
+          setLoading(false);
+          return;
+        }
+      }
+
       await MasterDataService.createClient(connectorId, formData);
       toast.success("Client registered successfully!");
       router.push("/master");
@@ -144,18 +169,15 @@ export default function ClientRegistrationForm({ connectorId }: ClientRegistrati
 
               <div className="p-8 pb-12 min-h-[500px]">
                 <TabsContent value="personal" className="space-y-6 mt-0">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label>Client Name *</Label>
                       <Input name="client_name" value={formData.client_name} onChange={handleChange} required placeholder="Full name as per PAN" />
                     </div>
                     <div className="space-y-2">
-                        <Label>Client Code *</Label>
-                        <Input name="client_code" value={formData.client_code} onChange={handleChange} required placeholder="Unique Client Code" />
-                    </div>
-                    <div className="space-y-2">
                       <Label>Date of Birth *</Label>
                       <Input type="date" name="date_of_birth" value={formData.date_of_birth} onChange={handleChange} required />
+                      <p className="text-[10px] text-muted-foreground italic">Age must be 18+ years.</p>
                     </div>
                   </div>
 
@@ -209,6 +231,38 @@ export default function ClientRegistrationForm({ connectorId }: ClientRegistrati
                       <Input name="spouse_name" value={formData.spouse_name} onChange={handleChange} />
                     </div>
                   </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                    <div className="space-y-2">
+                        <Label>Nationality *</Label>
+                        <Input name="nationality" value={formData.nationality} onChange={handleChange} required />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Residential Status *</Label>
+                        <select name="residential_status" value={formData.residential_status} onChange={handleChange} required className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                            <option value="Resident Individual">Resident Individual</option>
+                            <option value="Non-Resident Indian">Non-Resident Indian</option>
+                            <option value="Person of Indian Origin">Person of Indian Origin</option>
+                            <option value="Foreign National">Foreign National</option>
+                        </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                    <div className="space-y-2">
+                        <Label>Tax Residency *</Label>
+                        <Input name="tax_residency" value={formData.tax_residency} onChange={handleChange} required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>PEP Status *</Label>
+                      <select name="pep_status" value={formData.pep_status} onChange={handleChange} required className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                        <option value="Not a PEP">Not a PEP</option>
+                        <option value="PEP">Politically Exposed Person</option>
+                        <option value="Family Member of PEP">Family Member of PEP</option>
+                        <option value="Close Associate of PEP">Close Associate of PEP</option>
+                      </select>
+                    </div>
+                  </div>
                 </TabsContent>
 
                 <TabsContent value="financial" className="space-y-6 mt-0">
@@ -225,11 +279,25 @@ export default function ClientRegistrationForm({ connectorId }: ClientRegistrati
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label>Source of Income *</Label>
-                      <Input name="income_source" value={formData.income_source} onChange={handleChange} required placeholder="Salary, Business, Profession, etc." />
+                      <select name="income_source" value={formData.income_source} onChange={handleChange} required className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                        <option value="">Select Source</option>
+                        <option value="Salaried">Salaried</option>
+                        <option value="Business">Business</option>
+                        <option value="Professional">Professional</option>
+                        <option value="Agriculture">Agriculture</option>
+                        <option value="Investments">Investments</option>
+                        <option value="Other">Other</option>
+                      </select>
                     </div>
                     <div className="space-y-2">
                       <Label>Occupation *</Label>
                       <Input name="occupation" value={formData.occupation} onChange={handleChange} required placeholder="Software Engineer, Doctor, etc." />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                    <div className="space-y-2">
+                      <Label>Existing Portfolio Value (₹) *</Label>
+                      <Input type="number" name="existing_portfolio_value" value={formData.existing_portfolio_value} onChange={handleChange} required />
                     </div>
                   </div>
                   <div className="space-y-2 pt-4">
@@ -285,10 +353,10 @@ export default function ClientRegistrationForm({ connectorId }: ClientRegistrati
                     <div className="space-y-2">
                       <Label>Investment Horizon *</Label>
                       <select name="investment_horizon" value={formData.investment_horizon} onChange={handleChange} required className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                        <option value="Less than 1 Year">Less than 1 Year</option>
-                        <option value="1-3 Years">1-3 Years</option>
-                        <option value="3-5 Years">3-5 Years</option>
-                        <option value="5+ Years">5+ Years</option>
+                        <option value="">Select Horizon</option>
+                        <option value="Short Term">Short Term (1-3 years)</option>
+                        <option value="Medium Term">Medium Term (3-7 years)</option>
+                        <option value="Long Term">Long Term (7+ years)</option>
                       </select>
                     </div>
                   </div>
@@ -300,18 +368,20 @@ export default function ClientRegistrationForm({ connectorId }: ClientRegistrati
                     <div className="space-y-2">
                       <Label>Investment Experience *</Label>
                       <select name="investment_experience" value={formData.investment_experience} onChange={handleChange} required className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                        <option value="None">None (Beginner)</option>
-                        <option value="0-2 Years">0-2 Years</option>
-                        <option value="2-5 Years">2-5 Years</option>
-                        <option value="5+ Years">5+ Years</option>
+                        <option value="">Select Experience</option>
+                        <option value="Beginner">Beginner (0-2 years)</option>
+                        <option value="Intermediate">Intermediate (2-5 years)</option>
+                        <option value="Experienced">Experienced (5-10 years)</option>
+                        <option value="Expert">Expert (10+ years)</option>
                       </select>
                     </div>
                     <div className="space-y-2">
                       <Label>Liquidity Needs *</Label>
                       <select name="liquidity_needs" value={formData.liquidity_needs} onChange={handleChange} required className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                        <option value="High">High (Needs cash frequently)</option>
-                        <option value="Medium">Medium</option>
-                        <option value="Low">Low (Long-term lock-in okay)</option>
+                        <option value="">Select Needs</option>
+                        <option value="Low">Low (can lock funds for long term)</option>
+                        <option value="Medium">Medium (some funds may be needed)</option>
+                        <option value="High">High (regular need for liquid funds)</option>
                       </select>
                     </div>
                   </div>
@@ -323,6 +393,8 @@ export default function ClientRegistrationForm({ connectorId }: ClientRegistrati
                       <Label>Advisor Name *</Label>
                       <Input name="advisor_name" value={formData.advisor_name} onChange={handleChange} required />
                     </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
                     <div className="space-y-2">
                         <Label>Marital Status *</Label>
                         <select name="marital_status" value={formData.marital_status} onChange={handleChange} required className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
@@ -330,9 +402,48 @@ export default function ClientRegistrationForm({ connectorId }: ClientRegistrati
                             <option value="Single">Single</option>
                             <option value="Married">Married</option>
                             <option value="Divorced">Divorced</option>
+                            <option value="Widowed">Widowed</option>
                         </select>
                     </div>
+                    <div className="space-y-2">
+                      <Label>FATCA Compliance *</Label>
+                      <select name="fatca_compliance" value={formData.fatca_compliance} onChange={handleChange} required className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                        <option value="FATCA Compliant">FATCA Compliant</option>
+                        <option value="Non-Compliant">Non-Compliant</option>
+                        <option value="Not Applicable">Not Applicable</option>
+                      </select>
+                    </div>
                   </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                    <div className="space-y-2">
+                      <Label>Advisor Registration Number *</Label>
+                      <Input name="advisor_registration_number" value={formData.advisor_registration_number} onChange={handleChange} required placeholder="e.g. INA000012345" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Client Date *</Label>
+                      <Input type="date" name="client_date" value={formData.client_date} onChange={handleChange} required />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                    <div className="space-y-2">
+                      <Label>Previous Advisor Name</Label>
+                      <Input name="previous_advisor_name" value={formData.previous_advisor_name} onChange={handleChange} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Referral Source</Label>
+                      <select name="referral_source" value={formData.referral_source} onChange={handleChange} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                        <option value="">Select Source</option>
+                        <option value="Existing Client">Existing Client</option>
+                        <option value="Friend/Family">Friend/Family</option>
+                        <option value="Online Search">Online Search</option>
+                        <option value="Advertisement">Advertisement</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
                     <div className="space-y-2">
                       <Label>Nominee Name</Label>
@@ -341,6 +452,13 @@ export default function ClientRegistrationForm({ connectorId }: ClientRegistrati
                     <div className="space-y-2">
                       <Label>Relationship with Nominee</Label>
                       <Input name="nominee_relationship" value={formData.nominee_relationship} onChange={handleChange} />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                    <div className="space-y-2">
+                      <Label>Declaration Date *</Label>
+                      <Input type="date" name="declaration_date" value={formData.declaration_date} onChange={handleChange} required />
                     </div>
                   </div>
 

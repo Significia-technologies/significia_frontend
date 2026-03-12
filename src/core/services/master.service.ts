@@ -63,8 +63,12 @@ export interface ClientCreate {
 
   // Metadata
   advisor_name: string;
+  advisor_registration_number: string;
+  client_date: string;
   nominee_name?: string;
   nominee_relationship?: string;
+  previous_advisor_name?: string;
+  referral_source?: string;
   declaration_signed: boolean;
   declaration_date?: string;
   client_signature_path?: string;

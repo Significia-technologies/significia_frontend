@@ -6,8 +6,8 @@ export interface Employee {
   name_of_employee: string;
   designation: string;
   ia_registration_number: string;
-  date_of_registration: string;
-  date_of_registration_expiry: string;
+  date_of_registration?: string;
+  date_of_registration_expiry?: string;
   certificate_path?: string;
   created_at?: string;
 }
@@ -18,8 +18,8 @@ export interface IAMaster {
   nature_of_entity: string;
   name_of_entity?: string;
   ia_registration_number: string;
-  date_of_registration: string;
-  date_of_registration_expiry: string;
+  date_of_registration?: string;
+  date_of_registration_expiry?: string;
   registered_address: string;
   registered_contact_number: string;
   office_contact_number?: string;
