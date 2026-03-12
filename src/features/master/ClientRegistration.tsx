@@ -19,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { MasterDataService, ClientCreate } from "@/core/services/master.service";
+import { IAMasterService, Employee } from "@/core/services/ia-master.service";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -30,6 +31,7 @@ export default function ClientRegistrationForm({ connectorId }: ClientRegistrati
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("personal");
+  const [employees, setEmployees] = useState<Employee[]>([]);
 
   const [formData, setFormData] = useState<ClientCreate>({
     email: "",
@@ -67,7 +69,22 @@ export default function ClientRegistrationForm({ connectorId }: ClientRegistrati
     nominee_name: "",
     nominee_relationship: "",
     declaration_signed: true,
+    assigned_employee_id: "",
   });
+
+  React.useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        const iaMaster = await IAMasterService.getLatest(connectorId);
+        if (iaMaster?.employees) {
+          setEmployees(iaMaster.employees);
+        }
+      } catch (error) {
+        console.error("Failed to fetch employees", error);
+      }
+    };
+    fetchEmployees();
+  }, [connectorId]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -324,6 +341,27 @@ export default function ClientRegistrationForm({ connectorId }: ClientRegistrati
                     <div className="space-y-2">
                       <Label>Relationship with Nominee</Label>
                       <Input name="nominee_relationship" value={formData.nominee_relationship} onChange={handleChange} />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                    <div className="space-y-2">
+                      <Label>Assigned Employee/Partner *</Label>
+                      <select 
+                        name="assigned_employee_id" 
+                        value={formData.assigned_employee_id} 
+                        onChange={handleChange} 
+                        required 
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                      >
+                        <option value="">Select Professional</option>
+                        {employees.map((emp) => (
+                          <option key={emp.id} value={emp.id}>
+                            {emp.name_of_employee} ({emp.designation})
+                          </option>
+                        ))}
+                      </select>
+                      <p className="text-[10px] text-muted-foreground">Select the Employee or Partner providing advisory services to this client.</p>
                     </div>
                   </div>
                   <Card className="bg-primary/5 border-primary/20 mt-8">

@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { MasterDataService, Client } from "@/core/services/master.service";
+import { IAMasterService, Employee } from "@/core/services/ia-master.service";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
@@ -26,11 +27,28 @@ interface ClientListProps {
 export function ClientList({ connectorId }: ClientListProps) {
   const router = useRouter();
   const [clients, setClients] = useState<Client[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchClients();
+    const init = async () => {
+      setLoading(true);
+      await Promise.all([fetchClients(), fetchEmployees()]);
+      setLoading(false);
+    };
+    init();
   }, [connectorId]);
+
+  const fetchEmployees = async () => {
+    try {
+      const iaMaster = await IAMasterService.getLatest(connectorId);
+      if (iaMaster?.employees) {
+        setEmployees(iaMaster.employees);
+      }
+    } catch (error) {
+      console.error("Failed to fetch employees", error);
+    }
+  };
 
   const fetchClients = async () => {
     try {
@@ -81,6 +99,7 @@ export function ClientList({ connectorId }: ClientListProps) {
                 <TableHead className="font-semibold text-primary">Client Name</TableHead>
                 <TableHead className="font-semibold text-primary">Contact Info</TableHead>
                 <TableHead className="font-semibold text-primary">Address</TableHead>
+                <TableHead className="font-semibold text-primary">Assigned To</TableHead>
                 <TableHead className="font-semibold text-primary">Status</TableHead>
                 <TableHead className="text-right font-semibold text-primary">Actions</TableHead>
               </TableRow>
@@ -126,6 +145,15 @@ export function ClientList({ connectorId }: ClientListProps) {
                       <span className="flex items-center gap-1.5 text-sm text-muted-foreground italic">
                         <MapPin className="w-3 h-3 shrink-0" /> {client.address || 'No address provided'}
                       </span>
+                    </TableCell>
+                    <TableCell>
+                      {client.assigned_employee_id ? (
+                        <Badge variant="outline" className="bg-primary/5 text-primary border-primary/10">
+                          {employees.find(e => e.id === client.assigned_employee_id)?.name_of_employee || 'Unknown Professional'}
+                        </Badge>
+                      ) : (
+                        <span className="text-xs text-muted-foreground italic">Unassigned</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Badge variant={client.is_active ? 'default' : 'secondary'} className="capitalize bg-primary/20 text-primary border-primary/20">

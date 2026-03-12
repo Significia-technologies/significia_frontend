@@ -12,6 +12,7 @@ export interface Client {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  assigned_employee_id?: string;
 }
 
 export interface ClientCreate {
@@ -68,6 +69,7 @@ export interface ClientCreate {
   declaration_date?: string;
   client_signature_path?: string;
   advisor_signature_path?: string;
+  assigned_employee_id?: string;
 }
 
 export class MasterDataService {

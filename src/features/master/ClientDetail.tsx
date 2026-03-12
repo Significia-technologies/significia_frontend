@@ -21,6 +21,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ClientCreate } from "@/core/services/master.service";
+import { IAMasterService, Employee } from "@/core/services/ia-master.service";
 import { useRouter } from "next/navigation";
 
 interface ClientDetailProps {
@@ -30,6 +31,21 @@ interface ClientDetailProps {
 
 export default function ClientDetail({ client, connectorId }: ClientDetailProps) {
   const router = useRouter();
+  const [employees, setEmployees] = React.useState<Employee[]>([]);
+
+  React.useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        const iaMaster = await IAMasterService.getLatest(connectorId);
+        if (iaMaster?.employees) {
+          setEmployees(iaMaster.employees);
+        }
+      } catch (error) {
+        console.error("Failed to fetch employees", error);
+      }
+    };
+    fetchEmployees();
+  }, [connectorId]);
 
   const DetailItem = ({ label, value }: { label: string; value: any }) => (
     <div className="space-y-1">
@@ -147,6 +163,11 @@ export default function ClientDetail({ client, connectorId }: ClientDetailProps)
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div className="space-y-4 bg-muted/30 p-4 rounded-lg">
                             <DetailItem label="Advisor Name" value={client.advisor_name} />
+                            <DetailItem label="Assigned Professional" value={
+                              client.assigned_employee_id 
+                                ? employees.find(e => e.id === client.assigned_employee_id)?.name_of_employee || "Loading..."
+                                : "Unassigned"
+                            } />
                             <DetailItem label="Risk Profile" value={<Badge variant="secondary" className="bg-orange-100 text-orange-700 hover:bg-orange-100">{client.risk_profile}</Badge>} />
                             <DetailItem label="Declaration Signed" value={client.declaration_signed ? <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Yes</Badge> : <Badge variant="destructive">No</Badge>} />
                         </div>
