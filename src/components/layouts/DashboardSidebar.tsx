@@ -17,6 +17,7 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  Terminal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -74,6 +75,11 @@ const NAV_ITEMS = [
     label:"Tools",
     href:"/tools",
     icon:Wrench,
+  },
+  {
+    label:"Developer",
+    href:"/master/developer",
+    icon:Terminal,
   },
   {
     label:"Admin",

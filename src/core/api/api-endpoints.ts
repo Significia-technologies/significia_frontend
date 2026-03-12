@@ -76,4 +76,12 @@ export const API_ENDPOINTS = {
     CREATE: `${API_BASE}/storage`,
     VERIFY: (id: string) => `${API_BASE}/storage/${id}/verify`,
   },
+
+  // ── API Keys ──────────────────────────────────────
+  API_KEYS: {
+    LIST: `${API_BASE}/api-keys`,
+    CREATE: `${API_BASE}/api-keys`,
+    REVOKE: (id: string) => `${API_BASE}/api-keys/${id}`,
+  },
 };
+
