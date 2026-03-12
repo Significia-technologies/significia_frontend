@@ -139,9 +139,16 @@ export function DashboardSidebar() {
       {/* ── Main Nav ── */}
       <nav className="flex-1 space-y-0.5 overflow-y-auto overflow-x-hidden px-2 py-4 [&::-webkit-scrollbar]:hidden scrollbar-none">
         {NAV_ITEMS.map((item) => {
-          const isActive =
-            pathname === item.href ||
-            (item.href !== "/" && pathname.startsWith(item.href));
+          let isActive = false;
+          
+          if (item.href === "/") {
+            isActive = pathname === "/";
+          } else if (item.href === "/master") {
+            // Only active if exactly /master or /master/clients/etc, BUT NOT /master/developer
+            isActive = pathname === "/master" || (pathname.startsWith("/master") && !pathname.startsWith("/master/developer"));
+          } else {
+            isActive = pathname.startsWith(item.href);
+          }
 
           const linkContent = (
             <Link
