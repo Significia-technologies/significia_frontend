@@ -38,6 +38,8 @@ export interface ClientCreate {
   father_name: string;
   mother_name: string;
   spouse_name?: string;
+  aadhar_number?: string;
+  passport_number?: string;
 
   // Financial
   annual_income: number;

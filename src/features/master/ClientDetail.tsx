@@ -191,6 +191,11 @@ export default function ClientDetail({ client, connectorId }: ClientDetailProps)
                         <DetailItem label="Nationality" value={client.nationality} />
                         <DetailItem label="PEP Status" value={client.pep_status} />
                         <DetailItem label="FATCA Compliance" value={client.fatca_compliance} />
+                        {client.residential_status === "Resident Individual" ? (
+                          <DetailItem label="Aadhar Number" value={client.aadhar_number} />
+                        ) : (
+                          <DetailItem label="Passport Number" value={client.passport_number} />
+                        )}
                     </div>
                 </div>
 

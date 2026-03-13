@@ -46,6 +46,8 @@ export function AddClientModal({ isOpen, onClose, onSuccess, connectorId }: AddC
     net_worth: 0,
     income_source: "Business",
     fatca_compliance: "Yes",
+    aadhar_number: "",
+    passport_number: "",
     bank_account_number: "00000000",
     bank_name: "TBD",
     bank_branch: "TBD",
@@ -187,6 +189,49 @@ export function AddClientModal({ isOpen, onClose, onSuccess, connectorId }: AddC
                 ))}
               </select>
             </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Residential Status *</Label>
+              <select 
+                name="residential_status" 
+                value={formData.residential_status} 
+                onChange={handleChange} 
+                required 
+                className="flex h-10 w-full rounded-md border border-primary/10 bg-background/50 px-3 py-2 text-sm"
+              >
+                  <option value="Resident Individual">Resident Individual</option>
+                  <option value="Non-Resident Indian">Non-Resident Indian</option>
+                  <option value="Person of Indian Origin">Person of Indian Origin</option>
+                  <option value="Foreign National">Foreign National</option>
+              </select>
+            </div>
+            {formData.residential_status === "Resident Individual" ? (
+              <div className="space-y-2">
+                <Label>Aadhar Number *</Label>
+                <Input 
+                  name="aadhar_number" 
+                  value={formData.aadhar_number} 
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '').slice(0, 12);
+                    setFormData(prev => ({ ...prev, aadhar_number: val }));
+                  }} 
+                  required 
+                  placeholder="12 digit Aadhar"
+                />
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label>Passport Number *</Label>
+                <Input 
+                  name="passport_number" 
+                  value={formData.passport_number} 
+                  onChange={handleChange} 
+                  required 
+                  placeholder="Passport number"
+                />
+              </div>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="address">Physical Address</Label>
