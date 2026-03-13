@@ -111,6 +111,24 @@ export default function ClientRegistrationForm({
     fetchEmployees();
   }, [connectorId]);
 
+  // Sync formData with initialData when it changes (Edit Mode)
+  React.useEffect(() => {
+    if (isEdit && initialData) {
+      setFormData(prev => ({
+        ...prev,
+        ...initialData,
+        // Ensure numeric fields are correctly handled if they come as null/undefined
+        annual_income: initialData.annual_income || "" as any,
+        net_worth: initialData.net_worth || "" as any,
+        existing_portfolio_value: initialData.existing_portfolio_value || "" as any,
+        // Ensure dates are just the YYYY-MM-DD part
+        date_of_birth: initialData.date_of_birth?.split('T')[0] || "",
+        client_date: initialData.client_date?.split('T')[0] || "",
+        declaration_date: initialData.declaration_date?.split('T')[0] || "",
+      }));
+    }
+  }, [initialData, isEdit]);
+
   const calculateAge = (dob: string) => {
     if (!dob) return 0;
     const birthDate = new Date(dob);
