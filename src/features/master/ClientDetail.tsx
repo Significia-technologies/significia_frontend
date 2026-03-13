@@ -20,9 +20,10 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ClientCreate } from "@/core/services/master.service";
+import { ClientCreate, MasterDataService } from "@/core/services/master.service";
 import { IAMasterService, Employee } from "@/core/services/ia-master.service";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 interface ClientDetailProps {
   client: ClientCreate;
@@ -32,6 +33,7 @@ interface ClientDetailProps {
 export default function ClientDetail({ client, connectorId }: ClientDetailProps) {
   const router = useRouter();
   const [employees, setEmployees] = React.useState<Employee[]>([]);
+  const [downloading, setDownloading] = React.useState(false);
 
   React.useEffect(() => {
     const fetchEmployees = async () => {
@@ -53,6 +55,19 @@ export default function ClientDetail({ client, connectorId }: ClientDetailProps)
       <p className="text-sm font-semibold">{value || "N/A"}</p>
     </div>
   );
+
+  const handleDownloadReport = async () => {
+    setDownloading(true);
+    try {
+      await MasterDataService.downloadClientReport(connectorId, client.id!, client.client_name);
+      toast.success("Report downloaded successfully!");
+    } catch (error) {
+      console.error("Failed to download report", error);
+      toast.error("Failed to generate report");
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   const SectionHeader = ({ icon: Icon, title }: { icon: any; title: string }) => (
     <div className="flex items-center gap-2 mb-6 border-b border-primary/10 pb-2">
@@ -88,9 +103,18 @@ export default function ClientDetail({ client, connectorId }: ClientDetailProps)
         </div>
         
         <div className="flex items-center gap-3">
-            <Button variant="outline" className="gap-2 border-primary/20">
-                <FileText className="w-4 h-4" />
-                Reports
+            <Button 
+                variant="outline" 
+                className="gap-2 border-primary/20"
+                onClick={handleDownloadReport}
+                disabled={downloading}
+            >
+                {downloading ? (
+                    <span className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                ) : (
+                    <FileText className="w-4 h-4" />
+                )}
+                {downloading ? "Generating..." : "Reports"}
             </Button>
             <Button className="gap-2 shadow-lg shadow-primary/20">
                 <ShieldCheck className="w-4 h-4" />

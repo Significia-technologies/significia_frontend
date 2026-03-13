@@ -115,4 +115,19 @@ export class MasterDataService {
       API_ENDPOINTS.MASTER.CLIENTS.DELETE(connectorId, clientId)
     );
   }
+
+  static async downloadClientReport(connectorId: string, clientId: string, clientName: string): Promise<void> {
+    const response = await httpClient.get(
+      API_ENDPOINTS.MASTER.CLIENTS.DOWNLOAD_REPORT(connectorId, clientId),
+      { responseType: 'blob' }
+    );
+    
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Report_${clientName.replace(/\s+/g, '_')}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  }
 }
