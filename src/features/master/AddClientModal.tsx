@@ -17,6 +17,7 @@ import {
 import { MasterDataService, ClientCreate } from "@/core/services/master.service";
 import { IAMasterService, Employee } from "@/core/services/ia-master.service";
 import { toast } from "sonner";
+import { RegistrationPreviewModal } from "./components/RegistrationPreviewModal";
 
 interface AddClientModalProps {
   isOpen: boolean;
@@ -27,6 +28,7 @@ interface AddClientModalProps {
 
 export function AddClientModal({ isOpen, onClose, onSuccess, connectorId }: AddClientModalProps) {
   const [loading, setLoading] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [formData, setFormData] = useState<Partial<ClientCreate>>({
     client_name: "",
@@ -82,8 +84,12 @@ export function AddClientModal({ isOpen, onClose, onSuccess, connectorId }: AddC
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setShowPreview(true);
+  };
+
+  const handleFinalConfirm = async () => {
     setLoading(true);
     try {
       await MasterDataService.createClient(connectorId, formData as ClientCreate);
@@ -104,6 +110,7 @@ export function AddClientModal({ isOpen, onClose, onSuccess, connectorId }: AddC
       toast.error(error.message || "Failed to add client");
     } finally {
       setLoading(false);
+      setShowPreview(false);
     }
   };
 
@@ -261,6 +268,14 @@ export function AddClientModal({ isOpen, onClose, onSuccess, connectorId }: AddC
           </DialogFooter>
         </form>
       </DialogContent>
+
+      <RegistrationPreviewModal 
+        isOpen={showPreview}
+        onClose={() => setShowPreview(false)}
+        onConfirm={handleFinalConfirm}
+        formData={formData}
+        loading={loading}
+      />
     </Dialog>
   );
 }

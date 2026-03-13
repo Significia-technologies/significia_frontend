@@ -21,6 +21,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { MasterDataService, ClientCreate } from "@/core/services/master.service";
 import { IAMasterService, Employee } from "@/core/services/ia-master.service";
 import { toast } from "sonner";
+import { RegistrationPreviewModal } from "./components/RegistrationPreviewModal";
 import { useRouter } from "next/navigation";
 
 interface ClientRegistrationFormProps {
@@ -38,6 +39,7 @@ export default function ClientRegistrationForm({
 }: ClientRegistrationFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
   const [activeTab, setActiveTab] = useState("personal");
   const [employees, setEmployees] = useState<Employee[]>([]);
 
@@ -165,8 +167,21 @@ export default function ClientRegistrationForm({
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Age Validation
+    if (formData.date_of_birth) {
+      if (currentAge < 18) {
+        toast.error("Client must be at least 18 years old.");
+        return;
+      }
+    }
+    
+    setShowPreview(true);
+  };
+
+  const handleFinalConfirm = async () => {
     setLoading(true);
     const submissionData = {
       ...formData,
@@ -176,15 +191,6 @@ export default function ClientRegistrationForm({
     };
 
     try {
-      // Age Validation
-      if (formData.date_of_birth) {
-        if (currentAge < 18) {
-          toast.error("Client must be at least 18 years old.");
-          setLoading(false);
-          return;
-        }
-      }
-
       if (isEdit && clientId) {
           await MasterDataService.updateClient(connectorId, clientId, submissionData);
           toast.success("Client updated successfully!");
@@ -198,6 +204,7 @@ export default function ClientRegistrationForm({
       toast.error(error.response?.data?.detail || `Failed to ${isEdit ? 'update' : 'register'} client`);
     } finally {
       setLoading(false);
+      setShowPreview(false);
     }
   };
 
@@ -650,6 +657,14 @@ export default function ClientRegistrationForm({
           </form>
         </CardContent>
       </Card>
+
+      <RegistrationPreviewModal 
+        isOpen={showPreview}
+        onClose={() => setShowPreview(false)}
+        onConfirm={handleFinalConfirm}
+        formData={formData}
+        loading={loading}
+      />
     </div>
   );
 }
