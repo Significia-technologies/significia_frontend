@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { UserPlus, Search, Filter, MoreHorizontal, Mail, Phone, MapPin, Trash2, Edit, Database, CheckCircle2, Info } from "lucide-react";
+import { UserPlus, Search, Filter, MoreHorizontal, Mail, Phone, MapPin, Trash2, Pencil, Eye, Database, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,6 +14,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { MasterDataService, Client } from "@/core/services/master.service";
 import { IAMasterService, Employee } from "@/core/services/ia-master.service";
 import { toast } from "sonner";
@@ -161,24 +168,29 @@ export function ClientList({ connectorId }: ClientListProps) {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8 text-primary/70 hover:text-primary"
-                          onClick={() => router.push(`/master/clients/${client.id}`)}
-                        >
-                          <Info className="w-4 h-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8 text-destructive/70 hover:text-destructive hover:bg-destructive/10"
-                          onClick={() => handleDelete(client.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-40 border-primary/20">
+                          <DropdownMenuItem onClick={() => router.push(`/master/clients/${client.id}`)} className="gap-2">
+                            <Eye className="w-4 h-4" /> View Details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => router.push(`/master/clients/${client.id}/edit`)} className="gap-2">
+                            <Pencil className="w-4 h-4" /> Edit Details
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator className="bg-primary/10" />
+                          <DropdownMenuItem 
+                            onClick={() => handleDelete(client.id)} 
+                            variant="destructive"
+                            className="gap-2"
+                          >
+                            <Trash2 className="w-4 h-4" /> Delete Client
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))

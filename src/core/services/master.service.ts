@@ -107,4 +107,10 @@ export class MasterDataService {
     );
     return response.data;
   }
+
+  static async deleteClient(connectorId: string, clientId: string): Promise<void> {
+    await httpClient.delete(
+      API_ENDPOINTS.MASTER.CLIENTS.DELETE(connectorId, clientId)
+    );
+  }
 }
