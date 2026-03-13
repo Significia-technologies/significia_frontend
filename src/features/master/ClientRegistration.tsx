@@ -370,11 +370,11 @@ export default function ClientRegistrationForm({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label>Annual Income (INR) *</Label>
-                      <Input type="number" name="annual_income" value={formData.annual_income} onChange={handleChange} required />
+                      <Input type="number" name="annual_income" value={formData.annual_income} onChange={handleChange} placeholder="e.g. 500000" required />
                     </div>
                     <div className="space-y-2">
                       <Label>Estimated Net Worth (INR) *</Label>
-                      <Input type="number" name="net_worth" value={formData.net_worth} onChange={handleChange} required />
+                      <Input type="number" name="net_worth" value={formData.net_worth} onChange={handleChange} placeholder="e.g. 500000" required />
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -398,7 +398,7 @@ export default function ClientRegistrationForm({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
                     <div className="space-y-2">
                       <Label>Existing Portfolio Value (₹) *</Label>
-                      <Input type="number" name="existing_portfolio_value" value={formData.existing_portfolio_value} onChange={handleChange} required />
+                      <Input type="number" name="existing_portfolio_value" value={formData.existing_portfolio_value} onChange={handleChange} placeholder="e.g. 500000" required />
                     </div>
                   </div>
                   <div className="space-y-2 pt-4">
@@ -411,11 +411,11 @@ export default function ClientRegistrationForm({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label>Bank Account Number *</Label>
-                      <Input name="bank_account_number" value={formData.bank_account_number} onChange={handleChange} required />
+                      <Input name="bank_account_number" value={formData.bank_account_number} onChange={handleChange} placeholder="e.g. 1234567890" required />
                     </div>
                     <div className="space-y-2">
                       <Label>Bank Name *</Label>
-                      <Input name="bank_name" value={formData.bank_name} onChange={handleChange} required placeholder="e.g. HDFC Bank, ICICI Bank" />
+                      <Input name="bank_name" value={formData.bank_name} onChange={handleChange} placeholder="e.g. HDFC Bank, ICICI Bank" required />
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

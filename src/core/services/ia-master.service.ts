@@ -4,6 +4,7 @@ import httpClient from "../api/http-client";
 export interface Employee {
   id?: string;
   name_of_employee: string;
+  date_of_birth: string;
   designation: string;
   ia_registration_number: string;
   date_of_registration?: string;
@@ -15,6 +16,7 @@ export interface Employee {
 export interface IAMaster {
   id: string;
   name_of_ia: string;
+  date_of_birth: string;
   nature_of_entity: string;
   name_of_entity?: string;
   ia_registration_number: string;
