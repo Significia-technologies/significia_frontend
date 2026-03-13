@@ -271,6 +271,46 @@ export default function ClientRegistrationForm({
                     )}
                   </div>
 
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+                    <div className="space-y-2">
+                        <Label>Residential Status *</Label>
+                        <select name="residential_status" value={formData.residential_status} onChange={handleChange} required className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                            <option value="Resident Individual">Resident Individual</option>
+                            <option value="Non-Resident Indian">Non-Resident Indian</option>
+                            <option value="Person of Indian Origin">Person of Indian Origin</option>
+                            <option value="Foreign National">Foreign National</option>
+                        </select>
+                    </div>
+                    {formData.residential_status === "Resident Individual" ? (
+                      <div className="space-y-2">
+                          <Label>Aadhar Number *</Label>
+                          <Input 
+                            name="aadhar_number" 
+                            value={formData.aadhar_number} 
+                            onChange={(e) => {
+                              const val = e.target.value.replace(/\D/g, '').slice(0, 12);
+                              setFormData(prev => ({ ...prev, aadhar_number: val }));
+                            }} 
+                            required 
+                            placeholder="12 digit Aadhar" 
+                            className={formData.aadhar_number && formData.aadhar_number.length !== 12 ? "border-orange-500" : ""}
+                          />
+                          {formData.aadhar_number && formData.aadhar_number.length !== 12 && (
+                            <p className="text-[10px] text-orange-500">Must be 12 digits</p>
+                          )}
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                          <Label>Passport Number *</Label>
+                          <Input name="passport_number" value={formData.passport_number} onChange={handleChange} required placeholder="Passport number" />
+                      </div>
+                    )}
+                    <div className="space-y-2">
+                        <Label>Nationality *</Label>
+                        <Input name="nationality" value={formData.nationality} onChange={handleChange} required />
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <div className="space-y-2">
                        <Label>PAN Number *</Label>
@@ -318,46 +358,6 @@ export default function ClientRegistrationForm({
                     <div className="space-y-2">
                       <Label>Spouse Name (Optional)</Label>
                       <Input name="spouse_name" value={formData.spouse_name} onChange={handleChange} />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
-                    <div className="space-y-2">
-                        <Label>Residential Status *</Label>
-                        <select name="residential_status" value={formData.residential_status} onChange={handleChange} required className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                            <option value="Resident Individual">Resident Individual</option>
-                            <option value="Non-Resident Indian">Non-Resident Indian</option>
-                            <option value="Person of Indian Origin">Person of Indian Origin</option>
-                            <option value="Foreign National">Foreign National</option>
-                        </select>
-                    </div>
-                    {formData.residential_status === "Resident Individual" ? (
-                      <div className="space-y-2">
-                          <Label>Aadhar Number *</Label>
-                          <Input 
-                            name="aadhar_number" 
-                            value={formData.aadhar_number} 
-                            onChange={(e) => {
-                              const val = e.target.value.replace(/\D/g, '').slice(0, 12);
-                              setFormData(prev => ({ ...prev, aadhar_number: val }));
-                            }} 
-                            required 
-                            placeholder="12 digit Aadhar" 
-                            className={formData.aadhar_number && formData.aadhar_number.length !== 12 ? "border-orange-500" : ""}
-                          />
-                          {formData.aadhar_number && formData.aadhar_number.length !== 12 && (
-                            <p className="text-[10px] text-orange-500">Must be 12 digits</p>
-                          )}
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                          <Label>Passport Number *</Label>
-                          <Input name="passport_number" value={formData.passport_number} onChange={handleChange} required placeholder="Passport number" />
-                      </div>
-                    )}
-                    <div className="space-y-2">
-                        <Label>Nationality *</Label>
-                        <Input name="nationality" value={formData.nationality} onChange={handleChange} required />
                     </div>
                   </div>
 
