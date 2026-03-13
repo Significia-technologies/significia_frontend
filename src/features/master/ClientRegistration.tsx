@@ -335,7 +335,7 @@ export default function ClientRegistrationForm({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
                     <div className="space-y-2">
                         <Label>Tax Residency *</Label>
                         <Input name="tax_residency" value={formData.tax_residency} onChange={handleChange} required />
@@ -347,6 +347,14 @@ export default function ClientRegistrationForm({
                         <option value="PEP">Politically Exposed Person</option>
                         <option value="Family Member of PEP">Family Member of PEP</option>
                         <option value="Close Associate of PEP">Close Associate of PEP</option>
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>FATCA Compliance *</Label>
+                      <select name="fatca_compliance" value={formData.fatca_compliance} onChange={handleChange} required className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                        <option value="FATCA Compliant">FATCA Compliant</option>
+                        <option value="Non-Compliant">Non-Compliant</option>
+                        <option value="Not Applicable">Not Applicable</option>
                       </select>
                     </div>
                   </div>
@@ -557,15 +565,7 @@ export default function ClientRegistrationForm({
                         <h3 className="font-semibold text-lg">Regulatory & Dates</h3>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="space-y-2">
-                          <Label>FATCA Compliance *</Label>
-                          <select name="fatca_compliance" value={formData.fatca_compliance} onChange={handleChange} required className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                            <option value="FATCA Compliant">FATCA Compliant</option>
-                            <option value="Non-Compliant">Non-Compliant</option>
-                            <option value="Not Applicable">Not Applicable</option>
-                          </select>
-                        </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
                           <Label>Client Onboarding Date *</Label>
                           <Input type="date" name="client_date" value={formData.client_date} onChange={handleChange} required />

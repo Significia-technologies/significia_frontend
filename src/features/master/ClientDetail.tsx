@@ -190,6 +190,7 @@ export default function ClientDetail({ client, connectorId }: ClientDetailProps)
                         <DetailItem label="Marital Status" value={client.marital_status} />
                         <DetailItem label="Nationality" value={client.nationality} />
                         <DetailItem label="PEP Status" value={client.pep_status} />
+                        <DetailItem label="FATCA Compliance" value={client.fatca_compliance} />
                     </div>
                 </div>
 
@@ -230,7 +231,6 @@ export default function ClientDetail({ client, connectorId }: ClientDetailProps)
                     <div className="grid grid-cols-1 gap-6">
                         <DetailItem label="Portfolio Value" value={client.existing_portfolio_value ? new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(client.existing_portfolio_value) : "0.00"} />
                         <DetailItem label="Composition Details" value={client.existing_portfolio_composition} />
-                        <DetailItem label="FATCA Compliance" value={client.fatca_compliance} />
                     </div>
                 </div>
               </TabsContent>
