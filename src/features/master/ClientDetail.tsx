@@ -279,7 +279,7 @@ export default function ClientDetail({ client, connectorId }: ClientDetailProps)
       </Card>
       
       <div className="mt-8 flex justify-end gap-4">
-        <Button variant="outline" className="px-8 border-primary/20" onClick={() => router.push(`/master/clients/${client.client_code}/edit`)}>
+        <Button variant="outline" className="px-8 border-primary/20" onClick={() => router.push(`/master/clients/${client.id}/edit`)}>
             Edit Profile
         </Button>
         <Button variant="destructive" className="px-8" onClick={() => {}}>

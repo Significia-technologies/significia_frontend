@@ -16,6 +16,7 @@ export interface Client {
 }
 
 export interface ClientCreate {
+  id?: string;
   // Authentication
   email: string;
   password: string;
@@ -99,9 +100,11 @@ export class MasterDataService {
     return response.data;
   }
 
-  static async deleteClient(connectorId: string, clientId: string): Promise<void> {
-    await httpClient.delete(
-      API_ENDPOINTS.MASTER.CLIENTS.DELETE(connectorId, clientId)
+  static async updateClient(connectorId: string, clientId: string, data: Partial<ClientCreate>): Promise<Client> {
+    const response = await httpClient.put<Client>(
+      API_ENDPOINTS.MASTER.CLIENTS.UPDATE(connectorId, clientId),
+      data
     );
+    return response.data;
   }
 }
