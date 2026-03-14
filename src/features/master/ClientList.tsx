@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { UserPlus, Search, Filter, MoreHorizontal, Mail, Phone, MapPin, Trash2, Pencil, Eye, Database, CheckCircle2 } from "lucide-react";
+import { UserPlus, Search, Filter, MoreHorizontal, Mail, Phone, MapPin, Trash2, Pencil, Eye, Database, CheckCircle2, FileText, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -36,6 +36,7 @@ export function ClientList({ connectorId }: ClientListProps) {
   const [clients, setClients] = useState<Client[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
+  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     const init = async () => {
@@ -79,6 +80,18 @@ export function ClientList({ connectorId }: ClientListProps) {
     }
   };
 
+  const handleDownloadMasterReport = async () => {
+    try {
+      setDownloading(true);
+      await MasterDataService.downloadMasterReport(connectorId);
+      toast.success("Master report downloaded successfully");
+    } catch (error) {
+      toast.error("Failed to download master report");
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
@@ -90,6 +103,15 @@ export function ClientList({ connectorId }: ClientListProps) {
           <Button variant="outline" className="gap-2 border-primary/20">
             <Filter className="w-4 h-4" />
             Filters
+          </Button>
+          <Button 
+            variant="outline" 
+            className="gap-2 border-primary/20 text-primary hover:bg-primary/10"
+            onClick={handleDownloadMasterReport}
+            disabled={downloading || clients.length === 0}
+          >
+            <Download className="w-4 h-4" />
+            {downloading ? "Generating..." : "Master Report"}
           </Button>
           <Button className="gap-2 bg-primary hover:bg-primary/90" onClick={() => router.push("/master/clients/new")}>
             <UserPlus className="w-4 h-4" />
