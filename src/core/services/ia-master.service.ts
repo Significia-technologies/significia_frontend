@@ -4,10 +4,11 @@ import httpClient from "../api/http-client";
 export interface Employee {
   id?: string;
   name_of_employee: string;
+  date_of_birth: string;
   designation: string;
   ia_registration_number: string;
-  date_of_registration: string;
-  date_of_registration_expiry: string;
+  date_of_registration?: string;
+  date_of_registration_expiry?: string;
   certificate_path?: string;
   created_at?: string;
 }
@@ -15,11 +16,12 @@ export interface Employee {
 export interface IAMaster {
   id: string;
   name_of_ia: string;
+  date_of_birth: string;
   nature_of_entity: string;
   name_of_entity?: string;
   ia_registration_number: string;
-  date_of_registration: string;
-  date_of_registration_expiry: string;
+  date_of_registration?: string;
+  date_of_registration_expiry?: string;
   registered_address: string;
   registered_contact_number: string;
   office_contact_number?: string;
@@ -87,6 +89,11 @@ export class IAMasterService {
       API_ENDPOINTS.MASTER.IA_MASTER.UPDATE_PERMIT(connectorId, iaId),
       { max_client_permit: maxPermit }
     );
+    return response.data;
+  }
+
+  static async listConnectors(): Promise<any[]> {
+    const response = await httpClient.get<any[]>(API_ENDPOINTS.CONNECTORS.LIST);
     return response.data;
   }
 }

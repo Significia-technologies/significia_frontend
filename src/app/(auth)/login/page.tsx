@@ -34,13 +34,32 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const result = await AuthService.login({ email, password });
+      const hostname = window.location.hostname;
+      const parts = hostname.split('.');
+      const isSubdomain = parts.length >= 3 || (parts.length >= 2 && hostname.includes('localhost') && parts[0] !== 'www' && parts[0] !== 'app');
+
+      let result;
+      if (isSubdomain) {
+        result = await AuthService.clientLogin({ email, password });
+      } else {
+        result = await AuthService.login({ email, password });
+      }
+      
       setUser(result.user);
       
       if (result.user.role === "super_admin") {
         router.push("/admin");
+      } else if (result.user.role === "client") {
+        router.push("/");
       } else {
-        router.push("/dashboard");
+        if (result.subdomain) {
+          const currentHost = window.location.host;
+          const isLocalhost = currentHost.includes('localhost');
+          const baseDomain = isLocalhost ? 'localhost:3000' : 'significia.com';
+          window.location.href = `${window.location.protocol}//${result.subdomain}.${baseDomain}/?token=${result.accessToken}&refreshToken=${result.refreshToken}`;
+        } else {
+          router.push("/");
+        }
       }
     } catch (err: unknown) {
       let message = "Invalid email or password. Please try again.";
@@ -62,34 +81,26 @@ export default function LoginPage() {
   };
 
   return (
-    <Card className="w-full border-primary/20 shadow-2xl bg-card/50 backdrop-blur-xl overflow-hidden">
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-amber-500/50 to-transparent" />
-      <CardHeader className="space-y-3 text-center pt-8 pb-4">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 shadow-lg p-3 transition-transform hover:scale-105 duration-300">
-          <img src="/favicon-32x32.png" alt="Significia Logo" className="w-full h-full object-contain filter drop-shadow-md" />
-        </div>
-        <div>
-          <CardTitle className="text-4xl font-black tracking-tighter">
-            <span className="bg-gradient-to-b from-[#BF953F] via-[#FCF6BA] to-[#B38728] bg-clip-text text-transparent drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]">
-              Significia
-            </span>
-          </CardTitle>
-          <CardDescription className="text-muted-foreground/70 text-xs font-bold uppercase tracking-widest mt-1">
-            Secure Access
-          </CardDescription>
-        </div>
+    <Card className="w-full border-none shadow-none bg-transparent overflow-hidden">
+      <CardHeader className="space-y-1 pb-6 pt-0">
+        <CardTitle className="text-3xl font-bold flex justify-center tracking-tight">
+          Login
+        </CardTitle>
+        <CardDescription className="text-muted-foreground text-sm flex justify-center">
+          Enter your credentials to access your dashboard.
+        </CardDescription>
       </CardHeader>
 
       <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-4 px-8 pb-4">
+        <CardContent className="space-y-4 px-0 pb-4">
           {error && (
-            <div className="rounded-lg bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            <div className="rounded-lg bg-destructive/10 px-4 py-3 text-sm text-destructive border border-destructive/20 animate-in fade-in slide-in-from-top-1">
               {error}
             </div>
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">Email Address</Label>
             <Input
               id="email"
               type="email"
@@ -98,11 +109,17 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
               autoComplete="email"
+              className="h-11 bg-background/50 border-muted-foreground/20 focus:border-primary/50 transition-all"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="password">Password</Label>
+              {/* <Link href="#" className="text-xs text-primary hover:underline underline-offset-4">
+                Forgot password?
+              </Link> */}
+            </div>
             <div className="relative">
               <Input
                 id="password"
@@ -112,38 +129,39 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 autoComplete="current-password"
+                className="h-11 bg-background/50 border-muted-foreground/20 focus:border-primary/50 transition-all pr-10"
               />
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2"
+                className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 hover:bg-transparent"
                 onClick={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? (
-                  <EyeOff className="h-4 w-4" />
+                  <EyeOff className="h-4 w-4 text-muted-foreground" />
                 ) : (
-                  <Eye className="h-4 w-4" />
+                  <Eye className="h-4 w-4 text-muted-foreground" />
                 )}
               </Button>
             </div>
           </div>
         </CardContent>
 
-        <CardFooter className="flex flex-col gap-4 px-8 pb-8 pt-0">
-          <Button type="submit" className="w-full h-10 text-base font-bold bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20" disabled={isLoading}>
+        <CardFooter className="flex flex-col gap-6 px-0 pb-8 pt-2">
+          <Button type="submit" className="w-full h-11 text-base font-semibold bg-primary hover:bg-primary/90 shadow-xl shadow-primary/20 transition-all hover:scale-[1.01] active:scale-95" disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Sign In
+            Get Started
           </Button>
-          <p className="text-center text-sm text-muted-foreground">
+          {/* <p className="text-center text-sm text-muted-foreground">
             Don&apos;t have an account?{" "}
             <Link
               href="/register"
-              className="font-medium text-primary underline-offset-4 hover:underline"
+              className="font-semibold text-primary underline-offset-4 hover:underline"
             >
-              Sign up
+              Sign up for free
             </Link>
-          </p>
+          </p> */}
         </CardFooter>
       </form>
     </Card>

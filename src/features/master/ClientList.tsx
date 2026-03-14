@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { UserPlus, Search, Filter, MoreHorizontal, Mail, Phone, MapPin, Trash2, Edit, Database, CheckCircle2 } from "lucide-react";
+import { UserPlus, Search, Filter, MoreHorizontal, Mail, Phone, MapPin, Trash2, Pencil, Eye, Database, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,23 +14,48 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { MasterDataService, Client } from "@/core/services/master.service";
+import { IAMasterService, Employee } from "@/core/services/ia-master.service";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AddClientModal } from "./AddClientModal";
+import { useRouter } from "next/navigation";
 
 interface ClientListProps {
   connectorId: string;
 }
 
 export function ClientList({ connectorId }: ClientListProps) {
+  const router = useRouter();
   const [clients, setClients] = useState<Client[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    fetchClients();
+    const init = async () => {
+      setLoading(true);
+      await Promise.all([fetchClients(), fetchEmployees()]);
+      setLoading(false);
+    };
+    init();
   }, [connectorId]);
+
+  const fetchEmployees = async () => {
+    try {
+      const iaMaster = await IAMasterService.getLatest(connectorId);
+      if (iaMaster?.employees) {
+        setEmployees(iaMaster.employees);
+      }
+    } catch (error) {
+      console.error("Failed to fetch employees", error);
+    }
+  };
 
   const fetchClients = async () => {
     try {
@@ -66,7 +91,7 @@ export function ClientList({ connectorId }: ClientListProps) {
             <Filter className="w-4 h-4" />
             Filters
           </Button>
-          <Button className="gap-2 bg-primary hover:bg-primary/90" onClick={() => setIsModalOpen(true)}>
+          <Button className="gap-2 bg-primary hover:bg-primary/90" onClick={() => router.push("/master/clients/new")}>
             <UserPlus className="w-4 h-4" />
             Add Client
           </Button>
@@ -81,6 +106,7 @@ export function ClientList({ connectorId }: ClientListProps) {
                 <TableHead className="font-semibold text-primary">Client Name</TableHead>
                 <TableHead className="font-semibold text-primary">Contact Info</TableHead>
                 <TableHead className="font-semibold text-primary">Address</TableHead>
+                <TableHead className="font-semibold text-primary">Assigned To</TableHead>
                 <TableHead className="font-semibold text-primary">Status</TableHead>
                 <TableHead className="text-right font-semibold text-primary">Actions</TableHead>
               </TableRow>
@@ -111,14 +137,14 @@ export function ClientList({ connectorId }: ClientListProps) {
               ) : (
                 clients.map((client) => (
                   <TableRow key={client.id} className="hover:bg-primary/5 transition-colors">
-                    <TableCell className="font-medium">{client.name}</TableCell>
+                    <TableCell className="font-medium">{client.client_name}</TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-1 text-sm">
                         <span className="flex items-center gap-1.5 text-muted-foreground">
                           <Mail className="w-3 h-3" /> {client.email || 'N/A'}
                         </span>
                         <span className="flex items-center gap-1.5 text-muted-foreground">
-                          <Phone className="w-3 h-3" /> {client.phone || 'N/A'}
+                          <Phone className="w-3 h-3" /> {client.phone_number || 'N/A'}
                         </span>
                       </div>
                     </TableCell>
@@ -128,24 +154,43 @@ export function ClientList({ connectorId }: ClientListProps) {
                       </span>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={client.status === 'active' ? 'default' : 'secondary'} className="capitalize bg-primary/20 text-primary border-primary/20">
-                        {client.status}
+                      {client.assigned_employee_id ? (
+                        <Badge variant="outline" className="bg-primary/5 text-primary border-primary/10">
+                          {employees.find(e => e.id === client.assigned_employee_id)?.name_of_employee || 'Unknown Professional'}
+                        </Badge>
+                      ) : (
+                        <span className="text-xs text-muted-foreground italic">Unassigned</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={client.is_active ? 'default' : 'secondary'} className="capitalize bg-primary/20 text-primary border-primary/20">
+                        {client.is_active ? 'Active' : 'Deactivated'}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-primary/70 hover:text-primary">
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8 text-destructive/70 hover:text-destructive hover:bg-destructive/10"
-                          onClick={() => handleDelete(client.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-40 border-primary/20">
+                          <DropdownMenuItem onClick={() => router.push(`/master/clients/${client.id}`)} className="gap-2">
+                            <Eye className="w-4 h-4" /> View Details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => router.push(`/master/clients/${client.id}/edit`)} className="gap-2">
+                            <Pencil className="w-4 h-4" /> Edit Details
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator className="bg-primary/10" />
+                          <DropdownMenuItem 
+                            onClick={() => handleDelete(client.id)} 
+                            variant="destructive"
+                            className="gap-2"
+                          >
+                            <Trash2 className="w-4 h-4" /> Delete Client
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))
@@ -164,13 +209,6 @@ export function ClientList({ connectorId }: ClientListProps) {
           </div>
         </div>
       )}
-
-      <AddClientModal 
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSuccess={fetchClients}
-        connectorId={connectorId}
-      />
     </div>
   );
 }

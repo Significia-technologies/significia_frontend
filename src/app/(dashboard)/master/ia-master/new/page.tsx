@@ -68,7 +68,7 @@ export default function NewIAMasterPage() {
           <AlertTitle>Configuration Required</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
-        <Button onClick={() => router.push("/dashboard/master")} variant="outline" className="gap-2">
+        <Button onClick={() => router.push("/master")} variant="outline" className="gap-2">
           <ArrowLeft className="w-4 h-4" />
           Back to Master Repository
         </Button>

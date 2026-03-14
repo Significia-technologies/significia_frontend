@@ -49,6 +49,7 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
 
   const [formData, setFormData] = useState({
     name_of_ia: "",
+    date_of_birth: "",
     nature_of_entity: "",
     name_of_entity: "",
     ia_registration_number: "",
@@ -81,6 +82,7 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
     if (initialData) {
       setFormData({
         name_of_ia: initialData.name_of_ia || "",
+        date_of_birth: initialData.date_of_birth || "",
         nature_of_entity: initialData.nature_of_entity || "",
         name_of_entity: initialData.name_of_entity || "",
         ia_registration_number: initialData.ia_registration_number || "",
@@ -100,6 +102,7 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
       if (initialData.employees && initialData.employees.length > 0) {
         setEmployees(initialData.employees.map(emp => ({
           name_of_employee: emp.name_of_employee || "",
+          date_of_birth: emp.date_of_birth || "",
           designation: emp.designation || "",
           ia_registration_number: emp.ia_registration_number || "",
           date_of_registration: emp.date_of_registration || "",
@@ -145,6 +148,7 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
       ...prev,
       {
         name_of_employee: "",
+        date_of_birth: "",
         designation: "",
         ia_registration_number: "",
         date_of_registration: "",
@@ -166,11 +170,42 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
     });
   };
 
+  const calculateAge = (dob: string) => {
+    if (!dob) return 0;
+    const birthDate = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (iaNumberExists) {
       toast.error("Please use a unique IA Registration Number");
       return;
+    }
+
+    const iaAge = calculateAge(formData.date_of_birth);
+    if (iaAge < 18) {
+      toast.error(`Investment Advisor must be at least 18 years old (Current age: ${iaAge})`);
+      setLoading(false);
+      return;
+    }
+
+    // Validate employees age
+    if (!isSinglePersonEntity) {
+      for (let i = 0; i < employees.length; i++) {
+        const empAge = calculateAge(employees[i].date_of_birth);
+        if (empAge < 18) {
+          toast.error(`${personLabel} #${i + 1} must be at least 18 years old (Current age: ${empAge})`);
+          setLoading(false);
+          return;
+        }
+      }
     }
 
     setLoading(true);
@@ -203,7 +238,7 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
 
       await IAMasterService.create(connectorId, data);
       toast.success("Investment Advisor record saved successfully!");
-      router.push("/dashboard/master");
+      router.push("/master");
     } catch (error: any) {
       toast.error(error.response?.data?.detail || "Failed to save IA record");
     } finally {
@@ -266,6 +301,22 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
                     <div className="space-y-2">
                       <Label>Name of Investment Advisor *</Label>
                       <Input name="name_of_ia" value={formData.name_of_ia} onChange={handleChange} required className="bg-background/50" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className={calculateAge(formData.date_of_birth) < 18 && formData.date_of_birth ? "text-destructive font-bold" : ""}>
+                        Date of Birth * {calculateAge(formData.date_of_birth) < 18 && formData.date_of_birth && `(Age: ${calculateAge(formData.date_of_birth)})`}
+                      </Label>
+                      <Input 
+                        type="date" 
+                        name="date_of_birth" 
+                        value={formData.date_of_birth} 
+                        onChange={handleChange} 
+                        required 
+                        className={`bg-background/50 ${calculateAge(formData.date_of_birth) < 18 && formData.date_of_birth ? "border-destructive ring-destructive focus-visible:ring-destructive" : ""}`} 
+                      />
+                      {calculateAge(formData.date_of_birth) < 18 && formData.date_of_birth && (
+                        <p className="text-[10px] text-destructive font-bold animate-pulse italic">Minimum age requirement is 18 years.</p>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label>Nature of Entity *</Label>
@@ -456,25 +507,41 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
                                 <Input value={emp.name_of_employee} onChange={(e) => handleEmployeeChange(index, "name_of_employee", e.target.value)} required className="bg-background/50" />
                               </div>
                               <div className="space-y-2">
-                                <Label>Designation</Label>
-                                <Input value={emp.designation} onChange={(e) => handleEmployeeChange(index, "designation", e.target.value)} required className="bg-background/50" />
+                                <Label className={calculateAge(emp.date_of_birth) < 18 && emp.date_of_birth ? "text-destructive font-bold" : ""}>
+                                  Date of Birth * {calculateAge(emp.date_of_birth) < 18 && emp.date_of_birth && `(Age: ${calculateAge(emp.date_of_birth)})`}
+                                </Label>
+                                <Input 
+                                  type="date" 
+                                  value={emp.date_of_birth} 
+                                  onChange={(e) => handleEmployeeChange(index, "date_of_birth", e.target.value)} 
+                                  required 
+                                  className={`bg-background/50 ${calculateAge(emp.date_of_birth) < 18 && emp.date_of_birth ? "border-destructive ring-destructive focus-visible:ring-destructive" : ""}`} 
+                                />
+                                {calculateAge(emp.date_of_birth) < 18 && emp.date_of_birth && (
+                                  <p className="text-[10px] text-destructive font-bold animate-pulse italic">Minimum age requirement is 18 years.</p>
+                                )}
                               </div>
                             </div>
                             
                             <div className="grid grid-cols-2 gap-6">
                               <div className="space-y-2">
+                                <Label>Designation</Label>
+                                <Input value={emp.designation} onChange={(e) => handleEmployeeChange(index, "designation", e.target.value)} required className="bg-background/50" />
+                              </div>
+                              <div className="space-y-2">
                                 <Label>IA Reg Number</Label>
                                 <Input value={emp.ia_registration_number} onChange={(e) => handleEmployeeChange(index, "ia_registration_number", e.target.value)} required className="bg-background/50" />
                               </div>
-                              <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                  <Label className="text-[10px] uppercase font-bold text-muted-foreground">Reg Date</Label>
-                                  <Input type="date" value={emp.date_of_registration} onChange={(e) => handleEmployeeChange(index, "date_of_registration", e.target.value)} required className="bg-background/50" />
-                                </div>
-                                <div className="space-y-2">
-                                  <Label className="text-[10px] uppercase font-bold text-muted-foreground">Expiry Date</Label>
-                                  <Input type="date" value={emp.date_of_registration_expiry} onChange={(e) => handleEmployeeChange(index, "date_of_registration_expiry", e.target.value)} required className="bg-background/50" />
-                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-6">
+                              <div className="space-y-2">
+                                <Label className="text-[10px] uppercase font-bold text-muted-foreground">Reg Date</Label>
+                                <Input type="date" value={emp.date_of_registration} onChange={(e) => handleEmployeeChange(index, "date_of_registration", e.target.value)} required className="bg-background/50" />
+                              </div>
+                              <div className="space-y-2">
+                                <Label className="text-[10px] uppercase font-bold text-muted-foreground">Expiry Date</Label>
+                                <Input type="date" value={emp.date_of_registration_expiry} onChange={(e) => handleEmployeeChange(index, "date_of_registration_expiry", e.target.value)} required className="bg-background/50" />
                               </div>
                             </div>
 

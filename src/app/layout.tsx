@@ -9,7 +9,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "RRFinance — Financial Analysis Dashboard",
+  title: "Significia — Financial Analysis Software",
   description:
     "Enterprise-grade financial analytics, transaction management, and investment tracking dashboard.",
 };

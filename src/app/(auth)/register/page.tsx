@@ -88,28 +88,20 @@ export default function RegisterPage() {
   }
 
   return (
-    <Card className="w-full border-primary/20 shadow-2xl bg-card/50 backdrop-blur-xl overflow-hidden">
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-amber-500/50 to-transparent" />
-      <CardHeader className="space-y-3 text-center pt-8 pb-4">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 shadow-lg p-3 transition-transform hover:scale-105 duration-300">
-          <img src="/favicon-32x32.png" alt="Significia Logo" className="w-full h-full object-contain filter drop-shadow-md" />
-        </div>
-        <div>
-          <CardTitle className="text-4xl font-black tracking-tighter">
-            <span className="bg-gradient-to-b from-[#BF953F] via-[#FCF6BA] to-[#B38728] bg-clip-text text-transparent drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]">
-              Significia
-            </span>
-          </CardTitle>
-          <CardDescription className="text-muted-foreground/70 text-xs font-bold uppercase tracking-widest mt-1">
-            Create Account
-          </CardDescription>
-        </div>
+    <Card className="w-full border-none shadow-none bg-transparent overflow-hidden">
+      <CardHeader className="space-y-1 pb-6 pt-0">
+        <CardTitle className="text-3xl font-bold tracking-tight">
+          Create Account
+        </CardTitle>
+        <CardDescription className="text-muted-foreground text-sm">
+          Join the exclusive platform for premium Investment Advisory.
+        </CardDescription>
       </CardHeader>
 
       <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-3 px-8 pb-3 pt-2">
+        <CardContent className="space-y-4 px-0 pb-4 pt-0">
           {error && (
-            <div className="rounded-lg bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            <div className="rounded-lg bg-destructive/10 px-4 py-3 text-sm text-destructive border border-destructive/20 animate-in fade-in slide-in-from-top-1">
               {error}
             </div>
           )}
@@ -119,78 +111,84 @@ export default function RegisterPage() {
             <Input
               id="companyName"
               type="text"
-              placeholder="Acme Corp"
+              placeholder="Acme Wealth Management"
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
               required
+              className="h-11 bg-background/50 border-muted-foreground/20 focus:border-primary/50 transition-all"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">Work Email</Label>
             <Input
               id="email"
               type="email"
-              placeholder="name@example.com"
+              placeholder="name@company.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
               autoComplete="email"
+              className="h-11 bg-background/50 border-muted-foreground/20 focus:border-primary/50 transition-all"
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <div className="relative">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={8}
+                  className="h-11 bg-background/50 border-muted-foreground/20 focus:border-primary/50 transition-all pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirm</Label>
               <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
+                id="confirmPassword"
+                type="password"
                 placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 minLength={8}
+                className="h-11 bg-background/50 border-muted-foreground/20 focus:border-primary/50 transition-all"
               />
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
-              </Button>
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirm Password</Label>
-            <Input
-              id="confirmPassword"
-              type="password"
-              placeholder="••••••••"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              minLength={8}
-            />
           </div>
         </CardContent>
 
-        <CardFooter className="flex flex-col gap-4 px-8 pb-8 pt-0">
-          <Button type="submit" className="w-full h-11 text-lg font-bold bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20" disabled={isLoading}>
+        <CardFooter className="flex flex-col gap-6 px-0 pb-8 pt-2">
+          <Button type="submit" className="w-full h-11 text-base font-semibold bg-primary hover:bg-primary/90 shadow-xl shadow-primary/20 transition-all hover:scale-[1.01] active:scale-95" disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
-            Create Account
+            Register Now
           </Button>
           <p className="text-center text-sm text-muted-foreground">
             Already have an account?{" "}
             <Link
               href="/login"
-              className="font-medium text-primary underline-offset-4 hover:underline"
+              className="font-semibold text-primary underline-offset-4 hover:underline"
             >
               Sign in
             </Link>

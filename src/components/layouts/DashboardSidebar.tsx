@@ -17,6 +17,7 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  Terminal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -32,52 +33,57 @@ import { useAppStore } from "@/store/useAppStore";
 const NAV_ITEMS = [
   {
     label: "Overview",
-    href: "/dashboard",
+    href: "/",
     icon: LayoutDashboard,
   },
   {
     label: "Master",
-    href: "/dashboard/master",
+    href: "/master",
     icon: Database,
   },
   {
     label: "Financial Analysis",
-    href: "/dashboard/financial-analysis",
+    href: "/financial-analysis",
     icon: BarChart3,
   },
   {
     label: "Security Basket",
-    href: "/dashboard/security",
+    href: "/security",
     icon: ShieldCheck,
   },
   {
     label: "Portfolio",
-    href: "/dashboard/portfolio",
+    href: "/portfolio",
     icon: TrendingUp,
   },
   {
     label: "Operations",
-    href: "/dashboard/operations",
+    href: "/operations",
     icon: Activity,
   },
   {
     label:"Accounts",
-    href:"/dashboard/accounts",
+    href:"/accounts",
     icon:Users,
   },
   {
     label:"Drawers",
-    href:"/dashboard/drawers",
+    href:"/drawers",
     icon:Archive,
   },
   {
     label:"Tools",
-    href:"/dashboard/tools",
+    href:"/tools",
     icon:Wrench,
   },
   {
+    label:"Developer",
+    href:"/master/developer",
+    icon:Terminal,
+  },
+  {
     label:"Admin",
-    href:"/dashboard/admin",
+    href:"/admin",
     icon:UserCog,
   }
 ];
@@ -85,7 +91,7 @@ const NAV_ITEMS = [
 const BOTTOM_NAV_ITEMS = [
   {
     label: "Settings",
-    href: "/dashboard/settings",
+    href: "/settings",
     icon: Settings,
   },
 ];
@@ -133,9 +139,16 @@ export function DashboardSidebar() {
       {/* ── Main Nav ── */}
       <nav className="flex-1 space-y-0.5 overflow-y-auto overflow-x-hidden px-2 py-4 [&::-webkit-scrollbar]:hidden scrollbar-none">
         {NAV_ITEMS.map((item) => {
-          const isActive =
-            pathname === item.href ||
-            (item.href !== "/dashboard" && pathname.startsWith(item.href));
+          let isActive = false;
+          
+          if (item.href === "/") {
+            isActive = pathname === "/";
+          } else if (item.href === "/master") {
+            // Only active if exactly /master or /master/clients/etc, BUT NOT /master/developer
+            isActive = pathname === "/master" || (pathname.startsWith("/master") && !pathname.startsWith("/master/developer"));
+          } else {
+            isActive = pathname.startsWith(item.href);
+          }
 
           const linkContent = (
             <Link
