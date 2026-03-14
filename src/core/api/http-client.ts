@@ -128,6 +128,17 @@ httpClient.interceptors.response.use(
       }
     }
 
+    // If 403 Forbidden, the user might have been deactivated or lost access
+    if (error.response?.status === 403) {
+      // Clear tokens and redirect to login
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      if (typeof window !== "undefined") {
+        window.location.href = "/login?error=account_disabled";
+      }
+      return Promise.reject(error);
+    }
+
     return Promise.reject(error);
   }
 );

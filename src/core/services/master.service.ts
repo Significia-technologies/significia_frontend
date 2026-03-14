@@ -16,6 +16,7 @@ export interface Client {
 }
 
 export interface ClientCreate {
+  is_active?: boolean;
   id?: string;
   // Authentication
   email: string;
