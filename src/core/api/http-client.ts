@@ -36,7 +36,7 @@ httpClient.interceptors.request.use(
       
       // Define root domains that should NOT send a tenant slug automatically
       const rootDomains = ['localhost', '127.0.0.1', 'significia.com', 'www.significia.com', 'app.significia.com'];
-      const isRootDomain = rootDomains.includes(hostname);
+      const isRootDomain = rootDomains.includes(hostname) || hostname.endsWith('.vercel.app');
 
       if (!isRootDomain && (parts.length >= 3 || (parts.length >= 2 && hostname.includes('localhost')))) {
         const slug = parts[0];

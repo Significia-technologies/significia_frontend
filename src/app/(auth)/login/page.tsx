@@ -36,7 +36,7 @@ export default function LoginPage() {
     try {
       const hostname = window.location.hostname;
       const rootDomains = ['localhost', '127.0.0.1', 'significia.com', 'www.significia.com', 'app.significia.com'];
-      const isRootDomain = rootDomains.includes(hostname);
+      const isRootDomain = rootDomains.includes(hostname) || hostname.endsWith('.vercel.app');
 
       let result;
       if (isRootDomain) {
