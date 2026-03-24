@@ -33,9 +33,14 @@ httpClient.interceptors.request.use(
       // Extract tenant slug for routing
       const hostname = window.location.hostname;
       const parts = hostname.split('.');
-      if (parts.length >= 3 || (parts.length >= 2 && hostname.includes('localhost'))) {
+      
+      // Define root domains that should NOT send a tenant slug automatically
+      const rootDomains = ['localhost', '127.0.0.1', 'significia.com', 'www.significia.com', 'app.significia.com'];
+      const isRootDomain = rootDomains.includes(hostname);
+
+      if (!isRootDomain && (parts.length >= 3 || (parts.length >= 2 && hostname.includes('localhost')))) {
         const slug = parts[0];
-        if (slug !== 'www' && slug !== 'app' && config.headers) {
+        if (slug !== 'www' && slug !== 'app' && slug !== 'dashboard' && config.headers) {
           config.headers['X-Tenant-Slug'] = slug;
         }
       }
