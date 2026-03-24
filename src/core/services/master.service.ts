@@ -16,6 +16,7 @@ export interface Client {
 }
 
 export interface ClientCreate {
+  is_active?: boolean;
   id?: string;
   // Authentication
   email: string;
@@ -126,6 +127,22 @@ export class MasterDataService {
     const link = document.createElement('a');
     link.href = url;
     link.setAttribute('download', `Report_${clientName.replace(/\s+/g, '_')}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  }
+
+  static async downloadMasterReport(connectorId: string): Promise<void> {
+    const response = await httpClient.get(
+      API_ENDPOINTS.MASTER.CLIENTS.MASTER_REPORT(connectorId),
+      { responseType: 'blob' }
+    );
+    
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    const date = new Date().toISOString().split('T')[0];
+    link.setAttribute('download', `Client_Master_Report_${date}.pdf`);
     document.body.appendChild(link);
     link.click();
     link.remove();

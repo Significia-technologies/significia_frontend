@@ -35,14 +35,14 @@ export default function LoginPage() {
 
     try {
       const hostname = window.location.hostname;
-      const parts = hostname.split('.');
-      const isSubdomain = parts.length >= 3 || (parts.length >= 2 && hostname.includes('localhost') && parts[0] !== 'www' && parts[0] !== 'app');
+      const rootDomains = ['localhost', '127.0.0.1', 'significia.com', 'www.significia.com', 'app.significia.com'];
+      const isRootDomain = rootDomains.includes(hostname);
 
       let result;
-      if (isSubdomain) {
-        result = await AuthService.clientLogin({ email, password });
-      } else {
+      if (isRootDomain) {
         result = await AuthService.login({ email, password });
+      } else {
+        result = await AuthService.clientLogin({ email, password });
       }
       
       setUser(result.user);
@@ -52,7 +52,10 @@ export default function LoginPage() {
       } else if (result.user.role === "client") {
         router.push("/");
       } else {
-        if (result.subdomain) {
+        // IA Master (owner) or other internal roles
+        if (isRootDomain) {
+            router.push("/");
+        } else if (result.subdomain) {
           const currentHost = window.location.host;
           const isLocalhost = currentHost.includes('localhost');
           const baseDomain = isLocalhost ? 'localhost:3000' : 'significia.com';
