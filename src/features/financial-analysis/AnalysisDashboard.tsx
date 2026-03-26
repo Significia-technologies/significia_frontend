@@ -12,6 +12,7 @@ import {
   FileText,
   Download,
   BrainCircuit,
+  MessageSquare,
   PieChart as PieChartIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -240,16 +241,16 @@ export function AnalysisDashboard({ connectorId, result, clientName }: AnalysisD
           <Card className="border-primary/20 bg-primary/5 shadow-inner">
             <CardHeader className="flex flex-row items-center gap-3">
               <div className="p-2 rounded-lg bg-primary/10">
-                <BrainCircuit className="w-6 h-6 text-primary" />
+                <MessageSquare className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <CardTitle>AI Executive Brief</CardTitle>
-                <CardDescription>Generated insights for your financial health</CardDescription>
+                <CardTitle>Executive Brief</CardTitle>
+                <CardDescription>System generated insights for your financial health</CardDescription>
               </div>
             </CardHeader>
             <CardContent>
               <div className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground leading-relaxed" 
-                   dangerouslySetInnerHTML={{ __html: result.ai_analysis?.executive_brief || "No AI brief available." }}>
+                   dangerouslySetInnerHTML={{ __html: result.ai_analysis?.executive_brief || "No Executive Summary available." }}>
               </div>
             </CardContent>
           </Card>
@@ -300,7 +301,7 @@ export function AnalysisDashboard({ connectorId, result, clientName }: AnalysisD
                  <div className="p-2 rounded-lg bg-secondary/10 text-secondary">
                     <TrendingUp className="w-5 h-5" />
                  </div>
-                 <CardTitle className="text-lg">Detailed AI Insights</CardTitle>
+                 <CardTitle className="text-lg">Detailed System Insights</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                  <AnalysisBit 
