@@ -91,6 +91,7 @@ export const API_ENDPOINTS = {
     LIST: (connectorId: string) => `${API_BASE}/financial-analysis/${connectorId}/analysis`,
     CREATE: (connectorId: string) => `${API_BASE}/financial-analysis/${connectorId}/analysis`,
     DETAIL: (connectorId: string, resultId: string) => `${API_BASE}/financial-analysis/${connectorId}/analysis/${resultId}`,
+    DETAILS: (connectorId: string, resultId: string) => `${API_BASE}/financial-analysis/${connectorId}/analysis/${resultId}/details`,
     PDF: (connectorId: string, resultId: string) => `${API_BASE}/financial-analysis/${connectorId}/analysis/${resultId}/pdf`,
     WORD: (connectorId: string, resultId: string) => `${API_BASE}/financial-analysis/${connectorId}/analysis/${resultId}/word`,
   },

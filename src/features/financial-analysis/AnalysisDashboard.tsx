@@ -18,6 +18,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger,
+  DialogDescription
+} from "@/components/ui/dialog";
+import { 
   BarChart, 
   Bar, 
   XAxis, 
@@ -30,8 +38,11 @@ import {
   PieChart,
   Pie
 } from "recharts";
-import { FinancialAnalysisResult } from "@/core/services/financial-analysis.service";
-import { FinancialAnalysisService } from "@/core/services/financial-analysis.service";
+import { 
+  FinancialAnalysisResult, 
+  CalculationDetails, 
+  FinancialAnalysisService 
+} from "@/core/services/financial-analysis.service";
 import { toast } from "sonner";
 
 interface AnalysisDashboardProps {
@@ -42,6 +53,9 @@ interface AnalysisDashboardProps {
 
 export function AnalysisDashboard({ connectorId, result, clientName }: AnalysisDashboardProps) {
   const [downloading, setDownloading] = React.useState<string | null>(null);
+  const [calcDetails, setCalcDetails] = React.useState<CalculationDetails | null>(null);
+  const [loadingCalc, setLoadingCalc] = React.useState(false);
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
 
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -64,6 +78,24 @@ export function AnalysisDashboard({ connectorId, result, clientName }: AnalysisD
       toast.error(`Failed to download report`);
     } finally {
       setDownloading(null);
+    }
+  };
+
+  const fetchCalculationDetails = async () => {
+    if (calcDetails) {
+      setIsModalOpen(true);
+      return;
+    }
+    
+    setLoadingCalc(true);
+    try {
+      const details = await FinancialAnalysisService.getCalculationDetails(connectorId, result.id);
+      setCalcDetails(details);
+      setIsModalOpen(true);
+    } catch (error) {
+      toast.error("Failed to load calculation details");
+    } finally {
+      setLoadingCalc(false);
     }
   };
 
@@ -101,6 +133,68 @@ export function AnalysisDashboard({ connectorId, result, clientName }: AnalysisD
             {downloading === 'word' ? <span className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" /> : <Download className="w-4 h-4" />}
             Word Report
           </Button>
+          
+          <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+            <DialogTrigger asChild>
+              <Button 
+                variant="default" 
+                className="gap-2 shadow-lg shadow-primary/20"
+                onClick={fetchCalculationDetails}
+                disabled={loadingCalc}
+              >
+                {loadingCalc ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <BrainCircuit className="w-4 h-4" />}
+                View Calculation
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <BrainCircuit className="w-5 h-5 text-primary" />
+                  Calculation Logic Breakdown
+                </DialogTitle>
+                <DialogDescription>
+                  Step-by-step mathematical logic used for this analysis.
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="flex-1 overflow-y-auto pr-2 mt-4 space-y-8">
+                {calcDetails?.sections.map((section, idx) => (
+                  <div key={idx} className="space-y-4">
+                    <h4 className="font-bold text-base text-primary flex items-center gap-2 border-b border-primary/10 pb-2">
+                      <div className="w-2 h-2 rounded-full bg-primary" />
+                      {section.section}
+                    </h4>
+                    <div className="space-y-6 pl-4 border-l-2 border-primary/5 ml-1">
+                      {section.steps.map((step, sIdx) => (
+                        <div key={sIdx} className="space-y-2">
+                          <div className="flex items-start gap-2">
+                             <span className="bg-primary/10 text-primary text-[10px] font-bold px-1.5 py-0.5 rounded mt-0.5">Step {step.step}</span>
+                             <p className="text-sm font-semibold text-foreground">{step.description}</p>
+                          </div>
+                          <div className="bg-muted/50 p-3 rounded-md space-y-2 ml-10">
+                             <div className="text-xs">
+                                <span className="text-primary font-bold mr-2 uppercase tracking-tighter opacity-70">Formula:</span>
+                                <code className="text-foreground/90">{step.formula}</code>
+                             </div>
+                             {step.calculation && (
+                               <div className="text-xs pt-1 border-t border-primary/5">
+                                  <span className="text-primary font-bold mr-2 uppercase tracking-tighter opacity-70">Math:</span>
+                                  <span className="whitespace-pre-line text-muted-foreground">{step.calculation}</span>
+                               </div>
+                             )}
+                             <div className="text-xs pt-1 border-t border-primary/10 flex items-center justify-between">
+                                <span className="text-primary font-bold uppercase tracking-tighter opacity-70">Result:</span>
+                                <span className="text-primary font-bold">{step.result}</span>
+                             </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
@@ -171,7 +265,7 @@ export function AnalysisDashboard({ connectorId, result, clientName }: AnalysisD
                 <BarChart data={hlvData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
                   <XAxis dataKey="name" />
-                  <YAxis tickFormatter={(val) => `₹${(val / 10000000).toFixed(1)}Cr`} />
+                  <YAxis tickFormatter={(val: any) => `₹${(val / 10000000).toFixed(1)}Cr`} />
                   <Tooltip formatter={(val: any) => formatCurrency(val)} />
                   <Legend />
                   <Bar dataKey="total" name="Total HLV Needed" fill="#3b82f6" radius={[4, 4, 0, 0]} />

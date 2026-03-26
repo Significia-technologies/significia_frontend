@@ -39,6 +39,24 @@ export interface FinancialAnalysisResult {
   created_at: string;
 }
 
+export interface CalculationStep {
+  section: string;
+  steps: {
+    step: number;
+    description: string;
+    formula: string;
+    calculation?: string;
+    result: string;
+  }[];
+}
+
+export interface CalculationDetails {
+  result_id: string;
+  client_id: string;
+  sections: CalculationStep[];
+  created_at: string;
+}
+
 export interface FinancialAnalysisCreate {
   client_id: string;
   pan?: string;
@@ -161,5 +179,12 @@ export class FinancialAnalysisService {
     document.body.appendChild(link);
     link.click();
     link.remove();
+  }
+
+  static async getCalculationDetails(connectorId: string, resultId: string): Promise<CalculationDetails> {
+    const response = await httpClient.get<CalculationDetails>(
+      API_ENDPOINTS.FINANCIAL_ANALYSIS.DETAILS(connectorId, resultId)
+    );
+    return response.data;
   }
 }
