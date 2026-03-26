@@ -1,0 +1,261 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { 
+  PlusCircle, 
+  Search, 
+  Filter, 
+  MoreHorizontal, 
+  FileText, 
+  Eye, 
+  Download, 
+  TrendingUp, 
+  User, 
+  Calendar,
+  ChevronRight,
+  Database
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger, 
+  DropdownMenuSeparator 
+} from "@/components/ui/dropdown-menu";
+import { FinancialAnalysisService, FinancialAnalysisResult } from "@/core/services/financial-analysis.service";
+import { MasterDataService, Client } from "@/core/services/master.service";
+import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
+import { format } from "date-fns";
+
+interface AnalysisListProps {
+  connectorId: string;
+  clientId?: string;
+  onSelectAnalysis: (resultId: string) => void;
+  onCreateNew: () => void;
+}
+
+export function AnalysisList({ connectorId, clientId, onSelectAnalysis, onCreateNew }: AnalysisListProps) {
+  const [analyses, setAnalyses] = useState<FinancialAnalysisResult[]>([]);
+  const [clients, setClients] = useState<Record<string, Client>>({});
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [downloading, setDownloading] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [analysisData, clientData] = await Promise.all([
+          FinancialAnalysisService.list(connectorId),
+          MasterDataService.listClients(connectorId)
+        ]);
+
+        // Map clients for quick lookup
+        const clientMap: Record<string, Client> = {};
+        clientData.forEach(c => {
+          clientMap[c.id] = c;
+        });
+        setClients(clientMap);
+
+        // Filter by clientId if provided
+        if (clientId) {
+          setAnalyses(analysisData.filter(a => a.client_id === clientId));
+        } else {
+          setAnalyses(analysisData);
+        }
+      } catch (error) {
+        console.error("Failed to fetch data", error);
+        toast.error("Failed to load financial analyses");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [connectorId, clientId]);
+
+  const handleDownload = async (id: string, format: 'pdf' | 'word', clientName: string) => {
+    setDownloading(`${id}-${format}`);
+    try {
+      if (format === 'pdf') {
+        await FinancialAnalysisService.downloadPDF(connectorId, id, clientName);
+      } else {
+        await FinancialAnalysisService.downloadWord(connectorId, id, clientName);
+      }
+      toast.success(`${format.toUpperCase()} report downloaded`);
+    } catch (error) {
+      toast.error(`Failed to download ${format.toUpperCase()} report`);
+    } finally {
+      setDownloading(null);
+    }
+  };
+
+  const filteredAnalyses = analyses.filter(analysis => {
+    const client = clients[analysis.client_id];
+    if (!client) return false;
+    return client.client_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           client.client_code.toLowerCase().includes(searchTerm.toLowerCase());
+  });
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+        <div className="relative w-full md:w-96">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input 
+            placeholder="Search by client name or code..." 
+            className="pl-10 bg-background/50 border-primary/20"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <Button variant="outline" className="gap-2 border-primary/20">
+            <Filter className="w-4 h-4" />
+            Filters
+          </Button>
+          <Button className="gap-2 bg-primary hover:bg-primary/90" onClick={onCreateNew}>
+            <PlusCircle className="w-4 h-4" />
+            New Analysis
+          </Button>
+        </div>
+      </div>
+
+      <Card className="border-primary/10 overflow-hidden bg-card/50 backdrop-blur-sm shadow-xl">
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader className="bg-primary/5">
+              <TableRow>
+                <TableHead className="font-semibold text-primary">Client</TableHead>
+                <TableHead className="font-semibold text-primary">Analysis Date</TableHead>
+                <TableHead className="font-semibold text-primary">Net Worth (Calc)</TableHead>
+                <TableHead className="font-semibold text-primary">HLV Gap (Income)</TableHead>
+                <TableHead className="text-right font-semibold text-primary">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell><Skeleton className="h-5 w-40" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-20 float-right" /></TableCell>
+                  </TableRow>
+                ))
+              ) : filteredAnalyses.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-64 text-center">
+                    <div className="flex flex-col items-center justify-center text-muted-foreground">
+                      <div className="p-4 rounded-full bg-muted/50 mb-4">
+                        <TrendingUp className="w-8 h-8 opacity-20" />
+                      </div>
+                      <p className="text-lg font-medium">No financial analyses found</p>
+                      <p className="text-sm">Start by creating a new analysis for your clients.</p>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredAnalyses.map((analysis) => {
+                  const client = clients[analysis.client_id];
+                  return (
+                    <TableRow key={analysis.id} className="hover:bg-primary/5 transition-colors group">
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-bold text-foreground">{client?.client_name || "Unknown"}</span>
+                          <span className="text-xs text-muted-foreground">{client?.client_code || "N/A"}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Calendar className="w-4 h-4" />
+                          {format(new Date(analysis.created_at), "dd MMM yyyy")}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className="font-mono text-sm">
+                          ₹{new Intl.NumberFormat('en-IN').format(analysis.calculations?.net_worth || 0)}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="bg-orange-500/10 text-orange-600 border-orange-500/20">
+                          ₹{new Intl.NumberFormat('en-IN').format(analysis.hlv_data?.additional_life_cover_needed_income || 0)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 gap-1.5 hover:bg-primary/10 text-primary"
+                            onClick={() => onSelectAnalysis(analysis.id)}
+                          >
+                            <Eye className="w-4 h-4" />
+                            View
+                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10">
+                                <MoreHorizontal className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48 border-primary/20">
+                              <DropdownMenuItem className="gap-2" onClick={() => handleDownload(analysis.id, 'pdf', client?.client_name || 'Client')}>
+                                {downloading === `${analysis.id}-pdf` ? (
+                                  <span className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                  <FileText className="w-4 h-4" />
+                                )}
+                                Download PDF
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="gap-2" onClick={() => handleDownload(analysis.id, 'word', client?.client_name || 'Client')}>
+                                {downloading === `${analysis.id}-word` ? (
+                                  <span className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                  <FileText className="w-4 h-4" />
+                                )}
+                                Download Word
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator className="bg-primary/10" />
+                              <DropdownMenuItem className="gap-2 text-destructive focus:text-destructive">
+                                <PlusCircle className="w-4 h-4" /> Delete Record
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+      
+      {!loading && analyses.length > 0 && (
+        <div className="flex items-center justify-between text-sm text-muted-foreground px-2">
+          <p>Displaying {filteredAnalyses.length} analysis records in your private repository.</p>
+          <div className="flex items-center gap-1 p-1 rounded-md bg-blue-500/10 border border-blue-500/20 text-[10px] text-blue-600 font-bold uppercase tracking-widest px-2">
+            <Database className="w-3 h-3" />
+            Vault Secured
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

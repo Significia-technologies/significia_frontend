@@ -85,5 +85,14 @@ export const API_ENDPOINTS = {
     CREATE: `${API_BASE}/api-keys`,
     REVOKE: (id: string) => `${API_BASE}/api-keys/${id}`,
   },
+
+  // ── Financial Analysis ────────────────────────────
+  FINANCIAL_ANALYSIS: {
+    LIST: (connectorId: string) => `${API_BASE}/financial-analysis/${connectorId}/analysis`,
+    CREATE: (connectorId: string) => `${API_BASE}/financial-analysis/${connectorId}/analysis`,
+    DETAIL: (connectorId: string, resultId: string) => `${API_BASE}/financial-analysis/${connectorId}/analysis/${resultId}`,
+    PDF: (connectorId: string, resultId: string) => `${API_BASE}/financial-analysis/${connectorId}/analysis/${resultId}/pdf`,
+    WORD: (connectorId: string, resultId: string) => `${API_BASE}/financial-analysis/${connectorId}/analysis/${resultId}/word`,
+  },
 };
 

@@ -39,6 +39,7 @@ export interface ClientCreate {
   father_name: string;
   mother_name: string;
   spouse_name?: string;
+  spouse_dob?: string;
   aadhar_number?: string;
   passport_number?: string;
 
@@ -91,6 +92,13 @@ export class MasterDataService {
   static async getClient(connectorId: string, clientId: string): Promise<ClientCreate> {
     const response = await httpClient.get<ClientCreate>(
       API_ENDPOINTS.MASTER.CLIENTS.DETAIL(connectorId, clientId)
+    );
+    return response.data;
+  }
+
+  static async getClientByPan(connectorId: string, pan: string): Promise<ClientCreate> {
+    const response = await httpClient.get<ClientCreate>(
+      `${API_ENDPOINTS.MASTER.CLIENTS.LIST(connectorId)}/pan/${pan}`
     );
     return response.data;
   }
