@@ -62,6 +62,7 @@ export const API_ENDPOINTS = {
       DELETE: (connectorId: string, id: string) => `${API_BASE}/master/${connectorId}/clients/${id}`,
       DOWNLOAD_REPORT: (connectorId: string, id: string) => `${API_BASE}/master/${connectorId}/clients/${id}/pdf`,
       MASTER_REPORT: (connectorId: string) => `${API_BASE}/master/${connectorId}/report`,
+      BLANK_FORM: (connectorId: string) => `${API_BASE}/master/${connectorId}/blank-form`,
     },
     IA_MASTER: {
       CREATE: (connectorId: string) => `${API_BASE}/ia-master/?connector_id=${connectorId}`,
@@ -84,6 +85,17 @@ export const API_ENDPOINTS = {
     LIST: `${API_BASE}/api-keys`,
     CREATE: `${API_BASE}/api-keys`,
     REVOKE: (id: string) => `${API_BASE}/api-keys/${id}`,
+  },
+
+  // ── Financial Analysis ────────────────────────────
+  FINANCIAL_ANALYSIS: {
+    LIST: (connectorId: string) => `${API_BASE}/financial-analysis/${connectorId}/analysis`,
+    CREATE: (connectorId: string) => `${API_BASE}/financial-analysis/${connectorId}/analysis`,
+    DETAIL: (connectorId: string, resultId: string) => `${API_BASE}/financial-analysis/${connectorId}/analysis/${resultId}`,
+    DETAILS: (connectorId: string, resultId: string) => `${API_BASE}/financial-analysis/${connectorId}/analysis/${resultId}/details`,
+    PDF: (connectorId: string, resultId: string) => `${API_BASE}/financial-analysis/${connectorId}/analysis/${resultId}/pdf`,
+    WORD: (connectorId: string, resultId: string) => `${API_BASE}/financial-analysis/${connectorId}/analysis/${resultId}/word`,
+    FORM: (connectorId: string) => `${API_BASE}/financial-analysis/${connectorId}/form`,
   },
 };
 

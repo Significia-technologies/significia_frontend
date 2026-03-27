@@ -35,6 +35,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { AnalysisList } from "@/features/financial-analysis/AnalysisList";
+import { AnalysisForm } from "@/features/financial-analysis/AnalysisForm";
+import { AnalysisDashboard } from "@/features/financial-analysis/AnalysisDashboard";
+import { FinancialAnalysisResult, FinancialAnalysisService } from "@/core/services/financial-analysis.service";
 
 interface ClientDetailProps {
   client: ClientCreate;
@@ -182,6 +186,9 @@ export default function ClientDetail({ client, connectorId }: ClientDetailProps)
                 </TabsTrigger>
                 <TabsTrigger value="investment" className="flex-1 py-4 gap-2 data-[state=active]:bg-primary/5 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
                   <TrendingUp className="w-4 h-4" /> Investment
+                </TabsTrigger>
+                <TabsTrigger value="analysis" className="flex-1 py-4 gap-2 data-[state=active]:bg-primary/5 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
+                  <TrendingUp className="w-4 h-4 text-orange-500" /> Financial Analysis
                 </TabsTrigger>
             </TabsList>
 
@@ -343,6 +350,14 @@ export default function ClientDetail({ client, connectorId }: ClientDetailProps)
                     </div>
                 </div>
               </TabsContent>
+
+              <TabsContent value="analysis" className="mt-0 space-y-8">
+                 <AnalysisTabContent 
+                    connectorId={connectorId} 
+                    clientId={client.id!} 
+                    clientName={client.client_name} 
+                 />
+              </TabsContent>
             </div>
           </Tabs>
         </CardContent>
@@ -382,6 +397,65 @@ export default function ClientDetail({ client, connectorId }: ClientDetailProps)
           </AlertDialogContent>
         </AlertDialog>
       </div>
+    </div>
+  );
+}
+
+function AnalysisTabContent({ connectorId, clientId, clientName }: { connectorId: string, clientId: string, clientName: string }) {
+  const [view, setView] = React.useState<"LIST" | "FORM" | "DASHBOARD">("LIST");
+  const [selectedResult, setSelectedResult] = React.useState<FinancialAnalysisResult | null>(null);
+  const [loading, setLoading] = React.useState(false);
+
+  const handleSelect = async (id: string) => {
+    setLoading(true);
+    try {
+      const result = await FinancialAnalysisService.get(connectorId, id);
+      setSelectedResult(result);
+      setView("DASHBOARD");
+    } catch (e) {
+      toast.error("Failed to load analysis");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) return <div className="h-64 flex items-center justify-center animate-pulse text-muted-foreground">Loading Analysis data...</div>;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+         {view !== "LIST" && (
+           <Button variant="ghost" size="sm" onClick={() => setView("LIST")} className="gap-2">
+              <ArrowLeft className="w-4 h-4" /> Back to List
+           </Button>
+         )}
+      </div>
+
+      {view === "LIST" && (
+        <AnalysisList 
+          connectorId={connectorId} 
+          clientId={clientId} 
+          onSelectAnalysis={handleSelect}
+          onCreateNew={() => setView("FORM")}
+        />
+      )}
+
+      {view === "FORM" && (
+        <AnalysisForm 
+          connectorId={connectorId} 
+          clientId={clientId}
+          onSuccess={(id) => handleSelect(id)}
+          onCancel={() => setView("LIST")}
+        />
+      )}
+
+      {view === "DASHBOARD" && selectedResult && (
+        <AnalysisDashboard 
+          connectorId={connectorId} 
+          result={selectedResult} 
+          clientName={clientName} 
+        />
+      )}
     </div>
   );
 }
