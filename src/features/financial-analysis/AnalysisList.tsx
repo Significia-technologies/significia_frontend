@@ -230,10 +230,6 @@ export function AnalysisList({ connectorId, clientId, onSelectAnalysis, onCreate
                                 )}
                                 Download Word
                               </DropdownMenuItem>
-                              <DropdownMenuSeparator className="bg-primary/10" />
-                              <DropdownMenuItem className="gap-2 text-destructive focus:text-destructive">
-                                <PlusCircle className="w-4 h-4" /> Delete Record
-                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
