@@ -1,5 +1,6 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
 import { API_ENDPOINTS } from "./api-endpoints";
+import { getApiBaseUrl } from "./api-utils";
 
 /**
  * Configured Axios instance with interceptors for:
@@ -12,7 +13,7 @@ import { API_ENDPOINTS } from "./api-endpoints";
  */
 
 const httpClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/v1",
+  baseURL: getApiBaseUrl(),
   timeout: 15000,
   headers: {
     "Content-Type": "application/json",

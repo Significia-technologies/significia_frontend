@@ -23,6 +23,7 @@ import { IAMasterService, IAMaster } from "@/core/services/ia-master.service";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { getAssetUrl } from "@/core/api/api-utils";
 
 interface IAMasterFormProps {
   connectorId: string;
@@ -39,12 +40,6 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
     if (!path) return "";
     const cleanPath = path.split('?')[0];
     return cleanPath.split('/').pop() || "";
-  };
-
-  const getFileUrl = (path: string | undefined) => {
-    if (!path) return "";
-    if (path.startsWith("http")) return path;
-    return `http://127.0.0.1:8000/${path}`;
   };
 
   const [formData, setFormData] = useState({
@@ -426,7 +421,7 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
                               <FileCheck className="w-3 h-3" />
                               Already uploaded: {getFileName(initialData.ia_certificate_path)}
                             </span>
-                            <Button type="button" variant="ghost" size="icon" className="h-5 w-5 text-primary" onClick={() => window.open(getFileUrl(initialData.ia_certificate_path), '_blank')}>
+                            <Button type="button" variant="ghost" size="icon" className="h-5 w-5 text-primary" onClick={() => window.open(getAssetUrl(initialData.ia_certificate_path), '_blank')}>
                               <ExternalLink className="w-3 h-3" />
                             </Button>
                           </div>
@@ -443,7 +438,7 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
                               <FileCheck className="w-3 h-3" />
                               Already uploaded: {getFileName(initialData.ia_signature_path)}
                             </span>
-                            <Button type="button" variant="ghost" size="icon" className="h-5 w-5 text-primary" onClick={() => window.open(getFileUrl(initialData.ia_signature_path), '_blank')}>
+                            <Button type="button" variant="ghost" size="icon" className="h-5 w-5 text-primary" onClick={() => window.open(getAssetUrl(initialData.ia_signature_path), '_blank')}>
                               <ExternalLink className="w-3 h-3" />
                             </Button>
                           </div>
@@ -460,7 +455,7 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
                               <FileCheck className="w-3 h-3" />
                               Already uploaded: {getFileName(initialData.ia_logo_path)}
                             </span>
-                            <Button type="button" variant="ghost" size="icon" className="h-5 w-5 text-primary" onClick={() => window.open(getFileUrl(initialData.ia_logo_path), '_blank')}>
+                            <Button type="button" variant="ghost" size="icon" className="h-5 w-5 text-primary" onClick={() => window.open(getAssetUrl(initialData.ia_logo_path), '_blank')}>
                               <ExternalLink className="w-3 h-3" />
                             </Button>
                           </div>
@@ -554,7 +549,7 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
                                       <FileCheck className="w-3 h-3" />
                                       Existing: {getFileName(emp.certificate_path)}
                                     </span>
-                                    <Button type="button" variant="ghost" size="icon" className="h-5 w-5 text-primary" onClick={() => window.open(getFileUrl(emp.certificate_path), '_blank')}>
+                                    <Button type="button" variant="ghost" size="icon" className="h-5 w-5 text-primary" onClick={() => window.open(getAssetUrl(emp.certificate_path), '_blank')}>
                                       <ExternalLink className="w-3 h-3" />
                                     </Button>
                                   </div>
