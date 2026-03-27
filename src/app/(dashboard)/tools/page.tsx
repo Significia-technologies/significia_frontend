@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { ConnectorService, Connector } from "@/core/services/connector.service";
 import { FinancialAnalysisService } from "@/core/services/financial-analysis.service";
+import { MasterDataService } from "@/core/services/master.service";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
@@ -50,6 +51,20 @@ export default function ToolsPage() {
       toast.success("Form downloaded successfully.");
     } catch (error) {
       toast.error("Failed to download form.");
+    }
+  };
+
+  const handleDownloadClientForm = async () => {
+    if (!connector) {
+      toast.error("No active connection found.");
+      return;
+    }
+    try {
+      toast.info("Generating form...");
+      await MasterDataService.downloadBlankForm(connector.id);
+      toast.success("Client Registration form downloaded successfully.");
+    } catch (error) {
+      toast.error("Failed to download client form.");
     }
   };
 
@@ -93,6 +108,28 @@ export default function ToolsPage() {
             </CardHeader>
             <CardContent className="pt-6">
               <div className="space-y-4">
+
+                 <div className="flex items-center justify-between p-3 rounded-xl border bg-card hover:bg-accent/50 transition-all group cursor-default">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 rounded-lg bg-primary/10 text-primary group-hover:scale-110 transition-transform">
+                      <FileText className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">Client Registration Form</p>
+                      <p className="text-xs text-muted-foreground">Complete blank KYC & registration form</p>
+                    </div>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={handleDownloadClientForm}
+                    className="hover:bg-primary/20 hover:text-primary transition-colors"
+                    title="Download PDF"
+                  >
+                    <Download className="w-4 h-4" />
+                  </Button>
+                </div>
+
                 <div className="flex items-center justify-between p-3 rounded-xl border bg-card hover:bg-accent/50 transition-all group cursor-default">
                   <div className="flex items-center gap-3">
                     <div className="p-2.5 rounded-lg bg-primary/10 text-primary group-hover:scale-110 transition-transform">
@@ -112,8 +149,7 @@ export default function ToolsPage() {
                   >
                     <Download className="w-4 h-4" />
                   </Button>
-                </div>
-                
+                </div>               
                 <div className="p-4 rounded-xl border border-dashed border-muted-foreground/20 bg-muted/5 flex items-center justify-center text-xs text-muted-foreground italic">
                   Additional stationary items coming soon...
                 </div>

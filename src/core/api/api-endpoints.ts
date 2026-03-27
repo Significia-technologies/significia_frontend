@@ -62,6 +62,7 @@ export const API_ENDPOINTS = {
       DELETE: (connectorId: string, id: string) => `${API_BASE}/master/${connectorId}/clients/${id}`,
       DOWNLOAD_REPORT: (connectorId: string, id: string) => `${API_BASE}/master/${connectorId}/clients/${id}/pdf`,
       MASTER_REPORT: (connectorId: string) => `${API_BASE}/master/${connectorId}/report`,
+      BLANK_FORM: (connectorId: string) => `${API_BASE}/master/${connectorId}/blank-form`,
     },
     IA_MASTER: {
       CREATE: (connectorId: string) => `${API_BASE}/ia-master/?connector_id=${connectorId}`,

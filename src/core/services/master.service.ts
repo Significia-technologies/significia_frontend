@@ -155,4 +155,19 @@ export class MasterDataService {
     link.click();
     link.remove();
   }
+
+  static async downloadBlankForm(connectorId: string): Promise<void> {
+    const response = await httpClient.get(
+      API_ENDPOINTS.MASTER.CLIENTS.BLANK_FORM(connectorId),
+      { responseType: 'blob' }
+    );
+    
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'Client_Registration_Form.pdf');
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  }
 }
