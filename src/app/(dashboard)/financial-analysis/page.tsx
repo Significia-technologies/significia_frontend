@@ -123,10 +123,6 @@ export default function FinancialAnalysisPage() {
                 <FileText className="w-4 h-4" />
                 Download Form
               </Button>
-              <Button onClick={() => setView("FORM")} className="gap-2">
-                <PlusCircle className="w-4 h-4" />
-                New Analysis
-              </Button>
             </>
           )}
           <Button variant="outline" size="icon" onClick={fetchConnector}>
