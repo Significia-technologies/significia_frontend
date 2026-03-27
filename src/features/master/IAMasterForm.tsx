@@ -231,7 +231,11 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
         }
       });
 
-      await IAMasterService.create(connectorId, data);
+      if (initialData?.id) {
+        await IAMasterService.update(connectorId, initialData.id, data);
+      } else {
+        await IAMasterService.create(connectorId, data);
+      }
       toast.success("Investment Advisor record saved successfully!");
       router.push("/master");
     } catch (error: any) {

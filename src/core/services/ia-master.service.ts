@@ -62,6 +62,19 @@ export class IAMasterService {
     return response.data;
   }
 
+  static async update(connectorId: string, iaId: string, formData: FormData): Promise<IAMaster> {
+    const response = await httpClient.patch<IAMaster>(
+      API_ENDPOINTS.MASTER.IA_MASTER.UPDATE(connectorId, iaId),
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+    return response.data;
+  }
+
   static async getLatest(connectorId: string): Promise<IAMaster | null> {
     const response = await httpClient.get<IAMaster | null>(
       API_ENDPOINTS.MASTER.IA_MASTER.LATEST(connectorId)

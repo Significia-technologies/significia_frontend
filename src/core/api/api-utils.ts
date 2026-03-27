@@ -1,13 +1,16 @@
 /**
- * Sanitizes and upgrades the API base URL to HTTPS if the frontend is served via HTTPS.
- * This prevents Mixed Content errors in production.
+ * Sanitizes and upgrades the API base URL to HTTPS if the frontend is served via HTTPS or if running in a secure Worker.
  */
 export const getApiBaseUrl = (): string => {
   const envUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/v1";
   
+  // Detect protocol in both window and worker contexts
+  const currentProtocol = typeof window !== "undefined" 
+    ? window.location.protocol 
+    : (typeof self !== "undefined" ? self.location.protocol : "http:");
+
   if (
-    typeof window !== "undefined" && 
-    window.location.protocol === "https:" && 
+    currentProtocol === "https:" && 
     envUrl.startsWith("http://") && 
     !envUrl.includes("127.0.0.1") && 
     !envUrl.includes("localhost")
@@ -19,21 +22,21 @@ export const getApiBaseUrl = (): string => {
 };
 
 /**
- * Constructs a full URL for an asset (logo, certificate, etc.).
- * Automatically handles protocol upgrades and local development fallbacks.
+ * Constructs a full URL for an asset.
  */
 export const getAssetUrl = (path: string | undefined): string => {
   if (!path) return "";
   if (path.startsWith("http")) return path;
   
-  // Construct the base URL for assets (removing /api/v1 if it's there)
   const envUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/v1";
   let assetBase = envUrl.split('/api/')[0];
 
-  // Handle protocol upgrade if necessary
+  const currentProtocol = typeof window !== "undefined" 
+    ? window.location.protocol 
+    : (typeof self !== "undefined" ? self.location.protocol : "http:");
+
   if (
-    typeof window !== "undefined" && 
-    window.location.protocol === "https:" && 
+    currentProtocol === "https:" && 
     assetBase.startsWith("http://") && 
     !assetBase.includes("127.0.0.1") && 
     !assetBase.includes("localhost")
