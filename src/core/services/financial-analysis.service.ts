@@ -187,4 +187,19 @@ export class FinancialAnalysisService {
     );
     return response.data;
   }
+
+  static async downloadBlankForm(connectorId: string): Promise<void> {
+    const response = await httpClient.get(
+      API_ENDPOINTS.FINANCIAL_ANALYSIS.FORM(connectorId),
+      { responseType: 'blob' }
+    );
+    
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'Financial_Analysis_Data_Entry_Form.pdf');
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  }
 }

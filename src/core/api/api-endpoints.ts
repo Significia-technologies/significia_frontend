@@ -94,6 +94,7 @@ export const API_ENDPOINTS = {
     DETAILS: (connectorId: string, resultId: string) => `${API_BASE}/financial-analysis/${connectorId}/analysis/${resultId}/details`,
     PDF: (connectorId: string, resultId: string) => `${API_BASE}/financial-analysis/${connectorId}/analysis/${resultId}/pdf`,
     WORD: (connectorId: string, resultId: string) => `${API_BASE}/financial-analysis/${connectorId}/analysis/${resultId}/word`,
+    FORM: (connectorId: string) => `${API_BASE}/financial-analysis/${connectorId}/form`,
   },
 };
 

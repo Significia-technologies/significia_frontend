@@ -6,7 +6,8 @@ import {
   ArrowLeft, 
   RefreshCcw,
   PlusCircle,
-  Database
+  Database,
+  FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AnalysisList } from "@/features/financial-analysis/AnalysisList";
@@ -113,10 +114,20 @@ export default function FinancialAnalysisPage() {
         </div>
         <div className="flex items-center gap-3">
           {view === "LIST" && (
-            <Button onClick={() => setView("FORM")} className="gap-2">
-              <PlusCircle className="w-4 h-4" />
-              New Analysis
-            </Button>
+            <>
+              <Button 
+                variant="outline" 
+                onClick={() => connector && FinancialAnalysisService.downloadBlankForm(connector.id)} 
+                className="gap-2"
+              >
+                <FileText className="w-4 h-4" />
+                Download Form
+              </Button>
+              <Button onClick={() => setView("FORM")} className="gap-2">
+                <PlusCircle className="w-4 h-4" />
+                New Analysis
+              </Button>
+            </>
           )}
           <Button variant="outline" size="icon" onClick={fetchConnector}>
             <RefreshCcw className="w-4 h-4" />
