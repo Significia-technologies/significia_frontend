@@ -237,7 +237,7 @@ export function AnalysisDashboard({ connectorId, result, clientName }: AnalysisD
         {/* Left Column: Charts & Analysis */}
         <div className="lg:col-span-2 space-y-8">
           
-          {/* AI Executive Brief */}
+          {/*Executive Brief */}
           <Card className="border-primary/20 bg-primary/5 shadow-inner">
             <CardHeader className="flex flex-row items-center gap-3">
               <div className="p-2 rounded-lg bg-primary/10">
