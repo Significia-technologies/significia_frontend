@@ -723,12 +723,16 @@ All calculations are based on the assumptions provided and are illustrative in n
                     <Input type="number" min={40} max={80} placeholder="60" value={formData.assumptions.retirement_age === 0 ? "" : formData.assumptions.retirement_age} onChange={e => handleInputChange('assumptions.retirement_age', e.target.value === "" ? 0 : parseInt(e.target.value))} />
                   </div>
                   <div className="space-y-2">
-                    <Label>Life Expectancy (Client)</Label>
+                    <Label>Life Expectancy - Client</Label>
                     <Input type="number" min={0} placeholder="85" value={formData.assumptions.le_client === 0 ? "" : formData.assumptions.le_client} onChange={e => handleInputChange('assumptions.le_client', e.target.value === "" ? 0 : parseInt(e.target.value))} />
                   </div>
                   <div className="space-y-2">
-                    <Label>Life Expectancy (Spouse)</Label>
+                    <Label>Life Expectancy - Spouse</Label>
                     <Input type="number" min={0} placeholder="85" value={formData.assumptions.le_spouse === 0 ? "" : formData.assumptions.le_spouse} onChange={e => handleInputChange('assumptions.le_spouse', e.target.value === "" ? 0 : parseInt(e.target.value))} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Income Increment Rate (%)</Label>
+                    <Input type="number" min={0} placeholder="6" value={(formData.assumptions as any).inc_inc_rate === 0 ? "" : (formData.assumptions as any).inc_inc_rate} onChange={e => handleInputChange('assumptions.inc_inc_rate', e.target.value === "" ? 0 : parseFloat(e.target.value))} />
                   </div>
                   <div className="space-y-2">
                     <Label>Inflation Rate (%)</Label>
@@ -747,11 +751,11 @@ All calculations are based on the assumptions provided and are illustrative in n
                     <Input type="number" min={0} placeholder="8" value={formData.assumptions.post_ret_rate === 0 ? "" : formData.assumptions.post_ret_rate} onChange={e => handleInputChange('assumptions.post_ret_rate', e.target.value === "" ? 0 : parseFloat(e.target.value))} />
                   </div>
                   <div className="space-y-2">
-                    <Label>Standard of Living % for HLV</Label>
+                    <Label>Standard of Living for HLV (%)</Label>
                     <Input type="number" min={0} placeholder="70" value={formData.assumptions.sol_hlv === 0 ? "" : formData.assumptions.sol_hlv} onChange={e => handleInputChange('assumptions.sol_hlv', e.target.value === "" ? 0 : parseFloat(e.target.value))} />
                   </div>
                   <div className="space-y-2">
-                    <Label>Standard of Living % for Retirement</Label>
+                    <Label>Standard of Living for Retirement (%)</Label>
                     <Input type="number" min={0} placeholder="80" value={formData.assumptions.sol_ret === 0 ? "" : formData.assumptions.sol_ret} onChange={e => handleInputChange('assumptions.sol_ret', e.target.value === "" ? 0 : parseFloat(e.target.value))} />
                   </div>
                 </div>
@@ -764,7 +768,7 @@ All calculations are based on the assumptions provided and are illustrative in n
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
                       <Label className="text-xs">Education Corpus Needed (Today)</Label>
-                      <Input type="number" min={0} placeholder="0" value={formData.assumptions.child_education_corpus === 0 ? "" : formData.assumptions.child_education_corpus} onChange={e => handleInputChange('assumptions.child_education_corpus', e.target.value === "" ? 0 : parseFloat(e.target.value))} />
+                      <Input type="number" min={0} placeholder="0" value={formData.assumptions.child_education_corpus === 0 ? "" : Math.round(formData.assumptions.child_education_corpus)} onChange={e => handleInputChange('assumptions.child_education_corpus', e.target.value === "" ? 0 : parseFloat(e.target.value))} />
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs">Years to Education Goal</Label>
@@ -772,7 +776,7 @@ All calculations are based on the assumptions provided and are illustrative in n
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs">Marriage Corpus Needed (Today)</Label>
-                      <Input type="number" min={0} placeholder="0" value={formData.assumptions.child_marriage_corpus === 0 ? "" : formData.assumptions.child_marriage_corpus} onChange={e => handleInputChange('assumptions.child_marriage_corpus', e.target.value === "" ? 0 : parseFloat(e.target.value))} />
+                      <Input type="number" min={0} placeholder="0" value={formData.assumptions.child_marriage_corpus === 0 ? "" : Math.round(formData.assumptions.child_marriage_corpus)} onChange={e => handleInputChange('assumptions.child_marriage_corpus', e.target.value === "" ? 0 : parseFloat(e.target.value))} />
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs">Years to Marriage Goal</Label>
@@ -785,11 +789,11 @@ All calculations are based on the assumptions provided and are illustrative in n
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <Label>Education Goal Allocation (%)</Label>
-                      <Input type="number" min={0} max={100} placeholder="0" value={formData.education_investment_pct === 0 ? "" : formData.education_investment_pct} onChange={e => handleTopLevelChange('education_investment_pct', e.target.value === "" ? 0 : parseFloat(e.target.value))} />
+                      <Input type="number" min={0} max={100} placeholder="0" value={formData.education_investment_pct === 0 ? "" : Math.round(formData.education_investment_pct)} onChange={e => handleTopLevelChange('education_investment_pct', e.target.value === "" ? 0 : parseFloat(e.target.value))} />
                     </div>
                     <div className="space-y-2">
                       <Label>Marriage Goal Allocation (%)</Label>
-                      <Input type="number" min={0} max={100} placeholder="0" value={formData.marriage_investment_pct === 0 ? "" : formData.marriage_investment_pct} onChange={e => handleTopLevelChange('marriage_investment_pct', e.target.value === "" ? 0 : parseFloat(e.target.value))} />
+                      <Input type="number" min={0} max={100} placeholder="0" value={formData.marriage_investment_pct === 0 ? "" : Math.round(formData.marriage_investment_pct)} onChange={e => handleTopLevelChange('marriage_investment_pct', e.target.value === "" ? 0 : parseFloat(e.target.value))} />
                     </div>
                   </div>
                 </div>
