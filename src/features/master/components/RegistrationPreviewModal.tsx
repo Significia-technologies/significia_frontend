@@ -58,29 +58,29 @@ export function RegistrationPreviewModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[800px] max-h-[90vh] p-0 overflow-hidden border-primary/20 bg-card/95 backdrop-blur-md">
-        <DialogHeader className="p-6 pb-2 border-b border-primary/10 bg-primary/5">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <ShieldCheck className="w-6 h-6 text-primary" />
+      <DialogContent className="max-w-[95vw] sm:max-w-[800px] max-h-[90vh] p-0 overflow-hidden border-primary/20 bg-card/95 backdrop-blur-md">
+        <DialogHeader className="p-4 sm:p-6 sm:pb-2 border-b border-primary/10 bg-primary/5">
+          <div className="flex items-start sm:items-center gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+              <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
             </div>
-            <div>
-              <DialogTitle className="text-xl font-bold">Review Registration Details</DialogTitle>
-              <DialogDescription>
+            <div className="min-w-0">
+              <DialogTitle className="text-lg sm:text-xl font-bold truncate">Review Registration Details</DialogTitle>
+              <DialogDescription className="text-xs sm:text-sm line-clamp-1 sm:line-clamp-none">
                 Confirm all information is accurate before final submission.
               </DialogDescription>
             </div>
           </div>
         </DialogHeader>
 
-        <div className="p-6 h-[60vh] overflow-y-auto">
+        <div className="p-4 sm:p-6 h-[60vh] overflow-y-auto scrollbar-none">
           <div className="space-y-6">
             {/* Identity Highlighting */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-primary/5 rounded-lg border border-primary/10">
               <LabelWrapper label="Residential Status">
-                  <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
-                      {formData.residential_status}
-                  </Badge>
+                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                  {formData.residential_status}
+                </Badge>
               </LabelWrapper>
               <div>
                 {formData.residential_status === "Resident Individual" ? (
@@ -169,23 +169,23 @@ export function RegistrationPreviewModal({
           </div>
         </div>
 
-        <DialogFooter className="p-6 pt-4 border-t border-primary/10 bg-primary/5 flex items-center justify-between sm:justify-between">
-          <div className="flex items-center gap-2 text-muted-foreground mr-auto">
-            <AlertCircle className="w-4 h-4 text-orange-500" />
-            <span className="text-xs uppercase font-bold tracking-tighter">Please review all fields before confirming</span>
+        <DialogFooter className="p-4 sm:p-6 pt-4 border-t border-primary/10 bg-primary/5 flex flex-col sm:flex-row items-center gap-4 sm:justify-between">
+          <div className="flex items-center gap-2 text-muted-foreground w-full sm:w-auto">
+            <AlertCircle className="w-4 h-4 text-orange-500 shrink-0" />
+            <span className="text-[10px] sm:text-xs uppercase font-bold tracking-tighter">Review all fields before confirming</span>
           </div>
-          <div className="flex gap-3">
-            <Button variant="outline" onClick={onClose} disabled={loading} className="px-6 border-primary/20 hover:bg-primary/5">
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            <Button variant="outline" onClick={onClose} disabled={loading} className="w-full sm:w-auto px-6 border-primary/20 hover:bg-primary/5 h-11 sm:h-auto order-2 sm:order-1">
               Go Back & Edit
             </Button>
-            <Button onClick={onConfirm} disabled={loading} className="px-8 shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90">
+            <Button onClick={onConfirm} disabled={loading} className="w-full sm:w-auto px-8 shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90 h-11 sm:h-auto order-1 sm:order-2">
               {loading ? (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center gap-2">
                   <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   Processing...
                 </div>
               ) : (
-                <div className="flex items-center gap-2 font-bold uppercase tracking-tight">
+                <div className="flex items-center justify-center gap-2 font-bold uppercase tracking-tight">
                   <CheckCircle2 className="w-4 h-4" />
                   Confirm & Create
                 </div>
