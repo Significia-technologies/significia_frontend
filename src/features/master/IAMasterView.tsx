@@ -146,43 +146,45 @@ export function IAMasterView({ connectorId }: IAMasterViewProps) {
       {/* ── Summary Hero Card ────────────────────────── */}
       <Card className="relative overflow-hidden border-primary/10 bg-card/50 backdrop-blur-sm">
         <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-full -mr-16 -mt-16 blur-xl" />
-        <CardHeader className="relative flex flex-row items-start justify-between">
-          <div className="flex items-center gap-5">
-            <div className="w-20 h-20 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center overflow-hidden">
+        <CardHeader className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-6">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 w-full md:w-auto">
+            <div className="w-24 h-24 sm:w-20 sm:h-20 shrink-0 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center overflow-hidden">
               {data.ia_logo_path ? (
                 <img src={getAssetUrl(data.ia_logo_path)} alt="Logo" className="w-full h-full object-cover" />
               ) : (
                 <Building2 className="w-10 h-10 text-primary" />
               )}
             </div>
-            <div>
-              <div className="flex items-center gap-3">
-                <CardTitle className="text-3xl font-bold tracking-tight">{data.name_of_ia}</CardTitle>
-                <Badge className="bg-primary/20 text-primary border-primary/30 uppercase tracking-widest text-[10px] px-2 py-0.5">
+            <div className="flex flex-col items-center sm:items-start text-center sm:text-left">
+              <div className="flex flex-wrap justify-center sm:justify-start items-center gap-3">
+                <CardTitle className="text-2xl sm:text-3xl font-bold tracking-tight">{data.name_of_ia}</CardTitle>
+                <Badge className="bg-primary/20 text-primary border-primary/30 uppercase tracking-widest text-[10px] px-2 py-0.5 whitespace-nowrap">
                   {data.nature_of_entity}
                 </Badge>
               </div>
-              <CardDescription className="text-lg mt-1 flex items-center gap-2">
-                <Database className="w-4 h-4 text-primary/60" />
-                Reg No: <span className="font-mono text-primary font-medium">{data.ia_registration_number}</span>
+              <CardDescription className="text-base sm:text-lg mt-2 flex items-center gap-2">
+                <Database className="w-4 h-4 text-primary/60 shrink-0" />
+                <span className="flex flex-wrap items-center gap-1.5 justify-center sm:justify-start">
+                  Reg No: <span className="font-mono text-primary font-bold">{data.ia_registration_number}</span>
+                </span>
               </CardDescription>
             </div>
           </div>
-          <div className="flex flex-col items-end gap-3">
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" className="gap-2 border-primary/20 hover:bg-primary/5" onClick={handleDownloadPdf}>
+          <div className="flex flex-col items-center md:items-end gap-4 w-full md:w-auto">
+            <div className="flex flex-wrap justify-center md:justify-end gap-2 w-full">
+              <Button variant="outline" size="sm" className="flex-1 sm:flex-none gap-2 border-primary/20 hover:bg-primary/5" onClick={handleDownloadPdf}>
                 <Download className="w-4 h-4" />
                 Export PDF
               </Button>
-              <Button size="sm" className="gap-2 bg-primary hover:bg-primary/90" onClick={() => router.push("/master/ia-master/new")}>
+              <Button size="sm" className="flex-1 sm:flex-none gap-2 bg-primary hover:bg-primary/90" onClick={() => router.push("/master/ia-master/new")}>
                 <Edit className="w-4 h-4" />
                 Update
               </Button>
             </div>
             
             {/* Client Limit Section */}
-            <div className="bg-background/80 backdrop-blur-sm border border-primary/20 rounded-lg p-3 shadow-sm flex items-center gap-4">
-              <div className="flex flex-col">
+            <div className="bg-background/80 backdrop-blur-sm border border-primary/20 rounded-lg p-3 shadow-sm flex items-center gap-4 w-full sm:w-auto">
+              <div className="flex flex-col w-full sm:w-auto">
                 <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mb-1">Client Limit Usage</span>
                 <div className="text-sm font-medium flex items-center">
                   <span className="text-primary">{data.current_client_count ?? 0}</span>
@@ -286,56 +288,58 @@ export function IAMasterView({ connectorId }: IAMasterViewProps) {
       {data.employees && data.employees.length > 0 && (
         <Card className="border-primary/10 bg-card/50 backdrop-blur-sm overflow-hidden">
           <CardHeader className="border-b border-primary/10 pb-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-lg bg-primary/10">
                   <Users className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <CardTitle className="text-xl">Associated Employees</CardTitle>
-                  <CardDescription>Records of professionals linked to this IA registration.</CardDescription>
+                  <CardTitle className="text-lg sm:text-xl">Associated Employees</CardTitle>
+                  <CardDescription className="text-xs sm:text-sm">Records of professionals linked to this IA registration.</CardDescription>
                 </div>
               </div>
-              <Badge variant="outline" className="border-primary/20 text-primary">
+              <Badge variant="outline" className="border-primary/20 text-primary self-center sm:self-start">
                 {data.employees.length} Members
               </Badge>
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            <Table>
-              <TableHeader className="bg-primary/5">
-                <TableRow>
-                  <TableHead className="font-bold">Employee Name</TableHead>
-                  <TableHead className="font-bold">Designation</TableHead>
-                  <TableHead className="font-bold">IA Reg No</TableHead>
-                  <TableHead className="font-bold">Validity</TableHead>
-                  <TableHead className="text-right font-bold">Docs</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.employees.map((emp) => (
-                  <TableRow key={emp.id} className="hover:bg-primary/5 transition-colors">
-                    <TableCell className="font-semibold">{emp.name_of_employee}</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary" className="capitalize">
-                        {emp.designation}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="font-mono text-xs">{emp.ia_registration_number}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      Until {emp.date_of_registration_expiry}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {emp.certificate_path && (
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10" onClick={() => window.open(getAssetUrl(emp.certificate_path), '_blank')}>
-                          <ExternalLink className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </TableCell>
+            <div className="overflow-x-auto scrollbar-none">
+              <Table>
+                <TableHeader className="bg-primary/5">
+                  <TableRow>
+                    <TableHead className="font-bold whitespace-nowrap">Employee Name</TableHead>
+                    <TableHead className="font-bold whitespace-nowrap">Designation</TableHead>
+                    <TableHead className="font-bold whitespace-nowrap">IA Reg No</TableHead>
+                    <TableHead className="font-bold whitespace-nowrap">Validity</TableHead>
+                    <TableHead className="text-right font-bold whitespace-nowrap">Docs</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {data.employees.map((emp) => (
+                    <TableRow key={emp.id} className="hover:bg-primary/5 transition-colors">
+                      <TableCell className="font-semibold whitespace-nowrap">{emp.name_of_employee}</TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className="capitalize whitespace-nowrap">
+                          {emp.designation}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="font-mono text-xs whitespace-nowrap">{emp.ia_registration_number}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                        Until {emp.date_of_registration_expiry}
+                      </TableCell>
+                      <TableCell className="text-right whitespace-nowrap">
+                        {emp.certificate_path && (
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10" onClick={() => window.open(getAssetUrl(emp.certificate_path), '_blank')}>
+                            <ExternalLink className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
       )}

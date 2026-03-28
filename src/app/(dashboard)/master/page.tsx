@@ -141,7 +141,7 @@ export default function MasterPage() {
               <span className="p-1.5 rounded-lg bg-primary/10">
                 <Database className="w-8 h-8 text-primary" />
               </span>
-              Master Data Repository
+              Master Data
             </h1>
             <p className="text-muted-foreground mt-2 text-lg">
               Connected to <span className="font-mono text-primary font-medium">{connector.database_name}</span> inside your private infrastructure.
