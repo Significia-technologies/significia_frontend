@@ -94,45 +94,48 @@ export function ClientList({ connectorId }: ClientListProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-        <div className="relative w-full md:w-96">
+      <div className="flex flex-col xl:flex-row gap-4 items-center justify-between">
+        <div className="relative w-full xl:max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input placeholder="Search clients in private DB..." className="pl-10 bg-background/50 border-primary/20" />
         </div>
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <Button variant="outline" className="gap-2 border-primary/20">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full xl:w-auto">
+          {/* <Button variant="outline" className="flex-1 sm:flex-none gap-2 border-primary/20 h-9 text-xs sm:text-sm">
             <Filter className="w-4 h-4" />
             Filters
-          </Button>
+          </Button> */}
           <Button 
             variant="outline" 
-            className="gap-2 border-primary/20 text-primary hover:bg-primary/10"
+            className="flex-1 sm:flex-none gap-2 border-primary/20 text-primary hover:bg-primary/10 h-9 text-xs sm:text-sm"
             onClick={handleDownloadMasterReport}
             disabled={downloading || clients.length === 0}
           >
             <Download className="w-4 h-4" />
-            {downloading ? "Generating..." : "Master Report"}
+            <span className="hidden xs:inline">{downloading ? "Generating..." : "Master Report"}</span>
+            <span className="xs:hidden">Report</span>
           </Button>
-          <Button className="gap-2 bg-primary hover:bg-primary/90" onClick={() => router.push("/master/clients/new")}>
+          <Button className="flex-1 sm:flex-none gap-2 bg-primary hover:bg-primary/90 h-9 text-xs sm:text-sm" onClick={() => router.push("/master/clients/new")}>
             <UserPlus className="w-4 h-4" />
-            Add Client
+            <span className="hidden xs:inline">Add Client</span>
+            <span className="xs:hidden">Add</span>
           </Button>
         </div>
       </div>
 
       <Card className="border-primary/10 overflow-hidden bg-card/50 backdrop-blur-sm">
         <CardContent className="p-0">
-          <Table>
-            <TableHeader className="bg-primary/5">
-              <TableRow>
-                <TableHead className="font-semibold text-primary">Client Name</TableHead>
-                <TableHead className="font-semibold text-primary">Contact Info</TableHead>
-                <TableHead className="font-semibold text-primary">Address</TableHead>
-                <TableHead className="font-semibold text-primary">Assigned To</TableHead>
-                <TableHead className="font-semibold text-primary">Status</TableHead>
-                <TableHead className="text-right font-semibold text-primary">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
+          <div className="overflow-x-auto scrollbar-none">
+            <Table>
+              <TableHeader className="bg-primary/5">
+                <TableRow>
+                  <TableHead className="font-semibold text-primary whitespace-nowrap">Client Name</TableHead>
+                  <TableHead className="font-semibold text-primary whitespace-nowrap">Contact Info</TableHead>
+                  <TableHead className="font-semibold text-primary whitespace-nowrap">Address</TableHead>
+                  <TableHead className="font-semibold text-primary whitespace-nowrap">Assigned To</TableHead>
+                  <TableHead className="font-semibold text-primary whitespace-nowrap text-center">Status</TableHead>
+                  <TableHead className="text-right font-semibold text-primary whitespace-nowrap">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
             <TableBody>
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
@@ -146,7 +149,7 @@ export function ClientList({ connectorId }: ClientListProps) {
                 ))
               ) : clients.length === 0 ? (
                   <TableRow>
-                  <TableCell colSpan={5} className="h-64 text-center">
+                  <TableCell colSpan={6} className="h-64 text-center">
                     <div className="flex flex-col items-center justify-center text-muted-foreground">
                       <div className="p-4 rounded-full bg-muted/50 mb-4">
                         <Database className="w-8 h-8 opacity-20" />
@@ -159,8 +162,8 @@ export function ClientList({ connectorId }: ClientListProps) {
               ) : (
                 clients.map((client) => (
                   <TableRow key={client.id} className="hover:bg-primary/5 transition-colors">
-                    <TableCell className="font-medium">{client.client_name}</TableCell>
-                    <TableCell>
+                    <TableCell className="font-medium whitespace-nowrap">{client.client_name}</TableCell>
+                    <TableCell className="whitespace-nowrap">
                       <div className="flex flex-col gap-1 text-sm">
                         <span className="flex items-center gap-1.5 text-muted-foreground">
                           <Mail className="w-3 h-3" /> {client.email || 'N/A'}
@@ -170,12 +173,12 @@ export function ClientList({ connectorId }: ClientListProps) {
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="min-w-[200px]">
                       <span className="flex items-center gap-1.5 text-sm text-muted-foreground italic">
                         <MapPin className="w-3 h-3 shrink-0" /> {client.address || 'No address provided'}
                       </span>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="whitespace-nowrap">
                       {client.assigned_employee_id ? (
                         <Badge variant="outline" className="bg-primary/5 text-primary border-primary/10">
                           {employees.find(e => e.id === client.assigned_employee_id)?.name_of_employee || 'Unknown Professional'}
@@ -184,7 +187,7 @@ export function ClientList({ connectorId }: ClientListProps) {
                         <span className="text-xs text-muted-foreground italic">Unassigned</span>
                       )}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="text-center whitespace-nowrap">
                       <Badge variant={client.is_active ? 'default' : 'secondary'} className="capitalize bg-primary/20 text-primary border-primary/20">
                         {client.is_active ? 'Active' : 'Deactivated'}
                       </Badge>
@@ -219,7 +222,8 @@ export function ClientList({ connectorId }: ClientListProps) {
               )}
             </TableBody>
           </Table>
-        </CardContent>
+        </div>
+      </CardContent>
       </Card>
       
       {!loading && clients.length > 0 && (
