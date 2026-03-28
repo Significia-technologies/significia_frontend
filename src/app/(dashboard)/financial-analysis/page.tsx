@@ -103,7 +103,7 @@ export default function FinancialAnalysisPage() {
               <span className="p-1.5 rounded-lg bg-primary/10 shrink-0">
                 <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
               </span>
-              <span className="truncate">Financial Analysis</span>
+              <span className="truncate">Financial Assistant</span>
             </h1>
             <p className="text-muted-foreground mt-1 text-sm sm:text-base leading-relaxed">
               {view === "LIST" && "Analyze client portfolios and generate professional roadmap reports."}
