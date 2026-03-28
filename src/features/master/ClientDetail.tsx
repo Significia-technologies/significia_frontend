@@ -119,38 +119,40 @@ export default function ClientDetail({ client, connectorId }: ClientDetailProps)
   );
 
   return (
-    <div className="max-w-6xl mx-auto py-8 px-4 animate-in fade-in duration-500">
+    <div className="max-w-6xl mx-auto py-6 md:py-8 px-4 animate-in fade-in duration-500">
       {/* Header section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full shadow-sm">
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 mb-8">
+        <div className="flex items-start sm:items-center gap-4 w-full">
+          <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full shadow-sm shrink-0">
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold tracking-tight">{client.client_name}</h1>
-              <Badge className="bg-primary/20 text-primary border-primary/30 font-mono">
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight truncate max-w-full">
+                {client.client_name}
+              </h1>
+              <Badge className="bg-primary/20 text-primary border-primary/30 font-mono text-[10px] sm:text-xs">
                 {client.client_code}
               </Badge>
             </div>
-            <div className="flex items-center gap-4 mt-1 text-muted-foreground">
-              <span className="flex items-center gap-1.5 text-sm">
-                <Mail className="w-4 h-4" /> {currentClient.email}
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-2 text-muted-foreground">
+              <span className="flex items-center gap-1.5 text-xs sm:text-sm">
+                <Mail className="w-3.5 h-3.5" /> {currentClient.email}
               </span>
-              <span className="flex items-center gap-1.5 text-sm">
-                <Phone className="w-4 h-4" /> {currentClient.phone_number}
+              <span className="flex items-center gap-1.5 text-xs sm:text-sm">
+                <Phone className="w-3.5 h-3.5" /> {currentClient.phone_number}
               </span>
-              <Badge variant={currentClient.is_active === false ? "secondary" : "default"} className={`ml-2 ${currentClient.is_active === false ? "bg-muted" : "bg-green-500/10 text-green-600 border-green-500/20"}`}>
+              <Badge variant={currentClient.is_active === false ? "secondary" : "default"} className={`text-[10px] sm:text-xs ${currentClient.is_active === false ? "bg-muted" : "bg-green-500/10 text-green-600 border-green-500/20"}`}>
                 {currentClient.is_active === false ? "Deactivated" : "Active"}
               </Badge>
             </div>
           </div>
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 w-full lg:w-auto">
             <Button 
                 variant="outline" 
-                className="gap-2 border-primary/20"
+                className="flex-1 lg:flex-none gap-2 border-primary/20 h-10"
                 onClick={handleDownloadReport}
                 disabled={downloading}
             >
@@ -161,7 +163,7 @@ export default function ClientDetail({ client, connectorId }: ClientDetailProps)
                 )}
                 {downloading ? "Generating..." : "Reports"}
             </Button>
-            <Button className="gap-2 shadow-lg shadow-primary/20">
+            <Button className="flex-1 lg:flex-none gap-2 shadow-lg shadow-primary/20 h-10">
                 <ShieldCheck className="w-4 h-4" />
                 KYC Status
             </Button>
@@ -171,28 +173,30 @@ export default function ClientDetail({ client, connectorId }: ClientDetailProps)
       <Card className="border-primary/20 bg-card/50 backdrop-blur-sm shadow-xl overflow-hidden">
         <CardContent className="p-0">
           <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="w-full h-auto p-0 flex flex-wrap bg-muted/30 border-b border-primary/10 rounded-none">
-                <TabsTrigger value="overview" className="flex-1 py-4 gap-2 data-[state=active]:bg-primary/5 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
-                  <Info className="w-4 h-4" /> Overview
-                </TabsTrigger>
-                <TabsTrigger value="personal" className="flex-1 py-4 gap-2 data-[state=active]:bg-primary/5 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
-                  <User className="w-4 h-4" /> Personal
-                </TabsTrigger>
-                <TabsTrigger value="financial" className="flex-1 py-4 gap-2 data-[state=active]:bg-primary/5 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
-                  <CreditCard className="w-4 h-4" /> Financial
-                </TabsTrigger>
-                <TabsTrigger value="bank" className="flex-1 py-4 gap-2 data-[state=active]:bg-primary/5 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
-                  <Building className="w-4 h-4" /> Banking
-                </TabsTrigger>
-                <TabsTrigger value="investment" className="flex-1 py-4 gap-2 data-[state=active]:bg-primary/5 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
-                  <TrendingUp className="w-4 h-4" /> Investment
-                </TabsTrigger>
-                <TabsTrigger value="analysis" className="flex-1 py-4 gap-2 data-[state=active]:bg-primary/5 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
-                  <TrendingUp className="w-4 h-4 text-orange-500" /> Financial Analysis
-                </TabsTrigger>
-            </TabsList>
+            <div className="w-full overflow-x-auto scrollbar-none bg-muted/30 border-b border-primary/10">
+              <TabsList className="min-w-max h-auto p-0 flex bg-transparent rounded-none">
+                  <TabsTrigger value="overview" className="px-6 py-4 gap-2 data-[state=active]:bg-primary/5 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none text-xs sm:text-sm transition-all">
+                    <Info className="w-4 h-4" /> Overview
+                  </TabsTrigger>
+                  <TabsTrigger value="personal" className="px-6 py-4 gap-2 data-[state=active]:bg-primary/5 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none text-xs sm:text-sm transition-all">
+                    <User className="w-4 h-4" /> Personal
+                  </TabsTrigger>
+                  <TabsTrigger value="financial" className="px-6 py-4 gap-2 data-[state=active]:bg-primary/5 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none text-xs sm:text-sm transition-all">
+                    <CreditCard className="w-4 h-4" /> Financial
+                  </TabsTrigger>
+                  <TabsTrigger value="bank" className="px-6 py-4 gap-2 data-[state=active]:bg-primary/5 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none text-xs sm:text-sm transition-all">
+                    <Building className="w-4 h-4" /> Banking
+                  </TabsTrigger>
+                  <TabsTrigger value="investment" className="px-6 py-4 gap-2 data-[state=active]:bg-primary/5 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none text-xs sm:text-sm transition-all">
+                    <TrendingUp className="w-4 h-4" /> Investment
+                  </TabsTrigger>
+                  <TabsTrigger value="analysis" className="px-6 py-4 gap-2 data-[state=active]:bg-primary/5 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none text-xs sm:text-sm transition-all">
+                    <TrendingUp className="w-4 h-4 text-orange-500" /> Financial Analysis
+                  </TabsTrigger>
+              </TabsList>
+            </div>
 
-            <div className="p-8 min-h-[400px]">
+            <div className="p-4 sm:p-8 min-h-[400px]">
               <TabsContent value="overview" className="mt-0 space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <Card className="bg-primary/5 border-primary/10">
@@ -363,15 +367,15 @@ export default function ClientDetail({ client, connectorId }: ClientDetailProps)
         </CardContent>
       </Card>
       
-      <div className="mt-8 flex justify-end gap-4">
-        <Button variant="outline" className="px-8 border-primary/20" onClick={() => router.push(`/master/clients/${currentClient.id}/edit`)}>
+      <div className="mt-8 flex flex-col sm:flex-row justify-end gap-3 sm:gap-4">
+        <Button variant="outline" className="w-full sm:w-auto px-8 border-primary/20 h-11" onClick={() => router.push(`/master/clients/${currentClient.id}/edit`)}>
             Edit Profile
         </Button>
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button 
               variant={currentClient.is_active === false ? "default" : "destructive"} 
-              className="px-8" 
+              className="w-full sm:w-auto px-8 h-11" 
               disabled={isUpdating}
             >
                 {isUpdating ? "Updating..." : currentClient.is_active === false ? "Activate Client" : "Deactivate Client"}
