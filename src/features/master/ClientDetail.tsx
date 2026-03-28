@@ -198,40 +198,37 @@ export default function ClientDetail({ client, connectorId }: ClientDetailProps)
 
             <div className="p-4 sm:p-8 min-h-[400px]">
               <TabsContent value="overview" className="mt-0 space-y-8">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <Card className="bg-primary/5 border-primary/10">
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-bold opacity-70">Registration Date</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="flex items-center gap-2">
-                                <Calendar className="w-5 h-5 text-primary" />
-                                <span className="text-xl font-bold">{currentClient.declaration_date || "Not set"}</span>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-primary/5 border-primary/10">
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-bold opacity-70">Tax Residency</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="flex items-center gap-2">
-                                <MapPin className="w-5 h-5 text-primary" />
-                                <span className="text-xl font-bold">{currentClient.tax_residency}</span>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-primary/5 border-primary/10">
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-bold opacity-70">PAN Number</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="flex items-center gap-2">
-                                <Fingerprint className="w-5 h-5 text-primary" />
-                                <span className="text-xl font-bold font-mono">{currentClient.pan_number}</span>
-                            </div>
-                        </CardContent>
-                    </Card>
+                {/* Top Info Highlights Bar */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="flex items-center gap-4 p-4 rounded-xl bg-primary/5 border border-primary/10 transition-all hover:bg-primary/10">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <Calendar className="w-6 h-6 text-primary" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground mb-0.5">Registration</p>
+                      <p className="text-base font-bold truncate">{currentClient.declaration_date || "Not set"}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4 p-4 rounded-xl bg-primary/5 border border-primary/10 transition-all hover:bg-primary/10">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <MapPin className="w-6 h-6 text-primary" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground mb-0.5">Tax Residency</p>
+                      <p className="text-base font-bold truncate">{currentClient.tax_residency}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4 p-4 rounded-xl bg-primary/5 border border-primary/10 transition-all hover:bg-primary/10">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <Fingerprint className="w-6 h-6 text-primary" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground mb-0.5">PAN Number</p>
+                      <p className="text-base font-bold font-mono tracking-tight">{currentClient.pan_number}</p>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="space-y-4">
