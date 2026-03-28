@@ -2,10 +2,11 @@
 
 import React from "react";
 import { cn } from "@/lib/utils";
-import { DashboardSidebar } from "./DashboardSidebar";
+import { DashboardSidebar, SidebarContent } from "./DashboardSidebar";
 import { Topbar } from "./Topbar";
 import { useAppStore } from "@/store/useAppStore";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 
 import { useRouter } from "next/navigation";
 import { AuthService } from "@/core/services/auth.service";
@@ -15,7 +16,14 @@ interface DashboardLayoutProps {
 }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
-  const { user, setUser, clearUser, sidebarCollapsed } = useAppStore();
+  const { 
+    user, 
+    setUser, 
+    clearUser, 
+    sidebarCollapsed, 
+    isMobileMenuOpen, 
+    setMobileMenuOpen 
+  } = useAppStore();
   const [isInitializing, setIsInitializing] = React.useState(true);
   const router = useRouter();
 
@@ -53,11 +61,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           // If token exists but Zustand is empty (e.g. hard refresh), restore session
           let authUser;
           if (isSubdomain) {
-            // Might be a client hitting their portal, or an IA master hitting their own portal.
-            // Wait, does getCurrentClient return IA Master? No, getCurrentClient hits the client DB. 
-            // So if `isSubdomain` is true, we should probably try the route that matches their token.
-            // Let's first try `getCurrentUser` for IAMasters visiting their own dashboard, 
-            // if that fails, they might be a client, so try `getCurrentClient`.
             try {
                authUser = await AuthService.getCurrentUser();
             } catch (userErr) {
@@ -101,21 +104,31 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <TooltipProvider>
       <div className="min-h-screen bg-background">
-        {/* Sidebar */}
+        {/* Mobile Sidebar */}
+        <Sheet open={isMobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+          <SheetContent side="left" className="p-0 w-64 border-r-0 bg-sidebar">
+            <div className="flex flex-col h-full border-r border-border">
+              <SidebarContent />
+            </div>
+          </SheetContent>
+        </Sheet>
+
+        {/* Desktop Sidebar */}
         <DashboardSidebar />
 
         {/* Main Content Area */}
         <div
           className={cn(
             "flex flex-col transition-all duration-300 ease-in-out",
-            sidebarCollapsed ? "ml-[68px]" : "ml-64"
+            "ml-0 md:ml-64",
+            sidebarCollapsed ? "md:ml-[68px]" : "md:ml-60"
           )}
         >
           {/* Top Navigation */}
           <Topbar />
 
           {/* Page Content */}
-          <main className="flex-1 p-6">{children}</main>
+          <main className="flex-1 p-4 md:p-6">{children}</main>
         </div>
       </div>
     </TooltipProvider>

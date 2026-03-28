@@ -97,31 +97,12 @@ const BOTTOM_NAV_ITEMS = [
 ];
 
 // ── Component ───────────────────────────────────────
-export function DashboardSidebar() {
+export function SidebarContent() {
   const pathname = usePathname();
-  const { sidebarCollapsed, toggleSidebar } = useAppStore();
+  const { sidebarCollapsed } = useAppStore();
 
   return (
-    <aside
-      className={cn(
-        "fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-border bg-sidebar transition-all duration-300 ease-in-out",
-        sidebarCollapsed ? "w-[68px]" : "w-60"
-      )}
-    >
-      {/* ── Collapse Toggle on Border ── */}
-      <Button
-        variant="outline"
-        size="icon"
-        onClick={toggleSidebar}
-        className="absolute -right-3.5 top-1/2 z-50 h-7 w-7 -translate-y-1/2 rounded-full hidden md:flex"
-      >
-        {sidebarCollapsed ? (
-          <ChevronRight className="h-4 w-4" />
-        ) : (
-          <ChevronLeft className="h-4 w-4" />
-        )}
-      </Button>
-
+    <>
       {/* ── Logo ── */}
       <div className="flex h-16 items-center gap-2 px-4">
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg overflow-hidden bg-primary">
@@ -144,7 +125,6 @@ export function DashboardSidebar() {
           if (item.href === "/") {
             isActive = pathname === "/";
           } else if (item.href === "/master") {
-            // Only active if exactly /master or /master/clients/etc, BUT NOT /master/developer
             isActive = pathname === "/master" || (pathname.startsWith("/master") && !pathname.startsWith("/master/developer"));
           } else {
             isActive = pathname.startsWith(item.href);
@@ -216,6 +196,35 @@ export function DashboardSidebar() {
           return linkContent;
         })}
       </div>
+    </>
+  );
+}
+
+export function DashboardSidebar() {
+  const { sidebarCollapsed, toggleSidebar } = useAppStore();
+
+  return (
+    <aside
+      className={cn(
+        "fixed left-0 top-0 z-40 hidden h-screen flex-col border-r border-border bg-sidebar transition-all duration-300 ease-in-out md:flex",
+        sidebarCollapsed ? "w-[68px]" : "w-60"
+      )}
+    >
+      {/* ── Collapse Toggle on Border ── */}
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={toggleSidebar}
+        className="absolute -right-3.5 top-1/2 z-50 h-7 w-7 -translate-y-1/2 rounded-full hidden md:flex"
+      >
+        {sidebarCollapsed ? (
+          <ChevronRight className="h-4 w-4" />
+        ) : (
+          <ChevronLeft className="h-4 w-4" />
+        )}
+      </Button>
+
+      <SidebarContent />
     </aside>
   );
 }

@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { Bell, Search, LogOut, User, ChevronDown } from "lucide-react";
+import { Bell, Search, LogOut, User, ChevronDown, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -21,7 +21,7 @@ import { ThemeToggle } from "@/components/shared/ThemeToggle";
 
 export function Topbar() {
   const router = useRouter();
-  const { user, clearUser } = useAppStore();
+  const { user, clearUser, setMobileMenuOpen } = useAppStore();
 
   const handleLogout = async () => {
     try {
@@ -39,18 +39,30 @@ export function Topbar() {
     : "U";
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/80 px-6 backdrop-blur-md">
-      {/* ── Search Bar ── */}
-      <div className="relative w-full max-w-md">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Search transactions, accounts..."
-          className="pl-10"
-        />
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/80 px-4 md:px-6 backdrop-blur-md">
+      <div className="flex items-center gap-4">
+        {/* ── Mobile Menu Toggle ── */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="md:hidden"
+          onClick={() => setMobileMenuOpen(true)}
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+
+        {/* ── Search Bar ── */}
+        <div className="relative hidden w-full max-w-md sm:block">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search transactions, accounts..."
+            className="pl-10"
+          />
+        </div>
       </div>
 
       {/* ── Right Actions ── */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 md:gap-3">
         <ThemeToggle />
         
         {/* Notifications */}
