@@ -18,6 +18,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { MasterDataService, ClientCreate } from "@/core/services/master.service";
 import { IAMasterService, Employee } from "@/core/services/ia-master.service";
 import { toast } from "sonner";
@@ -209,14 +216,23 @@ export default function ClientRegistrationForm({
   };
 
   return (
-    <div className="max-w-6xl mx-auto py-8 px-4">
-      <div className="flex items-center gap-4 mb-8">
-        <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full shadow-sm">
-          <ArrowLeft className="w-5 h-5" />
+    <div className="max-w-6xl mx-auto py-6 md:py-8 px-4">
+      <div className="flex items-center gap-4 mb-6 md:mb-8">
+        <Button 
+          variant="outline" 
+          size="icon" 
+          onClick={() => router.back()} 
+          className="rounded-full w-10 h-10 border-primary/20 bg-background/50 hover:bg-primary/10 hover:border-primary/30 transition-all shrink-0 shadow-sm"
+        >
+          <ArrowLeft className="w-5 h-5 text-primary" />
         </Button>
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{isEdit ? `Editing: ${formData.client_name}` : 'New Client Registration'}</h1>
-          <p className="text-muted-foreground">{isEdit ? 'Update the client information in your secure private database.' : 'Complete the SEBI-mandated onboarding process for your new client.'}</p>
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            {isEdit ? `Editing: ${formData.client_name}` : 'New Client Registration'}
+          </h1>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 line-clamp-1">
+            {isEdit ? 'Update the client information in your secure private database.' : 'Complete the onboarding process.'}
+          </p>
         </div>
       </div>
 
@@ -224,25 +240,27 @@ export default function ClientRegistrationForm({
         <CardContent className="p-0">
           <form onSubmit={handleSubmit}>
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="w-full h-auto p-0 flex flex-wrap bg-muted/30 border-b border-primary/10 rounded-none">
-                <TabsTrigger value="personal" className="flex-1 py-4 gap-2 data-[state=active]:bg-primary/5 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
-                  <UserPlus className="w-4 h-4" /> Personal
-                </TabsTrigger>
-                <TabsTrigger value="financial" className="flex-1 py-4 gap-2 data-[state=active]:bg-primary/5 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
-                  <CreditCard className="w-4 h-4" /> Financial
-                </TabsTrigger>
-                <TabsTrigger value="bank" className="flex-1 py-4 gap-2 data-[state=active]:bg-primary/5 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
-                  <Building className="w-4 h-4" /> Banking
-                </TabsTrigger>
-                <TabsTrigger value="investment" className="flex-1 py-4 gap-2 data-[state=active]:bg-primary/5 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
-                  <TrendingUp className="w-4 h-4" /> Investment
-                </TabsTrigger>
-                <TabsTrigger value="compliance" className="flex-1 py-4 gap-2 data-[state=active]:bg-primary/5 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
-                  <ShieldCheck className="w-4 h-4" /> Compliance
-                </TabsTrigger>
-              </TabsList>
+              <div className="w-full overflow-x-auto scrollbar-none bg-muted/30 border-b border-primary/10">
+                <TabsList className="min-w-max h-auto p-0 flex bg-transparent rounded-none">
+                  <TabsTrigger value="personal" className="px-6 py-4 gap-2 data-[state=active]:bg-primary/5 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none text-xs sm:text-sm transition-all">
+                    <UserPlus className="w-4 h-4" /> Personal
+                  </TabsTrigger>
+                  <TabsTrigger value="financial" className="px-6 py-4 gap-2 data-[state=active]:bg-primary/5 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none text-xs sm:text-sm transition-all">
+                    <CreditCard className="w-4 h-4" /> Financial
+                  </TabsTrigger>
+                  <TabsTrigger value="bank" className="px-6 py-4 gap-2 data-[state=active]:bg-primary/5 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none text-xs sm:text-sm transition-all">
+                    <Building className="w-4 h-4" /> Banking
+                  </TabsTrigger>
+                  <TabsTrigger value="investment" className="px-6 py-4 gap-2 data-[state=active]:bg-primary/5 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none text-xs sm:text-sm transition-all">
+                    <TrendingUp className="w-4 h-4" /> Investment
+                  </TabsTrigger>
+                  <TabsTrigger value="compliance" className="px-6 py-4 gap-2 data-[state=active]:bg-primary/5 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none text-xs sm:text-sm transition-all">
+                    <ShieldCheck className="w-4 h-4" /> Compliance
+                  </TabsTrigger>
+                </TabsList>
+              </div>
 
-              <div className="p-8 pb-12 min-h-[500px]">
+              <div className="p-4 sm:p-8 pb-12 min-h-[500px]">
                 <TabsContent value="personal" className="space-y-6 mt-0">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
@@ -281,12 +299,22 @@ export default function ClientRegistrationForm({
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
                     <div className="space-y-2">
                         <Label>Residential Status *</Label>
-                        <select name="residential_status" value={formData.residential_status} onChange={handleChange} required className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                            <option value="Resident Individual">Resident Individual</option>
-                            <option value="Non-Resident Indian">Non-Resident Indian</option>
-                            <option value="Person of Indian Origin">Person of Indian Origin</option>
-                            <option value="Foreign National">Foreign National</option>
-                        </select>
+                        <Select 
+                          name="residential_status" 
+                          value={formData.residential_status} 
+                          onValueChange={(val) => setFormData(prev => ({ ...prev, residential_status: val }))}
+                          required
+                        >
+                          <SelectTrigger className="w-full bg-background/50 border-primary/20">
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-card border-primary/20">
+                            <SelectItem value="Resident Individual">Resident Individual</SelectItem>
+                            <SelectItem value="Non-Resident Indian">Non-Resident Indian</SelectItem>
+                            <SelectItem value="Person of Indian Origin">Person of Indian Origin</SelectItem>
+                            <SelectItem value="Foreign National">Foreign National</SelectItem>
+                          </SelectContent>
+                        </Select>
                     </div>
                     {formData.residential_status === "Resident Individual" ? (
                       <div className="space-y-2">
@@ -329,22 +357,40 @@ export default function ClientRegistrationForm({
                     </div>
                     <div className="space-y-2">
                         <Label>Gender *</Label>
-                        <select name="gender" value={formData.gender} onChange={handleChange} required className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background">
-                            <option value="">Select</option>
-                            <option value="Male">Male</option>
-                            <option value="Female">Female</option>
-                            <option value="Other">Other</option>
-                        </select>
+                        <Select 
+                          name="gender" 
+                          value={formData.gender} 
+                          onValueChange={(val) => setFormData(prev => ({ ...prev, gender: val }))}
+                          required
+                        >
+                          <SelectTrigger className="w-full bg-background/50 border-primary/20">
+                            <SelectValue placeholder="Select" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-card border-primary/20">
+                            <SelectItem value="Male">Male</SelectItem>
+                            <SelectItem value="Female">Female</SelectItem>
+                            <SelectItem value="Other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
                     </div>
                     <div className="space-y-2">
                         <Label>Marital Status *</Label>
-                        <select name="marital_status" value={formData.marital_status} onChange={handleChange} required className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                            <option value="">Select</option>
-                            <option value="Single">Single</option>
-                            <option value="Married">Married</option>
-                            <option value="Divorced">Divorced</option>
-                            <option value="Widowed">Widowed</option>
-                        </select>
+                        <Select 
+                          name="marital_status" 
+                          value={formData.marital_status} 
+                          onValueChange={(val) => setFormData(prev => ({ ...prev, marital_status: val }))}
+                          required
+                        >
+                          <SelectTrigger className="w-full bg-background/50 border-primary/20">
+                            <SelectValue placeholder="Select" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-card border-primary/20">
+                            <SelectItem value="Single">Single</SelectItem>
+                            <SelectItem value="Married">Married</SelectItem>
+                            <SelectItem value="Divorced">Divorced</SelectItem>
+                            <SelectItem value="Widowed">Widowed</SelectItem>
+                          </SelectContent>
+                        </Select>
                     </div>
                   </div>
 
@@ -375,20 +421,40 @@ export default function ClientRegistrationForm({
                     </div>
                     <div className="space-y-2">
                       <Label>PEP Status *</Label>
-                      <select name="pep_status" value={formData.pep_status} onChange={handleChange} required className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                        <option value="Not a PEP">Not a PEP</option>
-                        <option value="PEP">Politically Exposed Person</option>
-                        <option value="Family Member of PEP">Family Member of PEP</option>
-                        <option value="Close Associate of PEP">Close Associate of PEP</option>
-                      </select>
+                      <Select 
+                        name="pep_status" 
+                        value={formData.pep_status} 
+                        onValueChange={(val) => setFormData(prev => ({ ...prev, pep_status: val }))}
+                        required
+                      >
+                        <SelectTrigger className="w-full bg-background/50 border-primary/20">
+                          <SelectValue placeholder="Select Status" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-card border-primary/20">
+                          <SelectItem value="Not a PEP">Not a PEP</SelectItem>
+                          <SelectItem value="PEP">Politically Exposed Person</SelectItem>
+                          <SelectItem value="Family Member of PEP">Family Member of PEP</SelectItem>
+                          <SelectItem value="Close Associate of PEP">Close Associate of PEP</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-2">
                       <Label>FATCA Compliance *</Label>
-                      <select name="fatca_compliance" value={formData.fatca_compliance} onChange={handleChange} required className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                        <option value="FATCA Compliant">FATCA Compliant</option>
-                        <option value="Non-Compliant">Non-Compliant</option>
-                        <option value="Not Applicable">Not Applicable</option>
-                      </select>
+                      <Select 
+                        name="fatca_compliance" 
+                        value={formData.fatca_compliance} 
+                        onValueChange={(val) => setFormData(prev => ({ ...prev, fatca_compliance: val }))}
+                        required
+                      >
+                        <SelectTrigger className="w-full bg-background/50 border-primary/20">
+                          <SelectValue placeholder="Select Compliance" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-card border-primary/20">
+                          <SelectItem value="FATCA Compliant">FATCA Compliant</SelectItem>
+                          <SelectItem value="Non-Compliant">Non-Compliant</SelectItem>
+                          <SelectItem value="Not Applicable">Not Applicable</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
 
@@ -407,20 +473,23 @@ export default function ClientRegistrationForm({
 
                   <div className="space-y-2">
                     <Label>Assigned Professional (Employee/Partner) *</Label>
-                    <select 
+                    <Select 
                       name="assigned_employee_id" 
                       value={formData.assigned_employee_id} 
-                      onChange={handleChange} 
-                      required 
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                      onValueChange={(val) => setFormData(prev => ({ ...prev, assigned_employee_id: val }))}
+                      required
                     >
-                      <option value="">Select Professional</option>
-                      {employees.map((emp) => (
-                        <option key={emp.id} value={emp.id}>
-                          {emp.name_of_employee} ({emp.designation})
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger className="w-full bg-background/50 border-primary/20">
+                        <SelectValue placeholder="Select Professional" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-card border-primary/20">
+                        {employees.map((emp) => (
+                          <SelectItem key={emp.id} value={emp.id}>
+                            {emp.name_of_employee} ({emp.designation})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <p className="text-[10px] text-muted-foreground">Select the Employee or Partner providing advisory services to this client.</p>
                   </div>
                 </TabsContent>
@@ -439,15 +508,24 @@ export default function ClientRegistrationForm({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label>Source of Income *</Label>
-                      <select name="income_source" value={formData.income_source} onChange={handleChange} required className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                        <option value="">Select Source</option>
-                        <option value="Salaried">Salaried</option>
-                        <option value="Business">Business</option>
-                        <option value="Professional">Professional</option>
-                        <option value="Agriculture">Agriculture</option>
-                        <option value="Investments">Investments</option>
-                        <option value="Other">Other</option>
-                      </select>
+                      <Select 
+                        name="income_source" 
+                        value={formData.income_source} 
+                        onValueChange={(val) => setFormData(prev => ({ ...prev, income_source: val }))}
+                        required
+                      >
+                        <SelectTrigger className="w-full bg-background/50 border-primary/20">
+                          <SelectValue placeholder="Select Source" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-card border-primary/20">
+                          <SelectItem value="Salaried">Salaried</SelectItem>
+                          <SelectItem value="Business">Business</SelectItem>
+                          <SelectItem value="Professional">Professional</SelectItem>
+                          <SelectItem value="Agriculture">Agriculture</SelectItem>
+                          <SelectItem value="Investments">Investments</SelectItem>
+                          <SelectItem value="Other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-2">
                       <Label>Occupation *</Label>
@@ -503,22 +581,41 @@ export default function ClientRegistrationForm({
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label>Risk Profile *</Label>
-                      <select name="risk_profile" value={formData.risk_profile} onChange={handleChange} required className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                        <option value="Conservative">Conservative</option>
-                        <option value="Moderate">Moderate</option>
-                        <option value="Medium">Medium</option>
-                        <option value="Aggressive">Aggressive</option>
-                        <option value="Very Aggressive">Very Aggressive</option>
-                      </select>
+                      <Select 
+                        name="risk_profile" 
+                        value={formData.risk_profile} 
+                        onValueChange={(val) => setFormData(prev => ({ ...prev, risk_profile: val }))}
+                        required
+                      >
+                        <SelectTrigger className="w-full bg-background/50 border-primary/20">
+                          <SelectValue placeholder="Select Profile" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-card border-primary/20">
+                          <SelectItem value="Conservative">Conservative</SelectItem>
+                          <SelectItem value="Moderate">Moderate</SelectItem>
+                          <SelectItem value="Medium">Medium</SelectItem>
+                          <SelectItem value="Aggressive">Aggressive</SelectItem>
+                          <SelectItem value="Very Aggressive">Very Aggressive</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-2">
                       <Label>Investment Horizon *</Label>
-                      <select name="investment_horizon" value={formData.investment_horizon} onChange={handleChange} required className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                        <option value="">Select Horizon</option>
-                        <option value="Short Term">Short Term (1-3 years)</option>
-                        <option value="Medium Term">Medium Term (3-7 years)</option>
-                        <option value="Long Term">Long Term (7+ years)</option>
-                      </select>
+                      <Select 
+                        name="investment_horizon" 
+                        value={formData.investment_horizon} 
+                        onValueChange={(val) => setFormData(prev => ({ ...prev, investment_horizon: val }))}
+                        required
+                      >
+                        <SelectTrigger className="w-full bg-background/50 border-primary/20">
+                          <SelectValue placeholder="Select Horizon" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-card border-primary/20">
+                          <SelectItem value="Short Term">Short Term (1-3 years)</SelectItem>
+                          <SelectItem value="Medium Term">Medium Term (3-7 years)</SelectItem>
+                          <SelectItem value="Long Term">Long Term (7+ years)</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -528,22 +625,40 @@ export default function ClientRegistrationForm({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label>Investment Experience *</Label>
-                      <select name="investment_experience" value={formData.investment_experience} onChange={handleChange} required className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                        <option value="">Select Experience</option>
-                        <option value="Beginner">Beginner (0-2 years)</option>
-                        <option value="Intermediate">Intermediate (2-5 years)</option>
-                        <option value="Experienced">Experienced (5-10 years)</option>
-                        <option value="Expert">Expert (10+ years)</option>
-                      </select>
+                      <Select 
+                        name="investment_experience" 
+                        value={formData.investment_experience} 
+                        onValueChange={(val) => setFormData(prev => ({ ...prev, investment_experience: val }))}
+                        required
+                      >
+                        <SelectTrigger className="w-full bg-background/50 border-primary/20">
+                          <SelectValue placeholder="Select Experience" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-card border-primary/20">
+                          <SelectItem value="Beginner">Beginner (0-2 years)</SelectItem>
+                          <SelectItem value="Intermediate">Intermediate (2-5 years)</SelectItem>
+                          <SelectItem value="Experienced">Experienced (5-10 years)</SelectItem>
+                          <SelectItem value="Expert">Expert (10+ years)</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-2">
                       <Label>Liquidity Needs *</Label>
-                      <select name="liquidity_needs" value={formData.liquidity_needs} onChange={handleChange} required className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                        <option value="">Select Needs</option>
-                        <option value="Low">Low (can lock funds for long term)</option>
-                        <option value="Medium">Medium (some funds may be needed)</option>
-                        <option value="High">High (regular need for liquid funds)</option>
-                      </select>
+                      <Select 
+                        name="liquidity_needs" 
+                        value={formData.liquidity_needs} 
+                        onValueChange={(val) => setFormData(prev => ({ ...prev, liquidity_needs: val }))}
+                        required
+                      >
+                        <SelectTrigger className="w-full bg-background/50 border-primary/20">
+                          <SelectValue placeholder="Select Needs" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-card border-primary/20">
+                          <SelectItem value="Low">Low (can lock funds for long term)</SelectItem>
+                          <SelectItem value="Medium">Medium (some funds may be needed)</SelectItem>
+                          <SelectItem value="High">High (regular need for liquid funds)</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                 </TabsContent>
@@ -577,14 +692,22 @@ export default function ClientRegistrationForm({
                         </div>
                         <div className="space-y-2">
                           <Label>Referral Source</Label>
-                          <select name="referral_source" value={formData.referral_source} onChange={handleChange} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                            <option value="">Select Source</option>
-                            <option value="Existing Client">Existing Client</option>
-                            <option value="Friend/Family">Friend/Family</option>
-                            <option value="Online Search">Online Search</option>
-                            <option value="Advertisement">Advertisement</option>
-                            <option value="Other">Other</option>
-                          </select>
+                          <Select 
+                            name="referral_source" 
+                            value={formData.referral_source} 
+                            onValueChange={(val) => setFormData(prev => ({ ...prev, referral_source: val }))}
+                          >
+                            <SelectTrigger className="w-full bg-background/50 border-primary/20">
+                              <SelectValue placeholder="Select Source" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-card border-primary/20">
+                              <SelectItem value="Existing Client">Existing Client</SelectItem>
+                              <SelectItem value="Friend/Family">Friend/Family</SelectItem>
+                              <SelectItem value="Online Search">Online Search</SelectItem>
+                              <SelectItem value="Advertisement">Advertisement</SelectItem>
+                              <SelectItem value="Other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
                       </div>
                     </div>
@@ -627,12 +750,12 @@ export default function ClientRegistrationForm({
                 </TabsContent>
               </div>
 
-              <div className="p-8 border-t border-primary/10 bg-muted/20 flex items-center justify-between">
-                <Button type="button" variant="outline" onClick={() => router.back()} disabled={loading} className="px-8 border-primary/20">
+              <div className="p-6 sm:p-8 border-t border-primary/10 bg-muted/20 flex flex-col-reverse sm:flex-row items-center justify-between gap-4">
+                <Button type="button" variant="outline" onClick={() => router.back()} disabled={loading} className="w-full sm:w-auto px-8 border-primary/20 h-11 sm:h-auto">
                   Cancel
                 </Button>
                 
-                <div className="flex gap-4">
+                <div className="flex gap-4 w-full sm:w-auto">
                   {activeTab !== "compliance" ? (
                     <Button 
                       type="button" 
@@ -640,13 +763,14 @@ export default function ClientRegistrationForm({
                         const tabs = ["personal", "financial", "bank", "investment", "compliance"];
                         const nextIndex = tabs.indexOf(activeTab) + 1;
                         setActiveTab(tabs[nextIndex]);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
                       }}
-                      className="px-10"
+                      className="w-full sm:px-10 h-11 sm:h-auto"
                     >
                       Next Step
                     </Button>
                   ) : (
-                    <Button type="submit" disabled={loading} className="px-12 gap-2 h-12 text-lg font-bold shadow-lg shadow-primary/20">
+                    <Button type="submit" disabled={loading} className="w-full sm:px-12 gap-2 h-12 text-lg font-bold shadow-lg shadow-primary/20">
                       {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (isEdit ? <CheckCircle2 className="w-5 h-5" /> : <UserPlus className="w-5 h-5" />)}
                       {loading ? (isEdit ? "Updating..." : "Registering...") : (isEdit ? "Update Client" : "Finalize Registration")}
                     </Button>

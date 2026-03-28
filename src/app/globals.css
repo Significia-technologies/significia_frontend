@@ -115,6 +115,15 @@
   .glass {
     @apply bg-card/60 backdrop-blur-md border border-white/10 dark:border-white/5;
   }
+  
+  .scrollbar-none {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+  
+  .scrollbar-none::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
+  }
 }
 
 @layer base {
