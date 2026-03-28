@@ -8,7 +8,7 @@ import { useAppStore } from "@/store/useAppStore";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { AuthService } from "@/core/services/auth.service";
 
 interface DashboardLayoutProps {
@@ -26,6 +26,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   } = useAppStore();
   const [isInitializing, setIsInitializing] = React.useState(true);
   const router = useRouter();
+  const pathname = usePathname();
+
+  // Close mobile menu on route change
+  React.useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname, setMobileMenuOpen]);
 
   React.useEffect(() => {
     const initAuth = async () => {
