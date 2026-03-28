@@ -24,6 +24,14 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { getAssetUrl } from "@/core/api/api-utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
 
 interface IAMasterFormProps {
   connectorId: string;
@@ -246,7 +254,7 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
   };
 
   return (
-    <div className="max-w-7xl mx-auto py-6 px-4 animate-in fade-in duration-500">
+    <div className="max-w-7xl mx-auto py-6 px-3 sm:px-6 animate-in fade-in duration-500">
       <div className="flex items-center gap-4 mb-6">
         <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full h-8 w-8">
           <ArrowLeft className="w-4 h-4" />
@@ -264,39 +272,39 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
         <CardContent className="p-0">
           <form onSubmit={handleSubmit}>
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <div className="px-6 pt-4 bg-muted/30 border-b border-primary/10">
-                <TabsList className="bg-transparent h-auto p-0 gap-8 flex justify-start border-none">
+              <div className="px-4 sm:px-6 pt-4 bg-muted/30 border-b border-primary/10">
+                <TabsList className="bg-transparent h-auto p-0 gap-6 sm:gap-8 flex justify-start border-none overflow-x-auto scrollbar-none flex-nowrap pb-1">
                   <TabsTrigger 
                     value="basic" 
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent pb-3 px-1 text-sm font-semibold"
+                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent pb-3 px-1 text-sm font-semibold whitespace-nowrap"
                   >
                     Basic Info
                   </TabsTrigger>
                   <TabsTrigger 
                     value="bank" 
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent pb-3 px-1 text-sm font-semibold"
+                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent pb-3 px-1 text-sm font-semibold whitespace-nowrap"
                   >
                     Bank Details
                   </TabsTrigger>
                   <TabsTrigger 
                     value="docs" 
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent pb-3 px-1 text-sm font-semibold"
+                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent pb-3 px-1 text-sm font-semibold whitespace-nowrap"
                   >
                     Documents
                   </TabsTrigger>
                   <TabsTrigger 
                     value="employees" 
                     disabled={isSinglePersonEntity}
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent pb-3 px-1 text-sm font-semibold"
+                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent pb-3 px-1 text-sm font-semibold whitespace-nowrap"
                   >
                     {personLabelPlural}
                   </TabsTrigger>
                 </TabsList>
               </div>
 
-              <div className="p-6">
+              <div className="p-4 sm:p-6">
                 <TabsContent value="basic" className="space-y-6 mt-0">
-                  <div className="grid grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label>Name of Investment Advisor *</Label>
                       <Input name="name_of_ia" value={formData.name_of_ia} onChange={handleChange} required className="bg-background/50" />
@@ -319,20 +327,23 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
                     </div>
                     <div className="space-y-2">
                       <Label>Nature of Entity *</Label>
-                      <select 
+                      <Select 
                         name="nature_of_entity" 
                         value={formData.nature_of_entity} 
-                        onChange={handleChange}
+                        onValueChange={(value) => setFormData((prev) => ({ ...prev, nature_of_entity: value }))}
                         required
-                        className="flex h-10 w-full rounded-md border border-primary/10 bg-background/50 px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        <option value="">Select Nature</option>
-                        <option value="individual">Individual</option>
-                        <option value="proprietorship">Proprietorship</option>
-                        <option value="partnership">Partnership</option>
-                        <option value="llp">LLP</option>
-                        <option value="body">Body Corporate</option>
-                      </select>
+                        <SelectTrigger className="w-full bg-background/50 border-primary/10">
+                          <SelectValue placeholder="Select Nature" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="individual">Individual</SelectItem>
+                          <SelectItem value="proprietorship">Proprietorship</SelectItem>
+                          <SelectItem value="partnership">Partnership</SelectItem>
+                          <SelectItem value="llp">LLP</SelectItem>
+                          <SelectItem value="body">Body Corporate</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
 
@@ -341,7 +352,7 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
                     <Input name="name_of_entity" value={formData.name_of_entity} onChange={handleChange} placeholder="e.g. Acme Financial LLC" className="bg-background/50" />
                   </div>
 
-                  <div className="grid grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     <div className="space-y-2">
                       <Label>IA Reg Number *</Label>
                       <Input 
@@ -368,7 +379,7 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
                     <Textarea name="registered_address" value={formData.registered_address} onChange={handleChange} required className="min-h-[100px] bg-background/50" />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label>Contact Number *</Label>
                       <Input type="tel" name="registered_contact_number" value={formData.registered_contact_number} onChange={handleChange} required className="bg-background/50" />
@@ -381,7 +392,7 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
                 </TabsContent>
 
                 <TabsContent value="bank" className="space-y-6 mt-0">
-                  <div className="grid grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label>Bank Account Number *</Label>
                       <Input name="bank_account_number" value={formData.bank_account_number} onChange={handleChange} required className="bg-background/50" />
@@ -391,7 +402,7 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
                       <Input name="bank_name" value={formData.bank_name} onChange={handleChange} required className="bg-background/50" />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label>Bank Branch *</Label>
                       <Input name="bank_branch" value={formData.bank_branch} onChange={handleChange} required className="bg-background/50" />
@@ -417,15 +428,15 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
 
                   <div className="grid grid-cols-1 gap-8">
                     <div className="space-y-3">
-                      <div className="flex justify-between items-end">
-                        <Label className="text-base">IA Registration Certificate *</Label>
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-2">
+                        <Label className="text-base text-nowrap">IA Registration Certificate *</Label>
                         {initialData?.ia_certificate_path && (
                           <div className="flex items-center gap-2">
                             <span className="text-[10px] text-primary font-medium flex items-center gap-1">
                               <FileCheck className="w-3 h-3" />
-                              Already uploaded: {getFileName(initialData.ia_certificate_path)}
+                              <span className="truncate max-w-[150px] sm:max-w-none">Already uploaded: {getFileName(initialData.ia_certificate_path)}</span>
                             </span>
-                            <Button type="button" variant="ghost" size="icon" className="h-5 w-5 text-primary" onClick={() => window.open(getAssetUrl(initialData.ia_certificate_path), '_blank')}>
+                            <Button type="button" variant="ghost" size="icon" className="h-5 w-5 text-primary flex-shrink-0" onClick={() => window.open(getAssetUrl(initialData.ia_certificate_path), '_blank')}>
                               <ExternalLink className="w-3 h-3" />
                             </Button>
                           </div>
@@ -434,15 +445,15 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
                       <Input type="file" name="ia_certificate" onChange={handleFileChange} accept=".png,.jpg,.jpeg,.pdf" required={!initialData} className="bg-background/50 file:bg-primary/10 file:text-primary file:border-none file:rounded-md file:mr-4 file:px-4 cursor-pointer" />
                     </div>
                     <div className="space-y-3">
-                      <div className="flex justify-between items-end">
-                        <Label className="text-base">IA Signature *</Label>
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-2">
+                        <Label className="text-base text-nowrap">IA Signature *</Label>
                         {initialData?.ia_signature_path && (
                           <div className="flex items-center gap-2">
                             <span className="text-[10px] text-primary font-medium flex items-center gap-1">
                               <FileCheck className="w-3 h-3" />
-                              Already uploaded: {getFileName(initialData.ia_signature_path)}
+                              <span className="truncate max-w-[150px] sm:max-w-none">Already uploaded: {getFileName(initialData.ia_signature_path)}</span>
                             </span>
-                            <Button type="button" variant="ghost" size="icon" className="h-5 w-5 text-primary" onClick={() => window.open(getAssetUrl(initialData.ia_signature_path), '_blank')}>
+                            <Button type="button" variant="ghost" size="icon" className="h-5 w-5 text-primary flex-shrink-0" onClick={() => window.open(getAssetUrl(initialData.ia_signature_path), '_blank')}>
                               <ExternalLink className="w-3 h-3" />
                             </Button>
                           </div>
@@ -451,15 +462,15 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
                       <Input type="file" name="ia_signature" onChange={handleFileChange} accept=".png,.jpg,.jpeg" required={!initialData} className="bg-background/50 file:bg-primary/10 file:text-primary file:border-none file:rounded-md file:mr-4 file:px-4 cursor-pointer" />
                     </div>
                     <div className="space-y-3">
-                      <div className="flex justify-between items-end">
-                        <Label className="text-base">IA Logo *</Label>
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-2">
+                        <Label className="text-base text-nowrap">IA Logo *</Label>
                         {initialData?.ia_logo_path && (
                           <div className="flex items-center gap-2">
                             <span className="text-[10px] text-primary font-medium flex items-center gap-1">
                               <FileCheck className="w-3 h-3" />
-                              Already uploaded: {getFileName(initialData.ia_logo_path)}
+                              <span className="truncate max-w-[150px] sm:max-w-none">Already uploaded: {getFileName(initialData.ia_logo_path)}</span>
                             </span>
-                            <Button type="button" variant="ghost" size="icon" className="h-5 w-5 text-primary" onClick={() => window.open(getAssetUrl(initialData.ia_logo_path), '_blank')}>
+                            <Button type="button" variant="ghost" size="icon" className="h-5 w-5 text-primary flex-shrink-0" onClick={() => window.open(getAssetUrl(initialData.ia_logo_path), '_blank')}>
                               <ExternalLink className="w-3 h-3" />
                             </Button>
                           </div>
@@ -471,7 +482,7 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
                 </TabsContent>
 
                 <TabsContent value="employees" className="space-y-6 mt-0">
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
                     <div>
                       <h3 className="text-xl font-bold">Associated {personLabelPlural}</h3>
                       <p className="text-sm text-muted-foreground">List of certified investment advisory representatives.</p>
@@ -493,14 +504,14 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
                     <div className="space-y-6">
                       {employees.map((emp, index) => (
                         <Card key={index} className="border-primary/10 bg-primary/5 overflow-hidden">
-                          <CardHeader className="py-3 px-6 bg-primary/10 border-b border-primary/10 flex flex-row items-center justify-between">
+                          <CardHeader className="py-3 px-4 sm:px-6 bg-primary/10 border-b border-primary/10 flex flex-row items-center justify-between">
                             <CardTitle className="text-sm font-bold uppercase tracking-wider text-primary">{personLabel} Record #{index + 1}</CardTitle>
                             <Button type="button" variant="ghost" size="icon" onClick={() => removeEmployee(index)} className="text-destructive h-8 w-8 hover:bg-destructive/10">
                               <Trash2 className="w-4 h-4" />
                             </Button>
                           </CardHeader>
-                          <CardContent className="p-6 space-y-6">
-                            <div className="grid grid-cols-2 gap-6">
+                          <CardContent className="p-4 sm:p-6 space-y-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                               <div className="space-y-2">
                                 <Label>Full Name</Label>
                                 <Input value={emp.name_of_employee} onChange={(e) => handleEmployeeChange(index, "name_of_employee", e.target.value)} required className="bg-background/50" />
@@ -522,7 +533,7 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
                               </div>
                             </div>
                             
-                            <div className="grid grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                               <div className="space-y-2">
                                 <Label>Designation</Label>
                                 <Input value={emp.designation} onChange={(e) => handleEmployeeChange(index, "designation", e.target.value)} required className="bg-background/50" />
@@ -533,7 +544,7 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
                               </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                               <div className="space-y-2">
                                 <Label className="text-[10px] uppercase font-bold text-muted-foreground">Reg Date</Label>
                                 <Input type="date" value={emp.date_of_registration} onChange={(e) => handleEmployeeChange(index, "date_of_registration", e.target.value)} required className="bg-background/50" />
@@ -575,9 +586,9 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
                 </TabsContent>
               </div>
 
-              <div className="p-8 border-t border-primary/10 bg-muted/20 flex flex-row items-center justify-between">
-                <div className="flex gap-2">
-                  <Button type="button" variant="ghost" onClick={() => router.back()} disabled={loading} className="px-6">
+              <div className="p-4 sm:p-8 border-t border-primary/10 bg-muted/20 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-6">
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button type="button" variant="ghost" onClick={() => router.back()} disabled={loading} className="px-6 w-full sm:w-auto">
                     Discard Changes
                   </Button>
                   {activeTab !== "basic" && (
@@ -589,14 +600,14 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
                         const prevIndex = tabs.indexOf(activeTab) - 1;
                         setActiveTab(tabs[prevIndex]);
                       }}
-                      className="border-primary/20"
+                      className="border-primary/20 w-full sm:w-auto"
                     >
                       Previous
                     </Button>
                   )}
                 </div>
                 
-                <div className="flex gap-4">
+                <div className="flex flex-col sm:flex-row gap-4">
                   {activeTab !== "employees" && (
                     <Button 
                       type="button" 
@@ -611,13 +622,13 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
                         }
                         setActiveTab(tabs[nextIndex]);
                       }}
-                      className="px-8 border-primary/30"
+                      className="px-8 border-primary/30 w-full sm:w-auto py-6"
                     >
                       Next Step
                     </Button>
                   )}
                   {(activeTab === "employees" || (activeTab === "docs" && isSinglePersonEntity)) && (
-                    <Button type="submit" className="gap-2 px-10 bg-primary hover:bg-primary/90 text-lg py-6" disabled={loading || iaNumberExists}>
+                    <Button type="submit" className="gap-2 px-10 bg-primary hover:bg-primary/90 text-lg py-6 w-full sm:w-auto" disabled={loading || iaNumberExists}>
                       {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <FileCheck className="w-5 h-5" />}
                       {loading ? "Saving Records..." : "Save Master Entry"}
                     </Button>
