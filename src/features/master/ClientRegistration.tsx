@@ -484,7 +484,7 @@ export default function ClientRegistrationForm({
                       </SelectTrigger>
                       <SelectContent className="bg-card border-primary/20">
                         {employees.map((emp) => (
-                          <SelectItem key={emp.id} value={emp.id}>
+                          <SelectItem key={emp.id} value={emp.id || ""}>
                             {emp.name_of_employee} ({emp.designation})
                           </SelectItem>
                         ))}
