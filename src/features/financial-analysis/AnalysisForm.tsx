@@ -308,7 +308,7 @@ All calculations are based on the assumptions provided and are illustrative in n
   );
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 pb-20">
+    <div className="max-w-5xl mx-auto space-y-6 pb-20 px-4 sm:px-0">
       {/* Header Badge */}
       <div className="flex justify-center">
         <Badge variant="outline" className="px-6 py-2 bg-primary/5 text-primary border-primary/20 rounded-full font-bold tracking-wider animate-pulse">
@@ -317,8 +317,8 @@ All calculations are based on the assumptions provided and are illustrative in n
       </div>
 
       <Card className="border-primary/20 shadow-2xl bg-card/60 backdrop-blur-xl overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-primary/10 to-transparent border-b border-primary/10 p-8">
-          <div className="flex justify-between items-start">
+        <CardHeader className="bg-gradient-to-r from-primary/10 to-transparent border-b border-primary/10 p-4 sm:p-8">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
             <div className="space-y-1">
               <CardTitle className="text-3xl font-black tracking-tight flex items-center gap-3">
                 <Calculator className="w-8 h-8 text-primary" />
@@ -343,7 +343,7 @@ All calculations are based on the assumptions provided and are illustrative in n
           </div>
         </CardHeader>
 
-        <CardContent className="p-8">
+        <CardContent className="p-4 sm:p-8">
           {/* STEP 1: BASIC INFO & SPOUSE */}
           {step === 1 && (
             <div className="space-y-10 animate-in fade-in slide-in-from-right-4 duration-500">
@@ -376,7 +376,7 @@ All calculations are based on the assumptions provided and are illustrative in n
                   </div>
                   <div className="space-y-2 opacity-80">
                     <Label>Client Code / IA Details</Label>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       <div className="h-9 px-3 flex items-center rounded-md border border-input bg-muted/20 text-xs overflow-hidden truncate">
                         {displayInfo.clientCode || "Code"}
                       </div>
@@ -463,7 +463,7 @@ All calculations are based on the assumptions provided and are illustrative in n
                 
                 <div className="space-y-4">
                   {formData.children?.map((child, idx) => (
-                    <div key={idx} className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 rounded-xl bg-primary/5 border border-primary/10 relative group">
+                    <div key={idx} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 p-4 rounded-xl bg-primary/5 border border-primary/10 relative group">
                       <div className="space-y-1">
                         <Label className="text-[10px] uppercase opacity-50">Child Name</Label>
                         <Input value={child.name} onChange={e => updateChild(idx, 'name', e.target.value)} className="h-9" />
@@ -514,7 +514,7 @@ All calculations are based on the assumptions provided and are illustrative in n
               {/* Section 5: Annual Expenses */}
               <div>
                 <SectionHeader title="5. Annual Expenses (₹)" icon={CreditCard} number="5" />
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-4">
                   {[
                     { key: 'hh', label: 'Household & Groceries' },
                     { key: 'med', label: 'Medical & Healthcare' },
@@ -601,7 +601,7 @@ All calculations are based on the assumptions provided and are illustrative in n
                         >
                           <Trash2 className="h-3 w-3 text-destructive" />
                         </Button>
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div className="space-y-1">
                             <Label className="text-[10px] uppercase opacity-50">Label</Label>
                             <Input 
@@ -647,7 +647,7 @@ All calculations are based on the assumptions provided and are illustrative in n
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Life & Medical */}
                 <div className="space-y-6">
-                  <div className="grid grid-cols-2 gap-4 p-4 rounded-xl bg-blue-500/5 border border-blue-500/10">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-blue-500/5 border border-blue-500/10">
                     <div className="space-y-1">
                       <Label className="text-xs text-blue-600 font-bold">Life Insurance Cover</Label>
                       <Input type="number" min={0} placeholder="0" value={formData.insurance.life_cover === 0 ? "" : formData.insurance.life_cover} onChange={e => handleInputChange('insurance.life_cover', e.target.value === "" ? 0 : parseFloat(e.target.value))} />
@@ -657,7 +657,7 @@ All calculations are based on the assumptions provided and are illustrative in n
                       <Input type="number" min={0} placeholder="0" value={formData.insurance.life_premium === 0 ? "" : formData.insurance.life_premium} onChange={e => handleInputChange('insurance.life_premium', e.target.value === "" ? 0 : parseFloat(e.target.value))} />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4 p-4 rounded-xl bg-green-500/5 border border-green-500/10">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-green-500/5 border border-green-500/10">
                     <div className="space-y-1">
                       <Label className="text-xs text-green-600 font-bold">Health Insurance Cover</Label>
                       <Input type="number" min={0} placeholder="0" value={formData.insurance.med_cover === 0 ? "" : formData.insurance.med_cover} onChange={e => handleInputChange('insurance.med_cover', e.target.value === "" ? 0 : parseFloat(e.target.value))} />
@@ -671,7 +671,7 @@ All calculations are based on the assumptions provided and are illustrative in n
 
                 {/* Vehicle & Other */}
                 <div className="space-y-6">
-                  <div className="grid grid-cols-2 gap-4 p-4 rounded-xl bg-zinc-500/5 border border-zinc-500/10">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-zinc-500/5 border border-zinc-500/10">
                     <div className="space-y-1">
                       <Label className="text-xs opacity-70">Vehicle Insurance Cover</Label>
                       <Input type="number" min={0} placeholder="0" value={formData.insurance.veh_cover === 0 ? "" : formData.insurance.veh_cover} onChange={e => handleInputChange('insurance.veh_cover', e.target.value === "" ? 0 : parseFloat(e.target.value))} />
@@ -681,7 +681,7 @@ All calculations are based on the assumptions provided and are illustrative in n
                       <Input type="number" min={0} placeholder="0" value={formData.insurance.veh_premium === 0 ? "" : formData.insurance.veh_premium} onChange={e => handleInputChange('insurance.veh_premium', e.target.value === "" ? 0 : parseFloat(e.target.value))} />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4 p-4 rounded-xl bg-zinc-500/5 border border-zinc-500/10">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-zinc-500/5 border border-zinc-500/10">
                     <div className="space-y-1">
                       <Label className="text-xs opacity-70">Other General Insurance Cover</Label>
                       <Input type="number" min={0} placeholder="0" value={formData.insurance.other_cover === 0 ? "" : formData.insurance.other_cover} onChange={e => handleInputChange('insurance.other_cover', e.target.value === "" ? 0 : parseFloat(e.target.value))} />
@@ -695,9 +695,9 @@ All calculations are based on the assumptions provided and are illustrative in n
               </div>
 
               {/* Medical Bonus */}
-              <div className="bg-orange-500/5 border border-orange-500/10 p-6 rounded-2xl flex items-center gap-6">
+              <div className="bg-orange-500/5 border border-orange-500/10 p-4 sm:p-6 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center gap-6">
                 <AlertCircle className="w-8 h-8 text-orange-500 opacity-40 shrink-0" />
-                <div className="grid grid-cols-2 gap-6 flex-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 flex-1">
                   <div className="space-y-2">
                     <Label className="text-sm font-bold">Health Insurance Bonus Years</Label>
                     <Input type="number" min={0} placeholder="0" value={formData.medical_bonus_years === 0 ? "" : formData.medical_bonus_years} onChange={e => handleTopLevelChange('medical_bonus_years', e.target.value === "" ? 0 : parseFloat(e.target.value))} />
@@ -765,7 +765,7 @@ All calculations are based on the assumptions provided and are illustrative in n
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                 <div className="space-y-6">
                   <SectionHeader title="10. Child Goals" icon={GraduationCap} number="10" />
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1">
                       <Label className="text-xs">Education Corpus Needed (Today)</Label>
                       <Input type="number" min={0} placeholder="0" value={formData.assumptions.child_education_corpus === 0 ? "" : Math.round(formData.assumptions.child_education_corpus)} onChange={e => handleInputChange('assumptions.child_education_corpus', e.target.value === "" ? 0 : parseFloat(e.target.value))} />
@@ -850,26 +850,26 @@ All calculations are based on the assumptions provided and are illustrative in n
           )}
         </CardContent>
 
-        <CardFooter className="bg-primary/10 backdrop-blur-md p-8 flex justify-between border-t border-primary/20">
-          <Button variant="ghost" onClick={onCancel} className="font-bold hover:bg-destructive/10 hover:text-destructive">
+        <CardFooter className="bg-primary/10 backdrop-blur-md p-4 sm:p-8 flex flex-col sm:flex-row justify-between border-t border-primary/20 gap-6">
+          <Button variant="ghost" onClick={onCancel} className="font-bold hover:bg-destructive/10 hover:text-destructive w-full sm:w-auto">
             CANCEL AND EXIT
           </Button>
           
-          <div className="flex gap-4">
+          <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
             {step > 1 && (
-              <Button variant="outline" onClick={prevStep} className="gap-2 border-primary/20">
+              <Button variant="outline" onClick={prevStep} className="gap-2 border-primary/20 w-full sm:w-auto">
                 <ChevronLeft className="w-4 h-4" /> PREVIOUS STEP
               </Button>
             )}
             
             {step < 6 ? (
-              <Button className="gap-2 bg-primary px-10 font-black shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all" onClick={nextStep}>
+              <Button className="gap-2 bg-primary px-10 font-black shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all w-full sm:w-auto" onClick={nextStep}>
                 CONTINUE TO STEP {step + 1} <ChevronRight className="w-4 h-4" />
               </Button>
             ) : (
               <Button 
                 onClick={handleSubmit} 
-                className="gap-2 bg-green-600 hover:bg-green-700 px-12 font-black shadow-xl shadow-green-500/30 hover:scale-105 active:scale-95 transition-all"
+                className="gap-2 bg-green-600 hover:bg-green-700 px-12 font-black shadow-xl shadow-green-500/30 hover:scale-105 active:scale-95 transition-all w-full sm:w-auto"
                 disabled={loading}
               >
                 {loading ? <span className="animate-spin mr-2">◌</span> : <Save className="w-4 h-4 mr-2" />}

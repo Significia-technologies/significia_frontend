@@ -122,12 +122,12 @@ export function AnalysisList({ connectorId, clientId, onSelectAnalysis, onCreate
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <Button variant="outline" className="gap-2 border-primary/20">
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          <Button variant="outline" className="gap-2 border-primary/20 flex-1 md:flex-none">
             <Filter className="w-4 h-4" />
             Filters
           </Button>
-          <Button className="gap-2 bg-primary hover:bg-primary/90" onClick={onCreateNew}>
+          <Button className="gap-2 bg-primary hover:bg-primary/90 flex-1 md:flex-none whitespace-nowrap" onClick={onCreateNew}>
             <PlusCircle className="w-4 h-4" />
             New Analysis
           </Button>
@@ -136,110 +136,112 @@ export function AnalysisList({ connectorId, clientId, onSelectAnalysis, onCreate
 
       <Card className="border-primary/10 overflow-hidden bg-card/50 backdrop-blur-sm shadow-xl">
         <CardContent className="p-0">
-          <Table>
-            <TableHeader className="bg-primary/5">
-              <TableRow>
-                <TableHead className="font-semibold text-primary">Client</TableHead>
-                <TableHead className="font-semibold text-primary">Analysis Date</TableHead>
-                <TableHead className="font-semibold text-primary">Net Worth (Calc)</TableHead>
-                <TableHead className="font-semibold text-primary">HLV Gap (Income)</TableHead>
-                <TableHead className="text-right font-semibold text-primary">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <TableRow key={i}>
-                    <TableCell><Skeleton className="h-5 w-40" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-20 float-right" /></TableCell>
-                  </TableRow>
-                ))
-              ) : filteredAnalyses.length === 0 ? (
+          <div className="overflow-x-auto scrollbar-none">
+            <Table>
+              <TableHeader className="bg-primary/5">
                 <TableRow>
-                  <TableCell colSpan={5} className="h-64 text-center">
-                    <div className="flex flex-col items-center justify-center text-muted-foreground">
-                      <div className="p-4 rounded-full bg-muted/50 mb-4">
-                        <TrendingUp className="w-8 h-8 opacity-20" />
-                      </div>
-                      <p className="text-lg font-medium">No financial analyses found</p>
-                      <p className="text-sm">Start by creating a new analysis for your clients.</p>
-                    </div>
-                  </TableCell>
+                  <TableHead className="font-semibold text-primary whitespace-nowrap">Client</TableHead>
+                  <TableHead className="font-semibold text-primary whitespace-nowrap">Analysis Date</TableHead>
+                  <TableHead className="font-semibold text-primary whitespace-nowrap">Net Worth (Calc)</TableHead>
+                  <TableHead className="font-semibold text-primary whitespace-nowrap">HLV Gap (Income)</TableHead>
+                  <TableHead className="text-right font-semibold text-primary whitespace-nowrap">Actions</TableHead>
                 </TableRow>
-              ) : (
-                filteredAnalyses.map((analysis) => {
-                  const client = clients[analysis.client_id];
-                  return (
-                    <TableRow key={analysis.id} className="hover:bg-primary/5 transition-colors group">
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span className="font-bold text-foreground">{client?.client_name || "Unknown"}</span>
-                          <span className="text-xs text-muted-foreground">{client?.client_code || "N/A"}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Calendar className="w-4 h-4" />
-                          {format(new Date(analysis.created_at), "dd MMM yyyy")}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className="font-mono text-sm">
-                          ₹{new Intl.NumberFormat('en-IN').format(analysis.calculations?.net_worth || 0)}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="bg-orange-500/10 text-orange-600 border-orange-500/20">
-                          ₹{new Intl.NumberFormat('en-IN').format(analysis.hlv_data?.additional_life_cover_needed_income || 0)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-8 gap-1.5 hover:bg-primary/10 text-primary"
-                            onClick={() => onSelectAnalysis(analysis.id)}
-                          >
-                            <Eye className="w-4 h-4" />
-                            View
-                          </Button>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10">
-                                <MoreHorizontal className="w-4 h-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-48 border-primary/20">
-                              <DropdownMenuItem className="gap-2" onClick={() => handleDownload(analysis.id, 'pdf', client?.client_name || 'Client')}>
-                                {downloading === `${analysis.id}-pdf` ? (
-                                  <span className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                                ) : (
-                                  <FileText className="w-4 h-4" />
-                                )}
-                                Download PDF
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="gap-2" onClick={() => handleDownload(analysis.id, 'word', client?.client_name || 'Client')}>
-                                {downloading === `${analysis.id}-word` ? (
-                                  <span className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                                ) : (
-                                  <FileText className="w-4 h-4" />
-                                )}
-                                Download Word
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </TableCell>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell><Skeleton className="h-5 w-40" /></TableCell>
+                      <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                      <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                      <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                      <TableCell><Skeleton className="h-5 w-20 float-right" /></TableCell>
                     </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
+                  ))
+                ) : filteredAnalyses.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="h-64 text-center">
+                      <div className="flex flex-col items-center justify-center text-muted-foreground">
+                        <div className="p-4 rounded-full bg-muted/50 mb-4">
+                          <TrendingUp className="w-8 h-8 opacity-20" />
+                        </div>
+                        <p className="text-lg font-medium">No financial analyses found</p>
+                        <p className="text-sm">Start by creating a new analysis for your clients.</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredAnalyses.map((analysis) => {
+                    const client = clients[analysis.client_id];
+                    return (
+                      <TableRow key={analysis.id} className="hover:bg-primary/5 transition-colors group">
+                        <TableCell>
+                          <div className="flex flex-col min-w-[150px]">
+                            <span className="font-bold text-foreground">{client?.client_name || "Unknown"}</span>
+                            <span className="text-xs text-muted-foreground">{client?.client_code || "N/A"}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground whitespace-nowrap">
+                            <Calendar className="w-4 h-4" />
+                            {format(new Date(analysis.created_at), "dd MMM yyyy")}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <span className="font-mono text-sm whitespace-nowrap">
+                            ₹{new Intl.NumberFormat('en-IN').format(analysis.calculations?.net_worth || 0)}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="bg-orange-500/10 text-orange-600 border-orange-500/20 whitespace-nowrap">
+                            ₹{new Intl.NumberFormat('en-IN').format(analysis.hlv_data?.additional_life_cover_needed_income || 0)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-8 gap-1.5 hover:bg-primary/10 text-primary"
+                              onClick={() => onSelectAnalysis(analysis.id)}
+                            >
+                              <Eye className="w-4 h-4" />
+                              View
+                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10">
+                                  <MoreHorizontal className="w-4 h-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-48 border-primary/20">
+                                <DropdownMenuItem className="gap-2" onClick={() => handleDownload(analysis.id, 'pdf', client?.client_name || 'Client')}>
+                                  {downloading === `${analysis.id}-pdf` ? (
+                                    <span className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                                  ) : (
+                                    <FileText className="w-4 h-4" />
+                                  )}
+                                  Download PDF
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className="gap-2" onClick={() => handleDownload(analysis.id, 'word', client?.client_name || 'Client')}>
+                                  {downloading === `${analysis.id}-word` ? (
+                                    <span className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                                  ) : (
+                                    <FileText className="w-4 h-4" />
+                                  )}
+                                  Download Word
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
       

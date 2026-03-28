@@ -108,7 +108,7 @@ export function AnalysisDashboard({ connectorId, result, clientName }: AnalysisD
   const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'];
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
+    <div className="space-y-8 animate-in fade-in duration-700 pb-10">
       {/* Header Actions */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
@@ -147,7 +147,7 @@ export function AnalysisDashboard({ connectorId, result, clientName }: AnalysisD
                 View Calculation
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+            <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[90vh] sm:max-h-[80vh] overflow-hidden flex flex-col">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
                   <BrainCircuit className="w-5 h-5 text-primary" />

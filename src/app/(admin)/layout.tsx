@@ -4,7 +4,7 @@ import { ShieldAlert } from "lucide-react";
 import Link from "next/link";
 
 export const metadata = {
-  title: "Admin Portal — RRFinance",
+  title: "Admin Portal — Significia",
 };
 
 export default function AdminRouteLayout({

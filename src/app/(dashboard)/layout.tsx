@@ -1,7 +1,7 @@
 import { DashboardLayout } from "@/components/layouts/DashboardLayout";
 
 export const metadata = {
-  title: "Dashboard — RRFinance",
+  title: "Dashboard — Significia",
 };
 
 export default function DashboardRouteLayout({
