@@ -7,8 +7,7 @@ import {
   RefreshCcw,
   PlusCircle,
   Database,
-  FileText,
-  ShieldCheck
+  FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AnalysisList } from "@/features/financial-analysis/AnalysisList";
@@ -20,19 +19,12 @@ import { MasterDataService, Client } from "@/core/services/master.service";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
-import { 
-  Tabs, 
-  TabsContent, 
-  TabsList, 
-  TabsTrigger 
-} from "@/components/ui/tabs";
-import { RiskProfileForm } from "@/features/financial-analysis/RiskProfileForm";
+
 
 type ViewState = "LIST" | "FORM" | "DASHBOARD";
 
 export default function FinancialAnalysisPage() {
   const [view, setView] = useState<ViewState>("LIST");
-  const [activeTab, setActiveTab] = useState("roadmap");
   const [loading, setLoading] = useState(true);
   const [connector, setConnector] = useState<Connector | null>(null);
   const [selectedResult, setSelectedResult] = useState<FinancialAnalysisResult | null>(null);
@@ -100,10 +92,9 @@ export default function FinancialAnalysisPage() {
   return (
     <div className="max-w-7xl mx-auto py-8 px-4 space-y-8">
       
-      {/* Dynamic Breadcrumbs / Navigation */}
       <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-primary/10 pb-6 gap-6">
         <div className="flex items-start sm:items-center gap-4">
-          {view !== "LIST" && activeTab === "roadmap" && (
+          {view !== "LIST" && (
             <Button variant="ghost" size="icon" onClick={() => setView("LIST")} className="rounded-full shrink-0">
               <ArrowLeft className="w-5 h-5" />
             </Button>
@@ -116,20 +107,14 @@ export default function FinancialAnalysisPage() {
               <span className="truncate">Financial Assistant</span>
             </h1>
             <p className="text-muted-foreground mt-1 text-sm sm:text-base leading-relaxed">
-              {activeTab === "roadmap" ? (
-                <>
-                  {view === "LIST" && "Analyze client portfolios and generate professional roadmap reports."}
-                  {view === "FORM" && "Run precise HLV and retirement calculations."}
-                  {view === "DASHBOARD" && `Detailed analysis for ${selectedClientName}`}
-                </>
-              ) : (
-                "Assess client investment risk tolerance with 16 comprehensive metrics."
-              )}
+              {view === "LIST" && "Analyze client portfolios and generate professional roadmap reports."}
+              {view === "FORM" && "Run precise HLV and retirement calculations."}
+              {view === "DASHBOARD" && `Detailed analysis for ${selectedClientName}`}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          {view === "LIST" && activeTab === "roadmap" && (
+          {view === "LIST" && (
             <>
               <Button 
                 variant="outline" 
@@ -144,50 +129,29 @@ export default function FinancialAnalysisPage() {
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 max-w-md mb-8">
-          <TabsTrigger value="roadmap" className="gap-2">
-            <TrendingUp className="w-4 h-4" />
-            Financial Roadmap
-          </TabsTrigger>
-          <TabsTrigger value="risk" className="gap-2">
-            <ShieldCheck className="w-4 h-4" />
-            Risk Profile
-          </TabsTrigger>
-        </TabsList>
+      {view === "LIST" && (
+        <AnalysisList 
+          connectorId={connector.id} 
+          onSelectAnalysis={handleSelectAnalysis}
+          onCreateNew={() => setView("FORM")}
+        />
+      )}
 
-        <TabsContent value="roadmap" className="animate-in fade-in duration-500 m-0">
-          {view === "LIST" && (
-            <AnalysisList 
-              connectorId={connector.id} 
-              onSelectAnalysis={handleSelectAnalysis}
-              onCreateNew={() => setView("FORM")}
-            />
-          )}
+      {view === "FORM" && (
+        <AnalysisForm 
+          connectorId={connector.id} 
+          onSuccess={handleCreateSuccess}
+          onCancel={() => setView("LIST")}
+        />
+      )}
 
-          {view === "FORM" && (
-            <AnalysisForm 
-              connectorId={connector.id} 
-              onSuccess={handleCreateSuccess}
-              onCancel={() => setView("LIST")}
-            />
-          )}
-
-          {view === "DASHBOARD" && selectedResult && (
-            <AnalysisDashboard 
-              connectorId={connector.id} 
-              result={selectedResult}
-              clientName={selectedClientName}
-            />
-          )}
-        </TabsContent>
-
-        <TabsContent value="risk" className="animate-in fade-in duration-500 m-0">
-          <RiskProfileForm 
-            connectorId={connector.id}
-          />
-        </TabsContent>
-      </Tabs>
+      {view === "DASHBOARD" && selectedResult && (
+        <AnalysisDashboard 
+          connectorId={connector.id} 
+          result={selectedResult}
+          clientName={selectedClientName}
+        />
+      )}
 
     </div>
   );

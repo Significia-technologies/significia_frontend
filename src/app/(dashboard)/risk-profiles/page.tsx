@@ -14,10 +14,14 @@ import { ConnectorService, Connector } from "@/core/services/connector.service";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import Link from "next/link";
+import { RiskProfileForm } from "@/features/financial-analysis/RiskProfileForm";
+
+type ViewState = "HISTORY" | "FORM";
 
 export default function RiskProfilesPage() {
   const [loading, setLoading] = useState(true);
   const [connector, setConnector] = useState<Connector | null>(null);
+  const [view, setView] = useState<ViewState>("HISTORY");
 
   useEffect(() => {
     fetchConnector();
@@ -61,24 +65,37 @@ export default function RiskProfilesPage() {
     <div className="max-w-7xl mx-auto py-8 px-4 space-y-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-primary/10 pb-6 gap-6">
         <div className="flex items-center gap-4">
+          {view === "FORM" && (
+            <Button variant="ghost" size="icon" onClick={() => setView("HISTORY")} className="rounded-full shrink-0">
+              <History className="w-5 h-5" />
+            </Button>
+          )}
           <div className="p-2 rounded-xl bg-primary/10">
             <ShieldCheck className="w-8 h-8 text-primary" />
           </div>
           <div>
-            <h1 className="text-3xl font-black tracking-tight text-foreground uppercase">Risk Repository</h1>
-            <p className="text-muted-foreground text-sm font-medium">Manage and retrieve historical client risk assessments.</p>
+            <h1 className="text-3xl font-black tracking-tight text-foreground uppercase">
+              {view === "HISTORY" ? "Risk Repository" : "New Assessment"}
+            </h1>
+            <p className="text-muted-foreground text-sm font-medium">
+              {view === "HISTORY" ? "Manage and retrieve historical client risk assessments." : "Complete 16 metrics to determine client risk appetite."}
+            </p>
           </div>
         </div>
         
-        <Link href="/financial-analysis">
-          <Button className="gap-2 shadow-lg shadow-primary/20">
+        {view === "HISTORY" && (
+          <Button onClick={() => setView("FORM")} className="gap-2 shadow-lg shadow-primary/20">
             <PlusCircle className="w-4 h-4" />
             New Assessment
           </Button>
-        </Link>
+        )}
       </div>
 
-      <RiskProfileHistory connectorId={connector.id} />
+      {view === "HISTORY" ? (
+        <RiskProfileHistory connectorId={connector.id} />
+      ) : (
+        <RiskProfileForm connectorId={connector.id} />
+      )}
     </div>
   );
 }
