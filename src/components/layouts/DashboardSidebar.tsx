@@ -47,6 +47,11 @@ const NAV_ITEMS = [
     icon: BarChart3,
   },
   {
+    label: "Risk Profiles",
+    href: "/risk-profiles",
+    icon: ShieldCheck,
+  },
+  {
     label: "Security Basket",
     href: "/security",
     icon: ShieldCheck,

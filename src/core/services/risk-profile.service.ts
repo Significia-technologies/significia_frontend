@@ -16,6 +16,8 @@ export interface RiskAssessmentCalculateResponse {
 export interface RiskAssessmentCreate {
   client_code: string;
   answers: Record<string, string | Record<string, string>>;
+  discussion_notes?: string;
+  disclaimer_text?: string;
 }
 
 export interface SaveAssessmentResponse {
@@ -31,10 +33,12 @@ export interface SaveAssessmentResponse {
 export interface RiskAssessment {
   id: string;
   client_id: string;
-  total_score: number;
-  risk_tier: string;
-  answers: any;
-  recommendation?: string;
+  client_name?: string;
+  client_code?: string;
+  calculated_score: number;
+  assigned_risk_tier: string;
+  tier_recommendation?: string;
+  assessment_timestamp: string;
   created_at: string;
 }
 
@@ -62,9 +66,31 @@ export class RiskProfileService {
     return response.data;
   }
 
+  static async getAll(connectorId: string): Promise<RiskAssessment[]> {
+    const response = await httpClient.get<RiskAssessment[]>(
+      API_ENDPOINTS.RISK_PROFILE.LIST(connectorId)
+    );
+    return response.data;
+  }
+
   static async downloadPDF(connectorId: string, assessmentId: string, filename: string = "Risk_Profile.pdf"): Promise<void> {
     const response = await httpClient.get(
       API_ENDPOINTS.RISK_PROFILE.PDF(connectorId, assessmentId),
+      { responseType: 'blob' }
+    );
+    
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  }
+
+  static async downloadDOCX(connectorId: string, assessmentId: string, filename: string = "Risk_Profile.docx"): Promise<void> {
+    const response = await httpClient.get(
+      API_ENDPOINTS.RISK_PROFILE.DOCX(connectorId, assessmentId),
       { responseType: 'blob' }
     );
     

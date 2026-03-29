@@ -21,6 +21,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { MasterDataService } from "@/core/services/master.service";
 import { RiskProfileService, RiskAssessmentCalculateResponse } from "@/core/services/risk-profile.service";
 import { 
@@ -153,6 +161,9 @@ export function RiskProfileForm({ connectorId, clientId }: RiskProfileFormProps)
   const [result, setResult] = useState<RiskAssessmentCalculateResponse | null>(null);
   const [discussionNotes, setDiscussionNotes] = useState(RISK_PROFILE_DISCUSSION_INIT);
   const [disclaimer, setDisclaimer] = useState(RISK_PROFILE_DISCLAIMER);
+  
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [lastAssessmentId, setLastAssessmentId] = useState<string | null>(null);
 
   // Load client if ID provided
   useEffect(() => {
@@ -226,16 +237,30 @@ export function RiskProfileForm({ connectorId, clientId }: RiskProfileFormProps)
       const saveResp = await RiskProfileService.save(connectorId, {
         client_code: clientInfo.code,
         answers,
-        // Backend doesn't take notes yet in RiskAssessmentCreate, but we can extend if needed
+        discussion_notes: discussionNotes,
+        disclaimer_text: disclaimer
       });
-      toast.success("Risk assessment saved successfully!");
       
-      // Auto-download PDF
-      await RiskProfileService.downloadPDF(connectorId, saveResp.assessment_id, `Risk_Profile_${clientInfo.code}.pdf`);
+      setLastAssessmentId(saveResp.assessment_id);
+      setShowSuccessDialog(true);
+      toast.success("Risk assessment saved successfully!");
     } catch (error) {
       toast.error("Failed to save risk assessment");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const downloadFile = async (type: 'PDF' | 'DOCX') => {
+    if (!lastAssessmentId) return;
+    try {
+        if (type === 'PDF') {
+            await RiskProfileService.downloadPDF(connectorId, lastAssessmentId, `Risk_Profile_${clientInfo.code}.pdf`);
+        } else {
+            await RiskProfileService.downloadDOCX(connectorId, lastAssessmentId, `Risk_Profile_${clientInfo.code}.docx`);
+        }
+    } catch (error) {
+        toast.error(`Failed to download ${type}`);
     }
   };
 
@@ -569,6 +594,53 @@ export function RiskProfileForm({ connectorId, clientId }: RiskProfileFormProps)
           Significia Secured Risk Processing Pipeline v4.0
         </p>
       </div>
+
+      <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
+        <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-md border-primary/20">
+          <DialogHeader className="items-center text-center">
+            <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mb-4">
+              <CheckCircle2 className="w-10 h-10 text-green-500" />
+            </div>
+            <DialogTitle className="text-2xl font-black text-primary">Assessment Saved!</DialogTitle>
+            <DialogDescription className="font-medium">
+              Risk assessment for <span className="text-foreground font-black">{clientInfo.name}</span> has been stored securely in the vault.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid grid-cols-2 gap-4 py-6">
+            <Button 
+                variant="outline" 
+                className="h-24 flex flex-col gap-2 border-primary/10 hover:border-primary/40 hover:bg-primary/5 transition-all group"
+                onClick={() => downloadFile('PDF')}
+            >
+                <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <FileText className="w-4 h-4 text-red-500" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-widest">Download PDF</span>
+            </Button>
+            <Button 
+                variant="outline" 
+                className="h-24 flex flex-col gap-2 border-primary/10 hover:border-primary/40 hover:bg-primary/5 transition-all group"
+                onClick={() => downloadFile('DOCX')}
+            >
+                <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <FileText className="w-4 h-4 text-blue-500" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-widest">Download Word</span>
+            </Button>
+          </div>
+
+          <DialogFooter className="sm:justify-center">
+            <Button 
+                variant="ghost" 
+                className="text-[10px] font-black uppercase tracking-widest opacity-60 hover:opacity-100"
+                onClick={() => setShowSuccessDialog(false)}
+            >
+                Close & Finish
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

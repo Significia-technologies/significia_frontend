@@ -108,8 +108,10 @@ export const API_ENDPOINTS = {
   RISK_PROFILE: {
     CALCULATE: (connectorId: string) => `${API_BASE}/risk-profile/${connectorId}/calculate`,
     SAVE: (connectorId: string) => `${API_BASE}/risk-profile/${connectorId}/save`,
+    LIST: (connectorId: string) => `${API_BASE}/risk-profile/${connectorId}/assessments`,
     LATEST: (connectorId: string, clientCode: string) => `${API_BASE}/risk-profile/${connectorId}/client/${clientCode}/latest`,
     PDF: (connectorId: string, assessmentId: string) => `${API_BASE}/risk-profile/${connectorId}/assessment/${assessmentId}/pdf`,
+    DOCX: (connectorId: string, assessmentId: string) => `${API_BASE}/risk-profile/${connectorId}/assessment/${assessmentId}/docx`,
   },
 };
 
