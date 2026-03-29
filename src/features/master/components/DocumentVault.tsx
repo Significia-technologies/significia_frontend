@@ -17,6 +17,7 @@ interface DocumentVaultProps {
   clientId: string;
   documents: ClientDocumentResponse[];
   onUploadSuccess: () => void;
+  readOnly?: boolean;
 }
 
 const DOCUMENT_TYPES = [
@@ -31,7 +32,7 @@ const DOCUMENT_TYPES = [
   "Other"
 ];
 
-export function DocumentVault({ connectorId, clientId, documents, onUploadSuccess }: DocumentVaultProps) {
+export function DocumentVault({ connectorId, clientId, documents, onUploadSuccess, readOnly = false }: DocumentVaultProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selectedType, setSelectedType] = useState<string>("");
@@ -89,9 +90,11 @@ export function DocumentVault({ connectorId, clientId, documents, onUploadSucces
             </h2>
             <p className="text-sm text-muted-foreground mt-1">Secure repository for client verification files</p>
         </div>
-        <Button onClick={() => setIsModalOpen(true)} className="gap-2 shadow-md shadow-primary/20">
-          <Plus className="w-4 h-4" /> Upload Document
-        </Button>
+        {!readOnly && (
+            <Button onClick={() => setIsModalOpen(true)} className="gap-2 shadow-md shadow-primary/20">
+              <Plus className="w-4 h-4" /> Upload Document
+            </Button>
+        )}
       </div>
 
       {documents.length === 0 ? (
@@ -101,11 +104,13 @@ export function DocumentVault({ connectorId, clientId, documents, onUploadSucces
             </div>
             <h3 className="text-lg font-bold mb-2">The vault is empty</h3>
             <p className="text-muted-foreground text-center max-w-sm mb-6">
-                Upload PAN, Aadhar, and other mandatory documents to complete verification.
+                {readOnly ? "No registered documents found for this entity." : "Upload PAN, Aadhar, and other mandatory documents to complete verification."}
             </p>
-            <Button variant="outline" onClick={() => setIsModalOpen(true)} className="gap-2 border-primary/20 bg-card">
-                <UploadCloud className="w-4 h-4" /> Browse Files
-            </Button>
+            {!readOnly && (
+                <Button variant="outline" onClick={() => setIsModalOpen(true)} className="gap-2 border-primary/20 bg-card">
+                    <UploadCloud className="w-4 h-4" /> Browse Files
+                </Button>
+            )}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
