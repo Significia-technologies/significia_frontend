@@ -13,6 +13,14 @@ export interface Client {
   created_at: string;
   updated_at: string;
   assigned_employee_id?: string;
+  documents?: ClientDocumentResponse[];
+}
+
+export interface ClientDocumentResponse {
+  id: string;
+  document_type: string;
+  file_path: string;
+  uploaded_at: string;
 }
 
 export interface ClientCreate {
@@ -79,6 +87,7 @@ export interface ClientCreate {
   client_signature_path?: string;
   advisor_signature_path?: string;
   assigned_employee_id?: string;
+  documents?: ClientDocumentResponse[];
 }
 
 export class MasterDataService {
@@ -169,5 +178,22 @@ export class MasterDataService {
     document.body.appendChild(link);
     link.click();
     link.remove();
+  }
+
+  static async uploadDocument(connectorId: string, clientId: string, file: File, documentType: string): Promise<ClientDocumentResponse> {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("document_type", documentType);
+
+    const response = await httpClient.post<ClientDocumentResponse>(
+      API_ENDPOINTS.MASTER.CLIENTS.UPLOAD_DOCUMENT(connectorId, clientId),
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+    return response.data;
   }
 }

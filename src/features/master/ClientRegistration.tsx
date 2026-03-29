@@ -10,7 +10,9 @@ import {
   TrendingUp, 
   ShieldCheck,
   Loader2,
-  CheckCircle2
+  CheckCircle2,
+  FolderOpen,
+  UploadCloud
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,6 +40,17 @@ interface ClientRegistrationFormProps {
   isEdit?: boolean;
 }
 
+const REQUIRED_DOCUMENTS = [
+  "Signed Form",
+  "PAN Card",
+  "Aadhar Card",
+  "Cancelled Cheque",
+  "Photo (Passport size)",
+  "Address Proof",
+  "Income Proof",
+  "Signature"
+];
+
 export default function ClientRegistrationForm({ 
   connectorId, 
   initialData, 
@@ -49,6 +62,7 @@ export default function ClientRegistrationForm({
   const [showPreview, setShowPreview] = useState(false);
   const [activeTab, setActiveTab] = useState("personal");
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [pendingDocuments, setPendingDocuments] = useState<Record<string, File>>({});
 
   const [formData, setFormData] = useState<ClientCreate>(initialData || {
     email: "",
@@ -185,6 +199,16 @@ export default function ClientRegistrationForm({
       }
     }
     
+    // Document Validation
+    if (!isEdit) {
+        const missingDocs = REQUIRED_DOCUMENTS.filter(doc => !pendingDocuments[doc]);
+        if (missingDocs.length > 0) {
+            toast.error(`Missing mandatory documents: ${missingDocs.join(', ')}`);
+            setActiveTab("documents");
+            return;
+        }
+    }
+    
     setShowPreview(true);
   };
 
@@ -203,8 +227,18 @@ export default function ClientRegistrationForm({
           toast.success("Client updated successfully!");
           router.push(`/master/clients/${clientId}`);
       } else {
-          await MasterDataService.createClient(connectorId, submissionData);
-          toast.success("Client registered successfully!");
+          const client = await MasterDataService.createClient(connectorId, submissionData);
+          if (client.id && Object.keys(pendingDocuments).length > 0) {
+              toast.info("Registration saving. Uploading secure documents...", { duration: 5000 });
+              for (const [docType, file] of Object.entries(pendingDocuments)) {
+                  try {
+                      await MasterDataService.uploadDocument(connectorId, client.id, file, docType);
+                  } catch (e) {
+                      console.error(`Failed to upload ${docType}`, e);
+                  }
+              }
+          }
+          toast.success("Client registered and documents secured!");
           router.push("/master");
       }
     } catch (error: any) {
@@ -256,6 +290,9 @@ export default function ClientRegistrationForm({
                   </TabsTrigger>
                   <TabsTrigger value="compliance" className="px-6 py-4 gap-2 data-[state=active]:bg-primary/5 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none text-xs sm:text-sm transition-all">
                     <ShieldCheck className="w-4 h-4" /> Compliance
+                  </TabsTrigger>
+                  <TabsTrigger value="documents" className="px-6 py-4 gap-2 data-[state=active]:bg-primary/5 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none text-xs sm:text-sm transition-all">
+                    <FolderOpen className="w-4 h-4" /> Documents
                   </TabsTrigger>
                 </TabsList>
               </div>
@@ -748,6 +785,62 @@ export default function ClientRegistrationForm({
                     </CardContent>
                   </Card>
                 </TabsContent>
+
+                <TabsContent value="documents" className="space-y-6 mt-0">
+                  <div className="flex items-center gap-2 pb-2 border-b border-primary/10">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                      <FolderOpen className="w-4 h-4 text-primary" />
+                    </div>
+                    <div>
+                        <h3 className="font-semibold text-lg">Mandatory Documents</h3>
+                        <p className="text-xs text-muted-foreground">Please upload clear copies of all required documents.</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {REQUIRED_DOCUMENTS.map(docType => {
+                       const isImageOnly = ["Signature", "Photo (Passport size)", "Cancelled Cheque"].includes(docType);
+                       return (
+                       <div key={docType} className="border border-primary/20 rounded-lg p-4 bg-primary/5 cursor-pointer hover:border-primary/50 transition-colors flex flex-col items-center justify-center text-center min-h-[160px] relative" onClick={() => document.getElementById(`file-${docType.replace(/\s+/g, '-')}`)?.click()}>
+                           <input id={`file-${docType.replace(/\s+/g, '-')}`} type="file" className="hidden" accept={isImageOnly ? ".jpg,.jpeg" : ".pdf,.png,.jpg,.jpeg"} onChange={(e) => {
+                               if (e.target.files && e.target.files[0]) {
+                                   const file = e.target.files[0];
+                                   if (file.size > 5 * 1024 * 1024) {
+                                       toast.error(`${docType} exceeds maximum file size of 5MB.`);
+                                       e.target.value = "";
+                                       return;
+                                   }
+                                   if (isImageOnly && !file.type.match(/image\/jpe?g/)) {
+                                       toast.error(`${docType} must be in JPG/JPEG format.`);
+                                       // Reset the input value so user can try again
+                                       e.target.value = "";
+                                       return;
+                                   }
+                                   setPendingDocuments(prev => ({...prev, [docType]: file}));
+                               }
+                           }} onClick={(e) => e.stopPropagation()} />
+                           {pendingDocuments[docType] ? (
+                               <>
+                                  <div className="absolute top-2 right-2">
+                                      <CheckCircle2 className="w-5 h-5 text-green-500" />
+                                  </div>
+                                  <FileText className="w-8 h-8 text-primary mb-2" />
+                                  <p className="font-semibold text-sm max-w-[120px] truncate" title={pendingDocuments[docType].name}>{pendingDocuments[docType].name}</p>
+                                  <p className="text-xs text-green-600 mt-1 font-medium">Ready to secure</p>
+                               </>
+                           ) : (
+                               <>
+                                  <UploadCloud className="w-8 h-8 text-primary/40 mb-2" />
+                                  <p className="font-semibold text-sm">{docType} <span className="text-red-500">*</span></p>
+                                  <p className="text-[10px] text-muted-foreground mt-1 text-center font-medium opacity-80">
+                                      {isImageOnly ? "Must be JPG/JPEG (Max 5MB)" : "PDF, JPG, PNG (Max 5MB)"}
+                                  </p>
+                               </>
+                           )}
+                       </div>
+                    )})}
+                  </div>
+                </TabsContent>
               </div>
 
               <div className="p-6 sm:p-8 border-t border-primary/10 bg-muted/20 flex flex-col-reverse sm:flex-row items-center justify-between gap-4">
@@ -756,11 +849,11 @@ export default function ClientRegistrationForm({
                 </Button>
                 
                 <div className="flex gap-4 w-full sm:w-auto">
-                  {activeTab !== "compliance" ? (
+                  {activeTab !== "documents" ? (
                     <Button 
                       type="button" 
                       onClick={() => {
-                        const tabs = ["personal", "financial", "bank", "investment", "compliance"];
+                        const tabs = ["personal", "financial", "bank", "investment", "compliance", "documents"];
                         const nextIndex = tabs.indexOf(activeTab) + 1;
                         setActiveTab(tabs[nextIndex]);
                         window.scrollTo({ top: 0, behavior: 'smooth' });

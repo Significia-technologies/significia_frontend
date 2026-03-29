@@ -14,7 +14,8 @@ import {
   Phone,
   MapPin,
   Fingerprint,
-  Info
+  Info,
+  FolderOpen
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -39,6 +40,7 @@ import { AnalysisList } from "@/features/financial-analysis/AnalysisList";
 import { AnalysisForm } from "@/features/financial-analysis/AnalysisForm";
 import { AnalysisDashboard } from "@/features/financial-analysis/AnalysisDashboard";
 import { FinancialAnalysisResult, FinancialAnalysisService } from "@/core/services/financial-analysis.service";
+import { DocumentVault } from "./components/DocumentVault";
 
 interface ClientDetailProps {
   client: ClientCreate;
@@ -192,6 +194,9 @@ export default function ClientDetail({ client, connectorId }: ClientDetailProps)
                   </TabsTrigger>
                   <TabsTrigger value="analysis" className="px-6 py-4 gap-2 data-[state=active]:bg-primary/5 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none text-xs sm:text-sm transition-all">
                     <TrendingUp className="w-4 h-4 text-orange-500" /> Financial Analysis
+                  </TabsTrigger>
+                  <TabsTrigger value="vault" className="px-6 py-4 gap-2 data-[state=active]:bg-primary/5 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none text-xs sm:text-sm transition-all">
+                    <FolderOpen className="w-4 h-4 text-blue-500" /> Document Vault
                   </TabsTrigger>
               </TabsList>
             </div>
@@ -357,6 +362,19 @@ export default function ClientDetail({ client, connectorId }: ClientDetailProps)
                     connectorId={connectorId} 
                     clientId={client.id!} 
                     clientName={client.client_name} 
+                 />
+              </TabsContent>
+
+              <TabsContent value="vault" className="mt-0 space-y-8">
+                 <DocumentVault 
+                    connectorId={connectorId} 
+                    clientId={client.id!} 
+                    documents={currentClient.documents || []}
+                    onUploadSuccess={() => {
+                        MasterDataService.getClient(connectorId, client.id!).then(updatedClient => {
+                            setCurrentClient(updatedClient);
+                        }).catch(console.error);
+                    }}
                  />
               </TabsContent>
             </div>
