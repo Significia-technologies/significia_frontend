@@ -29,6 +29,7 @@ const DOCUMENT_TYPES = [
   "Cancelled Cheque",
   "Signed Form",
   "Client Signature",
+  "Financial Analysis Document",
   "Other"
 ];
 
