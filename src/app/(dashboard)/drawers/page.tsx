@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Folder, FolderOpen, ChevronRight, File, ArrowLeft, ShieldCheck, Users, Briefcase } from "lucide-react";
+import { Folder, FolderOpen, ChevronRight, File, ArrowLeft, ShieldCheck, Users, Briefcase, Search } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MasterDataService } from "@/core/services/master.service";
 import { IAMasterService } from "@/core/services/ia-master.service";
@@ -25,6 +26,7 @@ interface DrawerFolder {
 export default function DrawersPage() {
   const [loading, setLoading] = useState(true);
   const [folders, setFolders] = useState<DrawerFolder[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [connectorId, setConnectorId] = useState<string | null>(null);
   
   // State for Navigation: null = Root View (Folders), Folder = Inside Folder
@@ -139,36 +141,61 @@ export default function DrawersPage() {
   return (
     <div className="max-w-7xl mx-auto py-8 px-4 space-y-6 animate-in fade-in duration-500">
       {/* Breadcrumb Header */}
-      <div className="flex items-center gap-2 text-xl font-bold tracking-tight text-foreground border-b border-primary/10 pb-4">
-        <h1 
-            className={`flex items-center gap-2 cursor-pointer transition-colors ${activeFolder ? 'text-muted-foreground hover:text-foreground' : 'text-primary'}`}
-            onClick={() => setActiveFolder(null)}
-        >
-            <FolderOpen className="w-6 h-6" /> 
-            Drawers Dashboard
-        </h1>
-        {activeFolder && (
-            <>
-                <ChevronRight className="w-5 h-5 text-muted-foreground" />
-                <span className="text-primary flex items-center gap-2">
-                    {React.createElement(activeFolder.icon, { className: "w-5 h-5 fill-primary/10" })}
-                    {activeFolder.name}
-                </span>
-            </>
-        )}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-primary/10 pb-4">
+          <div className="flex items-center gap-2 text-xl font-bold tracking-tight text-foreground">
+            <h1 
+                className={`flex items-center gap-2 cursor-pointer transition-colors ${activeFolder ? 'text-muted-foreground hover:text-foreground' : 'text-primary'}`}
+                onClick={() => setActiveFolder(null)}
+            >
+                <FolderOpen className="w-6 h-6" /> 
+                Drawers Dashboard
+            </h1>
+            {activeFolder && (
+                <>
+                    <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                    <span className="text-primary flex items-center gap-2">
+                        {React.createElement(activeFolder.icon, { className: "w-5 h-5 fill-primary/10" })}
+                        {activeFolder.name}
+                    </span>
+                </>
+            )}
+          </div>
+
+          {!activeFolder && folders.length > 0 && (
+              <div className="relative w-full sm:w-80">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input 
+                      placeholder="Search directories by name or code..." 
+                      value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
+                      className="pl-9 h-10 border-primary/20 focus-visible:ring-primary/30 bg-background/50 backdrop-blur-sm"
+                  />
+              </div>
+          )}
       </div>
 
       {/* Root View - Global Folders */}
-      {!activeFolder ? (
-          folders.length === 0 ? (
+      {!activeFolder ? (() => {
+          const filteredFolders = folders.filter(f => 
+             f.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+             (f.code && f.code.toLowerCase().includes(searchQuery.toLowerCase()))
+          );
+
+          return folders.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 bg-primary/5 rounded-xl border border-primary/10 border-dashed">
                   <Folder className="w-16 h-16 text-primary/30 mb-4" />
                   <h3 className="text-lg font-bold">No Directories Available</h3>
                   <p className="text-muted-foreground">Register IA Master or Clients to populate drawers.</p>
               </div>
           ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {folders.map(folder => {
+              <div className="space-y-6">
+                {filteredFolders.length === 0 ? (
+                    <div className="text-center py-12 bg-primary/5 rounded-xl border border-primary/10 border-dashed">
+                        <p className="text-muted-foreground">No directories match your search.</p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                      {filteredFolders.map(folder => {
                     const isSystem = folder.type !== 'CLIENT';
                     const Icon = folder.icon;
                     return (
@@ -205,11 +232,13 @@ export default function DrawersPage() {
                                 </div>
                             </CardContent>
                         </Card>
-                    )
-                })}
+                      )
+                  })}
+                    </div>
+                )}
               </div>
-          )
-      ) : (
+          );
+      })() : (
           /* Inside Folder View */
           <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-300">
               <div className="flex items-center justify-between bg-primary/5 p-4 rounded-lg border border-primary/10">
