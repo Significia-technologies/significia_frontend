@@ -60,6 +60,8 @@ export const API_ENDPOINTS = {
       LIST: (connectorId: string) => `${API_BASE}/master/${connectorId}/clients`,
       CREATE: (connectorId: string) => `${API_BASE}/master/${connectorId}/clients`,
       DETAIL: (connectorId: string, id: string) => `${API_BASE}/master/${connectorId}/clients/${id}`,
+      CODE: (connectorId: string, code: string) => `${API_BASE}/master/${connectorId}/clients/code/${code}`,
+      PAN: (connectorId: string, pan: string) => `${API_BASE}/master/${connectorId}/clients/pan/${pan}`,
       UPDATE: (connectorId: string, id: string) => `${API_BASE}/master/${connectorId}/clients/${id}`,
       DELETE: (connectorId: string, id: string) => `${API_BASE}/master/${connectorId}/clients/${id}`,
       DOWNLOAD_REPORT: (connectorId: string, id: string) => `${API_BASE}/master/${connectorId}/clients/${id}/pdf`,
@@ -100,6 +102,14 @@ export const API_ENDPOINTS = {
     PDF: (connectorId: string, resultId: string) => `${API_BASE}/financial-analysis/${connectorId}/analysis/${resultId}/pdf`,
     WORD: (connectorId: string, resultId: string) => `${API_BASE}/financial-analysis/${connectorId}/analysis/${resultId}/word`,
     FORM: (connectorId: string) => `${API_BASE}/financial-analysis/${connectorId}/form`,
+  },
+
+  // ── Risk Profile ──────────────────────────────────
+  RISK_PROFILE: {
+    CALCULATE: (connectorId: string) => `${API_BASE}/risk-profile/${connectorId}/calculate`,
+    SAVE: (connectorId: string) => `${API_BASE}/risk-profile/${connectorId}/save`,
+    LATEST: (connectorId: string, clientCode: string) => `${API_BASE}/risk-profile/${connectorId}/client/${clientCode}/latest`,
+    PDF: (connectorId: string, assessmentId: string) => `${API_BASE}/risk-profile/${connectorId}/assessment/${assessmentId}/pdf`,
   },
 };
 

@@ -107,7 +107,14 @@ export class MasterDataService {
 
   static async getClientByPan(connectorId: string, pan: string): Promise<ClientCreate> {
     const response = await httpClient.get<ClientCreate>(
-      `${API_ENDPOINTS.MASTER.CLIENTS.LIST(connectorId)}/pan/${pan}`
+      API_ENDPOINTS.MASTER.CLIENTS.PAN(connectorId, pan)
+    );
+    return response.data;
+  }
+
+  static async getClientByCode(connectorId: string, code: string): Promise<ClientCreate> {
+    const response = await httpClient.get<ClientCreate>(
+      API_ENDPOINTS.MASTER.CLIENTS.CODE(connectorId, code)
     );
     return response.data;
   }
