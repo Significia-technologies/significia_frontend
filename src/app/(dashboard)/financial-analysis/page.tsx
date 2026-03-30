@@ -19,6 +19,8 @@ import { MasterDataService, Client } from "@/core/services/master.service";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
+
+
 type ViewState = "LIST" | "FORM" | "DASHBOARD";
 
 export default function FinancialAnalysisPage() {
@@ -90,7 +92,6 @@ export default function FinancialAnalysisPage() {
   return (
     <div className="max-w-7xl mx-auto py-8 px-4 space-y-8">
       
-      {/* Dynamic Breadcrumbs / Navigation */}
       <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-primary/10 pb-6 gap-6">
         <div className="flex items-start sm:items-center gap-4">
           {view !== "LIST" && (
@@ -125,38 +126,32 @@ export default function FinancialAnalysisPage() {
               </Button>
             </>
           )}
-          {/* <Button variant="outline" size="icon" onClick={fetchConnector}>
-            <RefreshCcw className="w-4 h-4" />
-          </Button> */}
         </div>
       </div>
 
-      {/* View Switcher */}
-      <div className="animate-in fade-in duration-500">
-        {view === "LIST" && (
-          <AnalysisList 
-            connectorId={connector.id} 
-            onSelectAnalysis={handleSelectAnalysis}
-            onCreateNew={() => setView("FORM")}
-          />
-        )}
+      {view === "LIST" && (
+        <AnalysisList 
+          connectorId={connector.id} 
+          onSelectAnalysis={handleSelectAnalysis}
+          onCreateNew={() => setView("FORM")}
+        />
+      )}
 
-        {view === "FORM" && (
-          <AnalysisForm 
-            connectorId={connector.id} 
-            onSuccess={handleCreateSuccess}
-            onCancel={() => setView("LIST")}
-          />
-        )}
+      {view === "FORM" && (
+        <AnalysisForm 
+          connectorId={connector.id} 
+          onSuccess={handleCreateSuccess}
+          onCancel={() => setView("LIST")}
+        />
+      )}
 
-        {view === "DASHBOARD" && selectedResult && (
-          <AnalysisDashboard 
-            connectorId={connector.id} 
-            result={selectedResult}
-            clientName={selectedClientName}
-          />
-        )}
-      </div>
+      {view === "DASHBOARD" && selectedResult && (
+        <AnalysisDashboard 
+          connectorId={connector.id} 
+          result={selectedResult}
+          clientName={selectedClientName}
+        />
+      )}
 
     </div>
   );
