@@ -22,6 +22,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -377,14 +378,25 @@ export function DynamicRiskForm({ connectorId, questionnaireId, questionnaire: i
                     </div>
                  </div>
 
-                 <div className="space-y-2">
-                    <Label className="text-[8px] font-bold uppercase tracking-widest opacity-20 ml-1">Discussion Metadata</Label>
-                    <textarea 
-                      value={discussionNotes}
-                      onChange={e => setDiscussionNotes(e.target.value)}
-                      className="w-full min-h-[60px] bg-white/[0.01] border border-white/5 rounded-lg p-3 text-[10px] font-bold focus:ring-1 focus:ring-primary/20 outline-none transition-all placeholder:opacity-20 text-foreground"
-                      placeholder="Add strategic session observations here..."
-                    />
+                 <div className="space-y-4">
+                    {questionnaire.disclaimer && (
+                      <div className="p-3 rounded-lg bg-red-500/5 border border-red-500/10 animate-in fade-in slide-in-from-bottom-2 duration-700">
+                        <Label className="text-[9px] font-black uppercase text-red-500/60 tracking-widest block mb-1">Legal Protocol Disclaimer</Label>
+                        <p className="text-[10px] leading-relaxed text-muted-foreground/80 italic font-medium">
+                          {questionnaire.disclaimer}
+                        </p>
+                      </div>
+                    )}
+                    
+                    <div className="space-y-2">
+                       <Label className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest pl-1">Discussion & Strategic Notes</Label>
+                       <Textarea 
+                          placeholder="Final observations or client context..."
+                          value={discussionNotes}
+                          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDiscussionNotes(e.target.value)}
+                          className="bg-white/[0.03] border-white/10 focus:border-primary/30 focus:ring-1 focus:ring-primary/10 text-white min-h-[80px] resize-none text-[11px] transition-all"
+                       />
+                    </div>
                  </div>
               </CardContent>
               <CardFooter className="px-5 py-3 bg-white/[0.02] border-t border-white/5 gap-3">

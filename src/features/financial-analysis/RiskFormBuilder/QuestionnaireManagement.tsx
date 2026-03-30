@@ -59,7 +59,16 @@ export function QuestionnaireManagement({ connectorId, onEdit, onView, onAddNew,
     setLoading(true);
     try {
       const data = await RiskProfileService.listQuestionnaires(connectorId);
-      setQuestionnaires(data);
+      // Prepend Sample Protocol (Hardcoded System Default)
+      const sampleProtocol = {
+        id: "sample-form",
+        portfolio_name: "Strategic Risk Assessment (Sample)",
+        status: "active",
+        is_system: true,
+        questions: Array(16).fill(0), // Dummy count for UI
+        created_at: new Date().toISOString()
+      };
+      setQuestionnaires([sampleProtocol, ...data]);
     } catch (error) {
       toast.error("Failed to load questionnaires");
     } finally {
@@ -103,6 +112,8 @@ export function QuestionnaireManagement({ connectorId, onEdit, onView, onAddNew,
         return <Badge variant="outline" className="text-amber-500 border-amber-500/20 bg-amber-500/5 gap-1.5 font-bold uppercase text-[8px] tracking-widest"><Clock className="w-2.5 h-2.5" /> Draft</Badge>;
       case 'archived':
         return <Badge variant="outline" className="text-muted-foreground border-muted-foreground/20 bg-muted/5 gap-1.5 font-bold uppercase text-[8px] tracking-widest"><Archive className="w-2.5 h-2.5" /> Archived</Badge>;
+      case 'system':
+        return <Badge className="bg-blue-500/10 text-blue-500 border-blue-500/20 hover:bg-blue-500/20 gap-1.5 font-bold uppercase text-[8px] tracking-widest pl-2 pr-1.5"><Layers className="w-2.5 h-2.5" /> System</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -174,12 +185,12 @@ export function QuestionnaireManagement({ connectorId, onEdit, onView, onAddNew,
                       </div>
                       <div>
                         <p className="text-[13px] font-black uppercase tracking-tight text-white/90 group-hover:text-primary transition-colors">{q.portfolio_name}</p>
-                        <p className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-tighter">System ID: {q.id.substring(0, 8)}</p>
+                        <p className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-tighter">{q.is_system ? 'Immutable Protocol' : `System ID: ${q.id.substring(0, 8)}`}</p>
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <StatusBadge status={q.status} />
+                    <StatusBadge status={q.is_system ? 'system' : q.status} />
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
@@ -198,10 +209,15 @@ export function QuestionnaireManagement({ connectorId, onEdit, onView, onAddNew,
                       <Button 
                         variant="outline" 
                         size="sm" 
-                        onClick={() => onEdit(q)}
-                        className="h-8 px-4 border-primary/30 bg-primary/10 hover:bg-primary text-primary hover:text-white font-black uppercase text-[8px] tracking-widest transition-all shadow-sm"
+                        onClick={() => !q.is_system && onEdit(q)}
+                        disabled={q.is_system}
+                        className={`h-8 px-4 font-black uppercase text-[8px] tracking-widest transition-all shadow-sm ${
+                          q.is_system 
+                          ? 'border-white/5 bg-white/5 text-white/20 cursor-not-allowed' 
+                          : 'border-primary/30 bg-primary/10 hover:bg-primary text-primary hover:text-white'
+                        }`}
                       >
-                        Configure
+                        {q.is_system ? 'System Lock' : 'Configure'}
                       </Button>
                       
                       <DropdownMenu>
@@ -210,30 +226,38 @@ export function QuestionnaireManagement({ connectorId, onEdit, onView, onAddNew,
                             <MoreVertical className="w-4 h-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48 bg-card/95 backdrop-blur-xl border-primary/10 p-1.5 shadow-2xl rounded-xl">
-                          <DropdownMenuItem onClick={() => onEdit(q)} className="gap-2.5 text-xs font-bold uppercase tracking-tight py-2.5 rounded-lg focus:bg-primary/10 focus:text-primary">
-                            <Edit3 className="w-4 h-4" /> Edit Definition
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => onView(q)} className="gap-2.5 text-xs font-bold uppercase tracking-tight py-2.5 rounded-lg focus:bg-primary/10 focus:text-primary">
-                            <Eye className="w-4 h-4" /> Preview Form
-                          </DropdownMenuItem>
+                         <DropdownMenuContent align="end" className="w-48 bg-card/95 backdrop-blur-xl border-primary/10 p-1.5 shadow-2xl rounded-xl">
+                          {!q.is_system && (
+                            <DropdownMenuItem onClick={() => onEdit(q)} className="gap-2.5 text-xs font-bold uppercase tracking-tight py-2.5 rounded-lg focus:bg-primary/10 focus:text-primary">
+                              <Edit3 className="w-4 h-4" /> Edit Definition
+                            </DropdownMenuItem>
+                          )}
+                          {!q.is_system && (
+                            <DropdownMenuItem onClick={() => onView(q)} className="gap-2.5 text-xs font-bold uppercase tracking-tight py-2.5 rounded-lg focus:bg-primary/10 focus:text-primary">
+                              <Eye className="w-4 h-4" /> Preview Form
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem onClick={() => handlePrint(q.id, q.portfolio_name)} className="gap-2.5 text-xs font-bold uppercase tracking-tight py-2.5 rounded-lg focus:bg-primary/10 focus:text-primary">
                             <Printer className="w-4 h-4" /> Print (Blank PDF)
                           </DropdownMenuItem>
-                          <DropdownMenuSeparator className="bg-primary/5" />
-                          {q.status !== 'active' ? (
-                            <DropdownMenuItem onClick={() => handleStatusChange(q.id, 'active')} className="gap-2.5 text-xs font-bold uppercase tracking-tight py-2.5 rounded-lg text-emerald-500 focus:bg-emerald-500/10 focus:text-emerald-500">
-                              <Power className="w-4 h-4" /> Activate Form
-                            </DropdownMenuItem>
-                          ) : (
-                            <DropdownMenuItem onClick={() => handleStatusChange(q.id, 'draft')} className="gap-2.5 text-xs font-bold uppercase tracking-tight py-2.5 rounded-lg text-amber-500 focus:bg-amber-500/10 focus:text-amber-500">
-                              <PowerOff className="w-4 h-4" /> Set as Draft
-                            </DropdownMenuItem>
-                          )}
-                          {q.status !== 'archived' && (
-                            <DropdownMenuItem onClick={() => handleStatusChange(q.id, 'archived')} className="gap-2.5 text-xs font-bold uppercase tracking-tight py-2.5 rounded-lg text-destructive/60 focus:bg-destructive/10 focus:text-destructive">
-                              <Archive className="w-4 h-4" /> Archive Form
-                            </DropdownMenuItem>
+                          {!q.is_system && (
+                            <>
+                              <DropdownMenuSeparator className="bg-primary/5" />
+                              {q.status !== 'active' ? (
+                                <DropdownMenuItem onClick={() => handleStatusChange(q.id, 'active')} className="gap-2.5 text-xs font-bold uppercase tracking-tight py-2.5 rounded-lg text-emerald-500 focus:bg-emerald-500/10 focus:text-emerald-500">
+                                  <Power className="w-4 h-4" /> Activate Form
+                                </DropdownMenuItem>
+                              ) : (
+                                <DropdownMenuItem onClick={() => handleStatusChange(q.id, 'draft')} className="gap-2.5 text-xs font-bold uppercase tracking-tight py-2.5 rounded-lg text-amber-500 focus:bg-amber-500/10 focus:text-amber-500">
+                                  <PowerOff className="w-4 h-4" /> Set as Draft
+                                </DropdownMenuItem>
+                              )}
+                              {q.status !== 'archived' && (
+                                <DropdownMenuItem onClick={() => handleStatusChange(q.id, 'archived')} className="gap-2.5 text-xs font-bold uppercase tracking-tight py-2.5 rounded-lg text-destructive/60 focus:bg-destructive/10 focus:text-destructive">
+                                  <Archive className="w-4 h-4" /> Archive Form
+                                </DropdownMenuItem>
+                              )}
+                            </>
                           )}
                         </DropdownMenuContent>
                       </DropdownMenu>

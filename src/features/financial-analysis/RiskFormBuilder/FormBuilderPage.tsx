@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -60,6 +61,7 @@ export function FormBuilderPage({ connectorId, onClose, initialData }: FormBuild
     { name: "Neutral", min_score: 0, max_score: 5, color: "#94A3B8", description: "Baseline profile" },
     { name: "Strategic", min_score: 6, max_score: 10, color: "#EAB308", description: "Standard profile" }
   ]);
+  const [disclaimer, setDisclaimer] = useState(initialData?.disclaimer || "");
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
 
   const totalPossibleScore = questions.reduce((sum, q) => {
@@ -152,6 +154,7 @@ export function FormBuilderPage({ connectorId, onClose, initialData }: FormBuild
         questions,
         categories,
         status: status,
+        disclaimer,
         max_possible_score: totalPossibleScore
       };
 
@@ -218,6 +221,18 @@ export function FormBuilderPage({ connectorId, onClose, initialData }: FormBuild
                      Protocol definitions are verified against the encryption engine before synchronization.
                   </p>
                </div>
+            </div>
+            <div className="space-y-2 mt-4 pt-4 border-t border-primary/5">
+                <Label className="text-[10px] font-black uppercase text-muted-foreground/60 tracking-widest pl-1">Protocol Disclaimer</Label>
+                <div className="relative group">
+                   <Textarea 
+                      placeholder="Enter legal disclaimer for this protocol..."
+                      value={disclaimer}
+                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDisclaimer(e.target.value)}
+                      className="bg-black/40 border-primary/10 focus:border-primary/40 focus:ring-1 focus:ring-primary/20 text-white min-h-[100px] resize-none transition-all"
+                   />
+                </div>
+                <p className="text-[9px] text-muted-foreground/40 italic pl-1">This text will appear at the end of assessments and on the cover of generated PDFs.</p>
             </div>
           </CardContent>
         </Card>
