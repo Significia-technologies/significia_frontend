@@ -112,6 +112,12 @@ export const API_ENDPOINTS = {
     LATEST: (connectorId: string, clientCode: string) => `${API_BASE}/risk-profile/${connectorId}/client/${clientCode}/latest`,
     PDF: (connectorId: string, assessmentId: string) => `${API_BASE}/risk-profile/${connectorId}/assessment/${assessmentId}/pdf`,
     DOCX: (connectorId: string, assessmentId: string) => `${API_BASE}/risk-profile/${connectorId}/assessment/${assessmentId}/docx`,
+    
+    // Custom Questionnaire Endpoints
+    QUESTIONNAIRES: (connectorId: string) => `${API_BASE}/risk-profile/${connectorId}/questionnaires`,
+    QUESTIONNAIRE: (connectorId: string, qId: string) => `${API_BASE}/risk-profile/${connectorId}/questionnaires/${qId}`,
+    CUSTOM_SAVE: (connectorId: string) => `${API_BASE}/risk-profile/${connectorId}/custom-save`,
+    CUSTOM_LIST: (connectorId: string) => `${API_BASE}/risk-profile/${connectorId}/custom-assessments`,
   },
 };
 

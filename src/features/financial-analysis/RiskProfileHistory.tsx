@@ -51,8 +51,28 @@ export function RiskProfileHistory({ connectorId }: RiskProfileHistoryProps) {
   const loadAssessments = async () => {
     setLoading(true);
     try {
-      const data = await RiskProfileService.getAll(connectorId);
-      setAssessments(data);
+      const standard = await RiskProfileService.getAll(connectorId);
+      const custom = await RiskProfileService.listCustomAssessments(connectorId);
+      
+      // Map custom assessments to match RiskAssessment interface for the table
+      const legacyCustom = custom.map(a => ({
+        id: a.id,
+        client_id: a.client_id,
+        client_name: a.client_name,
+        client_code: a.client_code,
+        calculated_score: a.total_score,
+        assigned_risk_tier: a.category_name,
+        form_name: a.portfolio_name,
+        assessment_timestamp: a.submitted_at,
+        created_at: a.submitted_at,
+        is_custom: true
+      }));
+
+      const all = [...standard, ...legacyCustom].sort((a, b) => 
+        new Date(b.assessment_timestamp).getTime() - new Date(a.assessment_timestamp).getTime()
+      );
+      
+      setAssessments(all as any);
     } catch (error) {
       toast.error("Failed to load risk assessment history");
     } finally {
@@ -60,13 +80,18 @@ export function RiskProfileHistory({ connectorId }: RiskProfileHistoryProps) {
     }
   };
 
-  const downloadFile = async (id: string, code: string, type: 'PDF' | 'DOCX') => {
-    setDownloading(`${id}-${type}`);
+  const downloadFile = async (item: any, type: 'PDF' | 'DOCX') => {
+    if (item.is_custom) {
+      toast.info("Custom form reports coming soon!");
+      return;
+    }
+
+    setDownloading(`${item.id}-${type}`);
     try {
       if (type === 'PDF') {
-        await RiskProfileService.downloadPDF(connectorId, id, `Risk_Profile_${code}.pdf`);
+        await RiskProfileService.downloadPDF(connectorId, item.id, `Risk_Profile_${item.client_code}.pdf`);
       } else {
-        await RiskProfileService.downloadDOCX(connectorId, id, `Risk_Profile_${code}.docx`);
+        await RiskProfileService.downloadDOCX(connectorId, item.id, `Risk_Profile_${item.client_code}.docx`);
       }
       toast.success(`${type} downloaded successfully`);
     } catch (error) {
@@ -167,8 +192,8 @@ export function RiskProfileHistory({ connectorId }: RiskProfileHistoryProps) {
                           variant="outline" 
                           size="sm" 
                           className="h-8 px-2 gap-1.5 border-primary/10 hover:border-red-500/30 hover:bg-red-500/5 transition-all"
-                          onClick={() => downloadFile(a.id, a.client_code || "client", 'PDF')}
-                          disabled={!!downloading}
+                          onClick={() => downloadFile(a, 'PDF')}
+                          disabled={!!downloading || (a as any).is_custom}
                         >
                           <FileText className="w-3.5 h-3.5 text-red-500" />
                           <span className="text-[9px] font-black uppercase">PDF</span>
@@ -177,8 +202,8 @@ export function RiskProfileHistory({ connectorId }: RiskProfileHistoryProps) {
                           variant="outline" 
                           size="sm" 
                           className="h-8 px-2 gap-1.5 border-primary/10 hover:border-blue-500/30 hover:bg-blue-500/5 transition-all"
-                          onClick={() => downloadFile(a.id, a.client_code || "client", 'DOCX')}
-                          disabled={!!downloading}
+                          onClick={() => downloadFile(a, 'DOCX')}
+                          disabled={!!downloading || (a as any).is_custom}
                         >
                           <FileText className="w-3.5 h-3.5 text-blue-500" />
                           <span className="text-[9px] font-black uppercase">Word</span>

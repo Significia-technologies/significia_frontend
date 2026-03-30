@@ -104,4 +104,53 @@ export class RiskProfileService {
     link.click();
     link.remove();
   }
+
+  // --- Custom Questionnaire Methods ---
+
+  static async listQuestionnaires(connectorId: string, status?: string): Promise<any[]> {
+    const response = await httpClient.get<any[]>(
+      API_ENDPOINTS.RISK_PROFILE.QUESTIONNAIRES(connectorId),
+      { params: { status } }
+    );
+    return response.data;
+  }
+
+  static async getQuestionnaire(connectorId: string, qId: string): Promise<any> {
+    const response = await httpClient.get<any>(
+      API_ENDPOINTS.RISK_PROFILE.QUESTIONNAIRE(connectorId, qId)
+    );
+    return response.data;
+  }
+
+  static async createQuestionnaire(connectorId: string, data: any): Promise<any> {
+    const response = await httpClient.post<any>(
+      API_ENDPOINTS.RISK_PROFILE.QUESTIONNAIRES(connectorId),
+      data
+    );
+    return response.data;
+  }
+
+  static async updateQuestionnaire(connectorId: string, qId: string, data: any): Promise<any> {
+    const response = await httpClient.put<any>(
+      API_ENDPOINTS.RISK_PROFILE.QUESTIONNAIRE(connectorId, qId),
+      data
+    );
+    return response.data;
+  }
+
+  static async saveCustomAssessment(connectorId: string, data: any): Promise<any> {
+    const response = await httpClient.post<any>(
+      API_ENDPOINTS.RISK_PROFILE.CUSTOM_SAVE(connectorId),
+      data
+    );
+    return response.data;
+  }
+
+  static async listCustomAssessments(connectorId: string, clientId?: string): Promise<any[]> {
+    const response = await httpClient.get<any[]>(
+      API_ENDPOINTS.RISK_PROFILE.CUSTOM_LIST(connectorId),
+      { params: { client_id: clientId } }
+    );
+    return response.data;
+  }
 }
