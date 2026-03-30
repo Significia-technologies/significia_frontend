@@ -81,17 +81,20 @@ export function RiskProfileHistory({ connectorId }: RiskProfileHistoryProps) {
   };
 
   const downloadFile = async (item: any, type: 'PDF' | 'DOCX') => {
-    if (item.is_custom) {
-      toast.info("Custom form reports coming soon!");
-      return;
-    }
-
     setDownloading(`${item.id}-${type}`);
     try {
-      if (type === 'PDF') {
-        await RiskProfileService.downloadPDF(connectorId, item.id, `Risk_Profile_${item.client_code}.pdf`);
+      if (item.is_custom) {
+        if (type === 'PDF') {
+          await RiskProfileService.downloadCustomPDF(connectorId, item.id, `Risk_Profile_${item.client_code}.pdf`);
+        } else {
+          await RiskProfileService.downloadCustomDOCX(connectorId, item.id, `Risk_Profile_${item.client_code}.docx`);
+        }
       } else {
-        await RiskProfileService.downloadDOCX(connectorId, item.id, `Risk_Profile_${item.client_code}.docx`);
+        if (type === 'PDF') {
+          await RiskProfileService.downloadPDF(connectorId, item.id, `Risk_Profile_${item.client_code}.pdf`);
+        } else {
+          await RiskProfileService.downloadDOCX(connectorId, item.id, `Risk_Profile_${item.client_code}.docx`);
+        }
       }
       toast.success(`${type} downloaded successfully`);
     } catch (error) {
@@ -193,7 +196,7 @@ export function RiskProfileHistory({ connectorId }: RiskProfileHistoryProps) {
                           size="sm" 
                           className="h-8 px-2 gap-1.5 border-primary/10 hover:border-red-500/30 hover:bg-red-500/5 transition-all"
                           onClick={() => downloadFile(a, 'PDF')}
-                          disabled={!!downloading || (a as any).is_custom}
+                          disabled={!!downloading}
                         >
                           <FileText className="w-3.5 h-3.5 text-red-500" />
                           <span className="text-[9px] font-black uppercase">PDF</span>
@@ -203,7 +206,7 @@ export function RiskProfileHistory({ connectorId }: RiskProfileHistoryProps) {
                           size="sm" 
                           className="h-8 px-2 gap-1.5 border-primary/10 hover:border-blue-500/30 hover:bg-blue-500/5 transition-all"
                           onClick={() => downloadFile(a, 'DOCX')}
-                          disabled={!!downloading || (a as any).is_custom}
+                          disabled={!!downloading}
                         >
                           <FileText className="w-3.5 h-3.5 text-blue-500" />
                           <span className="text-[9px] font-black uppercase">Word</span>

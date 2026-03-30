@@ -153,4 +153,34 @@ export class RiskProfileService {
     );
     return response.data;
   }
+
+  static async downloadCustomPDF(connectorId: string, assessmentId: string, filename: string = "Custom_Risk_Profile.pdf"): Promise<void> {
+    const response = await httpClient.get(
+      API_ENDPOINTS.RISK_PROFILE.CUSTOM_PDF(connectorId, assessmentId),
+      { responseType: 'blob' }
+    );
+    
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  }
+
+  static async downloadCustomDOCX(connectorId: string, assessmentId: string, filename: string = "Custom_Risk_Profile.docx"): Promise<void> {
+    const response = await httpClient.get(
+      API_ENDPOINTS.RISK_PROFILE.CUSTOM_DOCX(connectorId, assessmentId),
+      { responseType: 'blob' }
+    );
+    
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  }
 }
