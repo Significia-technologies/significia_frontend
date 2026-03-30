@@ -5,19 +5,28 @@ import {
   Wrench, 
   FileText, 
   Download,
-  RefreshCcw
+  RefreshCcw,
+  ShieldCheck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { ConnectorService, Connector } from "@/core/services/connector.service";
 import { FinancialAnalysisService } from "@/core/services/financial-analysis.service";
 import { MasterDataService } from "@/core/services/master.service";
+import { RiskProfileService } from "@/core/services/risk-profile.service";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
 export default function ToolsPage() {
   const [loading, setLoading] = useState(true);
   const [connector, setConnector] = useState<Connector | null>(null);
+  const [questionnaires, setQuestionnaires] = useState<any[]>([
+    {
+      id: "sample-form",
+      portfolio_name: "Strategic Risk Assessment (Sample)",
+      is_system: true
+    }
+  ]);
 
   useEffect(() => {
     fetchConnector();
@@ -28,7 +37,16 @@ export default function ToolsPage() {
     try {
       const connectors = await ConnectorService.list();
       if (connectors && connectors.length > 0) {
-        setConnector(connectors[0]);
+        const activeConnector = connectors[0];
+        setConnector(activeConnector);
+        
+        // Fetch questionnaires
+        const data = await RiskProfileService.listQuestionnaires(activeConnector.id);
+        const activeCustoms = data.filter((q: any) => q.status === 'active');
+        setQuestionnaires([
+          { id: "sample-form", portfolio_name: "Strategic Risk Assessment (Sample)", is_system: true },
+          ...activeCustoms
+        ]);
       } else {
         toast.error("No active connection found. Please check master settings.");
       }
@@ -65,6 +83,20 @@ export default function ToolsPage() {
       toast.success("Client Registration form downloaded successfully.");
     } catch (error) {
       toast.error("Failed to download client form.");
+    }
+  };
+
+  const handleDownloadProtocol = async (qId: string, name: string) => {
+    if (!connector) {
+      toast.error("No active connection found.");
+      return;
+    }
+    try {
+      toast.info(`Generating ${name}...`);
+      await RiskProfileService.downloadBlankPDF(connector.id, qId, `Risk_Form_${name.replace(/\s+/g, '_')}.pdf`);
+      toast.success("Protocol downloaded successfully.");
+    } catch (error) {
+      toast.error("Failed to download protocol.");
     }
   };
 
@@ -153,6 +185,51 @@ export default function ToolsPage() {
                 <div className="p-4 rounded-xl border border-dashed border-muted-foreground/20 bg-muted/5 flex items-center justify-center text-xs text-muted-foreground italic">
                   Additional stationary items coming soon...
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          {/* Risk Assessment Protocols Card */}
+          <Card className="overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 shadow-xl bg-card/40 backdrop-blur-sm">
+            <CardHeader className="bg-primary/5 pb-4 border-b border-primary/10">
+              <CardTitle className="flex items-center gap-2 text-xl text-primary">
+                <ShieldCheck className="w-5 h-5" />
+                Strategic Protocols
+              </CardTitle>
+              <CardDescription>
+                System-certified and custom risk assessment frameworks.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="space-y-4">
+                {questionnaires.map((q) => (
+                  <div key={q.id} className="flex items-center justify-between p-3 rounded-xl border border-primary/10 bg-background/50 hover:bg-primary/5 transition-all group cursor-default">
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2.5 rounded-lg ${q.is_system ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'} group-hover:scale-110 transition-transform`}>
+                        <ShieldCheck className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-[13px] uppercase tracking-tight">{q.portfolio_name}</p>
+                        <p className="text-[10px] font-semibold text-muted-foreground/60 uppercase">{q.is_system ? 'System Default' : 'Custom Protocol'}</p>
+                      </div>
+                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => handleDownloadProtocol(q.id, q.portfolio_name)}
+                      className="h-9 w-9 hover:bg-primary/20 hover:text-primary transition-colors rounded-lg"
+                      title="Download Blank PDF"
+                    >
+                      <Download className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+                
+                {questionnaires.length === 0 && (
+                  <div className="py-8 text-center text-xs text-muted-foreground italic border-2 border-dashed border-primary/5 rounded-xl">
+                    No active protocols found.
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
