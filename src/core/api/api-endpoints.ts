@@ -120,6 +120,6 @@ export const API_ENDPOINTS = {
     CUSTOM_LIST: (connectorId: string) => `${API_BASE}/risk-profile/${connectorId}/custom-assessments`,
     CUSTOM_PDF: (connectorId: string, assessmentId: string) => `${API_BASE}/risk-profile/${connectorId}/custom-assessment/${assessmentId}/pdf`,
     CUSTOM_DOCX: (connectorId: string, assessmentId: string) => `${API_BASE}/risk-profile/${connectorId}/custom-assessment/${assessmentId}/docx`,
+    BLANK_PDF: (connectorId: string, questionnaireId: string) => `${API_BASE}/risk-profile/${connectorId}/questionnaires/${questionnaireId}/pdf`,
   },
 };
-

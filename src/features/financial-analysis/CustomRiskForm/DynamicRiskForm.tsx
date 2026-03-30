@@ -14,7 +14,10 @@ import {
   ClipboardList,
   RotateCcw,
   ShieldCheck,
-  Edit2
+  Edit2,
+  Eye,
+  GripVertical,
+  Clock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,21 +31,23 @@ import { RiskProfileService } from "@/core/services/risk-profile.service";
 
 interface DynamicRiskFormProps {
   connectorId: string;
-  questionnaireId: string;
+  questionnaireId?: string;
+  questionnaire?: any;
   onClose?: () => void;
+  isPreview?: boolean;
 }
 
-export function DynamicRiskForm({ connectorId, questionnaireId, onClose }: DynamicRiskFormProps) {
+export function DynamicRiskForm({ connectorId, questionnaireId, questionnaire: initialQuestionnaire, onClose, isPreview = false }: DynamicRiskFormProps) {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [panValidating, setPanValidating] = useState(false);
   const [clientFound, setClientFound] = useState(false);
   
-  const [questionnaire, setQuestionnaire] = useState<any>(null);
+  const [questionnaire, setQuestionnaire] = useState<any>(initialQuestionnaire || null);
   const [clientInfo, setClientInfo] = useState({
-    name: "",
-    code: "",
+    name: isPreview ? "PREVIEW MODE" : "",
+    code: isPreview ? "PREVIEW" : "",
   });
 
   const [responses, setResponses] = useState<Record<string, { option_id: string, score: number, text: string }>>({});
@@ -50,10 +55,16 @@ export function DynamicRiskForm({ connectorId, questionnaireId, onClose }: Dynam
   const [currentStep, setCurrentStep] = useState(-1); // -1 for client entry, 0+ for questions, 999 for review
 
   useEffect(() => {
-    loadQuestionnaire();
-  }, [connectorId, questionnaireId]);
+    if (!initialQuestionnaire && questionnaireId) {
+      loadQuestionnaire();
+    } else if (initialQuestionnaire) {
+        setFetching(false);
+        if (isPreview) setCurrentStep(0);
+    }
+  }, [connectorId, questionnaireId, initialQuestionnaire]);
 
   const loadQuestionnaire = async () => {
+    if (!questionnaireId) return;
     setFetching(true);
     try {
       const data = await RiskProfileService.getQuestionnaire(connectorId, questionnaireId);
@@ -109,7 +120,7 @@ export function DynamicRiskForm({ connectorId, questionnaireId, onClose }: Dynam
   };
 
   const handleSubmit = async () => {
-    if (!clientFound) {
+    if (!clientFound && !isPreview) {
       toast.error("Please identify a client first.");
       return;
     }
@@ -121,8 +132,13 @@ export function DynamicRiskForm({ connectorId, questionnaireId, onClose }: Dynam
 
     setSubmitting(true);
     try {
+      if (isPreview) {
+        toast.info("Preview session concluded.");
+        if (onClose) onClose();
+        return;
+      }
       await RiskProfileService.saveCustomAssessment(connectorId, {
-        questionnaire_id: questionnaireId,
+        questionnaire_id: questionnaireId || questionnaire.id,
         client_code: clientInfo.code,
         responses,
         discussion_notes: discussionNotes
@@ -142,6 +158,10 @@ export function DynamicRiskForm({ connectorId, questionnaireId, onClose }: Dynam
 
   if (!questionnaire) {
     return <div className="p-20 text-center text-destructive font-bold">Questionnaire definition not found or corrupted.</div>;
+  }
+
+  if (isPreview && currentStep === -1) {
+     setCurrentStep(0);
   }
 
   const totalScore = calculateTotalScore();
@@ -314,7 +334,7 @@ export function DynamicRiskForm({ connectorId, questionnaireId, onClose }: Dynam
                     <ChevronLeft className="w-4 h-4" />
                   </Button>
                   <div className="text-left">
-                     <CardTitle className="text-md font-black uppercase tracking-tight">Protocol Summary</CardTitle>
+                     <CardTitle className="text-md font-black uppercase tracking-tight">Protocol Summary {isPreview && <Badge className="ml-2 bg-amber-500/10 text-amber-500 border-amber-500/20">PREVIEW</Badge>}</CardTitle>
                      <CardDescription className="text-[7px] font-bold uppercase tracking-widest opacity-40 mt-0.5 text-primary">Final Review & Submission</CardDescription>
                   </div>
               </CardHeader>
@@ -380,7 +400,7 @@ export function DynamicRiskForm({ connectorId, questionnaireId, onClose }: Dynam
                    disabled={submitting}
                    className="flex-[2] h-9 rounded-lg bg-primary text-black font-black uppercase tracking-widest text-[9px] shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform active:scale-95"
                  >
-                   {submitting ? "Vaulting..." : "Submit to history"}
+                   {submitting ? "Vaulting..." : isPreview ? "Finish Preview" : "Submit to history"}
                  </Button>
               </CardFooter>
             </Card>

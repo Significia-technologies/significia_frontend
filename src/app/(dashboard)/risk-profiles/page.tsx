@@ -5,17 +5,17 @@ import {
   ShieldCheck, 
   PlusCircle,
   Database,
-  Search,
-  History
+  History,
+  Settings,
+  Plus,
+  LayoutGrid
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RiskProfileHistory } from "@/features/financial-analysis/RiskProfileHistory";
 import { ConnectorService, Connector } from "@/core/services/connector.service";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import Link from "next/link";
 import { RiskProfileForm } from "@/features/financial-analysis/RiskProfileForm";
-import { FormBuilderPage } from "@/features/financial-analysis/RiskFormBuilder/FormBuilderPage";
 import { DynamicRiskForm } from "@/features/financial-analysis/CustomRiskForm/DynamicRiskForm";
 import { 
     DropdownMenu, 
@@ -25,13 +25,14 @@ import {
     DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
 import { RiskProfileService } from "@/core/services/risk-profile.service";
+import Link from "next/link";
 
-type ViewState = "HISTORY" | "FORM" | "BUILDER" | "CUSTOM_FORM";
+type ViewType = "HISTORY" | "FORM" | "CUSTOM_FORM";
 
 export default function RiskProfilesPage() {
   const [loading, setLoading] = useState(true);
   const [connector, setConnector] = useState<Connector | null>(null);
-  const [view, setView] = useState<ViewState>("HISTORY");
+  const [view, setView] = useState<ViewType>("HISTORY");
   const [questionnaires, setQuestionnaires] = useState<any[]>([]);
   const [selectedQuestionnaireId, setSelectedQuestionnaireId] = useState<string | null>(null);
 
@@ -91,81 +92,89 @@ export default function RiskProfilesPage() {
 
   return (
     <div className="max-w-7xl mx-auto py-2 px-4 space-y-4">
-      {(view === "HISTORY" || view === "FORM") && (
-        <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-primary/10 pb-6 gap-6 animate-in fade-in duration-500">
-          <div className="flex items-center gap-4">
-            {view === "FORM" && (
-              <Button variant="ghost" size="icon" onClick={() => setView("HISTORY")} className="rounded-full shrink-0">
-                <History className="w-5 h-5" />
-              </Button>
-            )}
-            <div className="p-2 rounded-xl bg-primary/10">
-              <ShieldCheck className="w-8 h-8 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-black tracking-tight text-foreground uppercase">
-                {view === "HISTORY" ? "Risk Repository" : "New Assessment"}
-              </h1>
-              <p className="text-muted-foreground text-sm font-medium">
-                {view === "HISTORY" ? "Manage and retrieve historical client risk assessments." : "Complete 16 metrics to determine client risk appetite."}
-              </p>
-            </div>
+      <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-primary/10 pb-6 gap-6 animate-in fade-in duration-500">
+        <div className="flex items-center gap-4">
+          <div className="p-2 rounded-xl bg-primary/10">
+            <ShieldCheck className="w-8 h-8 text-primary" />
           </div>
-          
+          <div>
+            <h1 className="text-3xl font-black tracking-tight text-foreground uppercase">
+              {view === "HISTORY" ? "RISK PROFILE MANAGEMENT" : "RISK ASSESSMENT"}
+            </h1>
+            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-40">
+              {view === "HISTORY" ? "Historical assessment archival" : "Strategic financial alignment protocol"}
+            </p>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-3">
           {view === "HISTORY" && (
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setView("BUILDER")} className="gap-2 border-primary/20 text-primary">
-                  <PlusCircle className="w-4 h-4" />
-                  Build Custom Form
+            <Link href="/risk-profiles/manage">
+              <Button 
+                variant="outline" 
+                className="h-10 px-5 gap-2 border-primary/10 hover:bg-primary/5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all"
+              >
+                <Settings className="w-4 h-4" /> Manage Protocols
               </Button>
+            </Link>
+          )}
+          
+          {(view === "FORM" || view === "CUSTOM_FORM") && (
+            <Button 
+              variant="ghost" 
+              onClick={() => {
+                setView("HISTORY");
+              }}
+              className="h-10 px-5 gap-2 hover:bg-primary/5 text-muted-foreground font-black uppercase text-[10px] tracking-widest rounded-xl transition-all"
+            >
+                Return to History
+            </Button>
+          )}
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button className="gap-2 shadow-lg shadow-primary/20">
-                      <PlusCircle className="w-4 h-4" />
-                      New Assessment
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 bg-card/95 backdrop-blur-md border-primary/20">
-                  <DropdownMenuItem onClick={() => setView("FORM")} className="cursor-pointer font-bold uppercase text-[10px] tracking-widest py-3">
-                    System "Sample" Form
+          {view === "HISTORY" && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button className="gap-2 shadow-lg shadow-primary/20">
+                    <PlusCircle className="w-4 h-4" />
+                    New Assessment
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 bg-card/95 backdrop-blur-md border-primary/20">
+                <DropdownMenuItem onClick={() => setView("FORM")} className="cursor-pointer font-bold uppercase text-[10px] tracking-widest py-3">
+                  System "Sample" Form
+                </DropdownMenuItem>
+                {questionnaires.length > 0 && <DropdownMenuSeparator className="bg-primary/10" />}
+                {questionnaires.map(q => (
+                  <DropdownMenuItem 
+                    key={q.id} 
+                    onClick={() => {
+                        setSelectedQuestionnaireId(q.id);
+                        setView("CUSTOM_FORM");
+                    }} 
+                    className="cursor-pointer font-bold uppercase text-[10px] tracking-widest py-3"
+                  >
+                    {q.portfolio_name}
                   </DropdownMenuItem>
-                  {questionnaires.length > 0 && <DropdownMenuSeparator className="bg-primary/10" />}
-                  {questionnaires.map(q => (
-                    <DropdownMenuItem 
-                      key={q.id} 
-                      onClick={() => {
-                          setSelectedQuestionnaireId(q.id);
-                          setView("CUSTOM_FORM");
-                      }} 
-                      className="cursor-pointer font-bold uppercase text-[10px] tracking-widest py-3"
-                    >
-                      {q.portfolio_name}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
         </div>
-      )}
+      </div>
 
       {view === "HISTORY" ? (
         <RiskProfileHistory connectorId={connector.id} />
-      ) : view === "FORM" ? (
-        <RiskProfileForm connectorId={connector.id} />
-      ) : view === "BUILDER" ? (
-        <FormBuilderPage connectorId={connector.id} onClose={() => {
-            setView("HISTORY");
-            loadQuestionnaires();
-        }} />
       ) : view === "CUSTOM_FORM" && selectedQuestionnaireId ? (
         <DynamicRiskForm 
             connectorId={connector.id} 
-            questionnaireId={selectedQuestionnaireId} 
+            questionnaireId={selectedQuestionnaireId}
             onClose={() => setView("HISTORY")} 
         />
-      ) : null}
+      ) : (
+        <RiskProfileForm 
+          connectorId={connector.id} 
+        />
+      )}
     </div>
   );
 }

@@ -13,7 +13,9 @@ import {
   Eye,
   CheckCircle2,
   AlertCircle,
-  GripVertical
+  GripVertical,
+  Clock,
+  ChevronLeft
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -137,7 +139,7 @@ export function FormBuilderPage({ connectorId, onClose, initialData }: FormBuild
     setCategories(newCategories);
   };
 
-  const handleSave = async () => {
+  const handleSave = async (status: "active" | "draft" = "active") => {
     if (!portfolioName) {
       toast.error("Please provide a name for this questionnaire.");
       return;
@@ -149,7 +151,7 @@ export function FormBuilderPage({ connectorId, onClose, initialData }: FormBuild
         portfolio_name: portfolioName,
         questions,
         categories,
-        status: "active",
+        status: status,
         max_possible_score: totalPossibleScore
       };
 
@@ -159,10 +161,10 @@ export function FormBuilderPage({ connectorId, onClose, initialData }: FormBuild
         await RiskProfileService.createQuestionnaire(connectorId, payload);
       }
 
-      toast.success("Architectural definition published successfully!");
+      toast.success(status === "active" ? "Architectural definition published successfully!" : "Progress saved to draft vault.");
       if (onClose) onClose();
     } catch (error) {
-      toast.error("Failed to publish configuration.");
+      toast.error(status === "active" ? "Failed to publish configuration." : "Failed to save draft.");
     } finally {
       setLoading(false);
     }
@@ -191,6 +193,14 @@ export function FormBuilderPage({ connectorId, onClose, initialData }: FormBuild
                   <div className="flex items-center gap-3 mt-3">
                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] opacity-40">System Core v2.0.4</span>
                      <div className="h-1 w-1 rounded-full bg-primary/30" />
+                     {initialData?.status && (
+                        <>
+                           <Badge variant="outline" className={`text-[8px] font-bold px-2 py-0.5 uppercase h-4.5 tracking-widest ${initialData.status === 'active' ? 'border-emerald-500/20 bg-emerald-500/5 text-emerald-500' : 'border-amber-500/20 bg-amber-500/5 text-amber-500'}`}>
+                              {initialData.status}
+                           </Badge>
+                           <div className="h-1 w-1 rounded-full bg-primary/30" />
+                        </>
+                     )}
                      <Badge variant="outline" className="text-[8px] border-primary/20 bg-primary/5 text-primary/80 font-bold px-2 py-0.5 uppercase h-4.5 tracking-widest">Verified Schema</Badge>
                   </div>
                </div>
@@ -219,8 +229,21 @@ export function FormBuilderPage({ connectorId, onClose, initialData }: FormBuild
                <div className="p-3 rounded-full bg-primary/5 text-primary/40">
                   <Plus className="w-6 h-6" />
                </div>
-               <div className="text-center">
-                  <h4 className="text-xs font-black uppercase text-foreground/40 tracking-widest">No Questions Defined</h4>
+               <div className="flex flex-col gap-1 pr-6 border-r border-primary/10">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={onClose} 
+                    className="h-8 w-8 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary transition-all mb-1"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </Button>
+                  <p className="text-[7px] font-black uppercase text-center opacity-20 tracking-tighter">Exit</p>
+               </div>
+               <div className="flex-1">
+                  <h1 className="text-2xl font-black tracking-tighter text-foreground/80 uppercase">
+                     {initialData ? "Modify Strategy" : "Define Protocol"}
+                  </h1>
                   <p className="text-[9px] font-bold uppercase text-muted-foreground/20 mt-1">Add your first strategic inquiry to begin the protocol.</p>
                </div>
                <Button onClick={addQuestion} variant="outline" size="sm" className="h-8 px-4 border-primary/20 hover:bg-primary/5 text-[8px] font-bold uppercase tracking-widest">
@@ -408,7 +431,11 @@ export function FormBuilderPage({ connectorId, onClose, initialData }: FormBuild
                   <p className="text-muted-foreground text-[6px] font-bold uppercase tracking-widest mt-1 opacity-20">Sync strategic protocol to global vault</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button onClick={handleSave} disabled={loading} className="gap-2 shadow-sm shadow-primary/10 font-bold uppercase text-[7px] tracking-widest px-5 h-9 bg-primary/80 hover:bg-primary transition-all rounded-md">
+                  <Button variant="outline" onClick={() => handleSave("draft")} disabled={loading} className="gap-2 border-primary/10 hover:bg-primary/5 font-bold uppercase text-[7px] tracking-widest px-4 h-9 rounded-md transition-all">
+                      <Clock className="w-3 h-3 text-amber-500" />
+                      Save Draft
+                  </Button>
+                  <Button onClick={() => handleSave("active")} disabled={loading} className="gap-2 shadow-sm shadow-primary/10 font-bold uppercase text-[7px] tracking-widest px-5 h-9 bg-primary/80 hover:bg-primary transition-all rounded-md">
                       {loading ? <span className="animate-spin text-[10px]">⌛</span> : <Save className="w-3 h-3" />}
                       Publish Protocol
                   </Button>
