@@ -238,7 +238,8 @@ export function RiskProfileForm({ connectorId, clientId }: RiskProfileFormProps)
         client_code: clientInfo.code,
         answers,
         discussion_notes: discussionNotes,
-        disclaimer_text: disclaimer
+        disclaimer_text: disclaimer,
+        form_name: "Sample"
       });
       
       setLastAssessmentId(saveResp.assessment_id);

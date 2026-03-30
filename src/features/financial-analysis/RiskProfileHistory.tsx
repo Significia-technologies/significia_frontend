@@ -116,6 +116,7 @@ export function RiskProfileHistory({ connectorId }: RiskProfileHistoryProps) {
                 <TableHead className="text-[10px] font-black uppercase tracking-widest text-primary/60">Client</TableHead>
                 <TableHead className="text-[10px] font-black uppercase tracking-widest text-primary/60">Risk Tier</TableHead>
                 <TableHead className="text-[10px] font-black uppercase tracking-widest text-primary/60 text-center">Score</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest text-primary/60">Form</TableHead>
                 <TableHead className="text-[10px] font-black uppercase tracking-widest text-primary/60">Date</TableHead>
                 <TableHead className="text-[10px] font-black uppercase tracking-widest text-primary/60 text-right">Actions</TableHead>
               </TableRow>
@@ -153,6 +154,9 @@ export function RiskProfileHistory({ connectorId }: RiskProfileHistoryProps) {
                     </TableCell>
                     <TableCell className="text-center font-black text-primary/80">
                       {a.calculated_score}
+                    </TableCell>
+                    <TableCell className="font-bold text-[10px] text-primary/70 uppercase tracking-tight">
+                      {a.form_name}
                     </TableCell>
                     <TableCell className="text-xs font-medium text-muted-foreground">
                       {format(new Date(a.assessment_timestamp), "MMM dd, yyyy • HH:mm")}

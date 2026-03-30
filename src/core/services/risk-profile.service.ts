@@ -18,6 +18,7 @@ export interface RiskAssessmentCreate {
   answers: Record<string, string | Record<string, string>>;
   discussion_notes?: string;
   disclaimer_text?: string;
+  form_name?: string;
 }
 
 export interface SaveAssessmentResponse {
@@ -38,6 +39,7 @@ export interface RiskAssessment {
   calculated_score: number;
   assigned_risk_tier: string;
   tier_recommendation?: string;
+  form_name: string;
   assessment_timestamp: string;
   created_at: string;
 }
