@@ -18,6 +18,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Terminal,
+  PieChart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -42,14 +43,19 @@ const NAV_ITEMS = [
     icon: Database,
   },
   {
-    label: "Financial Analysis",
-    href: "/financial-analysis",
+    label: "Financial Goals",
+    href: "/financial-goals",
     icon: BarChart3,
   },
   {
     label: "Risk Profiles",
     href: "/risk-profiles",
     icon: ShieldCheck,
+  },
+  {
+    label: "Asset Allocation",
+    href: "/asset-allocation",
+    icon: PieChart,
   },
   {
     label: "Security Basket",

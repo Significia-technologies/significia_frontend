@@ -112,7 +112,7 @@ export const API_ENDPOINTS = {
     LATEST: (connectorId: string, clientCode: string) => `${API_BASE}/risk-profile/${connectorId}/client/${clientCode}/latest`,
     PDF: (connectorId: string, assessmentId: string) => `${API_BASE}/risk-profile/${connectorId}/assessment/${assessmentId}/pdf`,
     DOCX: (connectorId: string, assessmentId: string) => `${API_BASE}/risk-profile/${connectorId}/assessment/${assessmentId}/docx`,
-    
+
     // Custom Questionnaire Endpoints
     QUESTIONNAIRES: (connectorId: string) => `${API_BASE}/risk-profile/${connectorId}/questionnaires`,
     QUESTIONNAIRE: (connectorId: string, qId: string) => `${API_BASE}/risk-profile/${connectorId}/questionnaires/${qId}`,
@@ -121,5 +121,16 @@ export const API_ENDPOINTS = {
     CUSTOM_PDF: (connectorId: string, assessmentId: string) => `${API_BASE}/risk-profile/${connectorId}/custom-assessment/${assessmentId}/pdf`,
     CUSTOM_DOCX: (connectorId: string, assessmentId: string) => `${API_BASE}/risk-profile/${connectorId}/custom-assessment/${assessmentId}/docx`,
     BLANK_PDF: (connectorId: string, questionnaireId: string) => `${API_BASE}/risk-profile/${connectorId}/questionnaires/${questionnaireId}/pdf`,
+  },
+
+  // ── Asset Allocation ──────────────────────────────
+  ASSET_ALLOCATION: {
+    VALIDATE_CLIENT: (connectorId: string) => `${API_BASE}/asset-allocation/${connectorId}/validate-client`,
+    SAVE: (connectorId: string) => `${API_BASE}/asset-allocation/${connectorId}/save`,
+    LIST: (connectorId: string) => `${API_BASE}/asset-allocation/${connectorId}/allocations`,
+    DETAIL: (connectorId: string, id: string) => `${API_BASE}/asset-allocation/${connectorId}/allocation/${id}`,
+    PDF: (connectorId: string, id: string) => `${API_BASE}/asset-allocation/${connectorId}/allocation/${id}/pdf`,
+    DOCX: (connectorId: string, id: string) => `${API_BASE}/asset-allocation/${connectorId}/allocation/${id}/docx`,
+    BLANK_PDF: (connectorId: string) => `${API_BASE}/asset-allocation/${connectorId}/blank-form/pdf`,
   },
 };

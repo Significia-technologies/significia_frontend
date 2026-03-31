@@ -14,6 +14,7 @@ import { ConnectorService, Connector } from "@/core/services/connector.service";
 import { FinancialAnalysisService } from "@/core/services/financial-analysis.service";
 import { MasterDataService } from "@/core/services/master.service";
 import { RiskProfileService } from "@/core/services/risk-profile.service";
+import { AssetAllocationService } from "@/core/services/asset-allocation.service";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
@@ -100,6 +101,20 @@ export default function ToolsPage() {
     }
   };
 
+  const handleDownloadAssetAllocationForm = async () => {
+    if (!connector) {
+      toast.error("No active connection found.");
+      return;
+    }
+    try {
+      toast.info("Generating form...");
+      await AssetAllocationService.downloadBlankPDF(connector.id);
+      toast.success("Asset Allocation form downloaded successfully.");
+    } catch (error) {
+      toast.error("Failed to download asset allocation form.");
+    }
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       {/* Header */}
@@ -176,6 +191,27 @@ export default function ToolsPage() {
                     variant="ghost" 
                     size="icon" 
                     onClick={handleDownloadForm}
+                    className="hover:bg-primary/20 hover:text-primary transition-colors"
+                    title="Download PDF"
+                  >
+                    <Download className="w-4 h-4" />
+                  </Button>
+                </div>
+
+                <div className="flex items-center justify-between p-3 rounded-xl border bg-card hover:bg-accent/50 transition-all group cursor-default">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 rounded-lg bg-primary/10 text-primary group-hover:scale-110 transition-transform">
+                      <FileText className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">Asset Allocation Form</p>
+                      <p className="text-xs text-muted-foreground">Strategic portfolio distribution template</p>
+                    </div>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={handleDownloadAssetAllocationForm}
                     className="hover:bg-primary/20 hover:text-primary transition-colors"
                     title="Download PDF"
                   >
