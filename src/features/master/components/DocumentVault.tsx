@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { getApiBaseUrl } from "@/core/api/api-utils";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 
 interface DocumentVaultProps {
   connectorId: string;
@@ -37,6 +38,7 @@ export function DocumentVault({ connectorId, clientId, documents, onUploadSucces
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selectedType, setSelectedType] = useState<string>("");
+  const [customType, setCustomType] = useState<string>("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const handleFileDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -52,18 +54,21 @@ export function DocumentVault({ connectorId, clientId, documents, onUploadSucces
   };
 
   const handleUpload = async () => {
-    if (!selectedType || !selectedFile) {
+    const finalType = selectedType === "Other" ? customType : selectedType;
+
+    if (!finalType || !selectedFile) {
       toast.error("Please select a document type and a file.");
       return;
     }
 
     setLoading(true);
     try {
-      await MasterDataService.uploadDocument(connectorId, clientId, selectedFile, selectedType);
+      await MasterDataService.uploadDocument(connectorId, clientId, selectedFile, finalType);
       toast.success("Document uploaded securely!");
       setIsModalOpen(false);
       setSelectedFile(null);
       setSelectedType("");
+      setCustomType("");
       onUploadSuccess(); // Trigger parent reload
     } catch (error) {
       toast.error("Failed to upload document");
@@ -143,7 +148,17 @@ export function DocumentVault({ connectorId, clientId, documents, onUploadSucces
       )}
 
       {/* Upload Modal */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+      <Dialog 
+        open={isModalOpen} 
+        onOpenChange={(open) => {
+          setIsModalOpen(open);
+          if (!open) {
+            setSelectedType("");
+            setCustomType("");
+            setSelectedFile(null);
+          }
+        }}
+      >
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -152,11 +167,11 @@ export function DocumentVault({ connectorId, clientId, documents, onUploadSucces
             </DialogTitle>
           </DialogHeader>
           
-          <div className="grid gap-6 py-4">
-            <div className="space-y-2">
+          <div className="grid gap-6 py-4 w-full overflow-hidden">
+            <div className="space-y-2 w-full overflow-hidden">
               <Label>Document Category *</Label>
               <Select value={selectedType} onValueChange={setSelectedType}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select document type..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -167,12 +182,24 @@ export function DocumentVault({ connectorId, clientId, documents, onUploadSucces
               </Select>
             </div>
 
-            <div className="space-y-2">
+            {selectedType === "Other" && (
+              <div className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-200 w-full overflow-hidden">
+                <Label>Custom Document Name *</Label>
+                <Input 
+                  placeholder="Enter document name (e.g. Electricity Bill)" 
+                  value={customType}
+                  className="w-full"
+                  onChange={(e) => setCustomType(e.target.value)}
+                />
+              </div>
+            )}
+
+            <div className="space-y-2 w-full overflow-hidden">
                 <Label>File *</Label>
                 <div 
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={handleFileDrop}
-                    className="border-2 border-dashed border-primary/20 hover:border-primary/50 transition-colors rounded-lg p-8 flex flex-col items-center justify-center text-center cursor-pointer bg-primary/5"
+                    className="border-2 border-dashed border-primary/20 hover:border-primary/50 transition-colors rounded-lg p-8 flex flex-col items-center justify-center text-center cursor-pointer bg-primary/5 w-full max-w-full overflow-hidden min-w-0"
                     onClick={() => document.getElementById("fileUpload")?.click()}
                 >
                     <input 
@@ -192,11 +219,13 @@ export function DocumentVault({ connectorId, clientId, documents, onUploadSucces
                         }} 
                     />
                     {selectedFile ? (
-                        <>
-                            <FileText className="w-10 h-10 text-primary mb-2" />
-                            <p className="font-medium text-sm text-foreground truncate max-w-full px-4">{selectedFile.name}</p>
-                            <p className="text-xs text-muted-foreground mt-1">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
-                        </>
+                        <div className="flex flex-col items-center justify-center w-full min-w-0">
+                            <FileText className="w-10 h-10 text-primary mb-2 flex-shrink-0" />
+                            <p className="font-medium text-sm text-foreground truncate w-full max-w-full px-2 text-center" title={selectedFile.name}>
+                                {selectedFile.name}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1 flex-shrink-0">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                        </div>
                     ) : (
                         <>
                             <UploadCloud className="w-10 h-10 text-primary/40 mb-2" />
