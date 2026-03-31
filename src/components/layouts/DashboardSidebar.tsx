@@ -42,8 +42,8 @@ const NAV_ITEMS = [
     icon: Database,
   },
   {
-    label: "Financial Analysis",
-    href: "/financial-analysis",
+    label: "Financial Goals",
+    href: "/financial-goals",
     icon: BarChart3,
   },
   {
