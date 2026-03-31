@@ -10,6 +10,7 @@ import {
   Landmark,
   Gem,
   ChevronRight,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -157,14 +158,41 @@ export function AssetAllocationHistory({ connectorId }: AssetAllocationHistoryPr
             Historical Asset Allocation Records & On-Demand Reports
           </p>
         </div>
-        <div className="relative w-full md:w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground opacity-50" />
-          <Input
-            placeholder="Search by Code or Name..."
-            className="pl-10 bg-card/50 border-primary/10 font-medium"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          <Button
+            id="download-blank-form-btn"
+            variant="outline"
+            size="sm"
+            className="h-10 px-4 gap-2 border-primary/20 bg-primary/5 hover:bg-primary/10 transition-all text-[10px] font-black uppercase tracking-widest"
+            onClick={async () => {
+              setDownloading("BLANK");
+              try {
+                await AssetAllocationService.downloadBlankPDF(connectorId);
+                toast.success("Blank form downloaded successfully");
+              } catch {
+                toast.error("Failed to download blank form");
+              } finally {
+                setDownloading(null);
+              }
+            }}
+            disabled={!!downloading}
+          >
+            {downloading === "BLANK" ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Download className="w-4 h-4" />
+            )}
+            Download Blank Form
+          </Button>
+          <div className="relative w-full md:w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground opacity-50" />
+            <Input
+              placeholder="Search by Code or Name..."
+              className="pl-10 bg-card/50 border-primary/10 font-medium"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
         </div>
       </div>
 

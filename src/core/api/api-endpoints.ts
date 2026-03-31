@@ -131,5 +131,6 @@ export const API_ENDPOINTS = {
     DETAIL: (connectorId: string, id: string) => `${API_BASE}/asset-allocation/${connectorId}/allocation/${id}`,
     PDF: (connectorId: string, id: string) => `${API_BASE}/asset-allocation/${connectorId}/allocation/${id}/pdf`,
     DOCX: (connectorId: string, id: string) => `${API_BASE}/asset-allocation/${connectorId}/allocation/${id}/docx`,
+    BLANK_PDF: (connectorId: string) => `${API_BASE}/asset-allocation/${connectorId}/blank-form/pdf`,
   },
 };
