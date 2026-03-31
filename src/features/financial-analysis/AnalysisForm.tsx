@@ -18,7 +18,12 @@ import {
   CheckCircle2,
   FileText,
   Calculator,
-  MessageSquare
+  MessageSquare,
+  Users,
+  Wallet,
+  Flag,
+  Check,
+  Target
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,10 +47,37 @@ interface AnalysisFormProps {
   onCancel: () => void;
 }
 
+const STEP_TITLES: Record<number, string> = {
+  1: "Entity Profile",
+  2: "Family Context",
+  3: "Financial Snapshot",
+  4: "Risk Mitigation",
+  5: "Strategic Planning",
+  6: "Final Review"
+};
+
+const STEP_DESCRIPTONS: Record<number, string> = {
+  1: "Basic details and spouse information",
+  2: "Children and contact information",
+  3: "Annual expenses, assets, and liabilities",
+  4: "Comprehensive insurance portfolio analysis",
+  5: "Goal setting and financial assumptions",
+  6: "Final notes and disclaimer confirmation"
+};
+
+const STEPS_CONFIG = [
+  { id: 1, title: "Profile", icon: User },
+  { id: 2, title: "Family", icon: Users },
+  { id: 3, title: "Snapshot", icon: Wallet },
+  { id: 4, title: "Security", icon: ShieldCheck },
+  { id: 5, title: "Goals", icon: Target },
+  { id: 6, title: "Finish", icon: Flag }
+];
+
 export function AnalysisForm({ connectorId, clientId, onSuccess, onCancel }: AnalysisFormProps) {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [panValidating, setPanValidating] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
   const [clientFound, setClientFound] = useState(false);
 
   const [formData, setFormData] = useState<FinancialAnalysisCreate>({
@@ -148,20 +180,20 @@ All calculations are based on the assumptions provided and are illustrative in n
     setClientFound(true);
   };
 
-  const validatePANRealTime = async (pan: string) => {
-    if (pan.length !== 10) return;
+  const validateCodeRealTime = async (code: string) => {
+    if (!code) return;
     
-    setPanValidating(true);
+    setIsValidating(true);
     try {
-      const client = await MasterDataService.getClientByPan(connectorId, pan);
+      const client = await MasterDataService.getClientByCode(connectorId, code);
       toast.success("Client found! Details auto-populated.");
       populateClientData(client);
     } catch (error) {
-      toast.error("PAN not found in registered database.");
+      toast.error("Client Code not found in database.");
       setClientFound(false);
-      setDisplayInfo({ clientName: "", clientCode: "", iaName: "", iaReg: "" });
+      setDisplayInfo({ clientName: "", clientCode: code, iaName: "", iaReg: "" });
     } finally {
-      setPanValidating(false);
+      setIsValidating(false);
     }
   };
 
@@ -299,46 +331,62 @@ All calculations are based on the assumptions provided and are illustrative in n
 
   const SectionHeader = ({ title, icon: Icon, number }: { title: string, icon: any, number: string }) => (
     <div className="flex items-center gap-3 mb-6 pb-2 border-b border-primary/10">
-      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold">
+      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-black text-xs">
         {number}
       </div>
-      <Icon className="w-5 h-5 text-primary/60" />
-      <h3 className="text-lg font-bold text-foreground/80">{title}</h3>
+      <Icon className="w-4 h-4 text-primary opacity-60" />
+      <h3 className="text-md font-black text-foreground/70 uppercase tracking-wide">{title}</h3>
     </div>
   );
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-20 px-4 sm:px-0">
-      {/* Header Badge */}
-      <div className="flex justify-center">
-        <Badge variant="outline" className="px-6 py-2 bg-primary/5 text-primary border-primary/20 rounded-full font-bold tracking-wider animate-pulse">
-          FINPLAN SYNC: PARITY MODE v3.2
-        </Badge>
-      </div>
 
       <Card className="border-primary/20 shadow-2xl bg-card/60 backdrop-blur-xl overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-primary/10 to-transparent border-b border-primary/10 p-4 sm:p-8">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
-            <div className="space-y-1">
-              <CardTitle className="text-3xl font-black tracking-tight flex items-center gap-3">
-                <Calculator className="w-8 h-8 text-primary" />
-                Financial Analysis Wizard
-              </CardTitle>
-              <CardDescription className="text-base font-medium opacity-70">
-                15 Sections | Comprehensive HLV & Retirement Planning
-              </CardDescription>
-            </div>
-            <div className="flex flex-col items-end gap-2">
-              <div className="flex bg-background/50 rounded-full p-1 border border-primary/10">
-                {[1, 2, 3, 4, 5, 6].map(i => (
-                  <div 
-                    key={i} 
-                    className={`w-3 h-3 rounded-full mx-1 transition-all duration-300 ${step === i ? 'bg-primary scale-125 shadow-lg shadow-primary/50' : 'bg-muted'}`}
-                    onClick={() => setStep(i)}
-                  />
-                ))}
+          <div className="flex flex-col gap-4">
+            {/* Professional Stepper Section */}
+            <div className="relative w-full overflow-hidden sm:overflow-visible pt-2">
+              <div className="flex justify-between items-start relative min-w-[600px] sm:min-w-0 px-2">
+                {/* Connecting Line Background */}
+                <div className="absolute top-5 left-0 w-full h-[2px] bg-muted/30 -z-10" />
+                
+                {/* Active/Success Progress Line */}
+                <div 
+                  className="absolute top-5 left-0 h-[2px] bg-green-500 transition-all duration-500 -z-10" 
+                  style={{ width: `${((step - 1) / (STEPS_CONFIG.length - 1)) * 100}%` }}
+                />
+
+                {STEPS_CONFIG.map((s, idx) => {
+                  const isCompleted = step > s.id;
+                  const isActive = step === s.id;
+                  const isPending = step < s.id;
+
+                  return (
+                    <div key={s.id} className="flex flex-col items-center gap-3 relative z-10">
+                      <div 
+                        className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-500 border-2 ${
+                          isCompleted ? "bg-green-600 border-green-600 text-white shadow-lg shadow-green-500/20" :
+                          isActive ? "bg-primary border-primary text-background scale-125 shadow-lg shadow-primary/40 ring-4 ring-primary/10" :
+                          "bg-card border-muted/50 text-muted-foreground"
+                        }`}
+                        onClick={() => setStep(s.id)}
+                      >
+                        {isCompleted ? <Check className="w-5 h-5" /> : <s.icon className="w-4 h-4" />}
+                      </div>
+                      <div className="flex flex-col items-center">
+                        <span className={`text-[10px] font-black uppercase tracking-widest transition-colors duration-300 ${
+                          isCompleted ? "text-green-500" :
+                          isActive ? "text-primary" :
+                          "text-muted-foreground/50"
+                        }`}>
+                          {s.title}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-              <span className="text-[10px] font-bold uppercase tracking-tiniest opacity-50">Step {step} of 6</span>
             </div>
           </div>
         </CardHeader>
@@ -353,37 +401,40 @@ All calculations are based on the assumptions provided and are illustrative in n
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label className="flex justify-between">
-                      PAN Number * 
-                      {panValidating && <span className="text-[10px] animate-spin">⌛</span>}
+                      Client Code * 
+                      {isValidating && <span className="text-[10px] animate-spin">⌛</span>}
                     </Label>
                     <div className="relative">
                       <Input 
-                        value={formData.pan} 
-                        onChange={e => handleTopLevelChange('pan', e.target.value.toUpperCase())}
-                        onBlur={e => validatePANRealTime(e.target.value)}
-                        placeholder="ABCDE1234F"
-                        className={`uppercase font-mono text-lg tracking-widest pl-10 ${clientFound ? 'border-green-500/50 bg-green-500/5' : ''}`}
+                        value={displayInfo.clientCode} 
+                        onChange={e => setDisplayInfo(prev => ({ ...prev, clientCode: e.target.value.toUpperCase() }))}
+                        onBlur={e => validateCodeRealTime(e.target.value)}
+                        placeholder="SIGN001"
+                        className={`uppercase font-mono text-lg tracking-widest pl-10 ${clientFound ? 'border-primary/50 bg-primary/5' : ''}`}
                       />
                       <Search className="absolute left-3 top-2.5 w-4 h-4 opacity-40" />
-                      {clientFound && <CheckCircle2 className="absolute right-3 top-2.5 w-4 h-4 text-green-500" />}
+                      {clientFound && <CheckCircle2 className="absolute right-3 top-2.5 w-4 h-4 text-primary" />}
                     </div>
                   </div>
                   <div className="space-y-2 opacity-80">
                     <Label>Full Name (Auto-populated)</Label>
                     <div className="h-10 px-3 flex items-center rounded-md border border-input bg-muted/30 font-bold uppercase text-primary/80">
-                      {displayInfo.clientName || "Validate PAN first"}
+                      {displayInfo.clientName || "Validate Client Code first"}
                     </div>
                   </div>
                   <div className="space-y-2 opacity-80">
-                    <Label>Client Code / IA Details</Label>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                      <div className="h-9 px-3 flex items-center rounded-md border border-input bg-muted/20 text-xs overflow-hidden truncate">
-                        {displayInfo.clientCode || "Code"}
-                      </div>
-                      <div className="h-9 px-3 flex items-center rounded-md border border-input bg-muted/20 text-xs overflow-hidden truncate">
+                    <Label>PAN Number (Auto-populated)</Label>
+                    <div className="h-10 px-3 flex items-center rounded-md border border-input bg-muted/30 font-bold uppercase text-primary/80 tracking-widest italic">
+                      {formData.pan || "Validate Client Code first"}
+                    </div>
+                  </div>
+                  <div className="space-y-2 opacity-80">
+                    <Label>IA Details (Auto-populated)</Label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div className="h-10 px-3 flex items-center rounded-md border border-input bg-muted/20 text-xs overflow-hidden truncate">
                         {displayInfo.iaName || "IA Name"}
                       </div>
-                      <div className="h-9 px-3 flex items-center rounded-md border border-input bg-muted/20 text-xs overflow-hidden truncate">
+                      <div className="h-10 px-3 flex items-center rounded-md border border-input bg-muted/20 text-xs overflow-hidden truncate">
                         {displayInfo.iaReg || "IA Reg No"}
                       </div>
                     </div>
@@ -864,7 +915,7 @@ All calculations are based on the assumptions provided and are illustrative in n
             
             {step < 6 ? (
               <Button className="gap-2 bg-primary px-10 font-black shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all w-full sm:w-auto" onClick={nextStep}>
-                CONTINUE TO STEP {step + 1} <ChevronRight className="w-4 h-4" />
+                PROCEED TO {STEP_TITLES[step + 1].toUpperCase()} <ChevronRight className="w-4 h-4" />
               </Button>
             ) : (
               <Button 
