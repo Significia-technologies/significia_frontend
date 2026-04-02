@@ -2,7 +2,7 @@
  * Sanitizes and upgrades the API base URL to HTTPS if the frontend is served via HTTPS or if running in a secure Worker.
  */
 export const getApiBaseUrl = (): string => {
-  const envUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/v1";
+  const envUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8001/api/v1";
   
   // Detect protocol in both window and worker contexts
   const currentProtocol = typeof window !== "undefined" 

@@ -1,66 +1,45 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { MasterDataService, ClientCreate } from "@/core/services/master.service";
-import { IAMasterService } from "@/core/services/ia-master.service";
+import { use } from "react";
 import ClientDetail from "@/features/master/ClientDetail";
+import { MasterDataService } from "@/core/services/master.service";
 import { Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import React, { useEffect, useState } from "react";
+import type { ClientCreate } from "@/core/services/master.service";
 
-export default function ClientProfilePage() {
-  const { id } = useParams();
-  const router = useRouter();
+/**
+ * Client Detail Page — Bridge Architecture
+ * Fetches client data server-side (via Bridge) and renders ClientDetail.
+ */
+export default function ClientDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const [client, setClient] = useState<ClientCreate | null>(null);
-  const [connectorId, setConnectorId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchData() {
-      try {
-        // 1. Get connector
-        const connectors = await IAMasterService.listConnectors();
-        if (!connectors || connectors.length === 0) {
-          toast.error("No database connection found.");
-          setLoading(false);
-          return;
-        }
-        const connId = connectors[0].id;
-        setConnectorId(connId);
-
-        // 2. Get client data
-        const data = await MasterDataService.getClient(connId, id as string);
-        setClient(data);
-      } catch (error) {
-        toast.error("Failed to load client profile.");
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    if (id) fetchData();
+    MasterDataService.getClient(id)
+      .then(setClient)
+      .catch(() => setError("Failed to load client data."))
+      .finally(() => setLoading(false));
   }, [id]);
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+      <div className="flex items-center justify-center min-h-[60vh]">
         <Loader2 className="w-10 h-10 animate-spin text-primary" />
-        <p className="text-muted-foreground animate-pulse">Fetching Secure Profile...</p>
       </div>
     );
   }
 
-  if (!client || !connectorId) {
+  if (error || !client) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
-        <h2 className="text-2xl font-bold text-destructive mb-2">Profile Not Found</h2>
-        <p className="text-muted-foreground max-w-md">
-          We couldn't retrieve the details for this client. 
-          Please ensure the client exists in your private database.
-        </p>
+        <h2 className="text-2xl font-bold text-destructive mb-2">Client Not Found</h2>
+        <p className="text-muted-foreground">{error || "This client record could not be found."}</p>
       </div>
     );
   }
 
-  return <ClientDetail client={client} connectorId={connectorId} />;
+  return <ClientDetail client={client} />;
 }

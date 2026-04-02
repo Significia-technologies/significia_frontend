@@ -34,11 +34,11 @@ import {
 
 
 interface IAMasterFormProps {
-  connectorId: string;
+  
   initialData?: IAMaster | null;
 }
 
-export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
+export function IAMasterForm({ initialData }: IAMasterFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("basic");
@@ -136,7 +136,7 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
   const validateIANumber = async () => {
     if (!formData.ia_registration_number || (initialData && initialData.ia_registration_number === formData.ia_registration_number)) return;
     try {
-      const exists = await IAMasterService.validateIANumber(connectorId, formData.ia_registration_number);
+      const exists = await IAMasterService.validateIANumber(formData.ia_registration_number);
       setIaNumberExists(exists);
       if (exists) {
         toast.error("IA Registration Number already exists!");
@@ -240,9 +240,9 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
       });
 
       if (initialData?.id) {
-        await IAMasterService.update(connectorId, initialData.id, data);
+        await IAMasterService.update(initialData.id, data);
       } else {
-        await IAMasterService.create(connectorId, data);
+        await IAMasterService.create(data);
       }
       toast.success("Investment Advisor record saved successfully!");
       router.push("/master");

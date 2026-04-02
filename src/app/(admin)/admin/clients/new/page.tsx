@@ -25,54 +25,36 @@ export default function NewClientProvisioningPage() {
   const [formData, setFormData] = useState({
     companyName: "",
     email: "",
-    password: "", // Temporary initial password
+    subdomain: "",
   });
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [successData, setSuccessData] = useState<any | null>(null);
 
-  const generatePassword = () => {
-    // Generate a random 12-char secure password for the new client
-    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
-    let pwd = "";
-    for (let i = 0, n = charset.length; i < 12; ++i) {
-      pwd += charset.charAt(Math.floor(Math.random() * n));
-    }
-    setFormData((prev) => ({ ...prev, password: pwd }));
-  };
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(formData.password);
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    alert("Copied to clipboard!");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
-    setSuccess(false);
+    setSuccessData(null);
 
     try {
-      await AdminService.provisionClient({
+      const response = await AdminService.provisionClient({
         company_name: formData.companyName,
         email: formData.email,
-        password: formData.password,
+        subdomain: formData.subdomain || undefined,
       });
-      // Set success for visual feedback, then we can optionally redirect
-      setSuccess(true);
-      setTimeout(() => {
-        router.push("/admin");
-      }, 3000);
+      setSuccessData(response);
     } catch (err) {
       if (err instanceof AxiosError && err.response?.data?.detail) {
          const detail = err.response.data.detail;
-         if (typeof detail === "string") {
-            setError(detail);
-         } else if (Array.isArray(detail)) {
-            setError(detail.map(d => d.msg).join(", "));
-         } else {
-             setError("An unknown error occurred during provisioning.");
-         }
+         setError(typeof detail === "string" ? detail : JSON.stringify(detail));
       } else {
         setError("Failed to reach server. Check your connection.");
       }
@@ -80,6 +62,65 @@ export default function NewClientProvisioningPage() {
       setIsLoading(false);
     }
   };
+
+  if (successData) {
+    return (
+      <div className="max-w-2xl mx-auto space-y-6">
+        <div className="flex items-center gap-4">
+          <Link href="/admin">
+            <Button variant="ghost" size="icon">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+          </Link>
+          <h1 className="text-2xl font-bold tracking-tight">Provisioning Successful</h1>
+        </div>
+
+        <Alert className="border-green-500/50 text-green-600 bg-green-500/10 mb-6">
+          <CheckCircle2 className="h-4 w-4 stroke-green-600" />
+          <AlertTitle>Tenant Created</AlertTitle>
+          <AlertDescription>
+            The record for <b>{successData.tenant_name}</b> is now live. Please copy the bridge token below.
+          </AlertDescription>
+        </Alert>
+
+        <Card className="border-primary/50 shadow-lg">
+          <CardHeader className="bg-primary/5 border-b">
+            <CardTitle className="text-lg">Deployment Checklist</CardTitle>
+            <CardDescription>Copy these credentials to configure the IA's Bridge server.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6 pt-6">
+            <div className="space-y-2">
+              <Label className="text-xs uppercase text-muted-foreground font-bold">Bridge Registration Token</Label>
+              <div className="flex gap-2">
+                <Input value={successData.bridge_registration_token} readOnly className="font-mono text-xs bg-muted" />
+                <Button variant="outline" size="icon" onClick={() => copyToClipboard(successData.bridge_registration_token)}>
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+              <p className="text-[10px] text-amber-600 font-medium">⚠️ Give this to the IA. They MUST paste this into their bridge/.env</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+              <div className="space-y-1">
+                <Label className="text-[10px] uppercase text-muted-foreground">Admin Email</Label>
+                <p className="text-sm font-medium">{successData.email}</p>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[10px] uppercase text-muted-foreground">Subdomain</Label>
+                <p className="text-sm font-medium">{successData.subdomain || "None (Custom Domain Only)"}</p>
+              </div>
+            </div>
+          </CardContent>
+          <CardFooter className="flex justify-between border-t bg-muted/20">
+            <Button variant="ghost" onClick={() => setSuccessData(null)}>Provision Another</Button>
+            <Link href="/admin">
+              <Button>Back to Dashboard</Button>
+            </Link>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -89,20 +130,8 @@ export default function NewClientProvisioningPage() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
         </Link>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Provision New Client</h1>
-        </div>
+        <h1 className="text-2xl font-bold tracking-tight">Provision New Client</h1>
       </div>
-
-      {success && (
-        <Alert className="border-green-500/50 text-green-600 bg-green-500/10">
-          <CheckCircle2 className="h-4 w-4 stroke-green-600" />
-          <AlertTitle>Provisioning Successful</AlertTitle>
-          <AlertDescription>
-            The tenant for <b>{formData.companyName}</b> has been generated safely. Navigating back to the overview...
-          </AlertDescription>
-        </Alert>
-      )}
 
       {error && (
         <Alert variant="destructive">
@@ -115,93 +144,57 @@ export default function NewClientProvisioningPage() {
         <CardHeader>
           <CardTitle>Tenant Registration Details</CardTitle>
           <CardDescription>
-            Fill out the operational details required to map the organizational schema. They will use this email and temporary password to log in.
+            Fill out the operational details required to map the organizational schema.
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="companyName">Company Name / Workspace Label</Label>
+              <Label htmlFor="companyName">Company Name</Label>
               <Input
                 id="companyName"
-                placeholder="Acme Corp"
+                placeholder="e.g. Bunty Wealth Management"
                 required
                 value={formData.companyName}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, companyName: e.target.value }))
-                }
+                onChange={(e) => setFormData((prev) => ({ ...prev, companyName: e.target.value }))}
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Root Owner Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="admin@acmecorp.com"
-                required
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, email: e.target.value }))
-                }
-              />
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Temporary Initial Password</Label>
-                <button 
-                  type="button" 
-                  onClick={generatePassword}
-                  className="text-xs text-primary font-medium hover:underline"
-                >
-                  Auto-Generate
-                </button>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="subdomain">Subdomain (Optional)</Label>
+                <div className="flex items-center">
+                  <Input
+                    id="subdomain"
+                    placeholder="bunty"
+                    className="rounded-r-none"
+                    value={formData.subdomain}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, subdomain: e.target.value.toLowerCase().replace(/[^a-z0-9]/g, "") }))}
+                  />
+                  <div className="bg-muted px-3 h-10 flex items-center border border-l-0 rounded-r-md text-xs text-muted-foreground">
+                    .significia.com
+                  </div>
+                </div>
+                <p className="text-[10px] text-muted-foreground">Leave blank for Custom Domain only.</p>
               </div>
-              <div className="relative">
+
+              <div className="space-y-2">
+                <Label htmlFor="email">Admin Email</Label>
                 <Input
-                  id="password"
-                  type="text"
-                  placeholder="Super secure password"
+                  id="email"
+                  type="email"
+                  placeholder="admin@bunty.com"
                   required
-                  value={formData.password}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, password: e.target.value }))
-                  }
+                  value={formData.email}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
                 />
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  className="absolute right-0 top-0 h-full px-3 text-muted-foreground hover:text-foreground"
-                  onClick={copyToClipboard}
-                  title="Copy password"
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Copy and securely distribute this password to the client in advance.
-              </p>
             </div>
+
           </CardContent>
-          <CardFooter className="bg-muted/30 py-4 px-6 mt-4 flex justify-end">
-            <Button
-              type="submit"
-              disabled={isLoading || success}
-              className="w-full sm:w-auto"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Provisioning DB...
-                </>
-              ) : (
-                <>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Create Client Record
-                </>
-              )}
+          <CardFooter className="bg-muted/30 py-4 px-6 flex justify-end">
+            <Button type="submit" disabled={isLoading} className="w-full sm:w-auto">
+              {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Provisioning...</> : <><PlusCircle className="mr-2 h-4 w-4" /> Create Tenant Record</>}
             </Button>
           </CardFooter>
         </form>

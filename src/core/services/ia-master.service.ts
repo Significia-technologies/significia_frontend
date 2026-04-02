@@ -1,4 +1,4 @@
-import { API_ENDPOINTS } from "../api/api-endpoints";
+﻿import { API_ENDPOINTS } from "../api/api-endpoints";
 import httpClient from "../api/http-client";
 
 export interface Employee {
@@ -41,53 +41,46 @@ export interface IAMaster {
   employees: Employee[];
 }
 
+// ── IA Master Service (Bridge Architecture) ───────────────────────────────
+// No  required — backend resolves tenant from JWT + X-Tenant-Slug
+
 export class IAMasterService {
-  static async validateIANumber(connectorId: string, iaNumber: string): Promise<boolean> {
+  static async validateIANumber(iaNumber: string): Promise<boolean> {
     const response = await httpClient.get<{ exists: boolean }>(
-      API_ENDPOINTS.MASTER.IA_MASTER.VALIDATE(connectorId, iaNumber)
+      API_ENDPOINTS.MASTER.IA_MASTER.VALIDATE(iaNumber)
     );
     return response.data.exists;
   }
 
-  static async create(connectorId: string, formData: FormData): Promise<IAMaster> {
+  static async create(formData: FormData): Promise<IAMaster> {
     const response = await httpClient.post<IAMaster>(
-      API_ENDPOINTS.MASTER.IA_MASTER.CREATE(connectorId),
+      API_ENDPOINTS.MASTER.IA_MASTER.CREATE,
       formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      }
+      { headers: { "Content-Type": "multipart/form-data" } }
     );
     return response.data;
   }
 
-  static async update(connectorId: string, iaId: string, formData: FormData): Promise<IAMaster> {
+  static async update(iaId: string, formData: FormData): Promise<IAMaster> {
     const response = await httpClient.patch<IAMaster>(
-      API_ENDPOINTS.MASTER.IA_MASTER.UPDATE(connectorId, iaId),
+      API_ENDPOINTS.MASTER.IA_MASTER.UPDATE(iaId),
       formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      }
+      { headers: { "Content-Type": "multipart/form-data" } }
     );
     return response.data;
   }
 
-  static async getLatest(connectorId: string): Promise<IAMaster | null> {
+  static async getLatest(): Promise<IAMaster | null> {
     const response = await httpClient.get<IAMaster | null>(
-      API_ENDPOINTS.MASTER.IA_MASTER.LATEST(connectorId)
+      API_ENDPOINTS.MASTER.IA_MASTER.LATEST
     );
     return response.data;
   }
 
-  static async downloadPdf(connectorId: string, iaId: string): Promise<void> {
-    const response = await httpClient.get(
-      API_ENDPOINTS.MASTER.IA_MASTER.PDF(connectorId, iaId),
-      { responseType: "blob" }
-    );
-    
+  static async downloadPdf(iaId: string): Promise<void> {
+    const response = await httpClient.get(API_ENDPOINTS.MASTER.IA_MASTER.PDF(iaId), {
+      responseType: "blob",
+    });
     const url = window.URL.createObjectURL(new Blob([response.data]));
     const link = document.createElement("a");
     link.href = url;
@@ -97,16 +90,18 @@ export class IAMasterService {
     link.remove();
   }
 
-  static async updateClientPermit(connectorId: string, iaId: string, maxPermit: number): Promise<IAMaster> {
+  static async updateClientPermit(iaId: string, maxPermit: number): Promise<IAMaster> {
     const response = await httpClient.patch<IAMaster>(
-      API_ENDPOINTS.MASTER.IA_MASTER.UPDATE_PERMIT(connectorId, iaId),
+      API_ENDPOINTS.MASTER.IA_MASTER.UPDATE_PERMIT(iaId),
       { max_client_permit: maxPermit }
     );
     return response.data;
   }
 
-  static async listConnectors(): Promise<any[]> {
-    const response = await httpClient.get<any[]>(API_ENDPOINTS.CONNECTORS.LIST);
+  static async listEmployees(): Promise<Employee[]> {
+    const response = await httpClient.get<Employee[]>(
+      API_ENDPOINTS.MASTER.IA_MASTER.EMPLOYEES
+    );
     return response.data;
   }
 }

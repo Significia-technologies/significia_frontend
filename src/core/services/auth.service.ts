@@ -1,7 +1,7 @@
 import httpClient from "@/core/api/http-client";
 import { API_ENDPOINTS } from "@/core/api/api-endpoints";
 
-// ── Types (matching backend user schema) ─────────────
+// ── Types ─────────────────────────────────────────
 
 export interface LoginPayload {
   email: string;
@@ -14,17 +14,15 @@ export interface RegisterPayload {
   companyName: string;
 }
 
-/**
- * Backend returns a "safe user" — all columns EXCEPT:
- * passwordHash, refreshTokenHash, twoFactorSecret, twoFactorRecoveryCodes
- */
 export interface User {
   id: string;
   email: string;
-  role: "super_admin" | "owner" | "admin" | "analyst" | "user" | "client";
+  name?: string;
+  role: "super_admin" | "owner" | "admin" | "analyst" | "user" | "client" | "ia_staff";
   tenant_id: string;
   company_name: string;
-  // Note: Add additional properties if backend adds them
+  custom_domain?: string | null;
+  subdomain?: string | null;
 }
 
 export interface AuthResponse {
@@ -34,67 +32,82 @@ export interface AuthResponse {
   subdomain?: string | null;
 }
 
-// ── Auth Service ────────────────────────────────────
+export interface IAStaffLoginResponse {
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
+  user_name: string;
+  user_role: string;
+  tenant_name: string;
+}
+
+// ── Auth Service ─────────────────────────────────────────────────────────
 
 export const AuthService = {
   /**
    * POST /api/v1/auth/login
-   * Body: { email, password }
-   * Response: { access_token, refresh_token, token_type }
+   * For Significia Super Admins only (app.significia.com)
    */
   async login(payload: LoginPayload): Promise<AuthResponse> {
     const { data } = await httpClient.post(API_ENDPOINTS.AUTH.LOGIN, payload);
-    
-    // Backend returns access_token and refresh_token (snake_case)
+
     const accessToken = data.access_token;
     const refreshToken = data.refresh_token;
     const subdomain = data.subdomain;
 
-    // Persist explicitly for Axios interceptor usage
     localStorage.setItem("accessToken", accessToken);
     localStorage.setItem("refreshToken", refreshToken);
 
-    // After login, we must fetch the user details separately
-    // because the FastAPI login route only returns the tokens.
     const user = await this.getCurrentUser();
-
     return { user, accessToken, refreshToken, subdomain };
+  },
+
+  /**
+   * POST /api/v1/ia-auth/login
+   * For IA Staff only — separate login page at /ia-login
+   * The backend resolves the tenant from the Host header (e.g. bunty.com)
+   */
+  async iaStaffLogin(payload: LoginPayload): Promise<IAStaffLoginResponse> {
+    const { data } = await httpClient.post<IAStaffLoginResponse>(
+      API_ENDPOINTS.IA_AUTH.LOGIN,
+      payload
+    );
+
+    localStorage.setItem("accessToken", data.access_token);
+    localStorage.setItem("refreshToken", data.refresh_token);
+    localStorage.setItem("userRole", data.user_role);
+    localStorage.setItem("tenantName", data.tenant_name);
+
+    return data;
   },
 
   /**
    * POST /api/v1/auth/register
    * Body: { email, password, company_name }
-   * Response: { id, email, role, tenant_id }
    */
   async register(payload: RegisterPayload): Promise<User> {
-    const backendPayload = {
+    const { data } = await httpClient.post(API_ENDPOINTS.AUTH.REGISTER, {
       email: payload.email,
       password: payload.password,
       company_name: payload.companyName,
-    };
-    
-    const { data } = await httpClient.post(API_ENDPOINTS.AUTH.REGISTER, backendPayload);
-    // Registration only returns a User object (201 Created), no tokens anymore
+    });
     return data as User;
   },
 
   /**
-   * POST /api/v1/auth/logout
+   * POST /api/v1/client-auth/bridge/login
+   * For IA clients (investors) logging into the client portal
    */
-  async logout(): Promise<void> {
-    try {
-      // Optional: inform backend
-      // await httpClient.post(API_ENDPOINTS.AUTH.LOGOUT);
-    } finally {
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-    }
+  async clientLogin(payload: LoginPayload): Promise<AuthResponse> {
+    const { data } = await httpClient.post(API_ENDPOINTS.CLIENT_AUTH.LOGIN, payload);
+    const accessToken = data.access_token;
+    localStorage.setItem("accessToken", accessToken);
+    const user = await this.getCurrentClient();
+    return { user, accessToken, refreshToken: "", subdomain: null };
   },
 
   /**
-   * GET /api/v1/auth/me
-   * Requires Authorization header
-   * Response: JSON body is directly the User object
+   * GET /api/v1/auth/me — Super Admin user
    */
   async getCurrentUser(): Promise<User> {
     const { data } = await httpClient.get(API_ENDPOINTS.AUTH.CURRENT_USER);
@@ -102,27 +115,43 @@ export const AuthService = {
   },
 
   /**
-   * POST /api/v1/client-auth/login
-   * For tenant clients connecting directly to their subdomain
+   * GET /api/v1/client-auth/me — IA Client
    */
-  async clientLogin(payload: LoginPayload): Promise<AuthResponse> {
-    const { data } = await httpClient.post("/client-auth/login", payload);
-    const accessToken = data.access_token;
-    
-    // Persist explicitly for Axios interceptor usage
-    localStorage.setItem("accessToken", accessToken);
-
-    const user = await this.getCurrentClient();
-
-    return { user, accessToken, refreshToken: "", subdomain: null };
+  async getCurrentClient(): Promise<User> {
+    const { data } = await httpClient.get(API_ENDPOINTS.CLIENT_AUTH.ME);
+    return data as User;
   },
 
   /**
-   * GET /api/v1/client-auth/me
+   * GET /api/v1/public/branding
+   * Fetch branding (name, logo) for the current tenant context.
+   * Does NOT require auth.
    */
-  async getCurrentClient(): Promise<User> {
-    const { data } = await httpClient.get("/client-auth/me");
-    // Coerce client format into our general User footprint so the frontend sees them properly
-    return { ...data, role: "client" } as User;
+  async getPublicBranding(slug?: string): Promise<{
+    name: string;
+    is_master: boolean;
+    logo_type: "significia" | "shield" | "custom";
+    logo_url?: string | null;
+  }> {
+    const headers: Record<string, string> = {};
+    if (slug) {
+      headers["X-Tenant-Slug"] = slug;
+    }
+    
+    // We use raw httpClient here because this route is unauthenticated
+    const { data } = await httpClient.get(API_ENDPOINTS.PUBLIC.BRANDING, {
+      headers,
+    });
+    return data;
+  },
+
+  /**
+   * Logout — clears all stored tokens
+   */
+  async logout(): Promise<void> {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("userRole");
+    localStorage.removeItem("tenantName");
   },
 };

@@ -34,10 +34,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 interface AssetAllocationHistoryProps {
-  connectorId: string;
+  
 }
 
-export function AssetAllocationHistory({ connectorId }: AssetAllocationHistoryProps) {
+export function AssetAllocationHistory({  }: AssetAllocationHistoryProps) {
   const [loading, setLoading] = useState(true);
   const [allocations, setAllocations] = useState<AssetAllocation[]>([]);
   const [search, setSearch] = useState("");
@@ -45,12 +45,12 @@ export function AssetAllocationHistory({ connectorId }: AssetAllocationHistoryPr
 
   useEffect(() => {
     loadAllocations();
-  }, [connectorId]);
+  }, []);
 
   const loadAllocations = async () => {
     setLoading(true);
     try {
-      const data = await AssetAllocationService.getAll(connectorId);
+      const data = await AssetAllocationService.getAll();
       setAllocations(data);
     } catch {
       toast.error("Failed to load allocation history");
@@ -64,13 +64,11 @@ export function AssetAllocationHistory({ connectorId }: AssetAllocationHistoryPr
     try {
       if (type === "PDF") {
         await AssetAllocationService.downloadPDF(
-          connectorId,
           item.id,
           `Asset_Allocation_${item.client_code || item.id}.pdf`
         );
       } else {
         await AssetAllocationService.downloadDOCX(
-          connectorId,
           item.id,
           `Asset_Allocation_${item.client_code || item.id}.docx`
         );
@@ -167,7 +165,7 @@ export function AssetAllocationHistory({ connectorId }: AssetAllocationHistoryPr
             onClick={async () => {
               setDownloading("BLANK");
               try {
-                await AssetAllocationService.downloadBlankPDF(connectorId);
+                await AssetAllocationService.downloadBlankPDF();
                 toast.success("Blank form downloaded successfully");
               } catch {
                 toast.error("Failed to download blank form");

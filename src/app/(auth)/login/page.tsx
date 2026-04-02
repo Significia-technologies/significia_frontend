@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
@@ -17,11 +17,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AuthService } from "@/core/services/auth.service";
 import { useAppStore } from "@/store/useAppStore";
+import { TenantLogo } from "@/components/shared/TenantLogo";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { setUser } = useAppStore();
-
+  const { setUser, publicBranding } = useAppStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -39,10 +39,20 @@ export default function LoginPage() {
       const isRootDomain = rootDomains.includes(hostname) || hostname.endsWith('.vercel.app');
 
       let result;
-      if (isRootDomain) {
+      // If we are simulating a tenant, we should use the client login flow
+      const isSimulating = !!localStorage.getItem("simulatedTenantSlug") && localStorage.getItem("simulatedTenantSlug") !== 'master';
+      
+      if (isRootDomain && !isSimulating) {
         result = await AuthService.login({ email, password });
       } else {
         result = await AuthService.clientLogin({ email, password });
+      }
+      
+      // Strict Role Isolation: Check if user belongs to this portal
+      if (isSimulating && result.user.role === "super_admin") {
+        setIsLoading(false);
+        setError("Unauthorized: Super Admins must log in via the master portal at app.significia.com");
+        return;
       }
       
       setUser(result.user);
@@ -53,7 +63,7 @@ export default function LoginPage() {
         router.push("/");
       } else {
         // IA Master (owner) or other internal roles
-        if (isRootDomain) {
+        if (isRootDomain && !isSimulating) {
             router.push("/");
         } else if (result.subdomain) {
           const currentHost = window.location.host;
@@ -83,15 +93,26 @@ export default function LoginPage() {
     }
   };
 
+  const brandingName = publicBranding?.name || "Elite Portal";
+  const isMaster = publicBranding?.is_master ?? true;
+
   return (
     <Card className="w-full border-none shadow-none bg-transparent overflow-hidden">
-      <CardHeader className="space-y-1 pb-6 pt-0">
-        <CardTitle className="text-3xl font-bold flex justify-center tracking-tight">
-          Login
-        </CardTitle>
-        <CardDescription className="text-muted-foreground text-sm flex justify-center">
-          Enter your credentials to access your dashboard.
-        </CardDescription>
+      <CardHeader className="space-y-4 pb-8 pt-0 items-center text-center">
+        <TenantLogo 
+          logoType={publicBranding?.logo_type || (isMaster ? "significia" : "shield")}
+          logoUrl={publicBranding?.logo_url}
+          className="h-16 w-16 mb-2 mx-auto"
+          iconClassName="h-8 w-8"
+        />
+        <div className="space-y-1">
+          <CardTitle className="text-3xl font-bold tracking-tight">
+            Welcome to {brandingName}
+          </CardTitle>
+          <CardDescription className="text-muted-foreground text-sm">
+            Please enter your details to sign in
+          </CardDescription>
+        </div>
       </CardHeader>
 
       <form onSubmit={handleSubmit}>
@@ -119,9 +140,6 @@ export default function LoginPage() {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="password">Password</Label>
-              {/* <Link href="#" className="text-xs text-primary hover:underline underline-offset-4">
-                Forgot password?
-              </Link> */}
             </div>
             <div className="relative">
               <Input
@@ -154,17 +172,8 @@ export default function LoginPage() {
         <CardFooter className="flex flex-col gap-6 px-0 pb-8 pt-2">
           <Button type="submit" className="w-full h-11 text-base font-semibold bg-primary hover:bg-primary/90 shadow-xl shadow-primary/20 transition-all hover:scale-[1.01] active:scale-95" disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Get Started
+            Sign In
           </Button>
-          {/* <p className="text-center text-sm text-muted-foreground">
-            Don&apos;t have an account?{" "}
-            <Link
-              href="/register"
-              className="font-semibold text-primary underline-offset-4 hover:underline"
-            >
-              Sign up for free
-            </Link>
-          </p> */}
         </CardFooter>
       </form>
     </Card>

@@ -1,16 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { 
-  Wrench, 
-  FileText, 
-  Download,
-  RefreshCcw,
-  ShieldCheck
-} from "lucide-react";
+import { Wrench, FileText, Download, RefreshCcw, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { ConnectorService, Connector } from "@/core/services/connector.service";
 import { FinancialAnalysisService } from "@/core/services/financial-analysis.service";
 import { MasterDataService } from "@/core/services/master.service";
 import { RiskProfileService } from "@/core/services/risk-profile.service";
@@ -18,99 +11,72 @@ import { AssetAllocationService } from "@/core/services/asset-allocation.service
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
+/**
+ * Advisor Tools Page — Bridge Architecture
+ * No connector gate needed — Bridge handles DB access transparently.
+ */
 export default function ToolsPage() {
   const [loading, setLoading] = useState(true);
-  const [connector, setConnector] = useState<Connector | null>(null);
   const [questionnaires, setQuestionnaires] = useState<any[]>([
-    {
-      id: "sample-form",
-      portfolio_name: "Strategic Risk Assessment (Sample)",
-      is_system: true
-    }
+    { id: "sample-form", portfolio_name: "Strategic Risk Assessment (Sample)", is_system: true },
   ]);
 
   useEffect(() => {
-    fetchConnector();
+    fetchQuestionnaires();
   }, []);
 
-  const fetchConnector = async () => {
+  const fetchQuestionnaires = async () => {
     setLoading(true);
     try {
-      const connectors = await ConnectorService.list();
-      if (connectors && connectors.length > 0) {
-        const activeConnector = connectors[0];
-        setConnector(activeConnector);
-        
-        // Fetch questionnaires
-        const data = await RiskProfileService.listQuestionnaires(activeConnector.id);
-        const activeCustoms = data.filter((q: any) => q.status === 'active');
-        setQuestionnaires([
-          { id: "sample-form", portfolio_name: "Strategic Risk Assessment (Sample)", is_system: true },
-          ...activeCustoms
-        ]);
-      } else {
-        toast.error("No active connection found. Please check master settings.");
-      }
-    } catch (error) {
-      console.error("Failed to fetch connector", error);
-      toast.error("Cloud connection failed. Please check master settings.");
+      const data = await RiskProfileService.listQuestionnaires();
+      const activeCustoms = data.filter((q: any) => q.status === "active");
+      setQuestionnaires([
+        { id: "sample-form", portfolio_name: "Strategic Risk Assessment (Sample)", is_system: true },
+        ...activeCustoms,
+      ]);
+    } catch {
+      // If questionnaires fail, show the system default only — non-fatal
     } finally {
       setLoading(false);
     }
   };
 
   const handleDownloadForm = async () => {
-    if (!connector) {
-      toast.error("No active connection found.");
-      return;
-    }
     try {
       toast.info("Generating form...");
-      await FinancialAnalysisService.downloadBlankForm(connector.id);
+      await FinancialAnalysisService.downloadBlankForm();
       toast.success("Form downloaded successfully.");
-    } catch (error) {
+    } catch {
       toast.error("Failed to download form.");
     }
   };
 
   const handleDownloadClientForm = async () => {
-    if (!connector) {
-      toast.error("No active connection found.");
-      return;
-    }
     try {
       toast.info("Generating form...");
-      await MasterDataService.downloadBlankForm(connector.id);
+      await MasterDataService.downloadBlankForm();
       toast.success("Client Registration form downloaded successfully.");
-    } catch (error) {
+    } catch {
       toast.error("Failed to download client form.");
     }
   };
 
   const handleDownloadProtocol = async (qId: string, name: string) => {
-    if (!connector) {
-      toast.error("No active connection found.");
-      return;
-    }
     try {
       toast.info(`Generating ${name}...`);
-      await RiskProfileService.downloadBlankPDF(connector.id, qId, `Risk_Form_${name.replace(/\s+/g, '_')}.pdf`);
+      await RiskProfileService.downloadBlankPDF(qId, `Risk_Form_${name.replace(/\s+/g, "_")}.pdf`);
       toast.success("Protocol downloaded successfully.");
-    } catch (error) {
+    } catch {
       toast.error("Failed to download protocol.");
     }
   };
 
   const handleDownloadAssetAllocationForm = async () => {
-    if (!connector) {
-      toast.error("No active connection found.");
-      return;
-    }
     try {
       toast.info("Generating form...");
-      await AssetAllocationService.downloadBlankPDF(connector.id);
+      await AssetAllocationService.downloadBlankPDF();
       toast.success("Asset Allocation form downloaded successfully.");
-    } catch (error) {
+    } catch {
       toast.error("Failed to download asset allocation form.");
     }
   };
@@ -126,12 +92,10 @@ export default function ToolsPage() {
             </span>
             Advisor Tools
           </h1>
-          <p className="text-muted-foreground mt-1">
-            Access utility tools and stationary for your practice.
-          </p>
+          <p className="text-muted-foreground mt-1">Access utility tools and stationary for your practice.</p>
         </div>
-        <Button variant="outline" size="icon" onClick={fetchConnector} disabled={loading} className="hover:rotate-180 transition-transform duration-500">
-          <RefreshCcw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+        <Button variant="outline" size="icon" onClick={fetchQuestionnaires} disabled={loading} className="hover:rotate-180 transition-transform duration-500">
+          <RefreshCcw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
         </Button>
       </div>
 
@@ -149,82 +113,37 @@ export default function ToolsPage() {
                 <FileText className="w-5 h-5 text-primary" />
                 Stationary
               </CardTitle>
-              <CardDescription>
-                Download printable forms and templates for client meetings.
-              </CardDescription>
+              <CardDescription>Download printable forms and templates for client meetings.</CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
               <div className="space-y-4">
-
-                 <div className="flex items-center justify-between p-3 rounded-xl border bg-card hover:bg-accent/50 transition-all group cursor-default">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 rounded-lg bg-primary/10 text-primary group-hover:scale-110 transition-transform">
-                      <FileText className="w-5 h-5" />
+                {[
+                  { label: "Client Registration Form", desc: "Complete blank KYC & registration form", handler: handleDownloadClientForm },
+                  { label: "Financial Analysis Form", desc: "Blank printable PDF data entry form", handler: handleDownloadForm },
+                  { label: "Asset Allocation Form", desc: "Strategic portfolio distribution template", handler: handleDownloadAssetAllocationForm },
+                ].map((item) => (
+                  <div key={item.label} className="flex items-center justify-between p-3 rounded-xl border bg-card hover:bg-accent/50 transition-all group cursor-default">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 rounded-lg bg-primary/10 text-primary group-hover:scale-110 transition-transform">
+                        <FileText className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-sm">{item.label}</p>
+                        <p className="text-xs text-muted-foreground">{item.desc}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-semibold text-sm">Client Registration Form</p>
-                      <p className="text-xs text-muted-foreground">Complete blank KYC & registration form</p>
-                    </div>
+                    <Button variant="ghost" size="icon" onClick={item.handler} className="hover:bg-primary/20 hover:text-primary transition-colors" title="Download PDF">
+                      <Download className="w-4 h-4" />
+                    </Button>
                   </div>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={handleDownloadClientForm}
-                    className="hover:bg-primary/20 hover:text-primary transition-colors"
-                    title="Download PDF"
-                  >
-                    <Download className="w-4 h-4" />
-                  </Button>
-                </div>
-
-                <div className="flex items-center justify-between p-3 rounded-xl border bg-card hover:bg-accent/50 transition-all group cursor-default">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 rounded-lg bg-primary/10 text-primary group-hover:scale-110 transition-transform">
-                      <FileText className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-sm">Financial Analysis Form</p>
-                      <p className="text-xs text-muted-foreground">Blank printable PDF data entry form</p>
-                    </div>
-                  </div>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={handleDownloadForm}
-                    className="hover:bg-primary/20 hover:text-primary transition-colors"
-                    title="Download PDF"
-                  >
-                    <Download className="w-4 h-4" />
-                  </Button>
-                </div>
-
-                <div className="flex items-center justify-between p-3 rounded-xl border bg-card hover:bg-accent/50 transition-all group cursor-default">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 rounded-lg bg-primary/10 text-primary group-hover:scale-110 transition-transform">
-                      <FileText className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-sm">Asset Allocation Form</p>
-                      <p className="text-xs text-muted-foreground">Strategic portfolio distribution template</p>
-                    </div>
-                  </div>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={handleDownloadAssetAllocationForm}
-                    className="hover:bg-primary/20 hover:text-primary transition-colors"
-                    title="Download PDF"
-                  >
-                    <Download className="w-4 h-4" />
-                  </Button>
-                </div>               
+                ))}
                 <div className="p-4 rounded-xl border border-dashed border-muted-foreground/20 bg-muted/5 flex items-center justify-center text-xs text-muted-foreground italic">
                   Additional stationary items coming soon...
                 </div>
               </div>
             </CardContent>
           </Card>
-          
+
           {/* Risk Assessment Protocols Card */}
           <Card className="overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 shadow-xl bg-card/40 backdrop-blur-sm">
             <CardHeader className="bg-primary/5 pb-4 border-b border-primary/10">
@@ -232,35 +151,26 @@ export default function ToolsPage() {
                 <ShieldCheck className="w-5 h-5" />
                 Strategic Protocols
               </CardTitle>
-              <CardDescription>
-                System-certified and custom risk assessment frameworks.
-              </CardDescription>
+              <CardDescription>System-certified and custom risk assessment frameworks.</CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
               <div className="space-y-4">
                 {questionnaires.map((q) => (
                   <div key={q.id} className="flex items-center justify-between p-3 rounded-xl border border-primary/10 bg-background/50 hover:bg-primary/5 transition-all group cursor-default">
                     <div className="flex items-center gap-3">
-                      <div className={`p-2.5 rounded-lg ${q.is_system ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'} group-hover:scale-110 transition-transform`}>
+                      <div className={`p-2.5 rounded-lg ${q.is_system ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"} group-hover:scale-110 transition-transform`}>
                         <ShieldCheck className="w-5 h-5" />
                       </div>
                       <div>
                         <p className="font-bold text-[13px] uppercase tracking-tight">{q.portfolio_name}</p>
-                        <p className="text-[10px] font-semibold text-muted-foreground/60 uppercase">{q.is_system ? 'System Default' : 'Custom Protocol'}</p>
+                        <p className="text-[10px] font-semibold text-muted-foreground/60 uppercase">{q.is_system ? "System Default" : "Custom Protocol"}</p>
                       </div>
                     </div>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      onClick={() => handleDownloadProtocol(q.id, q.portfolio_name)}
-                      className="h-9 w-9 hover:bg-primary/20 hover:text-primary transition-colors rounded-lg"
-                      title="Download Blank PDF"
-                    >
+                    <Button variant="ghost" size="icon" onClick={() => handleDownloadProtocol(q.id, q.portfolio_name)} className="h-9 w-9 hover:bg-primary/20 hover:text-primary transition-colors rounded-lg" title="Download Blank PDF">
                       <Download className="w-4 h-4" />
                     </Button>
                   </div>
                 ))}
-                
                 {questionnaires.length === 0 && (
                   <div className="py-8 text-center text-xs text-muted-foreground italic border-2 border-dashed border-primary/5 rounded-xl">
                     No active protocols found.
@@ -270,7 +180,7 @@ export default function ToolsPage() {
             </CardContent>
           </Card>
 
-          {/* Placeholders for future tools */}
+          {/* Placeholders */}
           <Card className="overflow-hidden border border-dashed opacity-60">
             <CardHeader>
               <CardTitle className="text-muted-foreground text-lg">Calculator Toolkit</CardTitle>

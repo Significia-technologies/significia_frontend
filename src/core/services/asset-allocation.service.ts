@@ -1,4 +1,4 @@
-import { API_ENDPOINTS } from "../api/api-endpoints";
+﻿import { API_ENDPOINTS } from "../api/api-endpoints";
 import httpClient from "../api/http-client";
 
 export interface AssetAllocationCreate {
@@ -65,52 +65,42 @@ export interface AssetAllocationSaveResponse {
   message: string;
 }
 
+// ── Asset Allocation Service (Bridge Architecture) ────────────────────────
+// No  required — backend resolves tenant from JWT + X-Tenant-Slug
+
 export class AssetAllocationService {
-  static async validateClient(
-    connectorId: string,
-    clientCode: string
-  ): Promise<ClientValidateResponse> {
+  static async validateClient(clientCode: string): Promise<ClientValidateResponse> {
     const response = await httpClient.post<ClientValidateResponse>(
-      API_ENDPOINTS.ASSET_ALLOCATION.VALIDATE_CLIENT(connectorId),
+      API_ENDPOINTS.ASSET_ALLOCATION.VALIDATE_CLIENT,
       { client_code: clientCode }
     );
     return response.data;
   }
 
-  static async save(
-    connectorId: string,
-    data: AssetAllocationCreate
-  ): Promise<AssetAllocationSaveResponse> {
+  static async save(data: AssetAllocationCreate): Promise<AssetAllocationSaveResponse> {
     const response = await httpClient.post<AssetAllocationSaveResponse>(
-      API_ENDPOINTS.ASSET_ALLOCATION.SAVE(connectorId),
+      API_ENDPOINTS.ASSET_ALLOCATION.SAVE,
       data
     );
     return response.data;
   }
 
-  static async getAll(connectorId: string): Promise<AssetAllocation[]> {
-    const response = await httpClient.get<AssetAllocation[]>(
-      API_ENDPOINTS.ASSET_ALLOCATION.LIST(connectorId)
-    );
+  static async getAll(): Promise<AssetAllocation[]> {
+    const response = await httpClient.get<AssetAllocation[]>(API_ENDPOINTS.ASSET_ALLOCATION.LIST);
     return response.data;
   }
 
-  static async getById(connectorId: string, id: string): Promise<AssetAllocation> {
+  static async getById(id: string): Promise<AssetAllocation> {
     const response = await httpClient.get<AssetAllocation>(
-      API_ENDPOINTS.ASSET_ALLOCATION.DETAIL(connectorId, id)
+      API_ENDPOINTS.ASSET_ALLOCATION.DETAIL(id)
     );
     return response.data;
   }
 
-  static async downloadPDF(
-    connectorId: string,
-    allocationId: string,
-    filename: string = "Asset_Allocation.pdf"
-  ): Promise<void> {
-    const response = await httpClient.get(
-      API_ENDPOINTS.ASSET_ALLOCATION.PDF(connectorId, allocationId),
-      { responseType: "blob" }
-    );
+  static async downloadPDF(allocationId: string, filename = "Asset_Allocation.pdf"): Promise<void> {
+    const response = await httpClient.get(API_ENDPOINTS.ASSET_ALLOCATION.PDF(allocationId), {
+      responseType: "blob",
+    });
     const url = window.URL.createObjectURL(new Blob([response.data]));
     const link = document.createElement("a");
     link.href = url;
@@ -120,15 +110,10 @@ export class AssetAllocationService {
     link.remove();
   }
 
-  static async downloadDOCX(
-    connectorId: string,
-    allocationId: string,
-    filename: string = "Asset_Allocation.docx"
-  ): Promise<void> {
-    const response = await httpClient.get(
-      API_ENDPOINTS.ASSET_ALLOCATION.DOCX(connectorId, allocationId),
-      { responseType: "blob" }
-    );
+  static async downloadDOCX(allocationId: string, filename = "Asset_Allocation.docx"): Promise<void> {
+    const response = await httpClient.get(API_ENDPOINTS.ASSET_ALLOCATION.DOCX(allocationId), {
+      responseType: "blob",
+    });
     const url = window.URL.createObjectURL(new Blob([response.data]));
     const link = document.createElement("a");
     link.href = url;
@@ -138,14 +123,10 @@ export class AssetAllocationService {
     link.remove();
   }
 
-  static async downloadBlankPDF(
-    connectorId: string,
-    filename: string = "Asset_Allocation_Blank_Form.pdf"
-  ): Promise<void> {
-    const response = await httpClient.get(
-      API_ENDPOINTS.ASSET_ALLOCATION.BLANK_PDF(connectorId),
-      { responseType: "blob" }
-    );
+  static async downloadBlankPDF(filename = "Asset_Allocation_Blank_Form.pdf"): Promise<void> {
+    const response = await httpClient.get(API_ENDPOINTS.ASSET_ALLOCATION.BLANK_PDF, {
+      responseType: "blob",
+    });
     const url = window.URL.createObjectURL(new Blob([response.data]));
     const link = document.createElement("a");
     link.href = url;

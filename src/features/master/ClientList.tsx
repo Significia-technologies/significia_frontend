@@ -27,11 +27,7 @@ import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
 
-interface ClientListProps {
-  connectorId: string;
-}
-
-export function ClientList({ connectorId }: ClientListProps) {
+export function ClientList() {
   const router = useRouter();
   const [clients, setClients] = useState<Client[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -45,11 +41,11 @@ export function ClientList({ connectorId }: ClientListProps) {
       setLoading(false);
     };
     init();
-  }, [connectorId]);
+  }, []);
 
   const fetchEmployees = async () => {
     try {
-      const iaMaster = await IAMasterService.getLatest(connectorId);
+      const iaMaster = await IAMasterService.getLatest();
       if (iaMaster?.employees) {
         setEmployees(iaMaster.employees);
       }
@@ -60,7 +56,7 @@ export function ClientList({ connectorId }: ClientListProps) {
 
   const fetchClients = async () => {
     try {
-      const data = await MasterDataService.listClients(connectorId);
+      const data = await MasterDataService.listClients();
       setClients(data);
     } catch (error) {
       toast.error("Failed to load clients from your private database");
@@ -72,7 +68,7 @@ export function ClientList({ connectorId }: ClientListProps) {
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this client?")) return;
     try {
-      await MasterDataService.deleteClient(connectorId, id);
+      await MasterDataService.deleteClient(id);
       toast.success("Client removed from private storage");
       fetchClients();
     } catch (error) {
@@ -83,7 +79,7 @@ export function ClientList({ connectorId }: ClientListProps) {
   const handleDownloadMasterReport = async () => {
     try {
       setDownloading(true);
-      await MasterDataService.downloadMasterReport(connectorId);
+      await MasterDataService.downloadMasterReport();
       toast.success("Master report downloaded successfully");
     } catch (error) {
       toast.error("Failed to download master report");

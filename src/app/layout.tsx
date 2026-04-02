@@ -15,7 +15,10 @@ export const metadata: Metadata = {
 };
 
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import { BrandingProvider } from "@/components/providers/BrandingProvider";
 import { Toaster } from "@/components/ui/sonner";
+
+import { DevelopmentFooter } from "@/components/dev/DevelopmentFooter";
 
 export default function RootLayout({
   children,
@@ -24,15 +27,18 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} font-sans antialiased`}>
+      <body className={`${inter.variable} font-sans antialiased text-foreground bg-background`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
           enableSystem
           disableTransitionOnChange
         >
-          {children}
-          <Toaster position="top-right" richColors />
+          <BrandingProvider>
+            {children}
+            <Toaster position="top-right" richColors />
+            <DevelopmentFooter />
+          </BrandingProvider>
         </ThemeProvider>
       </body>
     </html>

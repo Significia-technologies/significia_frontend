@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect } from "react";
 import { 
@@ -43,14 +43,14 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 
 interface QuestionnaireManagementProps {
-  connectorId: string;
+  
   onEdit: (questionnaire: any) => void;
   onView: (questionnaire: any) => void;
   onAddNew: () => void;
   onBack: () => void;
 }
 
-export function QuestionnaireManagement({ connectorId, onEdit, onView, onAddNew, onBack }: QuestionnaireManagementProps) {
+export function QuestionnaireManagement({ onEdit, onView, onAddNew, onBack }: QuestionnaireManagementProps) {
   const [questionnaires, setQuestionnaires] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -58,7 +58,7 @@ export function QuestionnaireManagement({ connectorId, onEdit, onView, onAddNew,
   const loadQuestionnaires = async () => {
     setLoading(true);
     try {
-      const data = await RiskProfileService.listQuestionnaires(connectorId);
+      const data = await RiskProfileService.listQuestionnaires();
       // Prepend Sample Protocol (Hardcoded System Default)
       const sampleProtocol = {
         id: "sample-form",
@@ -78,11 +78,11 @@ export function QuestionnaireManagement({ connectorId, onEdit, onView, onAddNew,
 
   useEffect(() => {
     loadQuestionnaires();
-  }, [connectorId]);
+  }, []);
 
   const handleStatusChange = async (qId: string, newStatus: string) => {
     try {
-      await RiskProfileService.updateQuestionnaire(connectorId, qId, { status: newStatus });
+      await RiskProfileService.updateQuestionnaire(qId, { status: newStatus });
       toast.success(`Form status updated to ${newStatus}`);
       loadQuestionnaires();
     } catch (error) {
@@ -93,7 +93,7 @@ export function QuestionnaireManagement({ connectorId, onEdit, onView, onAddNew,
   const handlePrint = async (qId: string, name: string) => {
     try {
       toast.info("Preparing printable version...");
-      await RiskProfileService.downloadBlankPDF(connectorId, qId, `Risk_Form_${name.replace(/\s+/g, '_')}.pdf`);
+      await RiskProfileService.downloadBlankPDF(qId, `Risk_Form_${name.replace(/\s+/g, '_')}.pdf`);
       toast.success("Printable form downloaded");
     } catch (error) {
       toast.error("Failed to generate printable form");

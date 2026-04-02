@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState } from "react";
 import { 
@@ -34,7 +34,7 @@ import { RegistrationPreviewModal } from "./components/RegistrationPreviewModal"
 import { useRouter } from "next/navigation";
 
 interface ClientRegistrationFormProps {
-  connectorId: string;
+  
   initialData?: ClientCreate;
   clientId?: string;
   isEdit?: boolean;
@@ -52,7 +52,7 @@ const REQUIRED_DOCUMENTS = [
 ];
 
 export default function ClientRegistrationForm({ 
-  connectorId, 
+  
   initialData, 
   clientId, 
   isEdit = false 
@@ -117,7 +117,7 @@ export default function ClientRegistrationForm({
   React.useEffect(() => {
     const fetchEmployees = async () => {
       try {
-        const iaMaster = await IAMasterService.getLatest(connectorId);
+        const iaMaster = await IAMasterService.getLatest();
         if (iaMaster) {
           if (iaMaster.employees) {
             setEmployees(iaMaster.employees);
@@ -134,7 +134,7 @@ export default function ClientRegistrationForm({
       }
     };
     fetchEmployees();
-  }, [connectorId]);
+  }, []);
 
   // Sync formData with initialData when it changes (Edit Mode)
   React.useEffect(() => {
@@ -223,16 +223,16 @@ export default function ClientRegistrationForm({
 
     try {
       if (isEdit && clientId) {
-          await MasterDataService.updateClient(connectorId, clientId, submissionData);
+          await MasterDataService.updateClient(clientId, submissionData);
           toast.success("Client updated successfully!");
           router.push(`/master/clients/${clientId}`);
       } else {
-          const client = await MasterDataService.createClient(connectorId, submissionData);
+          const client = await MasterDataService.createClient(submissionData);
           if (client.id && Object.keys(pendingDocuments).length > 0) {
               toast.info("Registration saving. Uploading secure documents...", { duration: 5000 });
               for (const [docType, file] of Object.entries(pendingDocuments)) {
                   try {
-                      await MasterDataService.uploadDocument(connectorId, client.id, file, docType);
+                      await MasterDataService.uploadDocument(client.id, file, docType);
                   } catch (e) {
                       console.error(`Failed to upload ${docType}`, e);
                   }

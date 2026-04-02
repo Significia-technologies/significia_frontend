@@ -1,16 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import {
-  PieChart,
-  PlusCircle,
-  Database,
-} from "lucide-react";
+import React, { useState } from "react";
+import { PieChart, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { ConnectorService, Connector } from "@/core/services/connector.service";
-import { ClientValidateResponse } from "@/core/services/asset-allocation.service";
+
+import type { ClientValidateResponse } from "@/core/services/asset-allocation.service";
 import { ClientValidator } from "@/features/asset-allocation/ClientValidator";
 import { AssetAllocationForm } from "@/features/asset-allocation/AssetAllocationForm";
 import { AssetAllocationHistory } from "@/features/asset-allocation/AssetAllocationHistory";
@@ -18,30 +13,14 @@ import { AssetAllocationHistory } from "@/features/asset-allocation/AssetAllocat
 type ViewType = "HISTORY" | "NEW_ALLOCATION";
 type NewAllocStep = "VALIDATE" | "FORM";
 
+/**
+ * Asset Allocation Page — Bridge Architecture
+ * No connector gate needed — the Bridge handles DB access transparently.
+ */
 export default function AssetAllocationPage() {
-  const [loading, setLoading] = useState(true);
-  const [connector, setConnector] = useState<Connector | null>(null);
   const [view, setView] = useState<ViewType>("HISTORY");
   const [step, setStep] = useState<NewAllocStep>("VALIDATE");
   const [clientInfo, setClientInfo] = useState<(ClientValidateResponse & { client_code: string }) | null>(null);
-
-  useEffect(() => {
-    fetchConnector();
-  }, []);
-
-  const fetchConnector = async () => {
-    setLoading(true);
-    try {
-      const connectors = await ConnectorService.list();
-      if (connectors && connectors.length > 0) {
-        setConnector(connectors[0]);
-      }
-    } catch {
-      toast.error("Failed to connect to vault.");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleStartNew = () => {
     setStep("VALIDATE");
@@ -69,28 +48,6 @@ export default function AssetAllocationPage() {
       setView("HISTORY");
     }
   };
-
-  if (loading) {
-    return (
-      <div className="max-w-7xl mx-auto py-8 px-4 space-y-8">
-        <Skeleton className="h-10 w-64" />
-        <Skeleton className="h-[500px] w-full rounded-xl" />
-      </div>
-    );
-  }
-
-  if (!connector) {
-    return (
-      <div className="max-w-7xl mx-auto py-12 px-4 text-center">
-        <Database className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-20" />
-        <h2 className="text-2xl font-bold">No Database Connector Found</h2>
-        <p className="text-muted-foreground mt-2 mb-6">
-          Setup a vault connector to access asset allocation features.
-        </p>
-        <Button onClick={() => (window.location.href = "/master")}>Setup Connector</Button>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-7xl mx-auto py-2 px-4 space-y-6">
@@ -137,7 +94,7 @@ export default function AssetAllocationPage() {
         </div>
       </div>
 
-      {/* ── Stepper for New Allocation ── */}
+      {/* ── Stepper ── */}
       {view === "NEW_ALLOCATION" && (
         <div className="flex items-center gap-2 animate-in fade-in duration-300">
           {[
@@ -149,22 +106,10 @@ export default function AssetAllocationPage() {
             return (
               <React.Fragment key={s.key}>
                 <div className="flex items-center gap-2">
-                  <div
-                    className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black transition-all ${
-                      isDone
-                        ? "bg-emerald-500 text-white"
-                        : isActive
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted/30 text-muted-foreground opacity-40"
-                    }`}
-                  >
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black transition-all ${isDone ? "bg-emerald-500 text-white" : isActive ? "bg-primary text-primary-foreground" : "bg-muted/30 text-muted-foreground opacity-40"}`}>
                     {isDone ? "✓" : s.num}
                   </div>
-                  <span
-                    className={`text-[10px] font-black uppercase tracking-widest transition-all ${
-                      isActive ? "text-foreground" : "text-muted-foreground opacity-40"
-                    }`}
-                  >
+                  <span className={`text-[10px] font-black uppercase tracking-widest transition-all ${isActive ? "text-foreground" : "text-muted-foreground opacity-40"}`}>
                     {s.label}
                   </span>
                 </div>
@@ -175,18 +120,17 @@ export default function AssetAllocationPage() {
         </div>
       )}
 
-      {/* ── Content Area ── */}
+      {/* ── Content ── */}
       <div className="animate-in fade-in duration-400">
         {view === "HISTORY" ? (
-          <AssetAllocationHistory connectorId={connector.id} />
+          <AssetAllocationHistory />
         ) : step === "VALIDATE" ? (
           <div className="max-w-2xl mx-auto rounded-xl border border-primary/10 bg-card/30 backdrop-blur-sm p-6">
-            <ClientValidator connectorId={connector.id} onValidated={handleClientValidated} />
+            <ClientValidator onValidated={handleClientValidated} />
           </div>
         ) : clientInfo ? (
           <div className="max-w-3xl mx-auto rounded-xl border border-primary/10 bg-card/30 backdrop-blur-sm p-6">
             <AssetAllocationForm
-              connectorId={connector.id}
               clientInfo={clientInfo}
               onSaved={handleSaved}
               onCancel={handleCancel}

@@ -47,12 +47,12 @@ import {
 import { toast } from "sonner";
 
 interface AnalysisDashboardProps {
-  connectorId: string;
+  
   result: FinancialAnalysisResult;
   clientName: string;
 }
 
-export function AnalysisDashboard({ connectorId, result, clientName }: AnalysisDashboardProps) {
+export function AnalysisDashboard({ result, clientName }: AnalysisDashboardProps) {
   const [downloading, setDownloading] = React.useState<string | null>(null);
   const [calcDetails, setCalcDetails] = React.useState<CalculationDetails | null>(null);
   const [loadingCalc, setLoadingCalc] = React.useState(false);
@@ -70,9 +70,9 @@ export function AnalysisDashboard({ connectorId, result, clientName }: AnalysisD
     setDownloading(format);
     try {
       if (format === 'pdf') {
-        await FinancialAnalysisService.downloadPDF(connectorId, result.id, clientName);
+        await FinancialAnalysisService.downloadPDF(result.id, clientName);
       } else {
-        await FinancialAnalysisService.downloadWord(connectorId, result.id, clientName);
+        await FinancialAnalysisService.downloadWord(result.id, clientName);
       }
       toast.success(`${format.toUpperCase()} report downloaded`);
     } catch (error) {
@@ -90,7 +90,7 @@ export function AnalysisDashboard({ connectorId, result, clientName }: AnalysisD
     
     setLoadingCalc(true);
     try {
-      const details = await FinancialAnalysisService.getCalculationDetails(connectorId, result.id);
+      const details = await FinancialAnalysisService.getCalculationDetails(result.id);
       setCalcDetails(details);
       setIsModalOpen(true);
     } catch (error) {

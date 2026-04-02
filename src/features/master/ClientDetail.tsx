@@ -44,10 +44,10 @@ import { DocumentVault } from "./components/DocumentVault";
 
 interface ClientDetailProps {
   client: ClientCreate;
-  connectorId: string;
+  
 }
 
-export default function ClientDetail({ client, connectorId }: ClientDetailProps) {
+export default function ClientDetail({ client }: ClientDetailProps) {
   const router = useRouter();
   const [employees, setEmployees] = React.useState<Employee[]>([]);
   const [downloading, setDownloading] = React.useState(false);
@@ -65,7 +65,7 @@ export default function ClientDetail({ client, connectorId }: ClientDetailProps)
 
     setIsUpdating(true);
     try {
-      const updatedClient = await MasterDataService.updateClient(connectorId, currentClient.id, {
+      const updatedClient = await MasterDataService.updateClient(currentClient.id, {
         is_active: !currentClient.is_active
       });
       // The updateClient returns a Client, but we need to update our ClientCreate state
@@ -82,7 +82,7 @@ export default function ClientDetail({ client, connectorId }: ClientDetailProps)
   React.useEffect(() => {
     const fetchEmployees = async () => {
       try {
-        const iaMaster = await IAMasterService.getLatest(connectorId);
+        const iaMaster = await IAMasterService.getLatest();
         if (iaMaster?.employees) {
           setEmployees(iaMaster.employees);
         }
@@ -91,7 +91,7 @@ export default function ClientDetail({ client, connectorId }: ClientDetailProps)
       }
     };
     fetchEmployees();
-  }, [connectorId]);
+  }, []);
 
   const DetailItem = ({ label, value }: { label: string; value: any }) => (
     <div className="space-y-1">
@@ -103,7 +103,7 @@ export default function ClientDetail({ client, connectorId }: ClientDetailProps)
   const handleDownloadReport = async () => {
     setDownloading(true);
     try {
-      await MasterDataService.downloadClientReport(connectorId, client.id!, client.client_name);
+      await MasterDataService.downloadClientReport(client.id!, client.client_name);
       toast.success("Report downloaded successfully!");
     } catch (error) {
       console.error("Failed to download report", error);
@@ -359,7 +359,7 @@ export default function ClientDetail({ client, connectorId }: ClientDetailProps)
 
               <TabsContent value="analysis" className="mt-0 space-y-8">
                  <AnalysisTabContent 
-                    connectorId={connectorId} 
+                     
                     clientId={client.id!} 
                     clientName={client.client_name} 
                  />
@@ -367,11 +367,11 @@ export default function ClientDetail({ client, connectorId }: ClientDetailProps)
 
               <TabsContent value="vault" className="mt-0 space-y-8">
                  <DocumentVault 
-                    connectorId={connectorId} 
+                     
                     clientId={client.id!} 
                     documents={currentClient.documents || []}
                     onUploadSuccess={() => {
-                        MasterDataService.getClient(connectorId, client.id!).then(updatedClient => {
+                        MasterDataService.getClient(client.id!).then(updatedClient => {
                             setCurrentClient(updatedClient);
                         }).catch(console.error);
                     }}
@@ -420,7 +420,7 @@ export default function ClientDetail({ client, connectorId }: ClientDetailProps)
   );
 }
 
-function AnalysisTabContent({ connectorId, clientId, clientName }: { connectorId: string, clientId: string, clientName: string }) {
+function AnalysisTabContent({ clientId, clientName }: { clientId: string, clientName: string }) {
   const [view, setView] = React.useState<"LIST" | "FORM" | "DASHBOARD">("LIST");
   const [selectedResult, setSelectedResult] = React.useState<FinancialAnalysisResult | null>(null);
   const [loading, setLoading] = React.useState(false);
@@ -428,7 +428,7 @@ function AnalysisTabContent({ connectorId, clientId, clientName }: { connectorId
   const handleSelect = async (id: string) => {
     setLoading(true);
     try {
-      const result = await FinancialAnalysisService.get(connectorId, id);
+      const result = await FinancialAnalysisService.get(id);
       setSelectedResult(result);
       setView("DASHBOARD");
     } catch (e) {
@@ -452,7 +452,7 @@ function AnalysisTabContent({ connectorId, clientId, clientName }: { connectorId
 
       {view === "LIST" && (
         <AnalysisList 
-          connectorId={connectorId} 
+           
           clientId={clientId} 
           onSelectAnalysis={handleSelect}
           onCreateNew={() => setView("FORM")}
@@ -461,7 +461,7 @@ function AnalysisTabContent({ connectorId, clientId, clientName }: { connectorId
 
       {view === "FORM" && (
         <AnalysisForm 
-          connectorId={connectorId} 
+           
           clientId={clientId}
           onSuccess={(id) => handleSelect(id)}
           onCancel={() => setView("LIST")}
@@ -470,7 +470,7 @@ function AnalysisTabContent({ connectorId, clientId, clientName }: { connectorId
 
       {view === "DASHBOARD" && selectedResult && (
         <AnalysisDashboard 
-          connectorId={connectorId} 
+           
           result={selectedResult} 
           clientName={clientName} 
         />

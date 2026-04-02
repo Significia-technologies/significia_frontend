@@ -41,7 +41,7 @@ import { MasterDataService, ClientCreate } from "@/core/services/master.service"
 import { toast } from "sonner";
 
 interface AnalysisFormProps {
-  connectorId: string;
+  
   clientId?: string;
   onSuccess: (resultId: string) => void;
   onCancel: () => void;
@@ -74,7 +74,7 @@ const STEPS_CONFIG = [
   { id: 6, title: "Finish", icon: Flag }
 ];
 
-export function AnalysisForm({ connectorId, clientId, onSuccess, onCancel }: AnalysisFormProps) {
+export function AnalysisForm({ clientId, onSuccess, onCancel }: AnalysisFormProps) {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
@@ -152,11 +152,11 @@ All calculations are based on the assumptions provided and are illustrative in n
   // Load existing client if ID provided
   useEffect(() => {
     if (clientId) {
-      MasterDataService.getClient(connectorId, clientId).then(client => {
+      MasterDataService.getClient(clientId).then(client => {
         populateClientData(client);
       });
     }
-  }, [connectorId, clientId]);
+  }, [clientId]);
 
   const populateClientData = (client: ClientCreate) => {
     setFormData(prev => ({
@@ -185,7 +185,7 @@ All calculations are based on the assumptions provided and are illustrative in n
     
     setIsValidating(true);
     try {
-      const client = await MasterDataService.getClientByCode(connectorId, code);
+      const client = await MasterDataService.getClientByCode(code);
       toast.success("Client found! Details auto-populated.");
       populateClientData(client);
     } catch (error) {
@@ -285,7 +285,7 @@ All calculations are based on the assumptions provided and are illustrative in n
     }
     setLoading(true);
     try {
-      const result = await FinancialAnalysisService.create(connectorId, formData);
+      const result = await FinancialAnalysisService.create(formData);
       toast.success("Analysis saved and calculated successfully!");
       onSuccess(result.id);
     } catch (error) {
