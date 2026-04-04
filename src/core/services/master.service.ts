@@ -197,4 +197,10 @@ export class MasterDataService {
     );
     return response.data;
   }
+
+  static async assignClient(clientId: string, staffId: string): Promise<void> {
+    await httpClient.patch(`/master/clients/${clientId}/assign`, null, {
+      params: { staff_id: staffId }
+    });
+  }
 }

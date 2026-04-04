@@ -80,6 +80,12 @@ const NAV_ITEMS = [
     icon: Users,
   },
   {
+    label: "Team",
+    href: "/team",
+    icon: Users,
+    minRole: "owner", // Accessible to IA Owners and Super Admins
+  },
+  {
     label: "Drawers",
     href: "/drawers",
     icon: Archive,

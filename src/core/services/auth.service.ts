@@ -23,6 +23,8 @@ export interface User {
   company_name: string;
   phone_number?: string | null;
   is_profile_completed: boolean;
+  max_client_permit: number;
+  plan_expiry_date?: string | null;
   custom_domain?: string | null;
   subdomain?: string | null;
 }

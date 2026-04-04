@@ -1,4 +1,4 @@
-﻿import { API_ENDPOINTS } from "../api/api-endpoints";
+import { API_ENDPOINTS } from "../api/api-endpoints";
 import httpClient from "../api/http-client";
 
 export interface Employee {
@@ -38,7 +38,6 @@ export interface IAMaster {
   current_client_count: number;
   created_at: string;
   updated_at: string;
-  employees: Employee[];
 }
 
 // ── IA Master Service (Bridge Architecture) ───────────────────────────────
