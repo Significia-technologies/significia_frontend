@@ -1,17 +1,19 @@
+"use client";
+
 import { SuperAdminGuard } from "@/components/guards/SuperAdminGuard";
 import { Topbar } from "@/components/layouts/Topbar";
-import { ShieldAlert } from "lucide-react";
+import { ShieldAlert, Users, History, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
-
-export const metadata = {
-  title: "Admin Portal — Significia",
-};
+import { usePathname } from "next/navigation";
+import { Separator } from "@/components/ui/separator";
 
 export default function AdminRouteLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+
   return (
     <SuperAdminGuard>
       <div className="h-screen bg-background flex flex-col overflow-hidden">
@@ -29,13 +31,35 @@ export default function AdminRouteLayout({
             <nav className="space-y-1">
               <Link 
                 href="/admin"
-                className="flex items-center gap-3 rounded-lg bg-accent px-3 py-2 text-sm font-medium transition-colors"
+                className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-accent/50 ${pathname === '/admin' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'}`}
               >
+                <LayoutDashboard className="h-4 w-4" />
                 Clients & Tenants
               </Link>
+              
+              <Link 
+                href="/admin/users"
+                className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-accent/50 ${pathname.startsWith('/admin/users') ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'}`}
+              >
+                <Users className="h-4 w-4" />
+                User Management
+              </Link>
+
+              <Link 
+                href="/admin/logs"
+                className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-accent/50 ${pathname === '/admin/logs' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'}`}
+              >
+                <History className="h-4 w-4" />
+                Audit Logs
+              </Link>
+
+              <div className="py-4">
+                <Separator className="opacity-10" />
+              </div>
+
               <Link 
                 href="/" 
-                className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
               >
                 &larr; Exit to Dashboard
               </Link>

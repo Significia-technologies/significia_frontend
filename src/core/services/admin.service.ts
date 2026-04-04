@@ -43,13 +43,69 @@ export interface ClientProvisionResponse {
   message: string;
 }
 
+export interface StaffUserOut {
+  id: string;
+  email: string;
+  full_name: string;
+  phone_number: string;
+  designation?: string;
+  address?: string;
+  role: string;
+  status: string;
+  last_login_at?: string;
+  created_at: string;
+}
+
+export interface ActivityLogOut {
+  id: string;
+  admin_id: string;
+  admin_email: string;
+  action: string;
+  target_type: string;
+  target_id?: string;
+  details?: string;
+  ip_address?: string;
+  created_at: string;
+}
+
 export const AdminService = {
   /**
    * Provisions a new client Tenant and root Owner.
-   * Requires Super Admin privileges.
    */
   provisionClient: async (payload: ClientProvisionPayload): Promise<ClientProvisionResponse> => {
     const response = await httpClient.post<ClientProvisionResponse>("/admin/clients", payload);
+    return response.data;
+  },
+
+  /**
+   * List all staff users (Master Tenant).
+   */
+  listStaff: async (): Promise<StaffUserOut[]> => {
+    const response = await httpClient.get<StaffUserOut[]>("/admin/staff");
+    return response.data;
+  },
+
+  /**
+   * Create a new staff user.
+   */
+  createStaff: async (payload: any): Promise<StaffUserOut> => {
+    const response = await httpClient.post<StaffUserOut>("/admin/staff", payload);
+    return response.data;
+  },
+
+  /**
+   * Update staff user (Role/Status/Soft-delete).
+   */
+  updateStaff: async (userId: string, payload: any): Promise<StaffUserOut> => {
+    const response = await httpClient.put<StaffUserOut>(`/admin/staff/${userId}`, payload);
+    return response.data;
+  },
+
+  /**
+   * Fetch system-wide administrative activity logs.
+   */
+  getLogs: async (limit: number = 100): Promise<ActivityLogOut[]> => {
+    const response = await httpClient.get<ActivityLogOut[]>(`/admin/logs?limit=${limit}`);
     return response.data;
   },
 };
