@@ -93,7 +93,7 @@ export default function LoginPage() {
     }
   };
 
-  const brandingName = publicBranding?.name || "Elite Portal";
+  const brandingName = publicBranding?.name || "Significia Portal";
   const isMaster = publicBranding?.is_master ?? true;
 
   return (

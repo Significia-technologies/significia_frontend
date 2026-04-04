@@ -5,7 +5,7 @@
  * a connectorId in the path. The backend resolves the tenant
  * from the JWT token + X-Tenant-Slug header automatically.
  *
- * Backend base: http://localhost:8001/api/v1 (local dev)
+ * Backend base: http://localhost:8000/api/v1 (local dev)
  */
 
 import { getApiBaseUrl } from "./api-utils";
