@@ -23,6 +23,7 @@ export interface BridgeOverview {
   custom_domain: string | null;
   subdomain: string | null;
   latest_invoice_status: string;
+  is_active: boolean;
   created_at: string;
 }
 
@@ -127,5 +128,23 @@ export class BridgeService {
    */
   static async updatePlan(tenantId: string, plan: string): Promise<void> {
     await httpClient.post(API_ENDPOINTS.BILLING.UPDATE_PLAN(tenantId), { plan });
+  }
+
+  /**
+   * POST /bridge/tenants/{tenantId}/status
+   * Toggle tenant active/inactive status.
+   */
+  static async updateTenantStatus(tenantId: string, is_active: boolean): Promise<any> {
+    const response = await httpClient.post(`${API_ENDPOINTS.BRIDGE.BASE}/${tenantId}/status`, { is_active });
+    return response.data;
+  }
+
+  /**
+   * PATCH /bridge/tenants/{tenantId}
+   * Update tenant core details.
+   */
+  static async updateTenant(tenantId: string, data: any): Promise<any> {
+    const response = await httpClient.patch(`${API_ENDPOINTS.BRIDGE.BASE}/${tenantId}`, data);
+    return response.data;
   }
 }

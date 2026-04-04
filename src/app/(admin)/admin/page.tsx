@@ -2,8 +2,33 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { PlusCircle, Building2, Activity, Shield, Zap } from "lucide-react";
+import { PlusCircle, Building2, Activity, Shield, Zap, MoreVertical, Edit, Power, PowerOff, CheckCircle2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuLabel, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -18,23 +43,29 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [bridges, setBridges] = useState<BridgeOverview[]>([]);
   const [stats, setStats] = useState<BillingStats | null>(null);
+  
+  // Edit Modal State
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editingTenant, setEditingTenant] = useState<BridgeOverview | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [bridgeList, billingStats] = await Promise.all([
+        BridgeService.getAllBridges().catch(() => []),
+        BridgeService.getBillingStats().catch(() => null),
+      ]);
+      setBridges(bridgeList);
+      setStats(billingStats);
+    } catch (error) {
+      console.error("Failed to fetch admin dashboard data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const [bridgeList, billingStats] = await Promise.all([
-          BridgeService.getAllBridges().catch(() => []),
-          BridgeService.getBillingStats().catch(() => null),
-        ]);
-        setBridges(bridgeList);
-        setStats(billingStats);
-      } catch (error) {
-        console.error("Failed to fetch admin dashboard data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchData();
   }, []);
 
@@ -135,7 +166,14 @@ export default function AdminDashboardPage() {
             ) : (
               bridges.map((bridge) => (
                 <TableRow key={bridge.tenant_id}>
-                  <TableCell className="font-medium">{bridge.tenant_name}</TableCell>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      {bridge.tenant_name}
+                      {!bridge.is_active && (
+                        <Badge variant="destructive" className="h-4 px-1 text-[8px] uppercase tracking-tighter">Inactive</Badge>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell className="font-mono text-xs text-muted-foreground">
                     {bridge.custom_domain || (bridge.subdomain ? `${bridge.subdomain}.significia.com` : "—")}
                   </TableCell>
@@ -173,26 +211,58 @@ export default function AdminDashboardPage() {
                     )}
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8 gap-1.5"
-                        disabled={bridge.bridge_status !== "ACTIVE"}
-                        onClick={async () => {
-                          if (confirm(`Initialize database for ${bridge.tenant_name}? This will create all core tables.`)) {
-                            try {
-                              const res = await BridgeService.initializeBridge(bridge.tenant_id);
-                              alert(res.message || "Database initialized successfully!");
-                            } catch (err: any) {
-                              alert(`Failed to initialize: ${err.response?.data?.detail || err.message}`);
-                            }
-                          }
-                        }}
-                      >
-                        <Shield className="h-3.5 w-3.5" />
-                        Initialize DB
-                      </Button>
+                    <div className="flex justify-end">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          
+                          <DropdownMenuItem onClick={() => {
+                            setEditingTenant(bridge);
+                            setIsEditOpen(true);
+                          }}>
+                            <Edit className="mr-2 h-4 w-4" /> Edit Details
+                          </DropdownMenuItem>
+
+                          <DropdownMenuItem 
+                            className={bridge.is_active ? "text-destructive" : "text-emerald-600"}
+                            onClick={async () => {
+                              try {
+                                await BridgeService.updateTenantStatus(bridge.tenant_id, !bridge.is_active);
+                                fetchData(); // Refresh
+                              } catch (err: any) {
+                                alert(`Failed to toggle status: ${err.message}`);
+                              }
+                            }}
+                          >
+                            {bridge.is_active ? <PowerOff className="mr-2 h-4 w-4" /> : <Power className="mr-2 h-4 w-4" />}
+                            {bridge.is_active ? "Deactivate Tenant" : "Activate Tenant"}
+                          </DropdownMenuItem>
+
+                          <DropdownMenuSeparator />
+                          
+                          <DropdownMenuItem 
+                            disabled={bridge.bridge_status !== "ACTIVE"}
+                            onClick={async () => {
+                              if (confirm(`Initialize database for ${bridge.tenant_name}?`)) {
+                                try {
+                                  const res = await BridgeService.initializeBridge(bridge.tenant_id);
+                                  alert(res.message || "Database initialized successfully!");
+                                } catch (err: any) {
+                                  alert(`Failed to initialize: ${err.response?.data?.detail || err.message}`);
+                                }
+                              }
+                            }}
+                          >
+                            <Shield className="mr-2 h-4 w-4" /> Initialize DB
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -200,6 +270,99 @@ export default function AdminDashboardPage() {
             )}
           </TableBody>
         </Table>
+      {/* Edit Tenant Dialog */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Edit Tenant Details</DialogTitle>
+            <DialogDescription>
+              Update core administrative settings for {editingTenant?.tenant_name}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="name">Company Name</Label>
+              <Input 
+                id="name" 
+                value={editingTenant?.tenant_name || ""} 
+                onChange={(e) => setEditingTenant(prev => prev ? {...prev, tenant_name: e.target.value} : null)}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="subdomain">Subdomain</Label>
+                <Input 
+                  id="subdomain" 
+                  value={editingTenant?.subdomain || ""} 
+                  onChange={(e) => setEditingTenant(prev => prev ? {...prev, subdomain: e.target.value} : null)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="plan">Billing Plan</Label>
+                <Select 
+                  value={editingTenant?.billing_plan || "starter"}
+                  onValueChange={(v) => setEditingTenant(prev => prev ? {...prev, billing_plan: v} : null)}
+                >
+                  <SelectTrigger id="plan">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="starter">Starter</SelectItem>
+                    <SelectItem value="professional">Professional</SelectItem>
+                    <SelectItem value="enterprise">Enterprise</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="custom_domain">Custom Domain</Label>
+              <Input 
+                id="custom_domain" 
+                placeholder="e.g. wealth.acme.com"
+                value={editingTenant?.custom_domain || ""} 
+                onChange={(e) => setEditingTenant(prev => prev ? {...prev, custom_domain: e.target.value} : null)}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="permit">Max Client Permit</Label>
+              <Input 
+                id="permit" 
+                type="number"
+                value={editingTenant?.max_client_permit || 5} 
+                onChange={(e) => setEditingTenant(prev => prev ? {...prev, max_client_permit: Number(e.target.value)} : null)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
+            <Button 
+              disabled={isSaving}
+              onClick={async () => {
+                if (!editingTenant) return;
+                setIsSaving(true);
+                try {
+                  await BridgeService.updateTenant(editingTenant.tenant_id, {
+                    name: editingTenant.tenant_name,
+                    subdomain: editingTenant.subdomain,
+                    custom_domain: editingTenant.custom_domain,
+                    max_client_permit: editingTenant.max_client_permit,
+                    billing_plan: editingTenant.billing_plan
+                  });
+                  setIsEditOpen(false);
+                  fetchData(); // Refresh list
+                } catch (err: any) {
+                  alert(`Failed to update: ${err.response?.data?.detail || err.message}`);
+                } finally {
+                  setIsSaving(false);
+                }
+              }}
+            >
+              {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       </div>
     </div>
   );

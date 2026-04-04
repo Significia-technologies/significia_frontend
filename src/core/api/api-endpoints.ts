@@ -130,13 +130,14 @@ export const API_ENDPOINTS = {
 
   // ── Bridge Management (Super Admin only) ───────────────────
   BRIDGE: {
+    BASE: `${API_BASE}/bridge/tenants`,
     ALL_BRIDGES: `${API_BASE}/bridge/tenants/bridges`,
     PROVISION: `${API_BASE}/bridge/tenants/provision`,
     UPDATE_ME: `${API_BASE}/bridge/tenants/me`,
     REVOKE: (tenantId: string) =>
       `${API_BASE}/bridge/tenants/${tenantId}/revoke`,
     INITIALIZE: (tenantId: string) =>
-      `${API_BASE}/admin/bridge-initialize/${tenantId}`,
+      `${API_BASE}/bridge/tenants/${tenantId}/initialize`,
     PING: (tenantId: string) =>
       `${API_BASE}/bridge/tenants/${tenantId}/ping`,
   },
