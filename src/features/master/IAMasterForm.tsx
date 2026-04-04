@@ -31,6 +31,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { AuthService } from "@/core/services/auth.service";
+import { useAppStore } from "@/store/useAppStore";
 
 
 interface IAMasterFormProps {
@@ -40,6 +42,7 @@ interface IAMasterFormProps {
 
 export function IAMasterForm({ initialData }: IAMasterFormProps) {
   const router = useRouter();
+  const { user, setUser } = useAppStore();
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("basic");
   const [iaNumberExists, setIaNumberExists] = useState(false);
@@ -114,8 +117,16 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
           certificate_path: emp.certificate_path,
         })));
       }
+    } else if (user && !formData.registered_email_id) {
+      // First-time setup: pre-populate from user session if not already filled
+      setFormData(prev => ({
+        ...prev,
+        name_of_ia: prev.name_of_ia || user.company_name || "",
+        registered_email_id: prev.registered_email_id || user.email || "",
+        registered_contact_number: prev.registered_contact_number || user.phone_number || ""
+      }));
     }
-  }, [initialData]);
+  }, [initialData, user]);
 
   const isSinglePersonEntity = formData.nature_of_entity === "individual" || formData.nature_of_entity === "proprietorship";
   const personLabel = formData.nature_of_entity === "body" ? "Employee" : "Partner";
@@ -244,6 +255,10 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
       } else {
         await IAMasterService.create(data);
       }
+      
+      // Refresh global session to update profile completion status
+      await AuthService.refreshUser(setUser);
+      
       toast.success("Investment Advisor record saved successfully!");
       router.push("/master");
     } catch (error: any) {

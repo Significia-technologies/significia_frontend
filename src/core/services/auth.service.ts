@@ -21,6 +21,8 @@ export interface User {
   role: "super_admin" | "owner" | "admin" | "analyst" | "user" | "client" | "ia_staff";
   tenant_id: string;
   company_name: string;
+  phone_number?: string | null;
+  is_profile_completed: boolean;
   custom_domain?: string | null;
   subdomain?: string | null;
 }
@@ -143,6 +145,15 @@ export const AuthService = {
       headers,
     });
     return data;
+  },
+
+  /**
+   * Refresh current user profile/session in global store
+   */
+  async refreshUser(setUser: (user: User) => void): Promise<User> {
+    const user = await this.getCurrentUser();
+    setUser(user);
+    return user;
   },
 
   /**

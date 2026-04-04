@@ -10,6 +10,8 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 
 import { useRouter, usePathname } from "next/navigation";
 import { AuthService } from "@/core/services/auth.service";
+import { ShieldCheck } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -93,6 +95,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         return;
       }
       
+      // ── Profile Completion Gate ──
+      // If IA Owner has not completed their profile, force them to the Master Data page
+      if (user && user.role === "owner" && !user.is_profile_completed) {
+        if (!pathname.startsWith("/master") && pathname !== "/") {
+          router.push("/master");
+        }
+      }
+      
       setIsInitializing(false);
     };
     
@@ -131,10 +141,31 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           )}
         >
           {/* Top Navigation */}
-          <Topbar />
+        {/* ── Top Navigation ── */}
+        <Topbar />
 
-          {/* Page Content */}
-          <main className="flex-1 p-4 md:p-6">{children}</main>
+        {/* ── Profile Incomplete Warning ── */}
+        {user?.role === "owner" && !user.is_profile_completed && (
+          <div className="mx-4 mt-4 md:mx-6">
+            <div className="flex items-center gap-3 rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 text-amber-600 dark:text-amber-400">
+              <ShieldCheck className="h-5 w-5 shrink-0" />
+              <div className="flex-1 text-sm font-medium">
+                Your IA Master profile is incomplete. Please provide your Registration and Bank details to unlock all features.
+              </div>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="h-7 border-amber-500/50 hover:bg-amber-500/20 text-[10px] uppercase font-bold"
+                onClick={() => router.push("/master/ia-master/new")}
+              >
+                Complete Profile
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Page Content */}
+        <main className="flex-1 p-4 md:p-6">{children}</main>
         </div>
       </div>
     </TooltipProvider>

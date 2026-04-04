@@ -138,6 +138,11 @@ export function SidebarContent() {
     // 3. Global "Admin" is for Super Admins ONLY
     if (item.href === "/admin" && !isSuperAdmin) return false;
 
+    // 4. If profile is NOT completed, IA Masters can ONLY see the Master page and Overview
+    if (isIAOwner && !user.is_profile_completed && !["/", "/master"].includes(item.href)) {
+      return false;
+    }
+
     return true;
   });
 
