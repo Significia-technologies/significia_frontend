@@ -84,8 +84,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             router.push("/admin");
             return;
           }
-        } catch (err) {
+        } catch (err: any) {
           console.error("Failed to restore session", err);
+          const errorDetail = err.response?.data?.detail;
+          
+          if (errorDetail === "SESSION_INVALIDATED") {
+            // Optional: You can set a global notify state here to show a toast
+            console.warn("Session invalidated by another device.");
+          }
+          
           clearUser();
           router.push("/login");
           return;
