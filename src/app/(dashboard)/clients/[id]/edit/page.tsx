@@ -9,5 +9,5 @@ import ClientRegistrationForm from "@/features/master/ClientRegistration";
  */
 export default function EditClientPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  return <ClientRegistrationForm clientId={id} />;
+  return <ClientRegistrationForm clientId={id} isEdit={true} />;
 }

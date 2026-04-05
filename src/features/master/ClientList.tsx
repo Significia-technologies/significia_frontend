@@ -47,10 +47,8 @@ export function ClientList() {
 
   const fetchEmployees = async () => {
     try {
-      const iaMaster = await IAMasterService.getLatest();
-      if (iaMaster?.employees) {
-        setEmployees(iaMaster.employees);
-      }
+      const validEmployees = await IAMasterService.listEmployees();
+      setEmployees(validEmployees);
     } catch (error) {
       console.error("Failed to fetch employees", error);
     }
@@ -188,7 +186,12 @@ export function ClientList() {
                     <TableCell className="whitespace-nowrap">
                       {client.assigned_employee_id ? (
                         <Badge variant="outline" className="bg-primary/5 text-primary border-primary/10">
-                          {employees.find(e => e.id === client.assigned_employee_id)?.name_of_employee || 'Unknown Professional'}
+                          {(() => {
+                            const emp = employees.find(e => (e.id || (e as any)._id) === client.assigned_employee_id);
+                            return emp 
+                              ? (emp.full_name || emp.name || emp.name_of_employee || "Staff Member") 
+                              : (loading ? "Loading..." : "Unknown Professional");
+                          })()}
                         </Badge>
                       ) : (
                         <span className="text-xs text-muted-foreground italic">Unassigned</span>

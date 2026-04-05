@@ -65,6 +65,8 @@ export default function ClientRegistrationForm({
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [ipvSearchTerm, setIpvSearchTerm] = useState("");
   const [showIpvResults, setShowIpvResults] = useState(false);
+  const [assignedSearchTerm, setAssignedSearchTerm] = useState("");
+  const [showAssignedResults, setShowAssignedResults] = useState(false);
   const [pendingDocuments, setPendingDocuments] = useState<Record<string, File>>({});
 
   const [formData, setFormData] = useState<ClientCreate>(initialData || {
@@ -139,12 +141,25 @@ export default function ClientRegistrationForm({
         }
 
         if (allEmployees) {
-          setEmployees(allEmployees);
+          // Filter out invalid/junk entries (like 0 or null) and ensure each has an ID
+          const validEmployees = (allEmployees as any[]).filter(
+            emp => emp && typeof emp === "object" && (emp.id || emp._id)
+          );
+          setEmployees(validEmployees);
+          
           // If we already have a selected ID (edit mode), find its name
           if (formData.ipv_done_by_id) {
-            const selected = allEmployees.find(e => e.id === formData.ipv_done_by_id);
+            const selected = validEmployees.find(e => (e.id || e._id) === formData.ipv_done_by_id);
             if (selected) {
               setIpvSearchTerm(selected.full_name || selected.name || selected.name_of_employee || "");
+            }
+          }
+
+          // Also handle Assigned Professional search term
+          if (formData.assigned_employee_id) {
+            const selected = validEmployees.find(e => (e.id || (e as any)._id) === formData.assigned_employee_id);
+            if (selected) {
+              setAssignedSearchTerm(selected.full_name || selected.name || selected.name_of_employee || "");
             }
           }
         }
@@ -154,24 +169,68 @@ export default function ClientRegistrationForm({
     };
     fetchEmployees();
   }, []);
+  
+  // Fetch Client Data if in Edit mode and no initialData
+  React.useEffect(() => {
+    if (clientId && !initialData) {
+      const fetchClient = async () => {
+        try {
+          const client = await MasterDataService.getClient(clientId);
+          if (client) {
+            setFormData(prev => ({
+              ...prev,
+              ...client,
+              // Ensure numeric fields and dates are correctly handled
+              annual_income: client.annual_income || "" as any,
+              net_worth: client.net_worth || "" as any,
+              existing_portfolio_value: client.existing_portfolio_value || "" as any,
+              date_of_birth: client.date_of_birth?.split('T')[0] || "",
+              client_date: client.client_date?.split('T')[0] || "",
+              agreement_date: client.agreement_date?.split('T')[0] || "",
+            }));
+          }
+        } catch (error) {
+          console.error("Failed to fetch client for edit", error);
+          toast.error("Failed to load client data");
+        }
+      };
+      fetchClient();
+    }
+  }, [clientId, initialData]);
 
-  // Sync formData with initialData when it changes (Edit Mode)
+  // Sync formData with initialData when it changes (Edit Mode prop)
   React.useEffect(() => {
     if (isEdit && initialData) {
       setFormData(prev => ({
         ...prev,
         ...initialData,
-        // Ensure numeric fields are correctly handled if they come as null/undefined
         annual_income: initialData.annual_income || "" as any,
         net_worth: initialData.net_worth || "" as any,
         existing_portfolio_value: initialData.existing_portfolio_value || "" as any,
-        // Ensure dates are just the YYYY-MM-DD part
         date_of_birth: initialData.date_of_birth?.split('T')[0] || "",
         client_date: initialData.client_date?.split('T')[0] || "",
         agreement_date: initialData.agreement_date?.split('T')[0] || "",
       }));
     }
   }, [initialData, isEdit]);
+
+  // Robustly sync Search Terms for Edit Mode when either employees or formData changes
+  React.useEffect(() => {
+    if (employees.length > 0) {
+      if (formData.ipv_done_by_id) {
+        const selected = employees.find(e => (e.id || (e as any)._id) === formData.ipv_done_by_id);
+        if (selected) {
+          setIpvSearchTerm(selected.full_name || selected.name || selected.name_of_employee || "");
+        }
+      }
+      if (formData.assigned_employee_id) {
+        const selected = employees.find(e => (e.id || (e as any)._id) === formData.assigned_employee_id);
+        if (selected) {
+          setAssignedSearchTerm(selected.full_name || selected.name || selected.name_of_employee || "");
+        }
+      }
+    }
+  }, [employees, formData.ipv_done_by_id, formData.assigned_employee_id]);
 
   const calculateAge = (dob: string) => {
     if (!dob) return 0;
@@ -192,9 +251,6 @@ export default function ClientRegistrationForm({
     const { name, value, type } = e.target;
     
     if (type === "number") {
-      // Allow empty string or numbers only
-      // If value is empty, set it as empty string to allow clearing the field
-      // Otherwise parse as float
       setFormData((prev) => ({
         ...prev,
         [name]: value === "" ? "" : parseFloat(value),
@@ -209,16 +265,10 @@ export default function ClientRegistrationForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Age Validation
-    if (formData.date_of_birth) {
-      if (currentAge < 18) {
-        toast.error("Client must be at least 18 years old.");
-        return;
-      }
+    if (formData.date_of_birth && currentAge < 18) {
+      toast.error("Client must be at least 18 years old.");
+      return;
     }
-    
-    // Document Validation
     if (!isEdit) {
         const missingDocs = REQUIRED_DOCUMENTS.filter(doc => !pendingDocuments[doc]);
         if (missingDocs.length > 0) {
@@ -227,7 +277,6 @@ export default function ClientRegistrationForm({
             return;
         }
     }
-    
     setShowPreview(true);
   };
 
@@ -238,6 +287,8 @@ export default function ClientRegistrationForm({
       annual_income: Number(formData.annual_income) || 0,
       net_worth: Number(formData.net_worth) || 0,
       existing_portfolio_value: Number(formData.existing_portfolio_value) || 0,
+      assigned_employee_id: formData.assigned_employee_id || undefined,
+      ipv_done_by_id: formData.ipv_done_by_id || undefined,
     };
 
     try {
@@ -529,23 +580,81 @@ export default function ClientRegistrationForm({
 
                   <div className="space-y-2">
                     <Label>Assigned Professional (Employee/Partner) *</Label>
-                    <Select 
-                      name="assigned_employee_id" 
-                      value={formData.assigned_employee_id} 
-                      onValueChange={(val) => setFormData(prev => ({ ...prev, assigned_employee_id: val }))}
-                      required
-                    >
-                      <SelectTrigger className="w-full bg-background/50 border-primary/20">
-                        <SelectValue placeholder="Select Professional" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-card border-primary/20">
-                        {employees.map((emp) => (
-                          <SelectItem key={emp.id} value={emp.id || ""}>
-                            {emp.name_of_employee} ({emp.designation})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="relative">
+                      <Input
+                        placeholder="Type to search staff/partner..."
+                        value={assignedSearchTerm}
+                        onChange={(e) => {
+                          setAssignedSearchTerm(e.target.value);
+                          setShowAssignedResults(true);
+                          if (!e.target.value) {
+                            setFormData(prev => ({ ...prev, assigned_employee_id: "" }));
+                          }
+                        }}
+                        onFocus={() => setShowAssignedResults(true)}
+                        className="bg-background/50 border-primary/20 pr-10"
+                        autoComplete="off"
+                      />
+                      {assignedSearchTerm && (
+                        <button 
+                          type="button"
+                          onClick={() => {
+                            setAssignedSearchTerm("");
+                            setFormData(prev => ({ ...prev, assigned_employee_id: "" }));
+                          }}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                        </button>
+                      )}
+
+                      {showAssignedResults && (
+                        <>
+                          <div 
+                            className="fixed inset-0 z-40" 
+                            onClick={() => setShowAssignedResults(false)}
+                          />
+                          <div className="absolute left-0 right-0 top-full mt-1 bg-card border border-primary/20 rounded-md shadow-lg z-50 max-h-[300px] overflow-y-auto">
+                            {employees
+                              .filter(emp => {
+                                const name = (emp.full_name || emp.name || emp.name_of_employee || "").toLowerCase();
+                                const desig = (emp.designation || "").toLowerCase();
+                                const search = assignedSearchTerm.toLowerCase();
+                                return name.includes(search) || desig.includes(search);
+                              })
+                              .map((emp) => (
+                                <div
+                                  key={emp.id}
+                                  className="p-3 hover:bg-primary/10 cursor-pointer border-b border-primary/5 last:border-0 flex flex-col transition-colors"
+                                  onClick={() => {
+                                    const name = emp.full_name || emp.name || emp.name_of_employee || "";
+                                    setAssignedSearchTerm(name);
+                                    setFormData(prev => ({ ...prev, assigned_employee_id: emp.id || "" }));
+                                    setShowAssignedResults(false);
+                                  }}
+                                >
+                                  <span className="font-medium text-sm text-foreground">
+                                    {emp.full_name || emp.name || emp.name_of_employee || "Staff Member"}
+                                  </span>
+                                  <span className="text-[11px] text-muted-foreground">
+                                    {emp.designation || "Professional"}
+                                  </span>
+                                </div>
+                              ))}
+                            {employees.filter(emp => {
+                                const name = (emp.full_name || emp.name || emp.name_of_employee || "").toLowerCase();
+                                const desig = (emp.designation || "").toLowerCase();
+                                const search = assignedSearchTerm.toLowerCase();
+                                return name.includes(search) || desig.includes(search);
+                            }).length === 0 && (
+                              <div className="p-4 text-center text-xs text-muted-foreground">
+                                No staff members found
+                              </div>
+                            )}
+                          </div>
+                        </>
+                      )}
+                    </div>
                     <p className="text-[10px] text-muted-foreground">Select the Employee or Partner providing advisory services to this client.</p>
                   </div>
                 </TabsContent>

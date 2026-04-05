@@ -50,6 +50,7 @@ interface ClientDetailProps {
 export default function ClientDetail({ client }: ClientDetailProps) {
   const router = useRouter();
   const [employees, setEmployees] = React.useState<Employee[]>([]);
+  const [loadingEmployees, setLoadingEmployees] = React.useState(true);
   const [downloading, setDownloading] = React.useState(false);
   const [isUpdating, setIsUpdating] = React.useState(false);
   const [currentClient, setCurrentClient] = React.useState<ClientCreate>(client);
@@ -81,13 +82,14 @@ export default function ClientDetail({ client }: ClientDetailProps) {
 
   React.useEffect(() => {
     const fetchEmployees = async () => {
+      setLoadingEmployees(true);
       try {
-        const iaMaster = await IAMasterService.getLatest();
-        if (iaMaster?.employees) {
-          setEmployees(iaMaster.employees);
-        }
+        const validEmployees = await IAMasterService.listEmployees();
+        setEmployees(validEmployees);
       } catch (error) {
         console.error("Failed to fetch employees", error);
+      } finally {
+        setLoadingEmployees(false);
       }
     };
     fetchEmployees();
@@ -243,7 +245,13 @@ export default function ClientDetail({ client }: ClientDetailProps) {
                             <DetailItem label="Advisor Name" value={currentClient.advisor_name} />
                             <DetailItem label="Assigned Professional" value={
                               currentClient.assigned_employee_id 
-                                ? employees.find(e => e.id === currentClient.assigned_employee_id)?.name_of_employee || "Loading..."
+                                ? (() => {
+                                    if (loadingEmployees) return "Loading...";
+                                    const emp = employees.find(e => (e.id || (e as any)._id) === currentClient.assigned_employee_id);
+                                    return emp 
+                                      ? (emp.full_name || emp.name || emp.name_of_employee || "Staff Member") 
+                                      : "Professional Not Found";
+                                  })()
                                 : "Unassigned"
                             } />
                             <DetailItem label="Risk Profile" value={<Badge variant="secondary" className="bg-orange-100 text-orange-700 hover:bg-orange-100">{currentClient.risk_profile}</Badge>} />
