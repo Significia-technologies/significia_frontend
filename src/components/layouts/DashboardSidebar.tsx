@@ -45,6 +45,11 @@ const NAV_ITEMS = [
     minRole: "super_admin", // Only for Significia staff
   },
   {
+    label: "Client Master",
+    href: "/clients",
+    icon: Users,
+  },
+  {
     label: "Financial Goals",
     href: "/financial-goals",
     icon: BarChart3,
@@ -73,11 +78,6 @@ const NAV_ITEMS = [
     label: "Operations",
     href: "/operations",
     icon: Activity,
-  },
-  {
-    label: "Accounts",
-    href: "/accounts",
-    icon: Users,
   },
   {
     label: "Team",

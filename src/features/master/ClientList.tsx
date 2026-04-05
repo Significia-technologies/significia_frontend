@@ -123,7 +123,7 @@ export function ClientList() {
             onClose={() => setShowChecklist(false)}
             onProceed={() => {
               setShowChecklist(false);
-              router.push("/master/clients/new");
+              router.push("/clients/new");
             }}
           />
         </div>
@@ -207,10 +207,10 @@ export function ClientList() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-40 border-primary/20">
-                          <DropdownMenuItem onClick={() => router.push(`/master/clients/${client.id}`)} className="gap-2">
+                          <DropdownMenuItem onClick={() => router.push(`/clients/${client.id}`)} className="gap-2">
                             <Eye className="w-4 h-4" /> View Details
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => router.push(`/master/clients/${client.id}/edit`)} className="gap-2">
+                          <DropdownMenuItem onClick={() => router.push(`/clients/${client.id}/edit`)} className="gap-2">
                             <Pencil className="w-4 h-4" /> Edit Details
                           </DropdownMenuItem>
                           <DropdownMenuSeparator className="bg-primary/10" />

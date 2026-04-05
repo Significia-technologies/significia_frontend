@@ -383,7 +383,7 @@ export default function ClientDetail({ client }: ClientDetailProps) {
       </Card>
       
       <div className="mt-8 flex flex-col sm:flex-row justify-end gap-3 sm:gap-4">
-        <Button variant="outline" className="w-full sm:w-auto px-8 border-primary/20 h-11" onClick={() => router.push(`/master/clients/${currentClient.id}/edit`)}>
+        <Button variant="outline" className="w-full sm:w-auto px-8 border-primary/20 h-11" onClick={() => router.push(`/clients/${currentClient.id}/edit`)}>
             Edit Profile
         </Button>
         <AlertDialog>

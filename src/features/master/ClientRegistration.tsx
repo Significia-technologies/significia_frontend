@@ -244,7 +244,7 @@ export default function ClientRegistrationForm({
       if (isEdit && clientId) {
           await MasterDataService.updateClient(clientId, submissionData);
           toast.success("Client updated successfully!");
-          router.push(`/master/clients/${clientId}`);
+          router.push(`/clients/${clientId}`);
       } else {
           const client = await MasterDataService.createClient(submissionData);
           if (client.id && Object.keys(pendingDocuments).length > 0) {
@@ -258,7 +258,7 @@ export default function ClientRegistrationForm({
               }
           }
           toast.success("Client registered and documents secured!");
-          router.push("/master");
+          router.push("/clients");
       }
     } catch (error: any) {
       toast.error(error.response?.data?.detail || `Failed to ${isEdit ? 'update' : 'register'} client`);

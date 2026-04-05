@@ -108,7 +108,7 @@ export default function ClientDirectory() {
             <Download className="w-4 h-4" />
             Master Report
           </Button>
-          <Button className="flex-1 sm:flex-none gap-2" onClick={() => router.push("/master/clients/new")}>
+          <Button className="flex-1 sm:flex-none gap-2" onClick={() => router.push("/clients/new")}>
             <UserPlus className="w-4 h-4" />
             Onboard Investor
           </Button>
@@ -217,10 +217,10 @@ export default function ClientDirectory() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-48">
-                            <DropdownMenuItem onClick={() => router.push(`/master/clients/${client.id}`)}>
+                            <DropdownMenuItem onClick={() => router.push(`/clients/${client.id}`)}>
                               <Eye className="w-4 h-4 mr-2" /> View Full Profile
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => router.push(`/master/clients/${client.id}/edit`)}>
+                            <DropdownMenuItem onClick={() => router.push(`/clients/${client.id}/edit`)}>
                               <Pencil className="w-4 h-4 mr-2" /> Edit Records
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />

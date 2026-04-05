@@ -1,11 +1,9 @@
 "use client";
 
 import React, { useEffect } from "react";
-import { Shield, List, RefreshCcw } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Shield, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ClientList } from "@/features/master/ClientList";
 import { IAMasterView } from "@/features/master/IAMasterView";
 import { BridgeStatusView } from "@/features/master/BridgeStatusView";
 import { BridgeService } from "@/core/services/bridge.service";
@@ -87,31 +85,7 @@ export default function MasterPage() {
       </header>
 
       <div className="grid grid-cols-1 gap-8">
-        <Tabs defaultValue="ia-master" className="w-full">
-          <div className="flex items-center justify-between mb-6">
-            <TabsList className="bg-muted/50 border border-primary/10 p-1">
-              <TabsTrigger
-                value="ia-master"
-                className="gap-2 px-6 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-              >
-                <Shield className="w-4 h-4" />
-                Investment Advisor
-              </TabsTrigger>
-              <TabsTrigger value="clients" className="gap-2 px-6">
-                <List className="w-4 h-4" />
-                Clients
-              </TabsTrigger>
-            </TabsList>
-          </div>
-
-          <TabsContent value="ia-master" className="focus-visible:outline-none focus-visible:ring-0">
-            <IAMasterView />
-          </TabsContent>
-
-          <TabsContent value="clients" className="focus-visible:outline-none focus-visible:ring-0">
-            <ClientList />
-          </TabsContent>
-        </Tabs>
+        <IAMasterView />
       </div>
     </div>
   );
