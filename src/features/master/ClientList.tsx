@@ -26,6 +26,7 @@ import { IAMasterService, Employee } from "@/core/services/ia-master.service";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
+import { PreRegistrationChecklist } from "./components/PreRegistrationChecklist";
 
 export function ClientList() {
   const router = useRouter();
@@ -33,6 +34,7 @@ export function ClientList() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
+  const [showChecklist, setShowChecklist] = useState(false);
 
   useEffect(() => {
     const init = async () => {
@@ -110,11 +112,20 @@ export function ClientList() {
             <span className="hidden xs:inline">{downloading ? "Generating..." : "Master Report"}</span>
             <span className="xs:hidden">Report</span>
           </Button>
-          <Button className="flex-1 sm:flex-none gap-2 bg-primary hover:bg-primary/90 h-9 text-xs sm:text-sm" onClick={() => router.push("/master/clients/new")}>
+          <Button className="flex-1 sm:flex-none gap-2 bg-primary hover:bg-primary/90 h-9 text-xs sm:text-sm" onClick={() => setShowChecklist(true)}>
             <UserPlus className="w-4 h-4" />
             <span className="hidden xs:inline">Add Client</span>
             <span className="xs:hidden">Add</span>
           </Button>
+
+          <PreRegistrationChecklist 
+            isOpen={showChecklist}
+            onClose={() => setShowChecklist(false)}
+            onProceed={() => {
+              setShowChecklist(false);
+              router.push("/master/clients/new");
+            }}
+          />
         </div>
       </div>
 
