@@ -33,8 +33,11 @@ export const TeamService = {
    * Onboard a new member to the organization silo.
    * Note: This counts against the tenant's license permit.
    */
-  async onboardTeamMember(data: CreateTeamMember): Promise<TeamMember> {
-    const response = await httpClient.post("/team", data);
+  async onboardTeamMember(data: CreateTeamMember | FormData): Promise<TeamMember> {
+    const config = data instanceof FormData ? {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    } : {};
+    const response = await httpClient.post("/team", data, config);
     return response.data;
   },
 

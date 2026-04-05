@@ -83,7 +83,7 @@ const NAV_ITEMS = [
     label: "Team",
     href: "/team",
     icon: Users,
-    minRole: "owner", // Accessible to IA Owners and Super Admins
+    minRole: "admin", // IA Owners and Partners
   },
   {
     label: "Drawers",
@@ -127,6 +127,7 @@ export function SidebarContent() {
   
   // ── Role/Context Detection ──────────────────────────
   const isIAOwner = user?.role === "owner";
+  const isIAPartner = user?.role === "partner";
   const isSuperAdmin = user?.role === "super_admin";
   const isMasterSubdomain = publicBranding?.is_master ?? (user?.subdomain === "master");
   
@@ -138,13 +139,16 @@ export function SidebarContent() {
     // 1. "Master" and other admin headers require a Master Context
     if (item.minRole === "super_admin" && !isMasterContext) return false;
     
-    // 2. "Developer" is for Significia Super Admins OR IA Owners
+    // 2. "Team" is for Owners and Partners
+    if (item.minRole === "admin" && !(isIAOwner || isIAPartner || isSuperAdmin)) return false;
+
+    // 3. "Developer" is for Significia Super Admins OR IA Owners
     if (item.href.includes("/master/developer") && !(isSuperAdmin || isIAOwner)) return false;
 
-    // 3. Global "Admin" is for Super Admins ONLY
+    // 4. Global "Admin" is for Super Admins ONLY
     if (item.href === "/admin" && !isSuperAdmin) return false;
 
-    // 4. If profile is NOT completed, IA Masters can ONLY see the Master page and Overview
+    // 5. If profile is NOT completed, IA Masters can ONLY see the Master page and Overview
     if (isIAOwner && !user.is_profile_completed && !["/", "/master"].includes(item.href)) {
       return false;
     }

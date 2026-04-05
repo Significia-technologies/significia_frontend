@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { TeamService, TeamMember } from "@/core/services/team.service";
+import { IAMasterService } from "@/core/services/ia-master.service";
 import { useAppStore } from "@/store/useAppStore";
 import { 
   Users, 
@@ -14,8 +15,12 @@ import {
   UserX,
   CreditCard,
   Plus,
-  Loader2
+  Loader2,
+  FileText,
+  Calendar,
+  Upload
 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -57,6 +62,7 @@ import { cn } from "@/lib/utils";
 export default function TeamManagement() {
   const { user } = useAppStore();
   const [members, setMembers] = useState<TeamMember[]>([]);
+  const [iaProfile, setIaProfile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddingMember, setIsAddingMember] = useState(false);
   const [newMember, setNewMember] = useState({
@@ -65,7 +71,11 @@ export default function TeamManagement() {
     phone_number: "",
     password: "",
     role: "ia_staff",
-    designation: ""
+    designation: "",
+    ia_registration_number: "",
+    date_of_registration: "",
+    date_of_registration_expiry: "",
+    certificate: null as File | null
   });
 
   const fetchTeam = async () => {
@@ -80,14 +90,48 @@ export default function TeamManagement() {
     }
   };
 
+  const fetchIaProfile = async () => {
+    try {
+      const profile = await IAMasterService.getLatest();
+      setIaProfile(profile);
+    } catch (error) {
+      console.error("Failed to fetch IA profile", error);
+    }
+  };
+
   useEffect(() => {
     fetchTeam();
+    fetchIaProfile();
   }, []);
+
+  // Update default role if it's body corporate
+  useEffect(() => {
+    if (iaProfile?.nature_of_entity === 'body' && newMember.role === 'partner') {
+        setNewMember(prev => ({ ...prev, role: 'ia_staff' }));
+    }
+  }, [iaProfile]);
 
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await TeamService.onboardTeamMember(newMember);
+      const formData = new FormData();
+      formData.append("full_name", newMember.full_name);
+      formData.append("email", newMember.email);
+      formData.append("phone_number", newMember.phone_number);
+      formData.append("password", newMember.password);
+      formData.append("role", newMember.role);
+      formData.append("designation", newMember.designation);
+      
+      if (showExtraFields) {
+          formData.append("ia_registration_number", newMember.ia_registration_number);
+          formData.append("date_of_registration", newMember.date_of_registration);
+          formData.append("date_of_registration_expiry", newMember.date_of_registration_expiry);
+          if (newMember.certificate) {
+              formData.append("certificate", newMember.certificate);
+          }
+      }
+
+      await TeamService.onboardTeamMember(formData);
       toast.success("Team member onboarded successfully");
       setIsAddingMember(false);
       setNewMember({
@@ -95,8 +139,12 @@ export default function TeamManagement() {
         email: "",
         phone_number: "",
         password: "",
-        role: "ia_staff",
-        designation: ""
+        role: iaProfile?.nature_of_entity === 'body' ? 'ia_staff' : "ia_staff", // Safe default
+        designation: "",
+        ia_registration_number: "",
+        date_of_registration: "",
+        date_of_registration_expiry: "",
+        certificate: null
       });
       fetchTeam();
     } catch (error: any) {
@@ -120,6 +168,10 @@ export default function TeamManagement() {
   const maxSeats = user?.max_client_permit || 5; 
   const usagePercentage = (activeMembers / maxSeats) * 100;
 
+  // Determine if extra fields should be shown
+  const isBodyCorporate = iaProfile?.nature_of_entity === 'body';
+  const showExtraFields = isBodyCorporate || newMember.role === "partner";
+
   return (
     <div className="space-y-6">
       {/* ── Header Area ── */}
@@ -138,83 +190,150 @@ export default function TeamManagement() {
               Onboard Member
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className={cn("sm:max-w-[425px]", showExtraFields && "sm:max-w-[600px]")}>
             <form onSubmit={handleAddMember}>
               <DialogHeader>
                 <DialogTitle>Onboard Team Member</DialogTitle>
                 <DialogDescription>
-                  Enter details for the new staff or partner. They will receive an email to login.
+                  Enter details for the new staff{isBodyCorporate ? "" : " or partner"}. They will receive an email to login.
                 </DialogDescription>
               </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input 
-                    id="name" 
-                    placeholder="John Doe" 
-                    required
-                    value={newMember.full_name}
-                    onChange={(e) => setNewMember({...newMember, full_name: e.target.value})}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="email">Email Address</Label>
-                  <Input 
-                    id="email" 
-                    type="email" 
-                    placeholder="john@example.com" 
-                    required
-                    value={newMember.email}
-                    onChange={(e) => setNewMember({...newMember, email: e.target.value})}
-                  />
-                </div>
-                <div className="grid gap-2">
-                    <Label htmlFor="phone">Phone Number</Label>
-                    <Input 
-                        id="phone" 
+              
+              <div className={cn("grid gap-4 py-4", showExtraFields && "grid-cols-2")}>
+                <div className="space-y-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="name">Full Name</Label>
+                      <Input 
+                        id="name" 
+                        placeholder="John Doe" 
                         required
-                        value={newMember.phone_number}
-                        onChange={(e) => setNewMember({...newMember, phone_number: e.target.value})}
-                    />
-                </div>
-                <div className="grid gap-2">
-                    <Label htmlFor="password">Temporary Password</Label>
-                    <Input 
-                        id="password" 
-                        type="password" 
+                        value={newMember.full_name}
+                        onChange={(e) => setNewMember({...newMember, full_name: e.target.value})}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="email">Email Address</Label>
+                      <Input 
+                        id="email" 
+                        type="email" 
+                        placeholder="john@example.com" 
                         required
-                        value={newMember.password}
-                        onChange={(e) => setNewMember({...newMember, password: e.target.value})}
-                    />
-                    <p className="text-[10px] text-muted-foreground">At least 8 characters. User can change this later.</p>
+                        value={newMember.email}
+                        onChange={(e) => setNewMember({...newMember, email: e.target.value})}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="phone">Phone Number</Label>
+                        <Input 
+                            id="phone" 
+                            required
+                            value={newMember.phone_number}
+                            onChange={(e) => setNewMember({...newMember, phone_number: e.target.value})}
+                        />
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="password">Temporary Password</Label>
+                        <Input 
+                            id="password" 
+                            type="password" 
+                            required
+                            value={newMember.password}
+                            onChange={(e) => setNewMember({...newMember, password: e.target.value})}
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="role">Role</Label>
+                        <Select 
+                            value={newMember.role}
+                            onValueChange={(val) => setNewMember({...newMember, role: val})}
+                        >
+                          <SelectTrigger id="role">
+                            <SelectValue placeholder="Select role" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {!isBodyCorporate && <SelectItem value="partner">Partner</SelectItem>}
+                            <SelectItem value="ia_staff">Staff</SelectItem>
+                            <SelectItem value="analyst">Analyst</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="designation">Designation</Label>
+                        <Input 
+                            id="designation" 
+                            placeholder="e.g. Senior Planner"
+                            value={newMember.designation}
+                            onChange={(e) => setNewMember({...newMember, designation: e.target.value})}
+                        />
+                      </div>
+                    </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="role">Role</Label>
-                    <Select 
-                        value={newMember.role}
-                        onValueChange={(val) => setNewMember({...newMember, role: val})}
-                    >
-                      <SelectTrigger id="role">
-                        <SelectValue placeholder="Select role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="partner">Partner</SelectItem>
-                        <SelectItem value="ia_staff">Staff</SelectItem>
-                        <SelectItem value="analyst">Analyst</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="designation">Designation</Label>
-                    <Input 
-                        id="designation" 
-                        placeholder="e.g. Senior Planner"
-                        value={newMember.designation}
-                        onChange={(e) => setNewMember({...newMember, designation: e.target.value})}
-                    />
-                  </div>
-                </div>
+
+                {showExtraFields && (
+                    <div className="space-y-4 border-l pl-4 border-border">
+                        <div className="text-xs font-bold uppercase text-primary mb-2 flex items-center gap-2">
+                            <Shield className="h-3 w-3" /> Registration Details
+                        </div>
+                        
+                        <div className="grid gap-2">
+                            <Label htmlFor="reg_no">IA Registration Number</Label>
+                            <Input 
+                                id="reg_no" 
+                                placeholder="INA000000000"
+                                required={showExtraFields}
+                                value={newMember.ia_registration_number}
+                                onChange={(e) => setNewMember({...newMember, ia_registration_number: e.target.value})}
+                            />
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label htmlFor="reg_date">Registration Date</Label>
+                            <div className="relative">
+                                <Calendar className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <Input 
+                                    id="reg_date" 
+                                    type="date"
+                                    className="pl-9"
+                                    required={showExtraFields}
+                                    value={newMember.date_of_registration}
+                                    onChange={(e) => setNewMember({...newMember, date_of_registration: e.target.value})}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label htmlFor="exp_date">Expiry Date</Label>
+                            <div className="relative">
+                                <Calendar className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <Input 
+                                    id="exp_date" 
+                                    type="date"
+                                    className="pl-9"
+                                    required={showExtraFields}
+                                    value={newMember.date_of_registration_expiry}
+                                    onChange={(e) => setNewMember({...newMember, date_of_registration_expiry: e.target.value})}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label htmlFor="certificate">Upload Certificate (PDF)</Label>
+                            <div className="flex items-center gap-2">
+                                <Input 
+                                    id="certificate" 
+                                    type="file"
+                                    accept="application/pdf"
+                                    className="text-xs"
+                                    required={showExtraFields}
+                                    onChange={(e) => setNewMember({...newMember, certificate: e.target.files?.[0] || null})}
+                                />
+                                {newMember.certificate && <FileText className="h-4 w-4 text-primary" />}
+                            </div>
+                        </div>
+                    </div>
+                )}
               </div>
               <DialogFooter>
                 <Button type="submit" className="w-full">Initialize Account</Button>
