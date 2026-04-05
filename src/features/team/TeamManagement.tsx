@@ -76,6 +76,15 @@ import { cn } from "@/lib/utils";
 export default function TeamManagement() {
   const { user } = useAppStore();
   const router = useRouter();
+
+  const slugify = (text: string) => 
+    text.toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)+/g, '');
+
+  const getIdentifier = (member: TeamMember) => 
+    `${slugify(member.full_name)}-${member.id}`;
+
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [iaProfile, setIaProfile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -569,15 +578,15 @@ export default function TeamManagement() {
                                  <DropdownMenuContent align="end" className="w-48">
                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                    <DropdownMenuSeparator />
-                                   <DropdownMenuItem onClick={() => router.push(`/team/${member.id}`)}>
+                                   <DropdownMenuItem onClick={() => router.push(`/team/${getIdentifier(member)}`)}>
                                      <Eye className="mr-2 h-4 w-4" />
                                      View Profile
                                    </DropdownMenuItem>
-                                   <DropdownMenuItem onClick={() => router.push(`/team/${member.id}/edit`)}>
+                                   <DropdownMenuItem onClick={() => router.push(`/team/${getIdentifier(member)}/edit`)}>
                                      <Edit className="mr-2 h-4 w-4" />
                                      Update Details
                                    </DropdownMenuItem>
-                                   <DropdownMenuItem onClick={() => handleManagePermissions(member)}>
+                                   <DropdownMenuItem onClick={() => router.push(`/team/${getIdentifier(member)}/permissions`)}>
                                      <Lock className="mr-2 h-4 w-4" />
                                      Permissions
                                    </DropdownMenuItem>

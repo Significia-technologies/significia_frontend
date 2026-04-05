@@ -31,7 +31,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-// import { Checkbox } from "@/components/ui/checkbox";
+// import { Checkbox } from "@/components/ui/Checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { 
   FinancialAnalysisService, 

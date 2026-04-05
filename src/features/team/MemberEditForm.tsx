@@ -21,8 +21,13 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 export default function MemberEditForm() {
-  const { id } = useParams();
+  const { identifier } = useParams() as { identifier: string };
   const router = useRouter();
+
+  // Extract UUID from the slug (name-uuid)
+  // UUIDs are always 36 characters long at the end of the identifier
+  const id = identifier?.slice(-36);
+
   const [member, setMember] = useState<TeamMember | null>(null);
   const [iaProfile, setIaProfile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -100,7 +105,7 @@ export default function MemberEditForm() {
 
       await TeamService.updateTeamMember(id as string, updateData);
       toast.success("Team member updated successfully");
-      router.push(`/team/${id}`);
+      router.push(`/team/${identifier}`);
     } catch (error: any) {
       toast.error(error.response?.data?.detail || "Update failed");
     } finally {

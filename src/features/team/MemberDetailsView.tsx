@@ -23,8 +23,13 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 export default function MemberDetailsView() {
-  const { id } = useParams();
+  const { identifier } = useParams() as { identifier: string };
   const router = useRouter();
+
+  // Extract UUID from the slug (name-uuid)
+  // UUIDs are always 36 characters long at the end of the identifier
+  const id = identifier?.slice(-36);
+
   const [member, setMember] = useState<TeamMember | null>(null);
   const [permissions, setPermissions] = useState<ModulePermission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -155,6 +160,36 @@ export default function MemberDetailsView() {
                 <p className="font-medium">{new Date(member.created_at).toLocaleDateString()}</p>
               </div>
             </div>
+
+            {member.ia_registration_number && (
+              <div className="pt-4 border-t space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-emerald-500/10 rounded-full">
+                    <Shield className="h-4 w-4 text-emerald-500" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase font-bold">IA Reg. Number</p>
+                    <p className="font-medium">{member.ia_registration_number}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-emerald-500/10 rounded-full">
+                    <Calendar className="h-4 w-4 text-emerald-500" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 w-full">
+                    <div>
+                      <p className="text-xs text-muted-foreground uppercase font-bold">Reg. Date</p>
+                      <p className="font-medium">{member.date_of_registration ? new Date(member.date_of_registration).toLocaleDateString() : '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground uppercase font-bold">Expiry Date</p>
+                      <p className="font-medium text-destructive/80 font-bold">{member.date_of_registration_expiry ? new Date(member.date_of_registration_expiry).toLocaleDateString() : '-'}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -165,7 +200,7 @@ export default function MemberDetailsView() {
                 <CardTitle className="text-lg">Access Permissions</CardTitle>
                 <CardDescription>Active permissions across all application modules.</CardDescription>
               </div>
-              <Button variant="outline" size="sm" className="gap-2" onClick={() => router.push(`/team/${member.id}/edit`)}>
+              <Button variant="outline" size="sm" className="gap-2" onClick={() => router.push(`/team/${identifier}/permissions`)}>
                 Edit Access
               </Button>
             </div>
