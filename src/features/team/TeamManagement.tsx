@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { TeamService, TeamMember } from "@/core/services/team.service";
+import { TeamService, TeamMember, APP_MODULES, ModulePermission } from "@/core/services/team.service";
 import { IAMasterService } from "@/core/services/ia-master.service";
 import { useAppStore } from "@/store/useAppStore";
 import { 
@@ -18,7 +18,8 @@ import {
   Loader2,
   FileText,
   Calendar,
-  Upload
+  Upload,
+  Lock
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -77,6 +78,12 @@ export default function TeamManagement() {
     date_of_registration_expiry: "",
     certificate: null as File | null
   });
+
+  // Permission Management State
+  const [isManagingPermissions, setIsManagingPermissions] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
+  const [permissions, setPermissions] = useState<ModulePermission[]>([]);
+  const [isSavingPermissions, setIsSavingPermissions] = useState(false);
 
   const fetchTeam = async () => {
     try {
@@ -161,6 +168,69 @@ export default function TeamManagement() {
     } catch (error) {
       toast.error("Action failed");
     }
+  };
+
+  const handleManagePermissions = async (member: TeamMember) => {
+    setSelectedMember(member);
+    setIsManagingPermissions(true);
+    try {
+      const data = await TeamService.getMemberPermissions(member.id);
+      // Fill in missing modules with defaults
+      const completePermissions = APP_MODULES.map(mod => {
+        const existing = data.find(p => p.module === mod);
+        return existing || { 
+          module: mod, 
+          can_read: false, 
+          can_create: false, 
+          can_update: false, 
+          can_delete: false 
+        };
+      });
+      setPermissions(completePermissions);
+    } catch (error) {
+      toast.error("Failed to load permissions");
+    }
+  };
+
+  const togglePermission = (module: string, field: keyof Omit<ModulePermission, 'module'>) => {
+    setPermissions(prev => prev.map(p => {
+      if (p.module === module) {
+        return { ...p, [field]: !p[field] };
+      }
+      return p;
+    }));
+  };
+
+  const handleSavePermissions = async () => {
+    if (!selectedMember) return;
+    setIsSavingPermissions(true);
+    try {
+      if (selectedMember.role === 'partner') {
+          // Partners should logically have all access if we are using presets, 
+          // but we'll save whatever is in the UI
+      }
+      await TeamService.updateMemberPermissions(selectedMember.id, permissions);
+      toast.success("Permissions updated successfully");
+      setIsManagingPermissions(false);
+    } catch (error) {
+      toast.error("Failed to save permissions");
+    } finally {
+      setIsSavingPermissions(false);
+    }
+  };
+
+  const applyPreset = (role: string) => {
+    setPermissions(prev => prev.map(p => {
+      if (role === 'partner') {
+        return { ...p, can_read: true, can_create: true, can_update: true, can_delete: true };
+      }
+      if (role === 'analyst') {
+        // Analysts start with generic Read access to everything? 
+        // Or "No Access" is better as requested.
+        return { ...p, can_read: false, can_create: false, can_update: false, can_delete: false };
+      }
+      return { ...p, can_read: false, can_create: false, can_update: false, can_delete: false };
+    }));
   };
 
   // ── Stats Calculation ──────────────────────────────
@@ -474,16 +544,29 @@ export default function TeamManagement() {
                         {new Date(member.created_at).toLocaleDateString()}
                       </TableCell>
                       <TableCell className="text-right">
-                         {member.role !== 'owner' && member.status === 'active' && (
-                             <Button 
-                               variant="ghost" 
-                               size="sm" 
-                               className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                               onClick={() => handleDeactivate(member.id)}
-                             >
-                               Deactivate
-                             </Button>
-                         )}
+                         <div className="flex justify-end gap-2">
+                           {member.role !== 'owner' && member.status === 'active' && (
+                               <>
+                                 <Button 
+                                   variant="outline" 
+                                   size="sm" 
+                                   className="h-8 gap-1.5"
+                                   onClick={() => handleManagePermissions(member)}
+                                 >
+                                   <Lock className="h-3.5 w-3.5" />
+                                   Permissions
+                                 </Button>
+                                 <Button 
+                                   variant="ghost" 
+                                   size="sm" 
+                                   className="h-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                   onClick={() => handleDeactivate(member.id)}
+                                 >
+                                   Deactivate
+                                 </Button>
+                               </>
+                           )}
+                         </div>
                       </TableCell>
                     </TableRow>
                   ))
@@ -493,6 +576,89 @@ export default function TeamManagement() {
           </div>
         </CardContent>
       </Card>
+
+      {/* ── Permissions Dialog ── */}
+      <Dialog open={isManagingPermissions} onOpenChange={setIsManagingPermissions}>
+        <DialogContent className="sm:max-w-[700px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5 text-primary" />
+              Manage Permissions: {selectedMember?.full_name}
+            </DialogTitle>
+            <DialogDescription>
+              Control access levels for each module. "Delete" refers to soft-deletion.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex gap-2 mb-4">
+             <Button variant="outline" size="sm" className="h-7 text-[10px]" onClick={() => applyPreset('partner')}>Full Access Preset</Button>
+             <Button variant="outline" size="sm" className="h-7 text-[10px]" onClick={() => applyPreset('ia_staff')}>Reset (No Access)</Button>
+          </div>
+
+          <div className="max-h-[400px] overflow-y-auto border rounded-md">
+            <Table>
+              <TableHeader className="sticky top-0 bg-background z-10 shadow-sm">
+                <TableRow>
+                  <TableHead className="w-[180px]">Module</TableHead>
+                  <TableHead className="text-center">Read</TableHead>
+                  <TableHead className="text-center">Create</TableHead>
+                  <TableHead className="text-center">Update</TableHead>
+                  <TableHead className="text-center">Delete (Soft)</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {permissions.map((p) => (
+                  <TableRow key={p.module}>
+                    <TableCell className="font-medium text-sm">{p.module}</TableCell>
+                    <TableCell className="text-center">
+                      <input 
+                        type="checkbox" 
+                        checked={p.can_read} 
+                        onChange={() => togglePermission(p.module, 'can_read')}
+                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                      />
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <input 
+                        type="checkbox" 
+                        checked={p.can_create} 
+                        onChange={() => togglePermission(p.module, 'can_create')}
+                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                      />
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <input 
+                        type="checkbox" 
+                        checked={p.can_update} 
+                        onChange={() => togglePermission(p.module, 'can_update')}
+                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                      />
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <input 
+                        type="checkbox" 
+                        checked={p.can_delete} 
+                        onChange={() => togglePermission(p.module, 'can_delete')}
+                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setIsManagingPermissions(false)} disabled={isSavingPermissions}>
+              Cancel
+            </Button>
+            <Button onClick={handleSavePermissions} disabled={isSavingPermissions} className="gap-2">
+              {isSavingPermissions && <Loader2 className="h-4 w-4 animate-spin" />}
+              Save Permissions
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -20,6 +20,26 @@ export interface CreateTeamMember {
   designation?: string;
 }
 
+export interface ModulePermission {
+  module: string;
+  can_read: boolean;
+  can_create: boolean;
+  can_update: boolean;
+  can_delete: boolean;
+}
+
+export const APP_MODULES = [
+  "Clients",
+  "Portfolio",
+  "Financial Goals",
+  "Risk Profiles",
+  "Asset Allocation",
+  "Security Basket",
+  "Operations",
+  "Drawers",
+  "Tools"
+];
+
 export const TeamService = {
   /**
    * List all organizational team members (Partners, Staff, etc.)
@@ -54,5 +74,20 @@ export const TeamService = {
    */
   async removeTeamMember(id: string): Promise<void> {
     await httpClient.delete(`/team/${id}`);
+  },
+
+  /**
+   * Get dynamic permissions for a team member.
+   */
+  async getMemberPermissions(id: string): Promise<ModulePermission[]> {
+    const response = await httpClient.get(`/team/${id}/permissions`);
+    return response.data;
+  },
+
+  /**
+   * Save dynamic permissions for a team member.
+   */
+  async updateMemberPermissions(id: string, permissions: ModulePermission[]): Promise<void> {
+    await httpClient.put(`/team/${id}/permissions`, permissions);
   },
 };
