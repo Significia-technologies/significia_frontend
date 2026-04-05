@@ -3,10 +3,12 @@ import httpClient from "../api/http-client";
 
 export interface Employee {
   id?: string;
-  name_of_employee: string;
-  date_of_birth: string;
-  designation: string;
-  ia_registration_number: string;
+  name_of_employee?: string;
+  full_name?: string;
+  name?: string;
+  date_of_birth?: string;
+  designation?: string;
+  ia_registration_number?: string;
   date_of_registration?: string;
   date_of_registration_expiry?: string;
   certificate_path?: string;
@@ -38,6 +40,7 @@ export interface IAMaster {
   current_client_count: number;
   created_at: string;
   updated_at: string;
+  employees?: Employee[];
 }
 
 // ── IA Master Service (Bridge Architecture) ───────────────────────────────

@@ -210,8 +210,8 @@ export default function ClientDetail({ client }: ClientDetailProps) {
                       <Calendar className="w-6 h-6 text-primary" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground mb-0.5">Registration</p>
-                      <p className="text-base font-bold truncate">{currentClient.declaration_date || "Not set"}</p>
+                      <p className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground mb-0.5">Agreement Date</p>
+                      <p className="text-base font-bold truncate">{currentClient.agreement_date || "Not set"}</p>
                     </div>
                   </div>
 

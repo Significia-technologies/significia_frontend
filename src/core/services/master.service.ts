@@ -15,6 +15,11 @@ export interface Client {
   created_at: string;
   updated_at: string;
   assigned_employee_id?: string;
+  kyc_verified: boolean;
+  ckyc_number?: string;
+  ipv_done_by_id?: string;
+  ipv_date?: string;
+  agreement_date?: string;
   documents?: ClientDocumentResponse[];
 }
 
@@ -80,10 +85,14 @@ export interface ClientCreate {
   previous_advisor_name?: string;
   referral_source?: string;
   declaration_signed: boolean;
-  declaration_date?: string;
+  agreement_date?: string;
   client_signature_path?: string;
   advisor_signature_path?: string;
   assigned_employee_id?: string;
+  kyc_verified: boolean;
+  ckyc_number?: string;
+  ipv_done_by_id?: string;
+  ipv_date?: string;
   documents?: ClientDocumentResponse[];
 }
 
