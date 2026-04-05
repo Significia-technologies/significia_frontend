@@ -9,6 +9,9 @@ export interface TeamMember {
   designation?: string;
   status: "active" | "inactive";
   created_at: string;
+  ia_registration_number?: string;
+  date_of_registration?: string;
+  date_of_registration_expiry?: string;
 }
 
 export interface CreateTeamMember {
@@ -18,6 +21,9 @@ export interface CreateTeamMember {
   password?: string;
   role: string;
   designation?: string;
+  ia_registration_number?: string;
+  date_of_registration?: string;
+  date_of_registration_expiry?: string;
 }
 
 export interface ModulePermission {

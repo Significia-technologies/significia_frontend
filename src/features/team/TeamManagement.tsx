@@ -14,13 +14,18 @@ import {
   UserCheck,
   UserX,
   CreditCard,
-  Plus,
-  Loader2,
-  FileText,
   Calendar,
   Upload,
-  Lock
+  Lock,
+  Eye,
+  Edit,
+  Trash2,
+  Settings,
+  FileText,
+  Loader2,
+  Plus
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -57,11 +62,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 export default function TeamManagement() {
   const { user } = useAppStore();
+  const router = useRouter();
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [iaProfile, setIaProfile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -544,27 +558,42 @@ export default function TeamManagement() {
                         {new Date(member.created_at).toLocaleDateString()}
                       </TableCell>
                       <TableCell className="text-right">
-                         <div className="flex justify-end gap-2">
+                         <div className="flex justify-end">
                            {member.role !== 'owner' && member.status === 'active' && (
-                               <>
-                                 <Button 
-                                   variant="outline" 
-                                   size="sm" 
-                                   className="h-8 gap-1.5"
-                                   onClick={() => handleManagePermissions(member)}
-                                 >
-                                   <Lock className="h-3.5 w-3.5" />
-                                   Permissions
-                                 </Button>
-                                 <Button 
-                                   variant="ghost" 
-                                   size="sm" 
-                                   className="h-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                   onClick={() => handleDeactivate(member.id)}
-                                 >
-                                   Deactivate
-                                 </Button>
-                               </>
+                               <DropdownMenu>
+                                 <DropdownMenuTrigger asChild>
+                                   <Button variant="ghost" size="icon" className="h-8 w-8">
+                                     <MoreHorizontal className="h-4 w-4" />
+                                   </Button>
+                                 </DropdownMenuTrigger>
+                                 <DropdownMenuContent align="end" className="w-48">
+                                   <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                   <DropdownMenuSeparator />
+                                   <DropdownMenuItem onClick={() => router.push(`/team/${member.id}`)}>
+                                     <Eye className="mr-2 h-4 w-4" />
+                                     View Profile
+                                   </DropdownMenuItem>
+                                   <DropdownMenuItem onClick={() => router.push(`/team/${member.id}/edit`)}>
+                                     <Edit className="mr-2 h-4 w-4" />
+                                     Update Details
+                                   </DropdownMenuItem>
+                                   <DropdownMenuItem onClick={() => handleManagePermissions(member)}>
+                                     <Lock className="mr-2 h-4 w-4" />
+                                     Permissions
+                                   </DropdownMenuItem>
+                                   <DropdownMenuSeparator />
+                                   <DropdownMenuItem 
+                                     variant="destructive"
+                                     onClick={() => handleDeactivate(member.id)}
+                                   >
+                                     <Trash2 className="mr-2 h-4 w-4" />
+                                     Deactivate
+                                   </DropdownMenuItem>
+                                 </DropdownMenuContent>
+                               </DropdownMenu>
+                           )}
+                           {member.role === 'owner' && (
+                             <Badge variant="outline" className="text-[10px]">Primary Admin</Badge>
                            )}
                          </div>
                       </TableCell>
