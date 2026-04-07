@@ -23,10 +23,10 @@ interface AddClientModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  connectorId: string;
+  
 }
 
-export function AddClientModal({ isOpen, onClose, onSuccess, connectorId }: AddClientModalProps) {
+export function AddClientModal({ isOpen, onClose, onSuccess }: AddClientModalProps) {
   const [loading, setLoading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -67,7 +67,7 @@ export function AddClientModal({ isOpen, onClose, onSuccess, connectorId }: AddC
     if (isOpen) {
       const fetchEmployees = async () => {
         try {
-          const iaMaster = await IAMasterService.getLatest(connectorId);
+          const iaMaster = await IAMasterService.getLatest();
           if (iaMaster?.employees) {
             setEmployees(iaMaster.employees);
           }
@@ -77,7 +77,7 @@ export function AddClientModal({ isOpen, onClose, onSuccess, connectorId }: AddC
       };
       fetchEmployees();
     }
-  }, [isOpen, connectorId]);
+  }, [isOpen]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -92,7 +92,7 @@ export function AddClientModal({ isOpen, onClose, onSuccess, connectorId }: AddC
   const handleFinalConfirm = async () => {
     setLoading(true);
     try {
-      await MasterDataService.createClient(connectorId, formData as ClientCreate);
+      await MasterDataService.createClient(formData as ClientCreate);
       toast.success("Client added to your private database!");
       onSuccess();
       onClose();

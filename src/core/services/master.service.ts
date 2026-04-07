@@ -1,6 +1,8 @@
 import { API_ENDPOINTS } from "../api/api-endpoints";
 import httpClient from "../api/http-client";
 
+// ── Types ─────────────────────────────────────────
+
 export interface Client {
   id: string;
   client_name: string;
@@ -13,6 +15,11 @@ export interface Client {
   created_at: string;
   updated_at: string;
   assigned_employee_id?: string;
+  kyc_verified: boolean;
+  ckyc_number?: string;
+  ipv_done_by_id?: string;
+  ipv_date?: string;
+  agreement_date?: string;
   documents?: ClientDocumentResponse[];
 }
 
@@ -30,7 +37,6 @@ export interface ClientCreate {
   email: string;
   password: string;
   client_code: string;
-
   // Personal
   client_name: string;
   date_of_birth: string;
@@ -50,7 +56,6 @@ export interface ClientCreate {
   spouse_dob?: string;
   aadhar_number?: string;
   passport_number?: string;
-
   // Financial
   annual_income: number;
   net_worth: number;
@@ -58,7 +63,6 @@ export interface ClientCreate {
   fatca_compliance: string;
   existing_portfolio_value?: number;
   existing_portfolio_composition?: string;
-
   // Banking
   bank_account_number: string;
   bank_name: string;
@@ -66,14 +70,12 @@ export interface ClientCreate {
   ifsc_code: string;
   demat_account_number?: string;
   trading_account_number?: string;
-
   // Investment
   risk_profile: string;
   investment_experience: string;
   investment_objectives: string;
   investment_horizon: string;
   liquidity_needs: string;
-
   // Metadata
   advisor_name: string;
   advisor_registration_number: string;
@@ -83,124 +85,131 @@ export interface ClientCreate {
   previous_advisor_name?: string;
   referral_source?: string;
   declaration_signed: boolean;
-  declaration_date?: string;
+  agreement_date?: string;
   client_signature_path?: string;
   advisor_signature_path?: string;
   assigned_employee_id?: string;
+  kyc_verified: boolean;
+  ckyc_number?: string;
+  ipv_done_by_id?: string;
+  ipv_date?: string;
   documents?: ClientDocumentResponse[];
 }
 
+// ── Master Data Service (Bridge Architecture) ─────────────────────────────
+// No  required — backend resolves tenant from JWT + X-Tenant-Slug
+
 export class MasterDataService {
-  static async listClients(connectorId: string): Promise<Client[]> {
-    const response = await httpClient.get<Client[]>(
-      API_ENDPOINTS.MASTER.CLIENTS.LIST(connectorId)
+  static async listClients(): Promise<Client[]> {
+    const response = await httpClient.get<{ clients: Client[]; total: number }>(
+      API_ENDPOINTS.MASTER.CLIENTS.LIST
     );
-    return response.data;
+    // Bridge Architecture returns { clients: [], total: 0 }
+    return response.data.clients || [];
   }
 
-  static async getClient(connectorId: string, clientId: string): Promise<ClientCreate> {
+  static async getClient(clientId: string): Promise<ClientCreate> {
     const response = await httpClient.get<ClientCreate>(
-      API_ENDPOINTS.MASTER.CLIENTS.DETAIL(connectorId, clientId)
+      API_ENDPOINTS.MASTER.CLIENTS.DETAIL(clientId)
     );
     return response.data;
   }
 
-  static async getClientByPan(connectorId: string, pan: string): Promise<ClientCreate> {
+  static async getClientByPan(pan: string): Promise<ClientCreate> {
     const response = await httpClient.get<ClientCreate>(
-      API_ENDPOINTS.MASTER.CLIENTS.PAN(connectorId, pan)
+      API_ENDPOINTS.MASTER.CLIENTS.BY_PAN(pan)
     );
     return response.data;
   }
 
-  static async getClientByCode(connectorId: string, code: string): Promise<ClientCreate> {
+  static async getClientByCode(code: string): Promise<ClientCreate> {
     const response = await httpClient.get<ClientCreate>(
-      API_ENDPOINTS.MASTER.CLIENTS.CODE(connectorId, code)
+      API_ENDPOINTS.MASTER.CLIENTS.BY_CODE(code)
     );
     return response.data;
   }
 
-  static async createClient(connectorId: string, data: ClientCreate): Promise<Client> {
+  static async createClient(data: ClientCreate): Promise<Client> {
     const response = await httpClient.post<Client>(
-      API_ENDPOINTS.MASTER.CLIENTS.CREATE(connectorId),
+      API_ENDPOINTS.MASTER.CLIENTS.CREATE,
       data
     );
     return response.data;
   }
 
-  static async updateClient(connectorId: string, clientId: string, data: Partial<ClientCreate>): Promise<Client> {
+  static async updateClient(clientId: string, data: Partial<ClientCreate>): Promise<Client> {
     const response = await httpClient.put<Client>(
-      API_ENDPOINTS.MASTER.CLIENTS.UPDATE(connectorId, clientId),
+      API_ENDPOINTS.MASTER.CLIENTS.UPDATE(clientId),
       data
     );
     return response.data;
   }
 
-  static async deleteClient(connectorId: string, clientId: string): Promise<void> {
-    await httpClient.delete(
-      API_ENDPOINTS.MASTER.CLIENTS.DELETE(connectorId, clientId)
-    );
+  static async deleteClient(clientId: string): Promise<void> {
+    await httpClient.delete(API_ENDPOINTS.MASTER.CLIENTS.DELETE(clientId));
   }
 
-  static async downloadClientReport(connectorId: string, clientId: string, clientName: string): Promise<void> {
+  static async downloadClientReport(clientId: string, clientName: string): Promise<void> {
     const response = await httpClient.get(
-      API_ENDPOINTS.MASTER.CLIENTS.DOWNLOAD_REPORT(connectorId, clientId),
-      { responseType: 'blob' }
+      API_ENDPOINTS.MASTER.CLIENTS.DOWNLOAD_REPORT(clientId),
+      { responseType: "blob" }
     );
-    
     const url = window.URL.createObjectURL(new Blob([response.data]));
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = url;
-    link.setAttribute('download', `Report_${clientName.replace(/\s+/g, '_')}.pdf`);
+    link.setAttribute("download", `Report_${clientName.replace(/\s+/g, "_")}.pdf`);
     document.body.appendChild(link);
     link.click();
     link.remove();
   }
 
-  static async downloadMasterReport(connectorId: string): Promise<void> {
-    const response = await httpClient.get(
-      API_ENDPOINTS.MASTER.CLIENTS.MASTER_REPORT(connectorId),
-      { responseType: 'blob' }
-    );
-    
+  static async downloadMasterReport(): Promise<void> {
+    const response = await httpClient.get(API_ENDPOINTS.MASTER.CLIENTS.MASTER_REPORT, {
+      responseType: "blob",
+    });
     const url = window.URL.createObjectURL(new Blob([response.data]));
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = url;
-    const date = new Date().toISOString().split('T')[0];
-    link.setAttribute('download', `Client_Master_Report_${date}.pdf`);
+    const date = new Date().toISOString().split("T")[0];
+    link.setAttribute("download", `Client_Master_Report_${date}.pdf`);
     document.body.appendChild(link);
     link.click();
     link.remove();
   }
 
-  static async downloadBlankForm(connectorId: string): Promise<void> {
-    const response = await httpClient.get(
-      API_ENDPOINTS.MASTER.CLIENTS.BLANK_FORM(connectorId),
-      { responseType: 'blob' }
-    );
-    
+  static async downloadBlankForm(): Promise<void> {
+    const response = await httpClient.get(API_ENDPOINTS.MASTER.CLIENTS.BLANK_FORM, {
+      responseType: "blob",
+    });
     const url = window.URL.createObjectURL(new Blob([response.data]));
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = url;
-    link.setAttribute('download', 'Client_Registration_Form.pdf');
+    link.setAttribute("download", "Client_Registration_Form.pdf");
     document.body.appendChild(link);
     link.click();
     link.remove();
   }
 
-  static async uploadDocument(connectorId: string, clientId: string, file: File, documentType: string): Promise<ClientDocumentResponse> {
+  static async uploadDocument(
+    clientId: string,
+    file: File,
+    documentType: string
+  ): Promise<ClientDocumentResponse> {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("document_type", documentType);
 
     const response = await httpClient.post<ClientDocumentResponse>(
-      API_ENDPOINTS.MASTER.CLIENTS.UPLOAD_DOCUMENT(connectorId, clientId),
+      API_ENDPOINTS.MASTER.CLIENTS.UPLOAD_DOCUMENT(clientId),
       formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      }
+      { headers: { "Content-Type": "multipart/form-data" } }
     );
     return response.data;
+  }
+
+  static async assignClient(clientId: string, staffId: string): Promise<void> {
+    await httpClient.patch(`/master/clients/${clientId}/assign`, null, {
+      params: { staff_id: staffId }
+    });
   }
 }

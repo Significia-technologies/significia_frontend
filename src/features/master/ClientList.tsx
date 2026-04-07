@@ -26,17 +26,15 @@ import { IAMasterService, Employee } from "@/core/services/ia-master.service";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
+import { PreRegistrationChecklist } from "./components/PreRegistrationChecklist";
 
-interface ClientListProps {
-  connectorId: string;
-}
-
-export function ClientList({ connectorId }: ClientListProps) {
+export function ClientList() {
   const router = useRouter();
   const [clients, setClients] = useState<Client[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
+  const [showChecklist, setShowChecklist] = useState(false);
 
   useEffect(() => {
     const init = async () => {
@@ -45,14 +43,12 @@ export function ClientList({ connectorId }: ClientListProps) {
       setLoading(false);
     };
     init();
-  }, [connectorId]);
+  }, []);
 
   const fetchEmployees = async () => {
     try {
-      const iaMaster = await IAMasterService.getLatest(connectorId);
-      if (iaMaster?.employees) {
-        setEmployees(iaMaster.employees);
-      }
+      const validEmployees = await IAMasterService.listEmployees();
+      setEmployees(validEmployees);
     } catch (error) {
       console.error("Failed to fetch employees", error);
     }
@@ -60,7 +56,7 @@ export function ClientList({ connectorId }: ClientListProps) {
 
   const fetchClients = async () => {
     try {
-      const data = await MasterDataService.listClients(connectorId);
+      const data = await MasterDataService.listClients();
       setClients(data);
     } catch (error) {
       toast.error("Failed to load clients from your private database");
@@ -72,7 +68,7 @@ export function ClientList({ connectorId }: ClientListProps) {
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this client?")) return;
     try {
-      await MasterDataService.deleteClient(connectorId, id);
+      await MasterDataService.deleteClient(id);
       toast.success("Client removed from private storage");
       fetchClients();
     } catch (error) {
@@ -83,7 +79,7 @@ export function ClientList({ connectorId }: ClientListProps) {
   const handleDownloadMasterReport = async () => {
     try {
       setDownloading(true);
-      await MasterDataService.downloadMasterReport(connectorId);
+      await MasterDataService.downloadMasterReport();
       toast.success("Master report downloaded successfully");
     } catch (error) {
       toast.error("Failed to download master report");
@@ -114,11 +110,20 @@ export function ClientList({ connectorId }: ClientListProps) {
             <span className="hidden xs:inline">{downloading ? "Generating..." : "Master Report"}</span>
             <span className="xs:hidden">Report</span>
           </Button>
-          <Button className="flex-1 sm:flex-none gap-2 bg-primary hover:bg-primary/90 h-9 text-xs sm:text-sm" onClick={() => router.push("/master/clients/new")}>
+          <Button className="flex-1 sm:flex-none gap-2 bg-primary hover:bg-primary/90 h-9 text-xs sm:text-sm" onClick={() => setShowChecklist(true)}>
             <UserPlus className="w-4 h-4" />
             <span className="hidden xs:inline">Add Client</span>
             <span className="xs:hidden">Add</span>
           </Button>
+
+          <PreRegistrationChecklist 
+            isOpen={showChecklist}
+            onClose={() => setShowChecklist(false)}
+            onProceed={() => {
+              setShowChecklist(false);
+              router.push("/clients/new");
+            }}
+          />
         </div>
       </div>
 
@@ -181,7 +186,12 @@ export function ClientList({ connectorId }: ClientListProps) {
                     <TableCell className="whitespace-nowrap">
                       {client.assigned_employee_id ? (
                         <Badge variant="outline" className="bg-primary/5 text-primary border-primary/10">
-                          {employees.find(e => e.id === client.assigned_employee_id)?.name_of_employee || 'Unknown Professional'}
+                          {(() => {
+                            const emp = employees.find(e => (e.id || (e as any)._id) === client.assigned_employee_id);
+                            return emp 
+                              ? (emp.full_name || emp.name || emp.name_of_employee || "Staff Member") 
+                              : (loading ? "Loading..." : "Unknown Professional");
+                          })()}
                         </Badge>
                       ) : (
                         <span className="text-xs text-muted-foreground italic">Unassigned</span>
@@ -200,10 +210,10 @@ export function ClientList({ connectorId }: ClientListProps) {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-40 border-primary/20">
-                          <DropdownMenuItem onClick={() => router.push(`/master/clients/${client.id}`)} className="gap-2">
+                          <DropdownMenuItem onClick={() => router.push(`/clients/${client.id}`)} className="gap-2">
                             <Eye className="w-4 h-4" /> View Details
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => router.push(`/master/clients/${client.id}/edit`)} className="gap-2">
+                          <DropdownMenuItem onClick={() => router.push(`/clients/${client.id}/edit`)} className="gap-2">
                             <Pencil className="w-4 h-4" /> Edit Details
                           </DropdownMenuItem>
                           <DropdownMenuSeparator className="bg-primary/10" />

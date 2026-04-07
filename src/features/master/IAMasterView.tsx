@@ -18,7 +18,10 @@ import {
   Pencil,
   Loader2,
   Save,
-  X
+  X,
+  Globe,
+  Layout,
+  Info
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,19 +36,24 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { IAMasterService, IAMaster } from "@/core/services/ia-master.service";
+import { TenantService, Tenant } from "@/core/services/tenant.service";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { getAssetUrl } from "@/core/api/api-utils";
 
-interface IAMasterViewProps {
-  connectorId: string;
-}
-
-export function IAMasterView({ connectorId }: IAMasterViewProps) {
+export function IAMasterView() {
   const router = useRouter();
   const [data, setData] = useState<IAMaster | null>(null);
+  const [tenant, setTenant] = useState<Tenant | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  // Portal Settings State
+  const [isEditingPortal, setIsEditingPortal] = useState(false);
+  const [subdomain, setSubdomain] = useState("");
+  const [customDomain, setCustomDomain] = useState("");
+  const [isSavingPortal, setIsSavingPortal] = useState(false);
+
   const [isEditingPermit, setIsEditingPermit] = useState(false);
   const [newPermitLimit, setNewPermitLimit] = useState("");
   const [isSavingPermit, setIsSavingPermit] = useState(false);
@@ -53,8 +61,14 @@ export function IAMasterView({ connectorId }: IAMasterViewProps) {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const latest = await IAMasterService.getLatest(connectorId);
+      const [latest, tenantData] = await Promise.all([
+        IAMasterService.getLatest(),
+        TenantService.getMyTenant()
+      ]);
       setData(latest);
+      setTenant(tenantData);
+      setSubdomain(tenantData.subdomain || "");
+      setCustomDomain(tenantData.custom_domain || "");
     } catch (error) {
       console.error("Failed to fetch IA Master data", error);
     } finally {
@@ -62,15 +76,35 @@ export function IAMasterView({ connectorId }: IAMasterViewProps) {
     }
   };
 
+  const handleSavePortal = async () => {
+    setIsSavingPortal(true);
+    try {
+      const updatedTenant = await TenantService.updatePortalSettings({
+        subdomain: subdomain || undefined,
+        custom_domain: customDomain || undefined
+      });
+      setTenant(updatedTenant);
+      setIsEditingPortal(false);
+      toast.success("Portal settings updated successfully");
+      
+      // Refresh to ensure everything is in sync
+      fetchData();
+    } catch (error: any) {
+      toast.error(error.response?.data?.detail || "Failed to update portal settings");
+    } finally {
+      setIsSavingPortal(false);
+    }
+  };
+
   useEffect(() => {
     fetchData();
-  }, [connectorId]);
+  }, []);
 
   const handleDownloadPdf = async () => {
     if (!data) return;
     try {
       toast.info("Generating your PDF report...");
-      await IAMasterService.downloadPdf(connectorId, data.id);
+      await IAMasterService.downloadPdf(data.id);
       toast.success("PDF report downloaded successfully");
     } catch (error) {
       toast.error("Failed to generate PDF report");
@@ -93,7 +127,7 @@ export function IAMasterView({ connectorId }: IAMasterViewProps) {
 
     setIsSavingPermit(true);
     try {
-      const updatedData = await IAMasterService.updateClientPermit(connectorId, data.id, maxPermit);
+      const updatedData = await IAMasterService.updateClientPermit(data.id, maxPermit);
       setData(updatedData);
       setIsEditingPermit(false);
       toast.success("Client limit updated successfully");
@@ -284,65 +318,112 @@ export function IAMasterView({ connectorId }: IAMasterViewProps) {
         </CardContent>
       </Card>
 
-      {/* ── Employees Table ──────────────────────────── */}
-      {data.employees && data.employees.length > 0 && (
-        <Card className="border-primary/10 bg-card/50 backdrop-blur-sm overflow-hidden">
-          <CardHeader className="border-b border-primary/10 pb-4">
-            <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-primary/10">
-                  <Users className="w-5 h-5 text-primary" />
+      {/* ── Portal & White-labeling ────────────────────────── */}
+      <Card className="border-primary/20 bg-primary/5 backdrop-blur-sm overflow-hidden">
+        <CardHeader className="border-b border-primary/10">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <Globe className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="text-lg sm:text-xl">Portal Branding & Domain</CardTitle>
+                <CardDescription className="text-xs sm:text-sm">Manage your white-labeled URL and client-facing portal settings.</CardDescription>
+              </div>
+            </div>
+            {!isEditingPortal ? (
+              <Button size="sm" variant="outline" className="gap-2 border-primary/20" onClick={() => setIsEditingPortal(true)}>
+                <Edit className="w-4 h-4" />
+                Configure Portal
+              </Button>
+            ) : (
+              <div className="flex gap-2">
+                <Button size="sm" variant="ghost" onClick={() => setIsEditingPortal(false)}>Cancel</Button>
+                <Button size="sm" className="gap-2" onClick={handleSavePortal} disabled={isSavingPortal}>
+                  {isSavingPortal && <Loader2 className="w-4 h-4 animate-spin" />}
+                  Save Changes
+                </Button>
+              </div>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent className="pt-6 space-y-6">
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Subdomain Configuration */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Layout className="w-4 h-4 text-primary" />
+                <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Portal Subdomain</h4>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <Input 
+                      value={subdomain}
+                      onChange={(e) => setSubdomain(e.target.value.toLowerCase())}
+                      placeholder="IA-slug"
+                      disabled={!isEditingPortal}
+                      className="pr-32 font-mono"
+                    />
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-mono">
+                      .significia.com
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <CardTitle className="text-lg sm:text-xl">Associated Employees</CardTitle>
-                  <CardDescription className="text-xs sm:text-sm">Records of professionals linked to this IA registration.</CardDescription>
+                <p className="text-[10px] text-muted-foreground">
+                  Your clients can access the portal directly at <span className="text-primary font-mono">{subdomain || 'your-slug'}.significia.com</span>
+                </p>
+              </div>
+            </div>
+
+            {/* Custom Domain Configuration */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Globe className="w-4 h-4 text-primary" />
+                <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Custom Private Domain</h4>
+              </div>
+              <div className="space-y-2">
+                <Input 
+                  value={customDomain}
+                  onChange={(e) => setCustomDomain(e.target.value.toLowerCase())}
+                  placeholder="e.g. portal.voltfleet.in"
+                  disabled={!isEditingPortal}
+                  className="font-mono"
+                />
+                <p className="text-[10px] text-muted-foreground">
+                  Point your domain (A record) to <span className="text-primary font-bold">123.45.67.89</span> to enable fully white-labeled access.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {!isEditingPortal && (tenant?.subdomain || tenant?.custom_domain) && (
+            <div className="mt-4 p-4 rounded-xl bg-background/50 border border-primary/10 flex items-start gap-4">
+              <div className="bg-primary/10 p-2 rounded-full">
+                <Info className="w-4 h-4 text-primary" />
+              </div>
+              <div className="space-y-1">
+                <h5 className="text-sm font-bold">White-labeling Active</h5>
+                <p className="text-xs text-muted-foreground italic">
+                  SEBI Regulation Note: Your portal is now correctly isolated on your own domain. All client PII data stays in your Bridge.
+                </p>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {tenant?.subdomain && (
+                    <Badge variant="outline" className="text-[10px] font-mono cursor-pointer hover:bg-primary/5" onClick={() => window.open(`https://${tenant.subdomain}.significia.com`, '_blank')}>
+                      {tenant.subdomain}.significia.com <ExternalLink className="w-2 h-2 ml-1" />
+                    </Badge>
+                  )}
+                  {tenant?.custom_domain && (
+                    <Badge variant="outline" className="text-[10px] font-mono cursor-pointer hover:bg-primary/5" onClick={() => window.open(`http://${tenant.custom_domain}`, '_blank')}>
+                      {tenant.custom_domain} <ExternalLink className="w-2 h-2 ml-1" />
+                    </Badge>
+                  )}
                 </div>
               </div>
-              <Badge variant="outline" className="border-primary/20 text-primary self-center sm:self-start">
-                {data.employees.length} Members
-              </Badge>
             </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto scrollbar-none">
-              <Table>
-                <TableHeader className="bg-primary/5">
-                  <TableRow>
-                    <TableHead className="font-bold whitespace-nowrap">Employee Name</TableHead>
-                    <TableHead className="font-bold whitespace-nowrap">Designation</TableHead>
-                    <TableHead className="font-bold whitespace-nowrap">IA Reg No</TableHead>
-                    <TableHead className="font-bold whitespace-nowrap">Validity</TableHead>
-                    <TableHead className="text-right font-bold whitespace-nowrap">Docs</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data.employees.map((emp) => (
-                    <TableRow key={emp.id} className="hover:bg-primary/5 transition-colors">
-                      <TableCell className="font-semibold whitespace-nowrap">{emp.name_of_employee}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className="capitalize whitespace-nowrap">
-                          {emp.designation}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="font-mono text-xs whitespace-nowrap">{emp.ia_registration_number}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                        Until {emp.date_of_registration_expiry}
-                      </TableCell>
-                      <TableCell className="text-right whitespace-nowrap">
-                        {emp.certificate_path && (
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10" onClick={() => window.open(getAssetUrl(emp.certificate_path), '_blank')}>
-                            <ExternalLink className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+          )}
+        </CardContent>
+      </Card>
 
     </div>
   );

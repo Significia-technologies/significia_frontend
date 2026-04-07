@@ -31,14 +31,14 @@ import { MasterDataService } from "@/core/services/master.service";
 import { RiskProfileService } from "@/core/services/risk-profile.service";
 
 interface DynamicRiskFormProps {
-  connectorId: string;
+  
   questionnaireId?: string;
   questionnaire?: any;
   onClose?: () => void;
   isPreview?: boolean;
 }
 
-export function DynamicRiskForm({ connectorId, questionnaireId, questionnaire: initialQuestionnaire, onClose, isPreview = false }: DynamicRiskFormProps) {
+export function DynamicRiskForm({ questionnaireId, questionnaire: initialQuestionnaire, onClose, isPreview = false }: DynamicRiskFormProps) {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -62,13 +62,13 @@ export function DynamicRiskForm({ connectorId, questionnaireId, questionnaire: i
         setFetching(false);
         if (isPreview) setCurrentStep(0);
     }
-  }, [connectorId, questionnaireId, initialQuestionnaire]);
+  }, [questionnaireId, initialQuestionnaire]);
 
   const loadQuestionnaire = async () => {
     if (!questionnaireId) return;
     setFetching(true);
     try {
-      const data = await RiskProfileService.getQuestionnaire(connectorId, questionnaireId);
+      const data = await RiskProfileService.getQuestionnaire(questionnaireId);
       setQuestionnaire(data);
     } catch (error) {
       toast.error("Failed to load questionnaire.");
@@ -81,7 +81,7 @@ export function DynamicRiskForm({ connectorId, questionnaireId, questionnaire: i
     if (!code || code.length < 3) return;
     setPanValidating(true);
     try {
-      const client = await MasterDataService.getClientByCode(connectorId, code);
+      const client = await MasterDataService.getClientByCode(code);
       if (client) {
         setClientInfo({
           name: client.client_name,
@@ -138,7 +138,7 @@ export function DynamicRiskForm({ connectorId, questionnaireId, questionnaire: i
         if (onClose) onClose();
         return;
       }
-      await RiskProfileService.saveCustomAssessment(connectorId, {
+      await RiskProfileService.saveCustomAssessment({
         questionnaire_id: questionnaireId || questionnaire.id,
         client_code: clientInfo.code,
         responses,

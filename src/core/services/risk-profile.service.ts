@@ -1,4 +1,4 @@
-import { API_ENDPOINTS } from "../api/api-endpoints";
+﻿import { API_ENDPOINTS } from "../api/api-endpoints";
 import httpClient from "../api/http-client";
 
 export interface RiskAssessmentCalculateRequest {
@@ -44,156 +44,162 @@ export interface RiskAssessment {
   created_at: string;
 }
 
+// ── Risk Profile Service (Bridge Architecture) ────────────────────────────
+// No  required — backend resolves tenant from JWT + X-Tenant-Slug
+
 export class RiskProfileService {
-  static async calculate(connectorId: string, data: RiskAssessmentCalculateRequest): Promise<RiskAssessmentCalculateResponse> {
+  static async calculate(
+    data: RiskAssessmentCalculateRequest
+  ): Promise<RiskAssessmentCalculateResponse> {
     const response = await httpClient.post<RiskAssessmentCalculateResponse>(
-      API_ENDPOINTS.RISK_PROFILE.CALCULATE(connectorId),
+      API_ENDPOINTS.RISK_PROFILE.CALCULATE,
       data
     );
     return response.data;
   }
 
-  static async save(connectorId: string, data: RiskAssessmentCreate): Promise<SaveAssessmentResponse> {
+  static async save(data: RiskAssessmentCreate): Promise<SaveAssessmentResponse> {
     const response = await httpClient.post<SaveAssessmentResponse>(
-      API_ENDPOINTS.RISK_PROFILE.SAVE(connectorId),
+      API_ENDPOINTS.RISK_PROFILE.SAVE,
       data
     );
     return response.data;
   }
 
-  static async getLatest(connectorId: string, clientCode: string): Promise<RiskAssessment> {
+  static async getLatest(clientCode: string): Promise<RiskAssessment> {
     const response = await httpClient.get<RiskAssessment>(
-      API_ENDPOINTS.RISK_PROFILE.LATEST(connectorId, clientCode)
+      API_ENDPOINTS.RISK_PROFILE.LATEST_FOR_CLIENT(clientCode)
     );
     return response.data;
   }
 
-  static async getAll(connectorId: string): Promise<RiskAssessment[]> {
-    const response = await httpClient.get<RiskAssessment[]>(
-      API_ENDPOINTS.RISK_PROFILE.LIST(connectorId)
-    );
+  static async getAll(): Promise<RiskAssessment[]> {
+    const response = await httpClient.get<RiskAssessment[]>(API_ENDPOINTS.RISK_PROFILE.LIST);
     return response.data;
   }
 
-  static async downloadPDF(connectorId: string, assessmentId: string, filename: string = "Risk_Profile.pdf"): Promise<void> {
-    const response = await httpClient.get(
-      API_ENDPOINTS.RISK_PROFILE.PDF(connectorId, assessmentId),
-      { responseType: 'blob' }
-    );
-    
+  static async downloadPDF(
+    assessmentId: string,
+    filename = "Risk_Profile.pdf"
+  ): Promise<void> {
+    const response = await httpClient.get(API_ENDPOINTS.RISK_PROFILE.PDF(assessmentId), {
+      responseType: "blob",
+    });
     const url = window.URL.createObjectURL(new Blob([response.data]));
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = url;
-    link.setAttribute('download', filename);
+    link.setAttribute("download", filename);
     document.body.appendChild(link);
     link.click();
     link.remove();
   }
 
-  static async downloadDOCX(connectorId: string, assessmentId: string, filename: string = "Risk_Profile.docx"): Promise<void> {
-    const response = await httpClient.get(
-      API_ENDPOINTS.RISK_PROFILE.DOCX(connectorId, assessmentId),
-      { responseType: 'blob' }
-    );
-    
+  static async downloadDOCX(
+    assessmentId: string,
+    filename = "Risk_Profile.docx"
+  ): Promise<void> {
+    const response = await httpClient.get(API_ENDPOINTS.RISK_PROFILE.DOCX(assessmentId), {
+      responseType: "blob",
+    });
     const url = window.URL.createObjectURL(new Blob([response.data]));
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = url;
-    link.setAttribute('download', filename);
+    link.setAttribute("download", filename);
     document.body.appendChild(link);
     link.click();
     link.remove();
   }
 
-  // --- Custom Questionnaire Methods ---
+  // ── Custom Questionnaire Methods ───────────────────────────
 
-  static async listQuestionnaires(connectorId: string, status?: string): Promise<any[]> {
-    const response = await httpClient.get<any[]>(
-      API_ENDPOINTS.RISK_PROFILE.QUESTIONNAIRES(connectorId),
-      { params: { status } }
-    );
+  static async listQuestionnaires(status?: string): Promise<any[]> {
+    const response = await httpClient.get<any[]>(API_ENDPOINTS.RISK_PROFILE.QUESTIONNAIRES, {
+      params: { status },
+    });
     return response.data;
   }
 
-  static async getQuestionnaire(connectorId: string, qId: string): Promise<any> {
+  static async getQuestionnaire(qId: string): Promise<any> {
     const response = await httpClient.get<any>(
-      API_ENDPOINTS.RISK_PROFILE.QUESTIONNAIRE(connectorId, qId)
+      API_ENDPOINTS.RISK_PROFILE.QUESTIONNAIRE(qId)
     );
     return response.data;
   }
 
-  static async createQuestionnaire(connectorId: string, data: any): Promise<any> {
+  static async createQuestionnaire(data: any): Promise<any> {
     const response = await httpClient.post<any>(
-      API_ENDPOINTS.RISK_PROFILE.QUESTIONNAIRES(connectorId),
+      API_ENDPOINTS.RISK_PROFILE.QUESTIONNAIRES,
       data
     );
     return response.data;
   }
 
-  static async updateQuestionnaire(connectorId: string, qId: string, data: any): Promise<any> {
+  static async updateQuestionnaire(qId: string, data: any): Promise<any> {
     const response = await httpClient.put<any>(
-      API_ENDPOINTS.RISK_PROFILE.QUESTIONNAIRE(connectorId, qId),
+      API_ENDPOINTS.RISK_PROFILE.QUESTIONNAIRE(qId),
       data
     );
     return response.data;
   }
 
-  static async saveCustomAssessment(connectorId: string, data: any): Promise<any> {
-    const response = await httpClient.post<any>(
-      API_ENDPOINTS.RISK_PROFILE.CUSTOM_SAVE(connectorId),
-      data
-    );
+  static async saveCustomAssessment(data: any): Promise<any> {
+    const response = await httpClient.post<any>(API_ENDPOINTS.RISK_PROFILE.CUSTOM_SAVE, data);
     return response.data;
   }
 
-  static async listCustomAssessments(connectorId: string, clientId?: string): Promise<any[]> {
-    const response = await httpClient.get<any[]>(
-      API_ENDPOINTS.RISK_PROFILE.CUSTOM_LIST(connectorId),
-      { params: { client_id: clientId } }
-    );
+  static async listCustomAssessments(clientId?: string): Promise<any[]> {
+    const response = await httpClient.get<any[]>(API_ENDPOINTS.RISK_PROFILE.CUSTOM_LIST, {
+      params: { client_id: clientId },
+    });
     return response.data;
   }
 
-  static async downloadCustomPDF(connectorId: string, assessmentId: string, filename: string = "Custom_Risk_Profile.pdf"): Promise<void> {
+  static async downloadCustomPDF(
+    assessmentId: string,
+    filename = "Custom_Risk_Profile.pdf"
+  ): Promise<void> {
     const response = await httpClient.get(
-      API_ENDPOINTS.RISK_PROFILE.CUSTOM_PDF(connectorId, assessmentId),
-      { responseType: 'blob' }
+      API_ENDPOINTS.RISK_PROFILE.CUSTOM_PDF(assessmentId),
+      { responseType: "blob" }
     );
-    
     const url = window.URL.createObjectURL(new Blob([response.data]));
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = url;
-    link.setAttribute('download', filename);
+    link.setAttribute("download", filename);
     document.body.appendChild(link);
     link.click();
     link.remove();
   }
 
-  static async downloadCustomDOCX(connectorId: string, assessmentId: string, filename: string = "Custom_Risk_Profile.docx"): Promise<void> {
+  static async downloadCustomDOCX(
+    assessmentId: string,
+    filename = "Custom_Risk_Profile.docx"
+  ): Promise<void> {
     const response = await httpClient.get(
-      API_ENDPOINTS.RISK_PROFILE.CUSTOM_DOCX(connectorId, assessmentId),
-      { responseType: 'blob' }
+      API_ENDPOINTS.RISK_PROFILE.CUSTOM_DOCX(assessmentId),
+      { responseType: "blob" }
     );
-    
     const url = window.URL.createObjectURL(new Blob([response.data]));
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = url;
-    link.setAttribute('download', filename);
+    link.setAttribute("download", filename);
     document.body.appendChild(link);
     link.click();
     link.remove();
   }
 
-  static async downloadBlankPDF(connectorId: string, questionnaireId: string, filename: string = "Blank_Risk_Form.pdf"): Promise<void> {
+  static async downloadBlankPDF(
+    questionnaireId: string,
+    filename = "Blank_Risk_Form.pdf"
+  ): Promise<void> {
     const response = await httpClient.get(
-      API_ENDPOINTS.RISK_PROFILE.BLANK_PDF(connectorId, questionnaireId),
-      { responseType: 'blob' }
+      API_ENDPOINTS.RISK_PROFILE.BLANK_PDF(questionnaireId),
+      { responseType: "blob" }
     );
-    
     const url = window.URL.createObjectURL(new Blob([response.data]));
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = url;
-    link.setAttribute('download', filename);
+    link.setAttribute("download", filename);
     document.body.appendChild(link);
     link.click();
     link.remove();

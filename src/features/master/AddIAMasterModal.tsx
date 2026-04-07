@@ -20,12 +20,12 @@ import { toast } from "sonner";
 
 interface AddIAMasterModalProps {
   isOpen: boolean;
-  connectorId: string;
+  
   onClose: () => void;
   onSuccess: () => void;
 }
 
-export function AddIAMasterModal({ isOpen, connectorId, onClose, onSuccess }: AddIAMasterModalProps) {
+export function AddIAMasterModal({ isOpen, onClose, onSuccess }: AddIAMasterModalProps) {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("basic");
   const [iaNumberExists, setIaNumberExists] = useState(false);
@@ -75,7 +75,7 @@ export function AddIAMasterModal({ isOpen, connectorId, onClose, onSuccess }: Ad
   const validateIANumber = async () => {
     if (!formData.ia_registration_number) return;
     try {
-      const exists = await IAMasterService.validateIANumber(connectorId, formData.ia_registration_number);
+      const exists = await IAMasterService.validateIANumber(formData.ia_registration_number);
       setIaNumberExists(exists);
       if (exists) {
         toast.error("IA Registration Number already exists!");
@@ -146,7 +146,7 @@ export function AddIAMasterModal({ isOpen, connectorId, onClose, onSuccess }: Ad
         }
       });
 
-      await IAMasterService.create(connectorId, data);
+      await IAMasterService.create(data);
       toast.success("Investment Advisor record created successfully!");
       onSuccess();
       onClose();

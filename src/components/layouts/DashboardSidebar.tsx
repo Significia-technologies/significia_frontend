@@ -29,6 +29,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useAppStore } from "@/store/useAppStore";
+import { TenantLogo } from "@/components/shared/TenantLogo";
 
 // ── Navigation Items ────────────────────────────────
 const NAV_ITEMS = [
@@ -41,6 +42,12 @@ const NAV_ITEMS = [
     label: "Master",
     href: "/master",
     icon: Database,
+    minRole: "super_admin", // Only for Significia staff
+  },
+  {
+    label: "Client Master",
+    href: "/clients",
+    icon: Users,
   },
   {
     label: "Financial Goals",
@@ -73,30 +80,33 @@ const NAV_ITEMS = [
     icon: Activity,
   },
   {
-    label:"Accounts",
-    href:"/accounts",
-    icon:Users,
+    label: "Team",
+    href: "/team",
+    icon: Users,
+    minRole: "admin", // IA Owners and Partners
   },
   {
-    label:"Drawers",
-    href:"/drawers",
-    icon:Archive,
+    label: "Drawers",
+    href: "/drawers",
+    icon: Archive,
   },
   {
-    label:"Tools",
-    href:"/tools",
-    icon:Wrench,
+    label: "Tools",
+    href: "/tools",
+    icon: Wrench,
   },
   {
-    label:"Developer",
-    href:"/master/developer",
-    icon:Terminal,
+    label: "Developer",
+    href: "/master/developer",
+    icon: Terminal,
+    minRole: "super_admin",
   },
   {
-    label:"Admin",
-    href:"/admin",
-    icon:UserCog,
-  }
+    label: "Admin",
+    href: "/admin",
+    icon: UserCog,
+    minRole: "super_admin",
+  },
 ];
 
 const BOTTOM_NAV_ITEMS = [
@@ -110,18 +120,54 @@ const BOTTOM_NAV_ITEMS = [
 // ── Component ───────────────────────────────────────
 export function SidebarContent() {
   const pathname = usePathname();
-  const { sidebarCollapsed } = useAppStore();
+  const { sidebarCollapsed, publicBranding, user } = useAppStore();
+
+  // Determine display name: Use public branding if available, or user session info
+  const displayName = publicBranding?.name || user?.company_name || user?.name || "Financial Portal";
+  
+  // ── Role/Context Detection ──────────────────────────
+  const isIAOwner = user?.role === "owner";
+  const isIAPartner = user?.role === "partner";
+  const isSuperAdmin = user?.role === "super_admin";
+  const isMasterSubdomain = publicBranding?.is_master ?? (user?.subdomain === "master");
+  
+  // A "Master Context" is when we are on the global master domain OR are an IA Master of our own instance.
+  const isMasterContext = isMasterSubdomain || isIAOwner;
+
+  // Filter items based on role
+  const filteredNavItems = NAV_ITEMS.filter((item) => {
+    // 1. "Master" and other admin headers require a Master Context
+    if (item.minRole === "super_admin" && !isMasterContext) return false;
+    
+    // 2. "Team" is for Owners and Partners
+    if (item.minRole === "admin" && !(isIAOwner || isIAPartner || isSuperAdmin)) return false;
+
+    // 3. "Developer" is for Significia Super Admins OR IA Owners
+    if (item.href.includes("/master/developer") && !(isSuperAdmin || isIAOwner)) return false;
+
+    // 4. Global "Admin" is for Super Admins ONLY
+    if (item.href === "/admin" && !isSuperAdmin) return false;
+
+    // 5. If profile is NOT completed, IA Masters can ONLY see the Master page and Overview
+    if (isIAOwner && !user.is_profile_completed && !["/", "/master"].includes(item.href)) {
+      return false;
+    }
+
+    return true;
+  });
 
   return (
     <>
       {/* ── Logo ── */}
-      <div className="flex h-16 items-center gap-2 px-4">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg overflow-hidden bg-primary">
-          <img src="/favicon-32x32.png" alt="Significia Logo" className="h-full w-full object-cover" />
-        </div>
+      <div className="flex h-16 items-center gap-3 px-4">
+        <TenantLogo
+          logoType={publicBranding?.logo_type || (isMasterContext ? "significia" : "shield")}
+          logoUrl={publicBranding?.logo_url}
+          className="h-8 w-8 shrink-0"
+        />
         {!sidebarCollapsed && (
-          <span className="text-lg font-semibold tracking-tight text-[#D4AF37]">
-            Significia
+          <span className="text-lg font-bold tracking-tight text-foreground truncate">
+            {displayName}
           </span>
         )}
       </div>
@@ -130,7 +176,7 @@ export function SidebarContent() {
 
       {/* ── Main Nav ── */}
       <nav className="flex-1 space-y-0.5 overflow-y-auto overflow-x-hidden px-2 py-4 [&::-webkit-scrollbar]:hidden scrollbar-none">
-        {NAV_ITEMS.map((item) => {
+        {filteredNavItems.map((item) => {
           let isActive = false;
           
           if (item.href === "/") {

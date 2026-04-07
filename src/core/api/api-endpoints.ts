@@ -1,9 +1,11 @@
 /**
  * Centralized API Endpoints Dictionary
- * All backend route strings are defined here to prevent hardcoded URLs
- * throughout the application.
+ * ─────────────────────────────────────────────────────────────
+ * Bridge Architecture — all data endpoints no longer require
+ * a connectorId in the path. The backend resolves the tenant
+ * from the JWT token + X-Tenant-Slug header automatically.
  *
- * Backend runs on: http://localhost:5000/api/v1
+ * Backend base: http://localhost:8000/api/v1 (local dev)
  */
 
 import { getApiBaseUrl } from "./api-utils";
@@ -11,7 +13,13 @@ import { getApiBaseUrl } from "./api-utils";
 const API_BASE = getApiBaseUrl();
 
 export const API_ENDPOINTS = {
-  // ── Auth ──────────────────────────────────────────
+  // ── Public Discovery ───────────────────────────────────────
+  PUBLIC: {
+    BRANDING: `${API_BASE}/public/branding`,
+  },
+
+  // ── Significia Super Admin Auth ────────────────────────────
+  // Only accessible from app.significia.com
   AUTH: {
     LOGIN: `${API_BASE}/auth/login`,
     REGISTER: `${API_BASE}/auth/register`,
@@ -20,117 +28,151 @@ export const API_ENDPOINTS = {
     CURRENT_USER: `${API_BASE}/auth/me`,
   },
 
-  // ── Analytics / Dashboard ─────────────────────────
-  ANALYTICS: {
-    OVERVIEW: `${API_BASE}/analytics/overview`,
-    REVENUE: `${API_BASE}/analytics/revenue`,
-    EXPENSES: `${API_BASE}/analytics/expenses`,
-    CASHFLOW: `${API_BASE}/analytics/cashflow`,
+  // ── IA Staff Auth ──────────────────────────────────────────
+  // Separate login flow for IA staff on their custom domain.
+  // e.g. bunty.com/ia-login → POST /ia-auth/login
+  IA_AUTH: {
+    LOGIN: `${API_BASE}/ia-auth/login`,
+    TENANT_INFO: `${API_BASE}/ia-auth/tenant-info`,
+    ME: `${API_BASE}/ia-auth/me`,
   },
 
-  // ── Transactions ──────────────────────────────────
-  TRANSACTIONS: {
-    LIST: `${API_BASE}/transactions/`,
-    DETAIL: (id: string) => `${API_BASE}/transactions/${id}`,
-    CREATE: `${API_BASE}/transactions/`,
-    EXPORT: `${API_BASE}/transactions/export`,
+  // ── Client Auth ────────────────────────────────────────────
+  // For IA clients (investors) logging into their portal
+  CLIENT_AUTH: {
+    LOGIN: `${API_BASE}/client-auth/bridge/login`,
+    ME: `${API_BASE}/client-auth/me`,
   },
 
-  // ── Users ─────────────────────────────────────────
-  USERS: {
-    LIST: `${API_BASE}/users/`,
-    DETAIL: (id: string) => `${API_BASE}/users/${id}`,
-    UPDATE_PROFILE: `${API_BASE}/users/profile`,
-  },
-
-  // ── Connectors ────────────────────────────────────
-  CONNECTORS: {
-    LIST: `${API_BASE}/connectors/`,
-    CREATE: `${API_BASE}/connectors/`,
-    DETAIL: (id: string) => `${API_BASE}/connectors/${id}`,
-    UPDATE: (id: string) => `${API_BASE}/connectors/${id}`,
-    DELETE: (id: string) => `${API_BASE}/connectors/${id}`,
-    TEST: (id: string) => `${API_BASE}/connectors/${id}/test`,
-    INITIALIZE: (id: string) => `${API_BASE}/connectors/${id}/initialize`,
-  },
-
-  // ── Master Data ──────────────────────────────────
+  // ── Master Data — Clients ──────────────────────────────────
+  // Bridge-powered: no connectorId needed
   MASTER: {
     CLIENTS: {
-      LIST: (connectorId: string) => `${API_BASE}/master/${connectorId}/clients`,
-      CREATE: (connectorId: string) => `${API_BASE}/master/${connectorId}/clients`,
-      DETAIL: (connectorId: string, id: string) => `${API_BASE}/master/${connectorId}/clients/${id}`,
-      CODE: (connectorId: string, code: string) => `${API_BASE}/master/${connectorId}/clients/code/${code}`,
-      PAN: (connectorId: string, pan: string) => `${API_BASE}/master/${connectorId}/clients/pan/${pan}`,
-      UPDATE: (connectorId: string, id: string) => `${API_BASE}/master/${connectorId}/clients/${id}`,
-      DELETE: (connectorId: string, id: string) => `${API_BASE}/master/${connectorId}/clients/${id}`,
-      DOWNLOAD_REPORT: (connectorId: string, id: string) => `${API_BASE}/master/${connectorId}/clients/${id}/pdf`,
-      MASTER_REPORT: (connectorId: string) => `${API_BASE}/master/${connectorId}/report`,
-      BLANK_FORM: (connectorId: string) => `${API_BASE}/master/${connectorId}/blank-form`,
-      UPLOAD_DOCUMENT: (connectorId: string, id: string) => `${API_BASE}/master/${connectorId}/clients/${id}/upload-document`,
+      LIST: `${API_BASE}/master/clients`,
+      CREATE: `${API_BASE}/master/clients`,
+      DETAIL: (id: string) => `${API_BASE}/master/clients/${id}`,
+      BY_CODE: (code: string) => `${API_BASE}/master/clients/code/${code}`,
+      BY_PAN: (pan: string) => `${API_BASE}/master/clients/pan/${pan}`,
+      UPDATE: (id: string) => `${API_BASE}/master/clients/${id}`,
+      DELETE: (id: string) => `${API_BASE}/master/clients/${id}`,
+      DOWNLOAD_REPORT: (id: string) => `${API_BASE}/master/clients/${id}/pdf`,
+      MASTER_REPORT: `${API_BASE}/master/report`,
+      BLANK_FORM: `${API_BASE}/master/blank-form`,
+      UPLOAD_DOCUMENT: (id: string) =>
+        `${API_BASE}/master/clients/${id}/upload-document`,
     },
     IA_MASTER: {
-      CREATE: (connectorId: string) => `${API_BASE}/ia-master/?connector_id=${connectorId}`,
-      VALIDATE: (connectorId: string, iaNumber: string) => `${API_BASE}/ia-master/validate-remote/${iaNumber}?connector_id=${connectorId}`,
-      LATEST: (connectorId: string) => `${API_BASE}/ia-master/latest?connector_id=${connectorId}`,
-      PDF: (connectorId: string, iaId: string) => `${API_BASE}/ia-master/${iaId}/pdf?connector_id=${connectorId}`,
-      UPDATE: (connectorId: string, iaId: string) => `${API_BASE}/ia-master/${iaId}?connector_id=${connectorId}`,
-      UPDATE_PERMIT: (connectorId: string, iaId: string) => `${API_BASE}/ia-master/${iaId}/client-permit?connector_id=${connectorId}`,
+      LATEST: `${API_BASE}/ia-master/latest`,
+      CREATE: `${API_BASE}/ia-master/`,
+      UPDATE: (iaId: string) => `${API_BASE}/ia-master/${iaId}`,
+      UPDATE_PERMIT: (iaId: string) =>
+        `${API_BASE}/ia-master/${iaId}/client-permit`,
+      VALIDATE: (iaNumber: string) =>
+        `${API_BASE}/ia-master/validate/${iaNumber}`,
+      PDF: (iaId: string) => `${API_BASE}/ia-master/${iaId}/pdf`,
+      EMPLOYEES: `${API_BASE}/ia-master/employees`,
     },
   },
 
-  // ── Storage ───────────────────────────────────────
-  STORAGE: {
-    LIST: `${API_BASE}/storage/`,
-    CREATE: `${API_BASE}/storage/`,
-    VERIFY: (id: string) => `${API_BASE}/storage/${id}/verify`,
+  // ── Financial Analysis ─────────────────────────────────────
+  FINANCIAL_ANALYSIS: {
+    LIST: `${API_BASE}/financial-analysis/bridge/analysis`,
+    CREATE: `${API_BASE}/financial-analysis/bridge/analysis`,
+    DETAIL: (resultId: string) =>
+      `${API_BASE}/financial-analysis/bridge/analysis/${resultId}`,
+    PDF: (resultId: string) =>
+      `${API_BASE}/financial-analysis/bridge/analysis/${resultId}/pdf`,
+    WORD: (resultId: string) =>
+      `${API_BASE}/financial-analysis/bridge/analysis/${resultId}/word`,
+    FORM: `${API_BASE}/financial-analysis/bridge/form`,
+    BY_CLIENT: (clientId: string) =>
+      `${API_BASE}/financial-analysis/bridge/analysis/client/${clientId}`,
   },
 
-  // ── API Keys ──────────────────────────────────────
+  // ── Risk Profile ───────────────────────────────────────────
+  RISK_PROFILE: {
+    CALCULATE: `${API_BASE}/risk-profile/bridge/calculate`,
+    SAVE: `${API_BASE}/risk-profile/bridge/save`,
+    LIST: `${API_BASE}/risk-profile/bridge/assessments`,
+    LATEST_FOR_CLIENT: (clientCode: string) =>
+      `${API_BASE}/risk-profile/bridge/client/${clientCode}/latest`,
+    PDF: (assessmentId: string) =>
+      `${API_BASE}/risk-profile/bridge/assessment/${assessmentId}/pdf`,
+    DOCX: (assessmentId: string) =>
+      `${API_BASE}/risk-profile/bridge/assessment/${assessmentId}/docx`,
+    // Custom Questionnaires
+    QUESTIONNAIRES: `${API_BASE}/risk-profile/bridge/questionnaires`,
+    QUESTIONNAIRE: (qId: string) =>
+      `${API_BASE}/risk-profile/bridge/questionnaires/${qId}`,
+    CUSTOM_SAVE: `${API_BASE}/risk-profile/bridge/custom-save`,
+    CUSTOM_LIST: `${API_BASE}/risk-profile/bridge/custom-assessments`,
+    CUSTOM_PDF: (assessmentId: string) =>
+      `${API_BASE}/risk-profile/bridge/custom-assessment/${assessmentId}/pdf`,
+    CUSTOM_DOCX: (assessmentId: string) =>
+      `${API_BASE}/risk-profile/bridge/custom-assessment/${assessmentId}/docx`,
+    BLANK_PDF: (questionnaireId: string) =>
+      `${API_BASE}/risk-profile/bridge/questionnaires/${questionnaireId}/pdf`,
+  },
+
+  // ── Asset Allocation ───────────────────────────────────────
+  ASSET_ALLOCATION: {
+    VALIDATE_CLIENT: `${API_BASE}/asset-allocation/bridge/validate-client`,
+    SAVE: `${API_BASE}/asset-allocation/bridge/save`,
+    LIST: `${API_BASE}/asset-allocation/bridge/allocations`,
+    DETAIL: (id: string) =>
+      `${API_BASE}/asset-allocation/bridge/allocation/${id}`,
+    PDF: (id: string) =>
+      `${API_BASE}/asset-allocation/bridge/allocation/${id}/pdf`,
+    DOCX: (id: string) =>
+      `${API_BASE}/asset-allocation/bridge/allocation/${id}/docx`,
+    BLANK_PDF: `${API_BASE}/asset-allocation/bridge/blank-form/pdf`,
+  },
+
+  // ── Bridge Management (Super Admin only) ───────────────────
+  BRIDGE: {
+    BASE: `${API_BASE}/bridge/tenants`,
+    ALL_BRIDGES: `${API_BASE}/bridge/tenants/bridges`,
+    PROVISION: `${API_BASE}/bridge/tenants/provision`,
+    UPDATE_ME: `${API_BASE}/bridge/tenants/me`,
+    REVOKE: (tenantId: string) =>
+      `${API_BASE}/bridge/tenants/${tenantId}/revoke`,
+    INITIALIZE: (tenantId: string) =>
+      `${API_BASE}/bridge/tenants/${tenantId}/initialize`,
+    PING: (tenantId: string) =>
+      `${API_BASE}/bridge/tenants/${tenantId}/ping`,
+  },
+
+  // ── Billing (Super Admin only) ─────────────────────────────
+  BILLING: {
+    OVERVIEW: `${API_BASE}/billing/overview`,
+    STATS: `${API_BASE}/billing/stats`,
+    TENANT_USAGE: (tenantId: string) =>
+      `${API_BASE}/billing/tenant/${tenantId}/usage`,
+    UPDATE_PLAN: (tenantId: string) =>
+      `${API_BASE}/billing/tenant/${tenantId}/plan`,
+  },
+
+  // ── API Keys ───────────────────────────────────────────────
   API_KEYS: {
     LIST: `${API_BASE}/api-keys/`,
     CREATE: `${API_BASE}/api-keys/`,
     REVOKE: (id: string) => `${API_BASE}/api-keys/${id}`,
   },
 
-  // ── Financial Analysis ────────────────────────────
-  FINANCIAL_ANALYSIS: {
-    LIST: (connectorId: string) => `${API_BASE}/financial-analysis/${connectorId}/analysis`,
-    CREATE: (connectorId: string) => `${API_BASE}/financial-analysis/${connectorId}/analysis`,
-    DETAIL: (connectorId: string, resultId: string) => `${API_BASE}/financial-analysis/${connectorId}/analysis/${resultId}`,
-    DETAILS: (connectorId: string, resultId: string) => `${API_BASE}/financial-analysis/${connectorId}/analysis/${resultId}/details`,
-    PDF: (connectorId: string, resultId: string) => `${API_BASE}/financial-analysis/${connectorId}/analysis/${resultId}/pdf`,
-    WORD: (connectorId: string, resultId: string) => `${API_BASE}/financial-analysis/${connectorId}/analysis/${resultId}/word`,
-    FORM: (connectorId: string) => `${API_BASE}/financial-analysis/${connectorId}/form`,
+  // ── Transactions (Bridge-powered) ─────────────────────────
+  TRANSACTIONS: {
+    LIST: `${API_BASE}/transactions/bridge/transactions`,
+    CREATE: `${API_BASE}/transactions/bridge/transactions`,
+    DETAIL: (id: string) => `${API_BASE}/transactions/bridge/transactions/${id}`,
+    EXPORT: `${API_BASE}/transactions/bridge/transactions/export`,
   },
 
-  // ── Risk Profile ──────────────────────────────────
-  RISK_PROFILE: {
-    CALCULATE: (connectorId: string) => `${API_BASE}/risk-profile/${connectorId}/calculate`,
-    SAVE: (connectorId: string) => `${API_BASE}/risk-profile/${connectorId}/save`,
-    LIST: (connectorId: string) => `${API_BASE}/risk-profile/${connectorId}/assessments`,
-    LATEST: (connectorId: string, clientCode: string) => `${API_BASE}/risk-profile/${connectorId}/client/${clientCode}/latest`,
-    PDF: (connectorId: string, assessmentId: string) => `${API_BASE}/risk-profile/${connectorId}/assessment/${assessmentId}/pdf`,
-    DOCX: (connectorId: string, assessmentId: string) => `${API_BASE}/risk-profile/${connectorId}/assessment/${assessmentId}/docx`,
-
-    // Custom Questionnaire Endpoints
-    QUESTIONNAIRES: (connectorId: string) => `${API_BASE}/risk-profile/${connectorId}/questionnaires`,
-    QUESTIONNAIRE: (connectorId: string, qId: string) => `${API_BASE}/risk-profile/${connectorId}/questionnaires/${qId}`,
-    CUSTOM_SAVE: (connectorId: string) => `${API_BASE}/risk-profile/${connectorId}/custom-save`,
-    CUSTOM_LIST: (connectorId: string) => `${API_BASE}/risk-profile/${connectorId}/custom-assessments`,
-    CUSTOM_PDF: (connectorId: string, assessmentId: string) => `${API_BASE}/risk-profile/${connectorId}/custom-assessment/${assessmentId}/pdf`,
-    CUSTOM_DOCX: (connectorId: string, assessmentId: string) => `${API_BASE}/risk-profile/${connectorId}/custom-assessment/${assessmentId}/docx`,
-    BLANK_PDF: (connectorId: string, questionnaireId: string) => `${API_BASE}/risk-profile/${connectorId}/questionnaires/${questionnaireId}/pdf`,
-  },
-
-  // ── Asset Allocation ──────────────────────────────
-  ASSET_ALLOCATION: {
-    VALIDATE_CLIENT: (connectorId: string) => `${API_BASE}/asset-allocation/${connectorId}/validate-client`,
-    SAVE: (connectorId: string) => `${API_BASE}/asset-allocation/${connectorId}/save`,
-    LIST: (connectorId: string) => `${API_BASE}/asset-allocation/${connectorId}/allocations`,
-    DETAIL: (connectorId: string, id: string) => `${API_BASE}/asset-allocation/${connectorId}/allocation/${id}`,
-    PDF: (connectorId: string, id: string) => `${API_BASE}/asset-allocation/${connectorId}/allocation/${id}/pdf`,
-    DOCX: (connectorId: string, id: string) => `${API_BASE}/asset-allocation/${connectorId}/allocation/${id}/docx`,
-    BLANK_PDF: (connectorId: string) => `${API_BASE}/asset-allocation/${connectorId}/blank-form/pdf`,
+  // ── Analytics (Bridge-powered) ────────────────────────────
+  ANALYTICS: {
+    OVERVIEW: `${API_BASE}/analytics/bridge/overview`,
+    PORTFOLIO: `${API_BASE}/analytics/bridge/portfolio`,
+    REVENUE: `${API_BASE}/analytics/bridge/revenue`,
+    CASHFLOW: `${API_BASE}/analytics/bridge/cashflow`,
+    CLIENT: (clientId: string) => `${API_BASE}/analytics/bridge/client/${clientId}`,
   },
 };

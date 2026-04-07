@@ -48,12 +48,12 @@ interface Category {
 }
 
 interface FormBuilderPageProps {
-  connectorId: string;
+  
   onClose?: () => void;
   initialData?: any;
 }
 
-export function FormBuilderPage({ connectorId, onClose, initialData }: FormBuilderPageProps) {
+export function FormBuilderPage({ onClose, initialData }: FormBuilderPageProps) {
   const [loading, setLoading] = useState(false);
   const [portfolioName, setPortfolioName] = useState(initialData?.portfolio_name || "");
   const [questions, setQuestions] = useState<Question[]>(initialData?.questions || []);
@@ -159,9 +159,9 @@ export function FormBuilderPage({ connectorId, onClose, initialData }: FormBuild
       };
 
       if (initialData?.id) {
-        await RiskProfileService.updateQuestionnaire(connectorId, initialData.id, payload);
+        await RiskProfileService.updateQuestionnaire(initialData.id, payload);
       } else {
-        await RiskProfileService.createQuestionnaire(connectorId, payload);
+        await RiskProfileService.createQuestionnaire(payload);
       }
 
       toast.success(status === "active" ? "Architectural definition published successfully!" : "Progress saved to draft vault.");

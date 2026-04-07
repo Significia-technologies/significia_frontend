@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect } from "react";
 import { 
@@ -41,13 +41,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 
 interface AnalysisListProps {
-  connectorId: string;
+  
   clientId?: string;
   onSelectAnalysis: (resultId: string) => void;
   onCreateNew: () => void;
 }
 
-export function AnalysisList({ connectorId, clientId, onSelectAnalysis, onCreateNew }: AnalysisListProps) {
+export function AnalysisList({ clientId, onSelectAnalysis, onCreateNew }: AnalysisListProps) {
   const [analyses, setAnalyses] = useState<FinancialAnalysisResult[]>([]);
   const [clients, setClients] = useState<Record<string, Client>>({});
   const [loading, setLoading] = useState(true);
@@ -59,8 +59,8 @@ export function AnalysisList({ connectorId, clientId, onSelectAnalysis, onCreate
       setLoading(true);
       try {
         const [analysisData, clientData] = await Promise.all([
-          FinancialAnalysisService.list(connectorId),
-          MasterDataService.listClients(connectorId)
+          FinancialAnalysisService.list(),
+          MasterDataService.listClients()
         ]);
 
         // Map clients for quick lookup
@@ -85,15 +85,15 @@ export function AnalysisList({ connectorId, clientId, onSelectAnalysis, onCreate
     };
 
     fetchData();
-  }, [connectorId, clientId]);
+  }, [clientId]);
 
   const handleDownload = async (id: string, format: 'pdf' | 'word', clientName: string) => {
     setDownloading(`${id}-${format}`);
     try {
       if (format === 'pdf') {
-        await FinancialAnalysisService.downloadPDF(connectorId, id, clientName);
+        await FinancialAnalysisService.downloadPDF(id, clientName);
       } else {
-        await FinancialAnalysisService.downloadWord(connectorId, id, clientName);
+        await FinancialAnalysisService.downloadWord(id, clientName);
       }
       toast.success(`${format.toUpperCase()} report downloaded`);
     } catch (error) {

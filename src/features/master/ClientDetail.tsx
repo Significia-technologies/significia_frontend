@@ -44,12 +44,13 @@ import { DocumentVault } from "./components/DocumentVault";
 
 interface ClientDetailProps {
   client: ClientCreate;
-  connectorId: string;
+  
 }
 
-export default function ClientDetail({ client, connectorId }: ClientDetailProps) {
+export default function ClientDetail({ client }: ClientDetailProps) {
   const router = useRouter();
   const [employees, setEmployees] = React.useState<Employee[]>([]);
+  const [loadingEmployees, setLoadingEmployees] = React.useState(true);
   const [downloading, setDownloading] = React.useState(false);
   const [isUpdating, setIsUpdating] = React.useState(false);
   const [currentClient, setCurrentClient] = React.useState<ClientCreate>(client);
@@ -65,7 +66,7 @@ export default function ClientDetail({ client, connectorId }: ClientDetailProps)
 
     setIsUpdating(true);
     try {
-      const updatedClient = await MasterDataService.updateClient(connectorId, currentClient.id, {
+      const updatedClient = await MasterDataService.updateClient(currentClient.id, {
         is_active: !currentClient.is_active
       });
       // The updateClient returns a Client, but we need to update our ClientCreate state
@@ -81,17 +82,18 @@ export default function ClientDetail({ client, connectorId }: ClientDetailProps)
 
   React.useEffect(() => {
     const fetchEmployees = async () => {
+      setLoadingEmployees(true);
       try {
-        const iaMaster = await IAMasterService.getLatest(connectorId);
-        if (iaMaster?.employees) {
-          setEmployees(iaMaster.employees);
-        }
+        const validEmployees = await IAMasterService.listEmployees();
+        setEmployees(validEmployees);
       } catch (error) {
         console.error("Failed to fetch employees", error);
+      } finally {
+        setLoadingEmployees(false);
       }
     };
     fetchEmployees();
-  }, [connectorId]);
+  }, []);
 
   const DetailItem = ({ label, value }: { label: string; value: any }) => (
     <div className="space-y-1">
@@ -103,7 +105,7 @@ export default function ClientDetail({ client, connectorId }: ClientDetailProps)
   const handleDownloadReport = async () => {
     setDownloading(true);
     try {
-      await MasterDataService.downloadClientReport(connectorId, client.id!, client.client_name);
+      await MasterDataService.downloadClientReport(client.id!, client.client_name);
       toast.success("Report downloaded successfully!");
     } catch (error) {
       console.error("Failed to download report", error);
@@ -210,8 +212,8 @@ export default function ClientDetail({ client, connectorId }: ClientDetailProps)
                       <Calendar className="w-6 h-6 text-primary" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground mb-0.5">Registration</p>
-                      <p className="text-base font-bold truncate">{currentClient.declaration_date || "Not set"}</p>
+                      <p className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground mb-0.5">Agreement Date</p>
+                      <p className="text-base font-bold truncate">{currentClient.agreement_date || "Not set"}</p>
                     </div>
                   </div>
 
@@ -243,7 +245,13 @@ export default function ClientDetail({ client, connectorId }: ClientDetailProps)
                             <DetailItem label="Advisor Name" value={currentClient.advisor_name} />
                             <DetailItem label="Assigned Professional" value={
                               currentClient.assigned_employee_id 
-                                ? employees.find(e => e.id === currentClient.assigned_employee_id)?.name_of_employee || "Loading..."
+                                ? (() => {
+                                    if (loadingEmployees) return "Loading...";
+                                    const emp = employees.find(e => (e.id || (e as any)._id) === currentClient.assigned_employee_id);
+                                    return emp 
+                                      ? (emp.full_name || emp.name || emp.name_of_employee || "Staff Member") 
+                                      : "Professional Not Found";
+                                  })()
                                 : "Unassigned"
                             } />
                             <DetailItem label="Risk Profile" value={<Badge variant="secondary" className="bg-orange-100 text-orange-700 hover:bg-orange-100">{currentClient.risk_profile}</Badge>} />
@@ -359,7 +367,7 @@ export default function ClientDetail({ client, connectorId }: ClientDetailProps)
 
               <TabsContent value="analysis" className="mt-0 space-y-8">
                  <AnalysisTabContent 
-                    connectorId={connectorId} 
+                     
                     clientId={client.id!} 
                     clientName={client.client_name} 
                  />
@@ -367,11 +375,11 @@ export default function ClientDetail({ client, connectorId }: ClientDetailProps)
 
               <TabsContent value="vault" className="mt-0 space-y-8">
                  <DocumentVault 
-                    connectorId={connectorId} 
+                     
                     clientId={client.id!} 
                     documents={currentClient.documents || []}
                     onUploadSuccess={() => {
-                        MasterDataService.getClient(connectorId, client.id!).then(updatedClient => {
+                        MasterDataService.getClient(client.id!).then(updatedClient => {
                             setCurrentClient(updatedClient);
                         }).catch(console.error);
                     }}
@@ -383,7 +391,7 @@ export default function ClientDetail({ client, connectorId }: ClientDetailProps)
       </Card>
       
       <div className="mt-8 flex flex-col sm:flex-row justify-end gap-3 sm:gap-4">
-        <Button variant="outline" className="w-full sm:w-auto px-8 border-primary/20 h-11" onClick={() => router.push(`/master/clients/${currentClient.id}/edit`)}>
+        <Button variant="outline" className="w-full sm:w-auto px-8 border-primary/20 h-11" onClick={() => router.push(`/clients/${currentClient.id}/edit`)}>
             Edit Profile
         </Button>
         <AlertDialog>
@@ -420,7 +428,7 @@ export default function ClientDetail({ client, connectorId }: ClientDetailProps)
   );
 }
 
-function AnalysisTabContent({ connectorId, clientId, clientName }: { connectorId: string, clientId: string, clientName: string }) {
+function AnalysisTabContent({ clientId, clientName }: { clientId: string, clientName: string }) {
   const [view, setView] = React.useState<"LIST" | "FORM" | "DASHBOARD">("LIST");
   const [selectedResult, setSelectedResult] = React.useState<FinancialAnalysisResult | null>(null);
   const [loading, setLoading] = React.useState(false);
@@ -428,7 +436,7 @@ function AnalysisTabContent({ connectorId, clientId, clientName }: { connectorId
   const handleSelect = async (id: string) => {
     setLoading(true);
     try {
-      const result = await FinancialAnalysisService.get(connectorId, id);
+      const result = await FinancialAnalysisService.get(id);
       setSelectedResult(result);
       setView("DASHBOARD");
     } catch (e) {
@@ -452,7 +460,7 @@ function AnalysisTabContent({ connectorId, clientId, clientName }: { connectorId
 
       {view === "LIST" && (
         <AnalysisList 
-          connectorId={connectorId} 
+           
           clientId={clientId} 
           onSelectAnalysis={handleSelect}
           onCreateNew={() => setView("FORM")}
@@ -461,7 +469,7 @@ function AnalysisTabContent({ connectorId, clientId, clientName }: { connectorId
 
       {view === "FORM" && (
         <AnalysisForm 
-          connectorId={connectorId} 
+           
           clientId={clientId}
           onSuccess={(id) => handleSelect(id)}
           onCancel={() => setView("LIST")}
@@ -470,7 +478,7 @@ function AnalysisTabContent({ connectorId, clientId, clientName }: { connectorId
 
       {view === "DASHBOARD" && selectedResult && (
         <AnalysisDashboard 
-          connectorId={connectorId} 
+           
           result={selectedResult} 
           clientName={clientName} 
         />

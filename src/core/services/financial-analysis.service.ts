@@ -1,4 +1,4 @@
-import { API_ENDPOINTS } from "../api/api-endpoints";
+﻿import { API_ENDPOINTS } from "../api/api-endpoints";
 import httpClient from "../api/http-client";
 
 export interface FinancialAnalysisProfile {
@@ -13,12 +13,7 @@ export interface FinancialAnalysisProfile {
   annual_income: number;
   expenses: any;
   assets: any;
-  liabilities: {
-    personal: number;
-    cc: number;
-    hb: number;
-    others?: { label: string; amount: number }[];
-  };
+  liabilities: { personal: number; cc: number; hb: number; others?: { label: string; amount: number }[] };
   insurance: any;
   retirement_age: number;
   assumptions: any;
@@ -41,13 +36,7 @@ export interface FinancialAnalysisResult {
 
 export interface CalculationStep {
   section: string;
-  steps: {
-    step: number;
-    description: string;
-    formula: string;
-    calculation?: string;
-    result: string;
-  }[];
+  steps: { step: number; description: string; formula: string; calculation?: string; result: string }[];
 }
 
 export interface CalculationDetails {
@@ -69,135 +58,87 @@ export interface FinancialAnalysisCreate {
   spouse_occupation?: string;
   children?: any[];
   annual_income: number;
-  expenses: {
-    hh: number;
-    med: number;
-    travel: number;
-    elec: number;
-    tele: number;
-    maid: number;
-    edu: number;
-    ent: number;
-    emi: number;
-    savings: number;
-    misc: number;
-  };
-  assets: {
-    land: number;
-    inv: number;
-    cash: number;
-    retirement: number;
-  };
-  liabilities: {
-    personal: number;
-    cc: number;
-    hb: number;
-    others?: { label: string; amount: number }[];
-  };
-  insurance: {
-    life_cover: number;
-    life_premium: number;
-    med_cover: number;
-    med_premium: number;
-    veh_cover: number;
-    veh_premium: number;
-    other_cover: number;
-    other_premium: number;
-  };
+  expenses: { hh: number; med: number; travel: number; elec: number; tele: number; maid: number; edu: number; ent: number; emi: number; savings: number; misc: number };
+  assets: { land: number; inv: number; cash: number; retirement: number };
+  liabilities: { personal: number; cc: number; hb: number; others?: { label: string; amount: number }[] };
+  insurance: { life_cover: number; life_premium: number; med_cover: number; med_premium: number; veh_cover: number; veh_premium: number; other_cover: number; other_premium: number };
   medical_bonus_years: number;
   medical_bonus_percentage: number;
   education_investment_pct: number;
   marriage_investment_pct: number;
-  assumptions: {
-    retirement_age: number;
-    le_client: number;
-    le_spouse: number;
-    inflation: number;
-    medical_inflation: number;
-    pre_ret_rate: number;
-    post_ret_rate: number;
-    sol_hlv: number;
-    sol_ret: number;
-    child_education_corpus: number;
-    education_years: number;
-    child_marriage_corpus: number;
-    marriage_years: number;
-  };
+  assumptions: { retirement_age: number; le_client: number; le_spouse: number; inflation: number; medical_inflation: number; pre_ret_rate: number; post_ret_rate: number; sol_hlv: number; sol_ret: number; child_education_corpus: number; education_years: number; child_marriage_corpus: number; marriage_years: number };
   exclude_ai?: boolean;
   disclaimer_text?: string;
   discussion_notes?: string;
 }
 
+// ── Financial Analysis Service (Bridge Architecture) ──────────────────────
+// No  required — backend resolves tenant from JWT + X-Tenant-Slug
+
 export class FinancialAnalysisService {
-  static async list(connectorId: string): Promise<FinancialAnalysisResult[]> {
+  static async list(): Promise<FinancialAnalysisResult[]> {
     const response = await httpClient.get<FinancialAnalysisResult[]>(
-      API_ENDPOINTS.FINANCIAL_ANALYSIS.LIST(connectorId)
+      API_ENDPOINTS.FINANCIAL_ANALYSIS.LIST
     );
     return response.data;
   }
 
-  static async get(connectorId: string, resultId: string): Promise<FinancialAnalysisResult> {
+  static async get(resultId: string): Promise<FinancialAnalysisResult> {
     const response = await httpClient.get<FinancialAnalysisResult>(
-      API_ENDPOINTS.FINANCIAL_ANALYSIS.DETAIL(connectorId, resultId)
+      API_ENDPOINTS.FINANCIAL_ANALYSIS.DETAIL(resultId)
     );
     return response.data;
   }
 
-  static async create(connectorId: string, data: FinancialAnalysisCreate): Promise<FinancialAnalysisResult> {
+  static async create(data: FinancialAnalysisCreate): Promise<FinancialAnalysisResult> {
     const response = await httpClient.post<FinancialAnalysisResult>(
-      API_ENDPOINTS.FINANCIAL_ANALYSIS.CREATE(connectorId),
+      API_ENDPOINTS.FINANCIAL_ANALYSIS.CREATE,
       data
     );
     return response.data;
   }
 
-  static async downloadPDF(connectorId: string, resultId: string, clientName: string): Promise<void> {
-    const response = await httpClient.get(
-      API_ENDPOINTS.FINANCIAL_ANALYSIS.PDF(connectorId, resultId),
-      { responseType: 'blob' }
-    );
-    
+  static async downloadPDF(resultId: string, clientName: string): Promise<void> {
+    const response = await httpClient.get(API_ENDPOINTS.FINANCIAL_ANALYSIS.PDF(resultId), {
+      responseType: "blob",
+    });
     const url = window.URL.createObjectURL(new Blob([response.data]));
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = url;
-    link.setAttribute('download', `Financial_Analysis_${clientName.replace(/\s+/g, '_')}.pdf`);
+    link.setAttribute("download", `Financial_Analysis_${clientName.replace(/\s+/g, "_")}.pdf`);
     document.body.appendChild(link);
     link.click();
     link.remove();
   }
 
-  static async downloadWord(connectorId: string, resultId: string, clientName: string): Promise<void> {
-    const response = await httpClient.get(
-      API_ENDPOINTS.FINANCIAL_ANALYSIS.WORD(connectorId, resultId),
-      { responseType: 'blob' }
-    );
-    
+  static async downloadWord(resultId: string, clientName: string): Promise<void> {
+    const response = await httpClient.get(API_ENDPOINTS.FINANCIAL_ANALYSIS.WORD(resultId), {
+      responseType: "blob",
+    });
     const url = window.URL.createObjectURL(new Blob([response.data]));
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = url;
-    link.setAttribute('download', `Financial_Analysis_${clientName.replace(/\s+/g, '_')}.docx`);
+    link.setAttribute("download", `Financial_Analysis_${clientName.replace(/\s+/g, "_")}.docx`);
     document.body.appendChild(link);
     link.click();
     link.remove();
   }
 
-  static async getCalculationDetails(connectorId: string, resultId: string): Promise<CalculationDetails> {
+  static async getCalculationDetails(resultId: string): Promise<CalculationDetails> {
     const response = await httpClient.get<CalculationDetails>(
-      API_ENDPOINTS.FINANCIAL_ANALYSIS.DETAILS(connectorId, resultId)
+      `${API_ENDPOINTS.FINANCIAL_ANALYSIS.DETAIL(resultId)}/details`
     );
     return response.data;
   }
 
-  static async downloadBlankForm(connectorId: string): Promise<void> {
-    const response = await httpClient.get(
-      API_ENDPOINTS.FINANCIAL_ANALYSIS.FORM(connectorId),
-      { responseType: 'blob' }
-    );
-    
+  static async downloadBlankForm(): Promise<void> {
+    const response = await httpClient.get(API_ENDPOINTS.FINANCIAL_ANALYSIS.FORM, {
+      responseType: "blob",
+    });
     const url = window.URL.createObjectURL(new Blob([response.data]));
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = url;
-    link.setAttribute('download', 'Financial_Analysis_Data_Entry_Form.pdf');
+    link.setAttribute("download", "Financial_Analysis_Data_Entry_Form.pdf");
     document.body.appendChild(link);
     link.click();
     link.remove();

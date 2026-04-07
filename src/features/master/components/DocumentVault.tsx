@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 
 interface DocumentVaultProps {
-  connectorId: string;
+  
   clientId: string;
   documents: ClientDocumentResponse[];
   onUploadSuccess: () => void;
@@ -34,7 +34,7 @@ const DOCUMENT_TYPES = [
   "Other"
 ];
 
-export function DocumentVault({ connectorId, clientId, documents, onUploadSuccess, readOnly = false }: DocumentVaultProps) {
+export function DocumentVault({ clientId, documents, onUploadSuccess, readOnly = false }: DocumentVaultProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selectedType, setSelectedType] = useState<string>("");
@@ -63,7 +63,7 @@ export function DocumentVault({ connectorId, clientId, documents, onUploadSucces
 
     setLoading(true);
     try {
-      await MasterDataService.uploadDocument(connectorId, clientId, selectedFile, finalType);
+      await MasterDataService.uploadDocument(clientId, selectedFile, finalType);
       toast.success("Document uploaded securely!");
       setIsModalOpen(false);
       setSelectedFile(null);

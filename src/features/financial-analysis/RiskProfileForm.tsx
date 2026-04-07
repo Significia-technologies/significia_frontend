@@ -38,7 +38,7 @@ import {
 } from "./constants";
 
 interface RiskProfileFormProps {
-  connectorId: string;
+  
   clientId?: string;
 }
 
@@ -126,7 +126,7 @@ const RadioOption = ({ name, value, label, current, onChange }: any) => (
   </label>
 );
 
-export function RiskProfileForm({ connectorId, clientId }: RiskProfileFormProps) {
+export function RiskProfileForm({ clientId }: RiskProfileFormProps) {
   const [loading, setLoading] = useState(false);
   const [calculating, setCalculating] = useState(false);
   const [panValidating, setPanValidating] = useState(false);
@@ -168,7 +168,7 @@ export function RiskProfileForm({ connectorId, clientId }: RiskProfileFormProps)
   // Load client if ID provided
   useEffect(() => {
     if (clientId) {
-      MasterDataService.getClient(connectorId, clientId).then(client => {
+      MasterDataService.getClient(clientId).then(client => {
         setClientInfo({
           name: client.client_name,
           code: client.client_code,
@@ -178,13 +178,13 @@ export function RiskProfileForm({ connectorId, clientId }: RiskProfileFormProps)
         setClientFound(true);
       });
     }
-  }, [connectorId, clientId]);
+  }, [clientId]);
 
   const validateClientByCode = async (code: string) => {
     if (!code || code.length < 3) return;
     setPanValidating(true);
     try {
-      const client = await MasterDataService.getClientByCode(connectorId, code);
+      const client = await MasterDataService.getClientByCode(code);
       if (client) {
         setClientInfo({
           name: client.client_name,
@@ -217,7 +217,7 @@ export function RiskProfileForm({ connectorId, clientId }: RiskProfileFormProps)
   const calculateScore = async () => {
     setCalculating(true);
     try {
-      const resp = await RiskProfileService.calculate(connectorId, { answers });
+      const resp = await RiskProfileService.calculate({ answers });
       setResult(resp);
       toast.success("Score calculated successfully!");
     } catch (error) {
@@ -234,7 +234,7 @@ export function RiskProfileForm({ connectorId, clientId }: RiskProfileFormProps)
     }
     setLoading(true);
     try {
-      const saveResp = await RiskProfileService.save(connectorId, {
+      const saveResp = await RiskProfileService.save({
         client_code: clientInfo.code,
         answers,
         discussion_notes: discussionNotes,
@@ -256,9 +256,9 @@ export function RiskProfileForm({ connectorId, clientId }: RiskProfileFormProps)
     if (!lastAssessmentId) return;
     try {
         if (type === 'PDF') {
-            await RiskProfileService.downloadPDF(connectorId, lastAssessmentId, `Risk_Profile_${clientInfo.code}.pdf`);
+            await RiskProfileService.downloadPDF(lastAssessmentId, `Risk_Profile_${clientInfo.code}.pdf`);
         } else {
-            await RiskProfileService.downloadDOCX(connectorId, lastAssessmentId, `Risk_Profile_${clientInfo.code}.docx`);
+            await RiskProfileService.downloadDOCX(lastAssessmentId, `Risk_Profile_${clientInfo.code}.docx`);
         }
     } catch (error) {
         toast.error(`Failed to download ${type}`);

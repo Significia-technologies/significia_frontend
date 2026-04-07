@@ -17,11 +17,11 @@ import { AssetAllocationService, ClientValidateResponse } from "@/core/services/
 import { toast } from "sonner";
 
 interface ClientValidatorProps {
-  connectorId: string;
+  
   onValidated: (clientInfo: ClientValidateResponse & { client_code: string }) => void;
 }
 
-export function ClientValidator({ connectorId, onValidated }: ClientValidatorProps) {
+export function ClientValidator({ onValidated }: ClientValidatorProps) {
   const [clientCode, setClientCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<(ClientValidateResponse & { client_code: string }) | null>(null);
@@ -31,7 +31,7 @@ export function ClientValidator({ connectorId, onValidated }: ClientValidatorPro
     setLoading(true);
     setResult(null);
     try {
-      const data = await AssetAllocationService.validateClient(connectorId, clientCode.trim().toUpperCase());
+      const data = await AssetAllocationService.validateClient(clientCode.trim().toUpperCase());
       const enriched = { ...data, client_code: clientCode.trim().toUpperCase() };
       setResult(enriched);
       if (data.success) {
@@ -44,7 +44,7 @@ export function ClientValidator({ connectorId, onValidated }: ClientValidatorPro
     } finally {
       setLoading(false);
     }
-  }, [clientCode, connectorId, onValidated]);
+  }, [clientCode, onValidated]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") validate();

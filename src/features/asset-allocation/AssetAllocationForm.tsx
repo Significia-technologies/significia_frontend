@@ -23,7 +23,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 interface AssetAllocationFormProps {
-  connectorId: string;
+  
   clientInfo: ClientValidateResponse & { client_code: string };
   onSaved: () => void;
   onCancel: () => void;
@@ -46,7 +46,6 @@ const DEFAULT_VALUES: AllocationValues = {
 const DISCLAIMER_DEFAULT = `This asset allocation report is prepared based on the client's risk profile and financial goals as assessed by the Investment Advisor. The allocation percentages represent a recommended distribution of investable assets and should be reviewed periodically. Past performance is not indicative of future results. This report does not constitute investment advice and is prepared solely for informational and planning purposes in accordance with SEBI Investment Advisor Regulations.`;
 
 export function AssetAllocationForm({
-  connectorId,
   clientInfo,
   onSaved,
   onCancel,
@@ -118,7 +117,7 @@ This asset allocation represents an evolution of investment strategy. Regular re
 
     setSaving(true);
     try {
-      await AssetAllocationService.save(connectorId, {
+      await AssetAllocationService.save({
         client_code: clientInfo.client_code,
         ia_registration_number: clientInfo.registration_number || "",
         assigned_risk_tier: clientInfo.category_name || "",

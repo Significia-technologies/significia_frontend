@@ -31,15 +31,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { AuthService } from "@/core/services/auth.service";
+import { useAppStore } from "@/store/useAppStore";
 
 
 interface IAMasterFormProps {
-  connectorId: string;
+  
   initialData?: IAMaster | null;
 }
 
-export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
+export function IAMasterForm({ initialData }: IAMasterFormProps) {
   const router = useRouter();
+  const { user, setUser } = useAppStore();
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("basic");
   const [iaNumberExists, setIaNumberExists] = useState(false);
@@ -79,7 +82,6 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
     ia_logo: null,
   });
 
-  const [employees, setEmployees] = useState<any[]>([]);
 
   useEffect(() => {
     if (initialData) {
@@ -101,25 +103,18 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
         bank_branch: initialData.bank_branch || "",
         ifsc_code: initialData.ifsc_code || "",
       });
-      // Hydrate employees
-      if (initialData.employees && initialData.employees.length > 0) {
-        setEmployees(initialData.employees.map(emp => ({
-          name_of_employee: emp.name_of_employee || "",
-          date_of_birth: emp.date_of_birth || "",
-          designation: emp.designation || "",
-          ia_registration_number: emp.ia_registration_number || "",
-          date_of_registration: emp.date_of_registration || "",
-          date_of_registration_expiry: emp.date_of_registration_expiry || "",
-          certificate: null,
-          certificate_path: emp.certificate_path,
-        })));
-      }
+    } else if (user && !formData.registered_email_id) {
+      // First-time setup: pre-populate from user session if not already filled
+      setFormData(prev => ({
+        ...prev,
+        name_of_ia: prev.name_of_ia || user.company_name || "",
+        registered_email_id: prev.registered_email_id || user.email || "",
+        registered_contact_number: prev.registered_contact_number || user.phone_number || ""
+      }));
     }
-  }, [initialData]);
+  }, [initialData, user]);
 
   const isSinglePersonEntity = formData.nature_of_entity === "individual" || formData.nature_of_entity === "proprietorship";
-  const personLabel = formData.nature_of_entity === "body" ? "Employee" : "Partner";
-  const personLabelPlural = formData.nature_of_entity === "body" ? "Employees" : "Partners";
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -136,7 +131,7 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
   const validateIANumber = async () => {
     if (!formData.ia_registration_number || (initialData && initialData.ia_registration_number === formData.ia_registration_number)) return;
     try {
-      const exists = await IAMasterService.validateIANumber(connectorId, formData.ia_registration_number);
+      const exists = await IAMasterService.validateIANumber(formData.ia_registration_number);
       setIaNumberExists(exists);
       if (exists) {
         toast.error("IA Registration Number already exists!");
@@ -146,32 +141,6 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
     }
   };
 
-  const addEmployee = () => {
-    setEmployees((prev) => [
-      ...prev,
-      {
-        name_of_employee: "",
-        date_of_birth: "",
-        designation: "",
-        ia_registration_number: "",
-        date_of_registration: "",
-        date_of_registration_expiry: "",
-        certificate: null,
-      },
-    ]);
-  };
-
-  const removeEmployee = (index: number) => {
-    setEmployees((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const handleEmployeeChange = (index: number, field: string, value: any) => {
-    setEmployees((prev) => {
-      const updated = [...prev];
-      updated[index][field] = value;
-      return updated;
-    });
-  };
 
   const calculateAge = (dob: string) => {
     if (!dob) return 0;
@@ -192,25 +161,6 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
       return;
     }
 
-    const iaAge = calculateAge(formData.date_of_birth);
-    if (iaAge < 18) {
-      toast.error(`Investment Advisor must be at least 18 years old (Current age: ${iaAge})`);
-      setLoading(false);
-      return;
-    }
-
-    // Validate employees age
-    if (!isSinglePersonEntity) {
-      for (let i = 0; i < employees.length; i++) {
-        const empAge = calculateAge(employees[i].date_of_birth);
-        if (empAge < 18) {
-          toast.error(`${personLabel} #${i + 1} must be at least 18 years old (Current age: ${empAge})`);
-          setLoading(false);
-          return;
-        }
-      }
-    }
-
     setLoading(true);
     try {
       const data = new FormData();
@@ -225,25 +175,16 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
       if (files.ia_signature) data.append("ia_signature", files.ia_signature);
       if (files.ia_logo) data.append("ia_logo", files.ia_logo);
 
-      // Append employees as JSON string (excluding files)
-      const employeesClean = employees.map(emp => {
-        const { certificate, ...rest } = emp;
-        return rest;
-      });
-      data.append("employees_json", JSON.stringify(employeesClean));
-
-      // Append employee certificates
-      employees.forEach((emp, index) => {
-        if (emp.certificate) {
-          data.append("employee_certificates", emp.certificate);
-        }
-      });
 
       if (initialData?.id) {
-        await IAMasterService.update(connectorId, initialData.id, data);
+        await IAMasterService.update(initialData.id, data);
       } else {
-        await IAMasterService.create(connectorId, data);
+        await IAMasterService.create(data);
       }
+      
+      // Refresh global session to update profile completion status
+      await AuthService.refreshUser(setUser);
+      
       toast.success("Investment Advisor record saved successfully!");
       router.push("/master");
     } catch (error: any) {
@@ -262,7 +203,7 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">IA Master Entry</h1>
           <p className="text-muted-foreground text-sm">
-            {initialData ? "Update" : "Register"} Investment Advisor details and employee records.
+            {initialData ? "Update" : "Register"} Investment Advisor details.
           </p>
         </div>
       </div>
@@ -291,13 +232,6 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
                     className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent pb-3 px-1 text-sm font-semibold whitespace-nowrap"
                   >
                     Documents
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="employees" 
-                    disabled={isSinglePersonEntity}
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent pb-3 px-1 text-sm font-semibold whitespace-nowrap"
-                  >
-                    {personLabelPlural}
                   </TabsTrigger>
                 </TabsList>
               </div>
@@ -481,109 +415,6 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
                   </div>
                 </TabsContent>
 
-                <TabsContent value="employees" className="space-y-6 mt-0">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-                    <div>
-                      <h3 className="text-xl font-bold">Associated {personLabelPlural}</h3>
-                      <p className="text-sm text-muted-foreground">List of certified investment advisory representatives.</p>
-                    </div>
-                    <Button type="button" variant="outline" size="sm" onClick={addEmployee} className="gap-2 border-primary/20 bg-primary/5 hover:bg-primary/10">
-                      <Plus className="w-4 h-4" />
-                      Add {personLabel}
-                    </Button>
-                  </div>
-
-                  {employees.length === 0 ? (
-                    <div className="text-center py-16 border-2 border-dashed border-primary/10 rounded-2xl bg-muted/5">
-                      <p className="text-muted-foreground">No {personLabelPlural.toLowerCase()} added yet.</p>
-                      <Button type="button" variant="ghost" className="mt-4 text-primary" onClick={addEmployee}>
-                        Add your first {personLabel.toLowerCase()} record
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="space-y-6">
-                      {employees.map((emp, index) => (
-                        <Card key={index} className="border-primary/10 bg-primary/5 overflow-hidden">
-                          <CardHeader className="py-3 px-4 sm:px-6 bg-primary/10 border-b border-primary/10 flex flex-row items-center justify-between">
-                            <CardTitle className="text-sm font-bold uppercase tracking-wider text-primary">{personLabel} Record #{index + 1}</CardTitle>
-                            <Button type="button" variant="ghost" size="icon" onClick={() => removeEmployee(index)} className="text-destructive h-8 w-8 hover:bg-destructive/10">
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </CardHeader>
-                          <CardContent className="p-4 sm:p-6 space-y-6">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                              <div className="space-y-2">
-                                <Label>Full Name</Label>
-                                <Input value={emp.name_of_employee} onChange={(e) => handleEmployeeChange(index, "name_of_employee", e.target.value)} required className="bg-background/50" />
-                              </div>
-                              <div className="space-y-2">
-                                <Label className={calculateAge(emp.date_of_birth) < 18 && emp.date_of_birth ? "text-destructive font-bold" : ""}>
-                                  Date of Birth * {calculateAge(emp.date_of_birth) < 18 && emp.date_of_birth && `(Age: ${calculateAge(emp.date_of_birth)})`}
-                                </Label>
-                                <Input 
-                                  type="date" 
-                                  value={emp.date_of_birth} 
-                                  onChange={(e) => handleEmployeeChange(index, "date_of_birth", e.target.value)} 
-                                  required 
-                                  className={`bg-background/50 ${calculateAge(emp.date_of_birth) < 18 && emp.date_of_birth ? "border-destructive ring-destructive focus-visible:ring-destructive" : ""}`} 
-                                />
-                                {calculateAge(emp.date_of_birth) < 18 && emp.date_of_birth && (
-                                  <p className="text-[10px] text-destructive font-bold animate-pulse italic">Minimum age requirement is 18 years.</p>
-                                )}
-                              </div>
-                            </div>
-                            
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                              <div className="space-y-2">
-                                <Label>Designation</Label>
-                                <Input value={emp.designation} onChange={(e) => handleEmployeeChange(index, "designation", e.target.value)} required className="bg-background/50" />
-                              </div>
-                              <div className="space-y-2">
-                                <Label>IA Reg Number</Label>
-                                <Input value={emp.ia_registration_number} onChange={(e) => handleEmployeeChange(index, "ia_registration_number", e.target.value)} required className="bg-background/50" />
-                              </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                              <div className="space-y-2">
-                                <Label className="text-[10px] uppercase font-bold text-muted-foreground">Reg Date</Label>
-                                <Input type="date" value={emp.date_of_registration} onChange={(e) => handleEmployeeChange(index, "date_of_registration", e.target.value)} required className="bg-background/50" />
-                              </div>
-                              <div className="space-y-2">
-                                <Label className="text-[10px] uppercase font-bold text-muted-foreground">Expiry Date</Label>
-                                <Input type="date" value={emp.date_of_registration_expiry} onChange={(e) => handleEmployeeChange(index, "date_of_registration_expiry", e.target.value)} required className="bg-background/50" />
-                              </div>
-                            </div>
-
-                            <div className="space-y-2 pt-2 border-t border-primary/5">
-                              <div className="flex justify-between items-center mb-1">
-                                <Label>{personLabel} IA Certificate</Label>
-                                {emp.certificate_path && (
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-[10px] text-primary font-medium flex items-center gap-1">
-                                      <FileCheck className="w-3 h-3" />
-                                      Existing: {getFileName(emp.certificate_path)}
-                                    </span>
-                                    <Button type="button" variant="ghost" size="icon" className="h-5 w-5 text-primary" onClick={() => window.open(getAssetUrl(emp.certificate_path), '_blank')}>
-                                      <ExternalLink className="w-3 h-3" />
-                                    </Button>
-                                  </div>
-                                )}
-                              </div>
-                              <Input 
-                                type="file" 
-                                onChange={(e) => handleEmployeeChange(index, "certificate", e.target.files?.[0])} 
-                                accept=".png,.jpg,.jpeg,.pdf" 
-                                required={!initialData}
-                                className="bg-background/50 file:bg-primary/10 file:text-primary file:border-none"
-                              />
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-                </TabsContent>
               </div>
 
               <div className="p-4 sm:p-8 border-t border-primary/10 bg-muted/20 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-6">
@@ -596,7 +427,7 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
                       type="button" 
                       variant="outline" 
                       onClick={() => {
-                        const tabs = ["basic", "bank", "docs", "employees"];
+                        const tabs = ["basic", "bank", "docs"];
                         const prevIndex = tabs.indexOf(activeTab) - 1;
                         setActiveTab(tabs[prevIndex]);
                       }}
@@ -608,27 +439,28 @@ export function IAMasterForm({ connectorId, initialData }: IAMasterFormProps) {
                 </div>
                 
                 <div className="flex flex-col sm:flex-row gap-4">
-                  {activeTab !== "employees" && (
+                  {activeTab !== "docs" ? (
                     <Button 
                       type="button" 
                       variant="outline" 
-                      onClick={() => {
-                        const tabs = ["basic", "bank", "docs", "employees"];
+                      onClick={(e) => {
+                        e.preventDefault();
+                        const tabs = ["basic", "bank", "docs"];
                         const nextIndex = tabs.indexOf(activeTab) + 1;
-                        if (isSinglePersonEntity && tabs[nextIndex] === "employees") {
-                           // Skip employees if individual/proprietorship
-                           handleSubmit(new Event('submit') as any);
-                           return;
+                        if (nextIndex < tabs.length) {
+                           setActiveTab(tabs[nextIndex]);
                         }
-                        setActiveTab(tabs[nextIndex]);
                       }}
                       className="px-8 border-primary/30 w-full sm:w-auto py-6"
                     >
                       Next Step
                     </Button>
-                  )}
-                  {(activeTab === "employees" || (activeTab === "docs" && isSinglePersonEntity)) && (
-                    <Button type="submit" className="gap-2 px-10 bg-primary hover:bg-primary/90 text-lg py-6 w-full sm:w-auto" disabled={loading || iaNumberExists}>
+                  ) : (
+                    <Button 
+                      type="submit" 
+                      className="gap-2 px-10 bg-primary hover:bg-primary/90 text-lg py-6 w-full sm:w-auto" 
+                      disabled={loading || iaNumberExists}
+                    >
                       {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <FileCheck className="w-5 h-5" />}
                       {loading ? "Saving Records..." : "Save Master Entry"}
                     </Button>

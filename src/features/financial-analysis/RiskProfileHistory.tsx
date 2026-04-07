@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect } from "react";
 import { 
@@ -35,10 +35,10 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 
 interface RiskProfileHistoryProps {
-  connectorId: string;
+  
 }
 
-export function RiskProfileHistory({ connectorId }: RiskProfileHistoryProps) {
+export function RiskProfileHistory({  }: RiskProfileHistoryProps) {
   const [loading, setLoading] = useState(true);
   const [assessments, setAssessments] = useState<RiskAssessment[]>([]);
   const [search, setSearch] = useState("");
@@ -46,13 +46,13 @@ export function RiskProfileHistory({ connectorId }: RiskProfileHistoryProps) {
 
   useEffect(() => {
     loadAssessments();
-  }, [connectorId]);
+  }, []);
 
   const loadAssessments = async () => {
     setLoading(true);
     try {
-      const standard = await RiskProfileService.getAll(connectorId);
-      const custom = await RiskProfileService.listCustomAssessments(connectorId);
+      const standard = await RiskProfileService.getAll();
+      const custom = await RiskProfileService.listCustomAssessments();
       
       // Map custom assessments to match RiskAssessment interface for the table
       const legacyCustom = custom.map(a => ({
@@ -85,15 +85,15 @@ export function RiskProfileHistory({ connectorId }: RiskProfileHistoryProps) {
     try {
       if (item.is_custom) {
         if (type === 'PDF') {
-          await RiskProfileService.downloadCustomPDF(connectorId, item.id, `Risk_Profile_${item.client_code}.pdf`);
+          await RiskProfileService.downloadCustomPDF(item.id, `Risk_Profile_${item.client_code}.pdf`);
         } else {
-          await RiskProfileService.downloadCustomDOCX(connectorId, item.id, `Risk_Profile_${item.client_code}.docx`);
+          await RiskProfileService.downloadCustomDOCX(item.id, `Risk_Profile_${item.client_code}.docx`);
         }
       } else {
         if (type === 'PDF') {
-          await RiskProfileService.downloadPDF(connectorId, item.id, `Risk_Profile_${item.client_code}.pdf`);
+          await RiskProfileService.downloadPDF(item.id, `Risk_Profile_${item.client_code}.pdf`);
         } else {
-          await RiskProfileService.downloadDOCX(connectorId, item.id, `Risk_Profile_${item.client_code}.docx`);
+          await RiskProfileService.downloadDOCX(item.id, `Risk_Profile_${item.client_code}.docx`);
         }
       }
       toast.success(`${type} downloaded successfully`);

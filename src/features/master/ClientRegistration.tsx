@@ -34,7 +34,7 @@ import { RegistrationPreviewModal } from "./components/RegistrationPreviewModal"
 import { useRouter } from "next/navigation";
 
 interface ClientRegistrationFormProps {
-  connectorId: string;
+  
   initialData?: ClientCreate;
   clientId?: string;
   isEdit?: boolean;
@@ -48,11 +48,12 @@ const REQUIRED_DOCUMENTS = [
   "Photo (Passport size)",
   "Address Proof",
   "Income Proof",
+  "Client Agreement",
   "Signature"
 ];
 
 export default function ClientRegistrationForm({ 
-  connectorId, 
+  
   initialData, 
   clientId, 
   isEdit = false 
@@ -62,6 +63,10 @@ export default function ClientRegistrationForm({
   const [showPreview, setShowPreview] = useState(false);
   const [activeTab, setActiveTab] = useState("personal");
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [ipvSearchTerm, setIpvSearchTerm] = useState("");
+  const [showIpvResults, setShowIpvResults] = useState(false);
+  const [assignedSearchTerm, setAssignedSearchTerm] = useState("");
+  const [showAssignedResults, setShowAssignedResults] = useState(false);
   const [pendingDocuments, setPendingDocuments] = useState<Record<string, File>>({});
 
   const [formData, setFormData] = useState<ClientCreate>(initialData || {
@@ -110,18 +115,23 @@ export default function ClientRegistrationForm({
     previous_advisor_name: "",
     referral_source: "",
     declaration_signed: true,
-    declaration_date: new Date().toISOString().split('T')[0],
+    agreement_date: new Date().toISOString().split('T')[0],
     assigned_employee_id: "",
+    kyc_verified: false,
+    ckyc_number: "",
+    ipv_done_by_id: "",
+    ipv_date: "",
   });
 
   React.useEffect(() => {
     const fetchEmployees = async () => {
       try {
-        const iaMaster = await IAMasterService.getLatest(connectorId);
+        const [iaMaster, allEmployees] = await Promise.all([
+          IAMasterService.getLatest(),
+          IAMasterService.listEmployees()
+        ]);
+
         if (iaMaster) {
-          if (iaMaster.employees) {
-            setEmployees(iaMaster.employees);
-          }
           // Auto-fill advisor info
           setFormData(prev => ({
             ...prev,
@@ -129,30 +139,98 @@ export default function ClientRegistrationForm({
             advisor_registration_number: iaMaster.ia_registration_number
           }));
         }
+
+        if (allEmployees) {
+          // Filter out invalid/junk entries (like 0 or null) and ensure each has an ID
+          const validEmployees = (allEmployees as any[]).filter(
+            emp => emp && typeof emp === "object" && (emp.id || emp._id)
+          );
+          setEmployees(validEmployees);
+          
+          // If we already have a selected ID (edit mode), find its name
+          if (formData.ipv_done_by_id) {
+            const selected = validEmployees.find(e => (e.id || e._id) === formData.ipv_done_by_id);
+            if (selected) {
+              setIpvSearchTerm(selected.full_name || selected.name || selected.name_of_employee || "");
+            }
+          }
+
+          // Also handle Assigned Professional search term
+          if (formData.assigned_employee_id) {
+            const selected = validEmployees.find(e => (e.id || (e as any)._id) === formData.assigned_employee_id);
+            if (selected) {
+              setAssignedSearchTerm(selected.full_name || selected.name || selected.name_of_employee || "");
+            }
+          }
+        }
       } catch (error) {
         console.error("Failed to fetch employees", error);
       }
     };
     fetchEmployees();
-  }, [connectorId]);
+  }, []);
+  
+  // Fetch Client Data if in Edit mode and no initialData
+  React.useEffect(() => {
+    if (clientId && !initialData) {
+      const fetchClient = async () => {
+        try {
+          const client = await MasterDataService.getClient(clientId);
+          if (client) {
+            setFormData(prev => ({
+              ...prev,
+              ...client,
+              // Ensure numeric fields and dates are correctly handled
+              annual_income: client.annual_income || "" as any,
+              net_worth: client.net_worth || "" as any,
+              existing_portfolio_value: client.existing_portfolio_value || "" as any,
+              date_of_birth: client.date_of_birth?.split('T')[0] || "",
+              client_date: client.client_date?.split('T')[0] || "",
+              agreement_date: client.agreement_date?.split('T')[0] || "",
+            }));
+          }
+        } catch (error) {
+          console.error("Failed to fetch client for edit", error);
+          toast.error("Failed to load client data");
+        }
+      };
+      fetchClient();
+    }
+  }, [clientId, initialData]);
 
-  // Sync formData with initialData when it changes (Edit Mode)
+  // Sync formData with initialData when it changes (Edit Mode prop)
   React.useEffect(() => {
     if (isEdit && initialData) {
       setFormData(prev => ({
         ...prev,
         ...initialData,
-        // Ensure numeric fields are correctly handled if they come as null/undefined
         annual_income: initialData.annual_income || "" as any,
         net_worth: initialData.net_worth || "" as any,
         existing_portfolio_value: initialData.existing_portfolio_value || "" as any,
-        // Ensure dates are just the YYYY-MM-DD part
         date_of_birth: initialData.date_of_birth?.split('T')[0] || "",
         client_date: initialData.client_date?.split('T')[0] || "",
-        declaration_date: initialData.declaration_date?.split('T')[0] || "",
+        agreement_date: initialData.agreement_date?.split('T')[0] || "",
       }));
     }
   }, [initialData, isEdit]);
+
+  // Robustly sync Search Terms for Edit Mode when either employees or formData changes
+  React.useEffect(() => {
+    if (employees.length > 0) {
+      if (formData.ipv_done_by_id) {
+        const selected = employees.find(e => (e.id || (e as any)._id) === formData.ipv_done_by_id);
+        if (selected) {
+          setIpvSearchTerm(selected.full_name || selected.name || selected.name_of_employee || "");
+        }
+      }
+      if (formData.assigned_employee_id) {
+        const selected = employees.find(e => (e.id || (e as any)._id) === formData.assigned_employee_id);
+        if (selected) {
+          setAssignedSearchTerm(selected.full_name || selected.name || selected.name_of_employee || "");
+        }
+      }
+    }
+  }, [employees, formData.ipv_done_by_id, formData.assigned_employee_id]);
 
   const calculateAge = (dob: string) => {
     if (!dob) return 0;
@@ -173,9 +251,6 @@ export default function ClientRegistrationForm({
     const { name, value, type } = e.target;
     
     if (type === "number") {
-      // Allow empty string or numbers only
-      // If value is empty, set it as empty string to allow clearing the field
-      // Otherwise parse as float
       setFormData((prev) => ({
         ...prev,
         [name]: value === "" ? "" : parseFloat(value),
@@ -190,16 +265,10 @@ export default function ClientRegistrationForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Age Validation
-    if (formData.date_of_birth) {
-      if (currentAge < 18) {
-        toast.error("Client must be at least 18 years old.");
-        return;
-      }
+    if (formData.date_of_birth && currentAge < 18) {
+      toast.error("Client must be at least 18 years old.");
+      return;
     }
-    
-    // Document Validation
     if (!isEdit) {
         const missingDocs = REQUIRED_DOCUMENTS.filter(doc => !pendingDocuments[doc]);
         if (missingDocs.length > 0) {
@@ -208,7 +277,6 @@ export default function ClientRegistrationForm({
             return;
         }
     }
-    
     setShowPreview(true);
   };
 
@@ -219,27 +287,29 @@ export default function ClientRegistrationForm({
       annual_income: Number(formData.annual_income) || 0,
       net_worth: Number(formData.net_worth) || 0,
       existing_portfolio_value: Number(formData.existing_portfolio_value) || 0,
+      assigned_employee_id: formData.assigned_employee_id || undefined,
+      ipv_done_by_id: formData.ipv_done_by_id || undefined,
     };
 
     try {
       if (isEdit && clientId) {
-          await MasterDataService.updateClient(connectorId, clientId, submissionData);
+          await MasterDataService.updateClient(clientId, submissionData);
           toast.success("Client updated successfully!");
-          router.push(`/master/clients/${clientId}`);
+          router.push(`/clients/${clientId}`);
       } else {
-          const client = await MasterDataService.createClient(connectorId, submissionData);
+          const client = await MasterDataService.createClient(submissionData);
           if (client.id && Object.keys(pendingDocuments).length > 0) {
               toast.info("Registration saving. Uploading secure documents...", { duration: 5000 });
               for (const [docType, file] of Object.entries(pendingDocuments)) {
                   try {
-                      await MasterDataService.uploadDocument(connectorId, client.id, file, docType);
+                      await MasterDataService.uploadDocument(client.id, file, docType);
                   } catch (e) {
                       console.error(`Failed to upload ${docType}`, e);
                   }
               }
           }
           toast.success("Client registered and documents secured!");
-          router.push("/master");
+          router.push("/clients");
       }
     } catch (error: any) {
       toast.error(error.response?.data?.detail || `Failed to ${isEdit ? 'update' : 'register'} client`);
@@ -510,23 +580,81 @@ export default function ClientRegistrationForm({
 
                   <div className="space-y-2">
                     <Label>Assigned Professional (Employee/Partner) *</Label>
-                    <Select 
-                      name="assigned_employee_id" 
-                      value={formData.assigned_employee_id} 
-                      onValueChange={(val) => setFormData(prev => ({ ...prev, assigned_employee_id: val }))}
-                      required
-                    >
-                      <SelectTrigger className="w-full bg-background/50 border-primary/20">
-                        <SelectValue placeholder="Select Professional" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-card border-primary/20">
-                        {employees.map((emp) => (
-                          <SelectItem key={emp.id} value={emp.id || ""}>
-                            {emp.name_of_employee} ({emp.designation})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="relative">
+                      <Input
+                        placeholder="Type to search staff/partner..."
+                        value={assignedSearchTerm}
+                        onChange={(e) => {
+                          setAssignedSearchTerm(e.target.value);
+                          setShowAssignedResults(true);
+                          if (!e.target.value) {
+                            setFormData(prev => ({ ...prev, assigned_employee_id: "" }));
+                          }
+                        }}
+                        onFocus={() => setShowAssignedResults(true)}
+                        className="bg-background/50 border-primary/20 pr-10"
+                        autoComplete="off"
+                      />
+                      {assignedSearchTerm && (
+                        <button 
+                          type="button"
+                          onClick={() => {
+                            setAssignedSearchTerm("");
+                            setFormData(prev => ({ ...prev, assigned_employee_id: "" }));
+                          }}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                        </button>
+                      )}
+
+                      {showAssignedResults && (
+                        <>
+                          <div 
+                            className="fixed inset-0 z-40" 
+                            onClick={() => setShowAssignedResults(false)}
+                          />
+                          <div className="absolute left-0 right-0 top-full mt-1 bg-card border border-primary/20 rounded-md shadow-lg z-50 max-h-[300px] overflow-y-auto">
+                            {employees
+                              .filter(emp => {
+                                const name = (emp.full_name || emp.name || emp.name_of_employee || "").toLowerCase();
+                                const desig = (emp.designation || "").toLowerCase();
+                                const search = assignedSearchTerm.toLowerCase();
+                                return name.includes(search) || desig.includes(search);
+                              })
+                              .map((emp) => (
+                                <div
+                                  key={emp.id}
+                                  className="p-3 hover:bg-primary/10 cursor-pointer border-b border-primary/5 last:border-0 flex flex-col transition-colors"
+                                  onClick={() => {
+                                    const name = emp.full_name || emp.name || emp.name_of_employee || "";
+                                    setAssignedSearchTerm(name);
+                                    setFormData(prev => ({ ...prev, assigned_employee_id: emp.id || "" }));
+                                    setShowAssignedResults(false);
+                                  }}
+                                >
+                                  <span className="font-medium text-sm text-foreground">
+                                    {emp.full_name || emp.name || emp.name_of_employee || "Staff Member"}
+                                  </span>
+                                  <span className="text-[11px] text-muted-foreground">
+                                    {emp.designation || "Professional"}
+                                  </span>
+                                </div>
+                              ))}
+                            {employees.filter(emp => {
+                                const name = (emp.full_name || emp.name || emp.name_of_employee || "").toLowerCase();
+                                const desig = (emp.designation || "").toLowerCase();
+                                const search = assignedSearchTerm.toLowerCase();
+                                return name.includes(search) || desig.includes(search);
+                            }).length === 0 && (
+                              <div className="p-4 text-center text-xs text-muted-foreground">
+                                No staff members found
+                              </div>
+                            )}
+                          </div>
+                        </>
+                      )}
+                    </div>
                     <p className="text-[10px] text-muted-foreground">Select the Employee or Partner providing advisory services to this client.</p>
                   </div>
                 </TabsContent>
@@ -749,6 +877,71 @@ export default function ClientRegistrationForm({
                       </div>
                     </div>
 
+                    {/* KYC & IPV Section */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2 pb-2 border-b border-primary/10">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                          <CheckCircle2 className="w-4 h-4 text-primary" />
+                        </div>
+                        <h3 className="font-semibold text-lg">KYC & IPV Details</h3>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <Label>KYC Verified Status *</Label>
+                          <Select 
+                            name="kyc_verified" 
+                            value={formData.kyc_verified ? "yes" : "no"} 
+                            onValueChange={(val) => {
+                              const isVerified = val === "yes";
+                              setFormData(prev => ({ ...prev, kyc_verified: isVerified }));
+                              if (!isVerified) {
+                                toast.error("Please validate the KYC then Reenter the Client data", {
+                                  duration: 5000,
+                                  position: "top-center"
+                                });
+                              }
+                            }}
+                            required
+                          >
+                            <SelectTrigger className={`w-full bg-background/50 border-primary/20 transition-all ${
+                              formData.kyc_verified 
+                                ? "border-emerald-500/50 bg-emerald-500/5 text-emerald-500" 
+                                : "border-rose-500/50 bg-rose-500/5 text-rose-500"
+                            }`}>
+                              <SelectValue placeholder="Select Status" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-card border-primary/20">
+                              <SelectItem value="yes" className="text-emerald-500 focus:text-emerald-500">
+                                <div className="flex items-center gap-2">
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check-circle"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                  <span>KYC Verified (Yes)</span>
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="no" className="text-rose-500 focus:text-rose-500">
+                                <div className="flex items-center gap-2">
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x-circle"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>
+                                  <span>Not Verified (No)</span>
+                                </div>
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                          {!formData.kyc_verified && (
+                            <p className="text-[10px] text-red-500 font-medium italic">Submission disabled until KYC is verified.</p>
+                          )}
+                        </div>
+                        <div className="space-y-2">
+                          <Label>CKYC Number</Label>
+                          <Input 
+                            name="ckyc_number" 
+                            value={formData.ckyc_number} 
+                            onChange={handleChange} 
+                            placeholder="Central KYC Number" 
+                          />
+                        </div>
+                      </div>
+                    </div>
+
                     {/* Regulatory Section */}
                     <div className="space-y-4">
                       <div className="flex items-center gap-2 pb-2 border-b border-primary/10">
@@ -764,8 +957,98 @@ export default function ClientRegistrationForm({
                           <Input type="date" name="client_date" value={formData.client_date} onChange={handleChange} required />
                         </div>
                         <div className="space-y-2">
-                          <Label>Declaration Date *</Label>
-                          <Input type="date" name="declaration_date" value={formData.declaration_date} onChange={handleChange} required />
+                          <Label>Agreement Date *</Label>
+                          <Input type="date" name="agreement_date" value={formData.agreement_date} onChange={handleChange} required />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2 relative">
+                          <Label>In-Person Verification (IPV) Done By *</Label>
+                          <div className="relative">
+                            <Input
+                              placeholder="Type to search staff..."
+                              value={ipvSearchTerm}
+                              onChange={(e) => {
+                                setIpvSearchTerm(e.target.value);
+                                setShowIpvResults(true);
+                                if (!e.target.value) {
+                                  setFormData(prev => ({ ...prev, ipv_done_by_id: "" }));
+                                }
+                              }}
+                              onFocus={() => setShowIpvResults(true)}
+                              className="bg-background/50 border-primary/20 pr-10"
+                              autoComplete="off"
+                            />
+                            {ipvSearchTerm && (
+                              <button 
+                                onClick={() => {
+                                  setIpvSearchTerm("");
+                                  setFormData(prev => ({ ...prev, ipv_done_by_id: "" }));
+                                }}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                              </button>
+                            )}
+
+                            {showIpvResults && (
+                              <>
+                                <div 
+                                  className="fixed inset-0 z-40" 
+                                  onClick={() => setShowIpvResults(false)}
+                                />
+                                <div className="absolute left-0 right-0 top-full mt-1 bg-card border border-primary/20 rounded-md shadow-lg z-50 max-h-[300px] overflow-y-auto">
+                                  {employees
+                                    .filter(emp => {
+                                      const name = (emp.full_name || emp.name || emp.name_of_employee || "").toLowerCase();
+                                      const desig = (emp.designation || "").toLowerCase();
+                                      const search = ipvSearchTerm.toLowerCase();
+                                      return name.includes(search) || desig.includes(search);
+                                    })
+                                    .map((emp) => (
+                                      <div
+                                        key={emp.id}
+                                        className="p-3 hover:bg-primary/10 cursor-pointer border-b border-primary/5 last:border-0 flex flex-col transition-colors"
+                                        onClick={() => {
+                                          const name = emp.full_name || emp.name || emp.name_of_employee || "";
+                                          setIpvSearchTerm(name);
+                                          setFormData(prev => ({ ...prev, ipv_done_by_id: emp.id || "" }));
+                                          setShowIpvResults(false);
+                                        }}
+                                      >
+                                        <span className="font-medium text-sm text-foreground">
+                                          {emp.full_name || emp.name || emp.name_of_employee || "Staff Member"}
+                                        </span>
+                                        <span className="text-[11px] text-muted-foreground">
+                                          {emp.designation || "Executive"}
+                                        </span>
+                                      </div>
+                                    ))}
+                                  {employees.filter(emp => {
+                                    const name = (emp.full_name || emp.name || emp.name_of_employee || "").toLowerCase();
+                                    const desig = (emp.designation || "").toLowerCase();
+                                    const search = ipvSearchTerm.toLowerCase();
+                                    return name.includes(search) || desig.includes(search);
+                                  }).length === 0 && (
+                                    <div className="p-4 text-center text-xs text-muted-foreground">
+                                      No staff members found
+                                    </div>
+                                  )}
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>IPV Date *</Label>
+                          <Input 
+                            type="date" 
+                            name="ipv_date" 
+                            value={formData.ipv_date} 
+                            onChange={handleChange} 
+                            required 
+                          />
                         </div>
                       </div>
                     </div>
@@ -863,7 +1146,7 @@ export default function ClientRegistrationForm({
                       Next Step
                     </Button>
                   ) : (
-                    <Button type="submit" disabled={loading} className="w-full sm:px-12 gap-2 h-12 text-lg font-bold shadow-lg shadow-primary/20">
+                    <Button type="submit" disabled={loading || !formData.kyc_verified} className="w-full sm:px-12 gap-2 h-12 text-lg font-bold shadow-lg shadow-primary/20 transition-all active:scale-95 disabled:opacity-50 disabled:grayscale">
                       {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (isEdit ? <CheckCircle2 className="w-5 h-5" /> : <UserPlus className="w-5 h-5" />)}
                       {loading ? (isEdit ? "Updating..." : "Registering...") : (isEdit ? "Update Client" : "Finalize Registration")}
                     </Button>
