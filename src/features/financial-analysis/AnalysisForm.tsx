@@ -74,6 +74,13 @@ const STEPS_CONFIG = [
   { id: 6, title: "Finish", icon: Flag }
 ];
 
+const BASE_DISCLAIMER = `This financial goal analysis report is generated based on data and assumptions provided by the Investment Adviser (RIA).
+This report is for information and illustrative purposes only and does not constitute investment advice, insurance recommendation, or financial planning advice.
+All projections and calculations are based on assumptions and are not guaranteed. Actual results may vary due to market conditions and other factors beyond the scope of this analysis.
+The Investment Adviser is responsible for reviewing, interpreting, and validating the data, assumptions, and outputs of this report.
+The client is solely responsible for any decisions taken based on this analysis.
+This document does not constitute legal or tax advice.`;
+
 export function AnalysisForm({ clientId, onSuccess, onCancel }: AnalysisFormProps) {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -128,17 +135,7 @@ export function AnalysisForm({ clientId, onSuccess, onCancel }: AnalysisFormProp
       marriage_years: 0
     },
     exclude_ai: false,
-    disclaimer_text: `This financial goal analysis report is generated based on data and assumptions provided by the Investment Adviser (RIA).
-
-This report is for information and illustrative purposes only and does not constitute investment advice, insurance recommendation, or financial planning advice.
-
-All projections and calculations are based on assumptions and are not guaranteed. Actual results may vary due to market conditions and other factors beyond the scope of this analysis.
-
-The Investment Adviser is responsible for reviewing, interpreting, and validating the data, assumptions, and outputs of this report.
-
-The client is solely responsible for any decisions taken based on this analysis.
-
-This document does not constitute legal or tax advice.`,
+    disclaimer_text: "",
     discussion_notes: ""
   });
 
@@ -285,7 +282,11 @@ This document does not constitute legal or tax advice.`,
     }
     setLoading(true);
     try {
-      const result = await FinancialAnalysisService.create(formData);
+      const submissionData = {
+        ...formData,
+        disclaimer_text: `${BASE_DISCLAIMER}\n\n${formData.disclaimer_text}`.trim()
+      };
+      const result = await FinancialAnalysisService.create(submissionData);
       toast.success("Analysis saved and calculated successfully!");
       onSuccess(result.id);
     } catch (error) {
@@ -878,13 +879,23 @@ This document does not constitute legal or tax advice.`,
               </div>
 
               {/* Section 13: Disclaimer */}
-              <div>
+              <div className="space-y-4">
                 <SectionHeader title="13. Disclaimer to Analysis" icon={FileText} number="13" />
-                <Textarea 
-                  value={formData.disclaimer_text} 
-                  onChange={e => handleTopLevelChange('disclaimer_text', e.target.value)}
-                  className="min-h-[200px] text-sm opacity-70 leading-relaxed font-serif"
-                />
+                <div className="p-5 rounded-2xl bg-muted/30 border border-muted/50 text-xs text-muted-foreground leading-relaxed font-serif whitespace-pre-wrap italic shadow-inner">
+                  {BASE_DISCLAIMER}
+                </div>
+                
+                <div className="space-y-3 pt-4">
+                  <Label className="text-sm font-bold flex items-center gap-2 text-primary/80">
+                    <Plus className="w-4 h-4" /> Additional Disclaimer Notes (Optional)
+                  </Label>
+                  <Textarea 
+                    value={formData.disclaimer_text} 
+                    onChange={e => handleTopLevelChange('disclaimer_text', e.target.value)}
+                    placeholder="Additional points on disclaimer can be given/added by the RIA/Financial Advisor"
+                    className="min-h-[120px] text-sm leading-relaxed border-primary/10 focus-visible:ring-primary/20"
+                  />
+                </div>
               </div>
 
               {/* Section 14: Discussion Notes */}
