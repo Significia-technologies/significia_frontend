@@ -113,19 +113,19 @@ export function AnalysisForm({ clientId, onSuccess, onCancel }: AnalysisFormProp
     education_investment_pct: 0,
     marriage_investment_pct: 0,
     assumptions: {
-      retirement_age: 60,
-      le_client: 85,
-      le_spouse: 85,
-      inflation: 6,
-      medical_inflation: 10,
-      pre_ret_rate: 12,
-      post_ret_rate: 8,
-      sol_hlv: 70,
-      sol_ret: 80,
+      retirement_age: 0,
+      le_client: 0,
+      le_spouse: 0,
+      inflation: 0,
+      medical_inflation: 0,
+      pre_ret_rate: 0,
+      post_ret_rate: 0,
+      sol_hlv: 0,
+      sol_ret: 0,
       child_education_corpus: 0,
-      education_years: 5,
+      education_years: 0,
       child_marriage_corpus: 0,
-      marriage_years: 10
+      marriage_years: 0
     },
     exclude_ai: false,
     disclaimer_text: `This financial analysis report is generated with data furnished solely by the client.
@@ -771,43 +771,43 @@ All calculations are based on the assumptions provided and are illustrative in n
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="space-y-2">
                     <Label>Retirement Age</Label>
-                    <Input type="number" min={40} max={80} placeholder="60" value={formData.assumptions.retirement_age === 0 ? "" : formData.assumptions.retirement_age} onChange={e => handleInputChange('assumptions.retirement_age', e.target.value === "" ? 0 : parseInt(e.target.value))} />
+                    <Input type="number" min={40} max={80} placeholder="0" value={formData.assumptions.retirement_age === 0 ? "" : formData.assumptions.retirement_age} onChange={e => handleInputChange('assumptions.retirement_age', e.target.value === "" ? 0 : parseInt(e.target.value))} />
                   </div>
                   <div className="space-y-2">
                     <Label>Life Expectancy - Client</Label>
-                    <Input type="number" min={0} placeholder="85" value={formData.assumptions.le_client === 0 ? "" : formData.assumptions.le_client} onChange={e => handleInputChange('assumptions.le_client', e.target.value === "" ? 0 : parseInt(e.target.value))} />
+                    <Input type="number" min={0} placeholder="0" value={formData.assumptions.le_client === 0 ? "" : formData.assumptions.le_client} onChange={e => handleInputChange('assumptions.le_client', e.target.value === "" ? 0 : parseInt(e.target.value))} />
                   </div>
                   <div className="space-y-2">
                     <Label>Life Expectancy - Spouse</Label>
-                    <Input type="number" min={0} placeholder="85" value={formData.assumptions.le_spouse === 0 ? "" : formData.assumptions.le_spouse} onChange={e => handleInputChange('assumptions.le_spouse', e.target.value === "" ? 0 : parseInt(e.target.value))} />
+                    <Input type="number" min={0} placeholder="0" value={formData.assumptions.le_spouse === 0 ? "" : formData.assumptions.le_spouse} onChange={e => handleInputChange('assumptions.le_spouse', e.target.value === "" ? 0 : parseInt(e.target.value))} />
                   </div>
                   <div className="space-y-2">
                     <Label>Income Increment Rate (%)</Label>
-                    <Input type="number" min={0} placeholder="6" value={(formData.assumptions as any).inc_inc_rate === 0 ? "" : (formData.assumptions as any).inc_inc_rate} onChange={e => handleInputChange('assumptions.inc_inc_rate', e.target.value === "" ? 0 : parseFloat(e.target.value))} />
+                    <Input type="number" min={0} placeholder="0" value={(formData.assumptions as any).inc_inc_rate === 0 ? "" : (formData.assumptions as any).inc_inc_rate} onChange={e => handleInputChange('assumptions.inc_inc_rate', e.target.value === "" ? 0 : parseFloat(e.target.value))} />
                   </div>
                   <div className="space-y-2">
                     <Label>Inflation Rate (%)</Label>
-                    <Input type="number" min={0} placeholder="6" value={formData.assumptions.inflation === 0 ? "" : formData.assumptions.inflation} onChange={e => handleInputChange('assumptions.inflation', e.target.value === "" ? 0 : parseFloat(e.target.value))} />
+                    <Input type="number" min={0} placeholder="0" value={formData.assumptions.inflation === 0 ? "" : formData.assumptions.inflation} onChange={e => handleInputChange('assumptions.inflation', e.target.value === "" ? 0 : parseFloat(e.target.value))} />
                   </div>
                   <div className="space-y-2">
                     <Label>Medical Inflation Rate (%)</Label>
-                    <Input type="number" min={0} placeholder="10" value={formData.assumptions.medical_inflation === 0 ? "" : formData.assumptions.medical_inflation} onChange={e => handleInputChange('assumptions.medical_inflation', e.target.value === "" ? 0 : parseFloat(e.target.value))} />
+                    <Input type="number" min={0} placeholder="0" value={formData.assumptions.medical_inflation === 0 ? "" : formData.assumptions.medical_inflation} onChange={e => handleInputChange('assumptions.medical_inflation', e.target.value === "" ? 0 : parseFloat(e.target.value))} />
                   </div>
                   <div className="space-y-2">
                     <Label>Pre-Retirement Return (%)</Label>
-                    <Input type="number" min={0} placeholder="12" value={formData.assumptions.pre_ret_rate === 0 ? "" : formData.assumptions.pre_ret_rate} onChange={e => handleInputChange('assumptions.pre_ret_rate', e.target.value === "" ? 0 : parseFloat(e.target.value))} />
+                    <Input type="number" min={0} placeholder="0" value={formData.assumptions.pre_ret_rate === 0 ? "" : formData.assumptions.pre_ret_rate} onChange={e => handleInputChange('assumptions.pre_ret_rate', e.target.value === "" ? 0 : parseFloat(e.target.value))} />
                   </div>
                   <div className="space-y-2">
                     <Label>Post-Retirement Return (%)</Label>
-                    <Input type="number" min={0} placeholder="8" value={formData.assumptions.post_ret_rate === 0 ? "" : formData.assumptions.post_ret_rate} onChange={e => handleInputChange('assumptions.post_ret_rate', e.target.value === "" ? 0 : parseFloat(e.target.value))} />
+                    <Input type="number" min={0} placeholder="0" value={formData.assumptions.post_ret_rate === 0 ? "" : formData.assumptions.post_ret_rate} onChange={e => handleInputChange('assumptions.post_ret_rate', e.target.value === "" ? 0 : parseFloat(e.target.value))} />
                   </div>
                   <div className="space-y-2">
                     <Label>Standard of Living for HLV (%)</Label>
-                    <Input type="number" min={0} placeholder="70" value={formData.assumptions.sol_hlv === 0 ? "" : formData.assumptions.sol_hlv} onChange={e => handleInputChange('assumptions.sol_hlv', e.target.value === "" ? 0 : parseFloat(e.target.value))} />
+                    <Input type="number" min={0} placeholder="0" value={formData.assumptions.sol_hlv === 0 ? "" : formData.assumptions.sol_hlv} onChange={e => handleInputChange('assumptions.sol_hlv', e.target.value === "" ? 0 : parseFloat(e.target.value))} />
                   </div>
                   <div className="space-y-2">
                     <Label>Standard of Living for Retirement (%)</Label>
-                    <Input type="number" min={0} placeholder="80" value={formData.assumptions.sol_ret === 0 ? "" : formData.assumptions.sol_ret} onChange={e => handleInputChange('assumptions.sol_ret', e.target.value === "" ? 0 : parseFloat(e.target.value))} />
+                    <Input type="number" min={0} placeholder="0" value={formData.assumptions.sol_ret === 0 ? "" : formData.assumptions.sol_ret} onChange={e => handleInputChange('assumptions.sol_ret', e.target.value === "" ? 0 : parseFloat(e.target.value))} />
                   </div>
                 </div>
               </div>
