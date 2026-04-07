@@ -45,6 +45,8 @@ export default function IALoginPage() {
         role: "ia_staff",
         tenant_id: "",
         company_name: response.tenant_name,
+        is_profile_completed: true,
+        max_client_permit: 0,
       });
 
       toast.success(`Welcome back, ${response.user_name}!`);
