@@ -238,18 +238,25 @@ export function AssetAllocationHistory({  }: AssetAllocationHistoryProps) {
                       {(() => {
                         const styles = getTierStyles(a.assigned_risk_tier);
                         return (
-                          <Badge
-                            variant="outline"
-                            className={cn(
-                              "gap-1.5 py-0.5 px-2.5 border uppercase font-black text-[8px] tracking-widest rounded-full shadow-sm transition-all group-hover:shadow-md",
-                              styles.bg,
-                              styles.text,
-                              styles.border
+                          <>
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                "gap-1.5 py-0.5 px-2.5 border uppercase font-black text-[8px] tracking-widest rounded-full shadow-sm transition-all group-hover:shadow-md",
+                                styles.bg,
+                                styles.text,
+                                styles.border
+                              )}
+                            >
+                              <span className={cn("w-1 h-1 rounded-full animate-pulse", styles.dot)} />
+                              {a.assigned_risk_tier || "N/A"}
+                            </Badge>
+                            {a.form_name && (
+                              <span className="text-[8px] text-muted-foreground opacity-40 font-bold ml-1 uppercase whitespace-nowrap">
+                                via {a.form_name}
+                              </span>
                             )}
-                          >
-                            <span className={cn("w-1 h-1 rounded-full animate-pulse", styles.dot)} />
-                            {a.assigned_risk_tier || "N/A"}
-                          </Badge>
+                          </>
                         );
                       })()}
                     </TableCell>
