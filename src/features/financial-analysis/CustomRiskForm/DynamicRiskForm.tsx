@@ -29,6 +29,7 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { MasterDataService } from "@/core/services/master.service";
 import { RiskProfileService } from "@/core/services/risk-profile.service";
+import { CUSTOM_RISK_PROFILE_DISCLAIMER } from "../constants";
 
 interface DynamicRiskFormProps {
   
@@ -379,14 +380,23 @@ export function DynamicRiskForm({ questionnaireId, questionnaire: initialQuestio
                  </div>
 
                  <div className="space-y-4">
-                    {questionnaire.disclaimer && (
-                      <div className="p-3 rounded-lg bg-red-500/5 border border-red-500/10 animate-in fade-in slide-in-from-bottom-2 duration-700">
-                        <Label className="text-[9px] font-black uppercase text-red-500/60 tracking-widest block mb-1">Legal Protocol Disclaimer</Label>
-                        <p className="text-[10px] leading-relaxed text-muted-foreground/80 italic font-medium">
-                          {questionnaire.disclaimer}
-                        </p>
-                      </div>
-                    )}
+                     <div className="space-y-3">
+                        <div className="p-3 rounded-lg bg-primary/5 border border-primary/10 selection:bg-primary/20">
+                            <Label className="text-[9px] font-black uppercase text-primary/60 tracking-widest block mb-1">Standard Regulatory Disclaimer</Label>
+                            <p className="text-[10px] leading-relaxed text-muted-foreground/80 italic font-medium">
+                              {CUSTOM_RISK_PROFILE_DISCLAIMER}
+                            </p>
+                        </div>
+                        
+                        {questionnaire.disclaimer && (
+                          <div className="p-3 rounded-lg bg-red-500/5 border border-red-500/10 animate-in fade-in slide-in-from-bottom-2 duration-700">
+                            <Label className="text-[9px] font-black uppercase text-red-500/60 tracking-widest block mb-1">Additional Protocol Disclaimer</Label>
+                            <p className="text-[10px] leading-relaxed text-muted-foreground/80 italic font-medium">
+                              {questionnaire.disclaimer}
+                            </p>
+                          </div>
+                        )}
+                     </div>
                     
                     <div className="space-y-2">
                        <Label className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest pl-1">Discussion & Strategic Notes</Label>

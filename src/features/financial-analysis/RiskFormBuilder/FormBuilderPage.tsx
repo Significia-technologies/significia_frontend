@@ -26,6 +26,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { RiskProfileService } from "@/core/services/risk-profile.service";
+import { CUSTOM_RISK_PROFILE_DISCLAIMER} from "../constants";
 
 interface Option {
   id: string;
@@ -222,17 +223,26 @@ export function FormBuilderPage({ onClose, initialData }: FormBuilderPageProps) 
                   </p>
                </div>
             </div>
-            <div className="space-y-2 mt-4 pt-4 border-t border-primary/5">
-                <Label className="text-[10px] font-black uppercase text-muted-foreground/60 tracking-widest pl-1">Protocol Disclaimer</Label>
-                <div className="relative group">
-                   <Textarea 
-                      placeholder="Enter legal disclaimer for this protocol..."
-                      value={disclaimer}
-                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDisclaimer(e.target.value)}
-                      className="bg-black/40 border-primary/10 focus:border-primary/40 focus:ring-1 focus:ring-primary/20 text-white min-h-[100px] resize-none transition-all"
-                   />
+            <div className="space-y-4 mt-6 pt-6 border-t border-primary/10">
+                <div className="space-y-2">
+                    <Label className="text-[10px] font-black uppercase text-primary/60 tracking-widest pl-1">Standard Regulatory Disclaimer</Label>
+                    <div className="p-4 rounded-xl bg-primary/[0.02] border border-primary/5 text-[10px] leading-relaxed text-muted-foreground/60 italic font-medium selection:bg-primary/20">
+                        {CUSTOM_RISK_PROFILE_DISCLAIMER}
+                    </div>
                 </div>
-                <p className="text-[9px] text-muted-foreground/40 italic pl-1">This text will appear at the end of assessments and on the cover of generated PDFs.</p>
+
+                <div className="space-y-2">
+                    <Label className="text-[10px] font-black uppercase text-muted-foreground/60 tracking-widest pl-1">Additional Protocol Guidance (Optional)</Label>
+                    <div className="relative group">
+                       <Textarea 
+                          placeholder="Enter supplemental points for this specific protocol..."
+                          value={disclaimer}
+                          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDisclaimer(e.target.value)}
+                          className="bg-black/40 border-primary/10 focus:border-primary/40 focus:ring-1 focus:ring-primary/20 text-white min-h-[100px] resize-none transition-all placeholder:text-muted-foreground/20"
+                       />
+                    </div>
+                    <p className="text-[9px] text-muted-foreground/40 italic pl-1">This manual text will be appended to the standard regulatory disclaimer in all outputs.</p>
+                </div>
             </div>
           </CardContent>
         </Card>
