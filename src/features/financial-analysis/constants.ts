@@ -1,18 +1,8 @@
-export const RISK_PROFILE_DISCLAIMER = `Executive brief and overall conclusion are generated with AI assistance. Client has the right to accept or reject the executive brief and overall conclusion.
-
-Risk profiling is based solely on the client's responses to the questionnaire. The client has the right to agree or disagree with the resulting profile.
-
-The risk profile shown is preliminary. Final risk profile selection requires discussion with the client before implementation.
-
-It is based on calculated scores, not personalized financial planning.
-
-This report does NOT provide specific asset allocation or product recommendations. Does not suggest which specific investments to buy or sell.
-
-This is NOT a financial plan or financial advice. For informational purposes only. Should not be construed as a recommendation to invest.
-
-Clients MUST consult with a qualified financial/investment advisor.
-
-All assessment data is stored in the database. Users are informed about data collection.`;
+export const RISK_PROFILE_DISCLAIMER = `This sample risk profile analysis report is generated based on data and assumptions provided by the Investment Adviser (RIA)/ Financial Advisor. This report provides computational and illustrative financial analysis based on inputs and assumptions provided by the Investment Adviser and/or client. It does not constitute investment advice, recommendation, or opinion on any investment products, strategies, or asset allocation. Any advisory services, interpretation, or recommendations are provided separately by the Investment Adviser. This report should be read in conjunction with advisory services provided separately by the Investment Adviser.
+This report is for information and illustrative purposes only and does not constitute investment advice, insurance recommendation, or financial planning advice.
+All projections and calculations are based on assumptions and are not guaranteed. Actual results may vary due to market conditions and other factors beyond the scope of this analysis.
+The Investment Adviser is responsible for reviewing, interpreting, and validating the data, assumptions, and outputs of this report.
+This document does not constitute legal or tax advice.`;
 
 export const RISK_PROFILE_DISCUSSION_INIT = `Discussion Notes:
 
