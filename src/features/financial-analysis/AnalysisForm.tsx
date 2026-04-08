@@ -39,6 +39,7 @@ import {
 } from "@/core/services/financial-analysis.service";
 import { MasterDataService, ClientCreate } from "@/core/services/master.service";
 import { toast } from "sonner";
+import { FINANCIAL_GOAL_ANALYSIS_DISCLAIMER } from "./constants";
 
 interface AnalysisFormProps {
   
@@ -73,12 +74,6 @@ const STEPS_CONFIG = [
   { id: 5, title: "Goals", icon: Target },
   { id: 6, title: "Finish", icon: Flag }
 ];
-
-const BASE_DISCLAIMER = `This financial goal analysis report is generated based on data and assumptions provided by the Investment Adviser (RIA)/ Financial Advisor. This report provides computational and illustrative financial analysis based on inputs and assumptions provided by the Investment Adviser and/or client. It does not constitute investment advice, recommendation, or opinion on any investment products, strategies, or asset allocation. Any advisory services, interpretation, or recommendations are provided separately by the Investment Adviser. This report should be read in conjunction with advisory services provided separately by the Investment Adviser.
-This report is for information and illustrative purposes only and does not constitute investment advice, insurance recommendation, or financial planning advice.
-All projections and calculations are based on assumptions and are not guaranteed. Actual results may vary due to market conditions and other factors beyond the scope of this analysis.
-The Investment Adviser is responsible for reviewing, interpreting, and validating the data, assumptions, and outputs of this report.
-This document does not constitute legal or tax advice.`;
 
 export function AnalysisForm({ clientId, onSuccess, onCancel }: AnalysisFormProps) {
   const [step, setStep] = useState(1);
@@ -283,7 +278,7 @@ export function AnalysisForm({ clientId, onSuccess, onCancel }: AnalysisFormProp
     try {
       const submissionData = {
         ...formData,
-        disclaimer_text: `${BASE_DISCLAIMER}\n\n${formData.disclaimer_text}`.trim()
+        disclaimer_text: `${FINANCIAL_GOAL_ANALYSIS_DISCLAIMER}\n\n${formData.disclaimer_text}`.trim()
       };
       const result = await FinancialAnalysisService.create(submissionData);
       toast.success("Analysis saved and calculated successfully!");
@@ -881,7 +876,7 @@ export function AnalysisForm({ clientId, onSuccess, onCancel }: AnalysisFormProp
               <div className="space-y-4">
                 <SectionHeader title="13. Disclaimer to Analysis" icon={FileText} number="13" />
                 <div className="p-5 rounded-2xl bg-muted/30 border border-muted/50 text-xs text-muted-foreground leading-relaxed font-serif whitespace-pre-wrap italic shadow-inner">
-                  {BASE_DISCLAIMER}
+                  {FINANCIAL_GOAL_ANALYSIS_DISCLAIMER}
                 </div>
                 
                 <div className="space-y-3 pt-4">
