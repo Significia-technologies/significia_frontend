@@ -179,6 +179,7 @@ export const API_ENDPOINTS = {
   // ── SEBI Compliance (Bridge-powered) ──────────────────────
   SEBI: {
     AUDIT_TRAIL: `${API_BASE}/ia-master/sebi/audit-trail`,
+    AUDIT_TRAIL_EXPORT: `${API_BASE}/ia-master/sebi/audit-trail/export`,
     IA_VERSIONS: `${API_BASE}/ia-master/sebi/ia-master/versions`,
     IA_VERSION: (version: number) => `${API_BASE}/ia-master/sebi/ia-master/versions/${version}`,
     IA_LOCK: `${API_BASE}/ia-master/sebi/ia-master/lock`,

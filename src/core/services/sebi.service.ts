@@ -92,6 +92,9 @@ export class SEBIService {
   static async getAuditTrail(params?: {
     table_name?: string;
     record_id?: string;
+    action_type?: string;
+    user_name?: string;
+    change_reason_type?: string;
     limit?: number;
     offset?: number;
   }): Promise<AuditTrailResponse> {
@@ -157,5 +160,45 @@ export class SEBIService {
       API_ENDPOINTS.SEBI.CHANGE_SUMMARY
     );
     return response.data;
+  }
+  // ── Audit Trail Export ───────────────────────────────────
+
+  static async exportAuditTrail(params: {
+    format: "csv" | "json";
+    table_name?: string;
+    record_id?: string;
+    from_date?: string;
+    to_date?: string;
+  }): Promise<void> {
+    const response = await httpClient.get(
+      API_ENDPOINTS.SEBI.AUDIT_TRAIL_EXPORT,
+      {
+        params,
+        responseType: "blob",
+      }
+    );
+
+    // Extract filename from Content-Disposition header or generate one
+    const contentDisposition = response.headers["content-disposition"];
+    let filename = `SEBI_Audit_Trail.${params.format}`;
+    if (contentDisposition) {
+      const match = contentDisposition.match(/filename=(.+)/);
+      if (match) {
+        filename = match[1].replace(/['"]/g, "");
+      }
+    }
+
+    // Trigger browser download
+    const blob = new Blob([response.data], {
+      type: params.format === "json" ? "application/json" : "text/csv",
+    });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
   }
 }
