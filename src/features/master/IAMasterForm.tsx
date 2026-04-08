@@ -58,6 +58,7 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
     date_of_birth: "",
     nature_of_entity: "",
     name_of_entity: "",
+    basl_membership_id: "",
     ia_registration_number: "",
     date_of_registration: "",
     date_of_registration_expiry: "",
@@ -70,6 +71,8 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
     bank_name: "",
     bank_branch: "",
     ifsc_code: "",
+    change_reason_type: "data_correction",
+    change_reason_text: "",
   });
 
   const [files, setFiles] = useState<{
@@ -90,6 +93,7 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
         date_of_birth: initialData.date_of_birth || "",
         nature_of_entity: initialData.nature_of_entity || "",
         name_of_entity: initialData.name_of_entity || "",
+        basl_membership_id: initialData.basl_membership_id || "",
         ia_registration_number: initialData.ia_registration_number || "",
         date_of_registration: initialData.date_of_registration || "",
         date_of_registration_expiry: initialData.date_of_registration_expiry || "",
@@ -102,6 +106,8 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
         bank_name: initialData.bank_name || "",
         bank_branch: initialData.bank_branch || "",
         ifsc_code: initialData.ifsc_code || "",
+        change_reason_type: "data_correction",
+        change_reason_text: "",
       });
     } else if (user && !formData.registered_email_id) {
       // First-time setup: pre-populate from user session if not already filled
@@ -158,6 +164,11 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
     e.preventDefault();
     if (iaNumberExists) {
       toast.error("Please use a unique IA Registration Number");
+      return;
+    }
+
+    if (initialData && (!formData.change_reason_text || formData.change_reason_text.length < 5)) {
+      toast.error("Please provide a valid reason for this update (min 5 characters)");
       return;
     }
 
@@ -288,6 +299,17 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     <div className="space-y-2">
+                      <Label>BASL Membership ID *</Label>
+                      <Input 
+                        name="basl_membership_id" 
+                        value={formData.basl_membership_id} 
+                        onChange={handleChange} 
+                        required 
+                        placeholder="e.g. BASL-1234"
+                        className="bg-background/50"
+                      />
+                    </div>
+                    <div className="space-y-2">
                       <Label>IA Reg Number *</Label>
                       <Input 
                         name="ia_registration_number" 
@@ -323,6 +345,49 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
                       <Input type="email" name="registered_email_id" value={formData.registered_email_id} onChange={handleChange} required className="bg-background/50" />
                     </div>
                   </div>
+
+                  {/* ── Change Rationale (Required for Updates) ── */}
+                  {initialData && (
+                    <div className="mt-8 p-6 rounded-xl border border-amber-200 bg-amber-50/30 dark:bg-amber-950/10 space-y-4 animate-in fade-in slide-in-from-top-2 duration-500">
+                      <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+                        <ShieldCheck className="w-5 h-5" />
+                        <h3 className="font-bold text-sm uppercase tracking-wider">Change Rationale (Required for SEBI Compliance)</h3>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <Label className="text-amber-700 dark:text-amber-300">Reason Category *</Label>
+                          <Select 
+                            name="change_reason_type" 
+                            value={formData.change_reason_type} 
+                            onValueChange={(value) => setFormData((prev) => ({ ...prev, change_reason_type: value }))}
+                          >
+                            <SelectTrigger className="w-full bg-background/50 border-amber-200/50">
+                              <SelectValue placeholder="Select Reason Type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="data_correction">Data Correction</SelectItem>
+                              <SelectItem value="client_update">Client Update</SelectItem>
+                              <SelectItem value="assumption_change">Assumption Change / Review Adjustment</SelectItem>
+                              <SelectItem value="regulatory_compliance">Regulatory Compliance</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-amber-700 dark:text-amber-300">Detailed Explanation *</Label>
+                          <Input 
+                            name="change_reason_text" 
+                            value={formData.change_reason_text} 
+                            onChange={handleChange} 
+                            placeholder="e.g. Updated IA logo and BASL ID"
+                            className="bg-background/50 border-amber-200/50"
+                          />
+                        </div>
+                      </div>
+                      <p className="text-[10px] text-amber-600/70 italic">
+                        This reason will be permanently stored in the SEBI-Safe audit trail and version history.
+                      </p>
+                    </div>
+                  )}
                 </TabsContent>
 
                 <TabsContent value="bank" className="space-y-6 mt-0">

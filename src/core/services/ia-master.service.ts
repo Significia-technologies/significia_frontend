@@ -21,6 +21,7 @@ export interface IAMaster {
   date_of_birth: string;
   nature_of_entity: string;
   name_of_entity?: string;
+  basl_membership_id: string;
   ia_registration_number: string;
   date_of_registration?: string;
   date_of_registration_expiry?: string;
