@@ -87,7 +87,7 @@ const NAV_ITEMS = [
     minRole: "admin", // IA Owners and Partners
   },
   {
-    label: "SEBI Compliance",
+    label: "Audit Log",
     href: "/master/compliance",
     icon: FileCheck2,
     minRole: "admin",

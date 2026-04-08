@@ -126,7 +126,7 @@ export function LockManagementTab() {
         }`}
       >
         <CardContent className="pt-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <div className="flex items-center gap-5">
               <div
                 className={`p-4 rounded-2xl ${

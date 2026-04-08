@@ -128,12 +128,12 @@ export function VersionHistoryTab() {
                     >
                       {/* Header */}
                       <button
-                        className="w-full text-left px-5 py-4 flex items-center justify-between"
+                        className="w-full text-left px-5 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
                         onClick={() =>
                           setExpandedVersion(isExpanded ? null : ver.version_number)
                         }
                       >
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-3">
                           <Badge
                             className={`font-mono text-xs ${
                               isLatest
@@ -156,7 +156,7 @@ export function VersionHistoryTab() {
                           </span>
                         </div>
 
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
                           {ver.change_reason_type && (
                             <Badge variant="outline" className="text-[10px]">
                               {CHANGE_REASON_LABELS[

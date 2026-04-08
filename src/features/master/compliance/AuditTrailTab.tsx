@@ -23,13 +23,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+
 import {
   Select,
   SelectContent,
@@ -193,18 +187,18 @@ export function AuditTrailTab() {
   };
 
   return (
-    <Card className="border-primary/10 bg-card/50 backdrop-blur-sm">
-      <CardHeader className="pb-4">
+    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+      <div className="pb-4">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
-            <CardTitle className="text-lg flex items-center gap-2">
+            <h2 className="text-lg font-semibold flex items-center gap-2 text-foreground">
               <ScrollText className="w-5 h-5 text-primary" />
               Audit Trail
-            </CardTitle>
-            <CardDescription className="mt-1">
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
               Field-level change history for SEBI regulatory compliance. Every
               modification is tracked with old/new values and mandatory reasons.
-            </CardDescription>
+            </p>
           </div>
             <div className="flex items-center gap-3">
               <Badge variant="secondary" className="bg-primary/5 text-primary border-primary/20 px-2.5 py-0.5 font-medium whitespace-nowrap">
@@ -496,9 +490,9 @@ export function AuditTrailTab() {
         </div>
 
 
-      </CardHeader>
+      </div>
 
-      <CardContent>
+      <div>
         {loading ? (
           <div className="space-y-3">
             {[...Array(5)].map((_, i) => (
@@ -518,8 +512,9 @@ export function AuditTrailTab() {
         ) : (
           <>
             <div className="rounded-lg border overflow-hidden">
-              <Table>
-                <TableHeader>
+              <div className="overflow-x-auto">
+                <Table style={{ minWidth: '800px' }}>
+                  <TableHeader>
                   <TableRow className="bg-muted/30 hover:bg-muted/30">
                     <TableHead className="text-xs w-[120px]">
                       Timestamp
@@ -662,6 +657,7 @@ export function AuditTrailTab() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
             </div>
 
             {/* Pagination */}
@@ -692,7 +688,7 @@ export function AuditTrailTab() {
             )}
           </>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

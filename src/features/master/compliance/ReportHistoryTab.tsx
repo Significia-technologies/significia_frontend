@@ -153,8 +153,9 @@ export function ReportHistoryTab() {
           </div>
         ) : (
           <div className="rounded-lg border overflow-hidden">
-            <Table>
-              <TableHeader>
+            <div className="overflow-x-auto">
+              <Table style={{ minWidth: '800px' }}>
+                <TableHeader>
                 <TableRow className="bg-muted/30 hover:bg-muted/30">
                   <TableHead className="text-xs w-[140px]">Date</TableHead>
                   <TableHead className="text-xs">Report Type</TableHead>
@@ -241,6 +242,7 @@ export function ReportHistoryTab() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           </div>
         )}
       </CardContent>

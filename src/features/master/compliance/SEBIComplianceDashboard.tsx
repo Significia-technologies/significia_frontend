@@ -63,18 +63,18 @@ export function SEBIComplianceDashboard() {
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
                 <Shield className="w-5 h-5 text-emerald-500" />
               </div>
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-                SEBI Compliance
+                Audit Log
               </h1>
-              <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/30 text-[10px] uppercase tracking-widest">
+              {/* <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/30 text-[10px] uppercase tracking-widest">
                 SAFE Design
-              </Badge>
+              </Badge> */}
             </div>
-            <p className="text-sm text-muted-foreground mt-1 ml-[52px]">
+            <p className="text-sm text-muted-foreground mt-2 md:mt-1 md:ml-[52px]">
               Full audit trail, version control, and regulatory transparency for
               IA Master data.
             </p>
