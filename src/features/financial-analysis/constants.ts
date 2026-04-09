@@ -43,3 +43,5 @@ export const Q2_FACTORS = [
   { code: "g", desc: "Price drop risk" },
   { code: "h", desc: "Dividend potential" }
 ];
+
+export const RECORD_VERSION_CONTROL_STATEMENT = "The system-generated version of this report, as stored in the Investment Adviser’s records, shall constitute the official version for audit and compliance purposes. Any externally modified, reproduced, or reformatted versions shall not be considered system-generated outputs.";

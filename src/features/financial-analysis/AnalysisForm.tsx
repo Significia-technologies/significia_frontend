@@ -39,7 +39,7 @@ import {
 } from "@/core/services/financial-analysis.service";
 import { MasterDataService, ClientCreate } from "@/core/services/master.service";
 import { toast } from "sonner";
-import { FINANCIAL_GOAL_ANALYSIS_DISCLAIMER } from "./constants";
+import { FINANCIAL_GOAL_ANALYSIS_DISCLAIMER, RECORD_VERSION_CONTROL_STATEMENT } from "./constants";
 
 interface AnalysisFormProps {
   
@@ -130,7 +130,8 @@ export function AnalysisForm({ clientId, onSuccess, onCancel }: AnalysisFormProp
     },
     exclude_ai: false,
     disclaimer_text: "",
-    discussion_notes: ""
+    discussion_notes: "",
+    record_version_control_statement: RECORD_VERSION_CONTROL_STATEMENT
   });
 
   const [displayInfo, setDisplayInfo] = useState({
@@ -892,14 +893,22 @@ export function AnalysisForm({ clientId, onSuccess, onCancel }: AnalysisFormProp
                 </div>
               </div>
 
-              {/* Section 14: Discussion Notes */}
+              {/* Section 14: Record & Version Control Statement */}
+              <div className="space-y-4">
+                <SectionHeader title="14. Record & Version Control Statement" icon={ShieldCheck} number="14" />
+                <div className="p-5 rounded-2xl bg-muted/30 border border-muted/50 text-xs text-muted-foreground leading-relaxed font-serif whitespace-pre-wrap italic shadow-inner">
+                  {RECORD_VERSION_CONTROL_STATEMENT}
+                </div>
+              </div>
+
+              {/* Section 15: Discussion Notes */}
               <div>
-                <SectionHeader title="14. Discussion Notes" icon={MessageSquare} number="14" />
+                <SectionHeader title="15. Discussion Notes" icon={MessageSquare} number="15" />
                 <Textarea 
                   value={formData.discussion_notes} 
                   onChange={e => handleTopLevelChange('discussion_notes', e.target.value)}
-                  placeholder="Enter specific notes from client meeting..."
-                  className="min-h-[120px]"
+                  placeholder="Record key discussion points between RIA/Advisor and client"
+                  className="min-h-[200px] text-sm leading-relaxed border-primary/10 focus-visible:ring-primary/20"
                 />
               </div>
             </div>

@@ -1,4 +1,4 @@
-﻿import { API_ENDPOINTS } from "../api/api-endpoints";
+import { API_ENDPOINTS } from "../api/api-endpoints";
 import httpClient from "../api/http-client";
 
 export interface FinancialAnalysisProfile {
@@ -70,6 +70,7 @@ export interface FinancialAnalysisCreate {
   exclude_ai?: boolean;
   disclaimer_text?: string;
   discussion_notes?: string;
+  record_version_control_statement?: string;
 }
 
 // ── Financial Analysis Service (Bridge Architecture) ──────────────────────
