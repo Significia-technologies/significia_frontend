@@ -38,12 +38,22 @@ import {
   FinancialAnalysisCreate 
 } from "@/core/services/financial-analysis.service";
 import { MasterDataService, ClientCreate } from "@/core/services/master.service";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { FINANCIAL_GOAL_ANALYSIS_DISCLAIMER, RECORD_VERSION_CONTROL_STATEMENT } from "./constants";
 
 interface AnalysisFormProps {
-  
   clientId?: string;
+  copyFromProfileId?: string;
   onSuccess: (resultId: string) => void;
   onCancel: () => void;
 }
@@ -75,12 +85,13 @@ const STEPS_CONFIG = [
   { id: 6, title: "Finish", icon: Flag }
 ];
 
-export function AnalysisForm({ clientId, onSuccess, onCancel }: AnalysisFormProps) {
+export function AnalysisForm({ clientId, copyFromProfileId, onSuccess, onCancel }: AnalysisFormProps) {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
   const [clientFound, setClientFound] = useState(false);
 
+  const [showConfirmAlert, setShowConfirmAlert] = useState(false);
   const [formData, setFormData] = useState<FinancialAnalysisCreate>({
     client_id: clientId || "",
     pan: "",
@@ -141,28 +152,90 @@ export function AnalysisForm({ clientId, onSuccess, onCancel }: AnalysisFormProp
     iaReg: ""
   });
 
-  // Load existing client if ID provided
+  // Load initial data with correct precedence: Client Master -> Historical Profile
   useEffect(() => {
-    if (clientId) {
-      MasterDataService.getClient(clientId).then(client => {
-        populateClientData(client);
-      });
-    }
-  }, [clientId]);
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        let clientData = null;
 
-  const populateClientData = (client: ClientCreate) => {
-    setFormData(prev => ({
-      ...prev,
-      client_id: client.id || prev.client_id,
-      pan: client.pan_number,
-      occupation: client.occupation,
-      dob: formatToInputDate(client.date_of_birth),
-      annual_income: client.annual_income,
-      spouse_name: client.spouse_name || "",
-      spouse_dob: formatToInputDate(client.spouse_dob || ""),
-      contact: client.phone_number,
-      email: client.email
-    }));
+        // 1. If we have a clientId, load master data first
+        if (clientId) {
+          clientData = await MasterDataService.getClient(clientId);
+          populateClientData(clientData);
+        }
+
+        // 2. If we are copying/editing a profile, load that snapshot
+        if (copyFromProfileId) {
+          const profile = await FinancialAnalysisService.getProfile(copyFromProfileId);
+
+          // If clientId wasn't provided but profile has one, load client display info
+          if (!clientData && profile.client_id) {
+            clientData = await MasterDataService.getClient(profile.client_id);
+            // Pass skipFormFields=true so we only get display info and don't overwrite form inputs
+            populateClientData(clientData, true);
+          }
+
+          // Apply profile snapshot OVER the form
+          setFormData(prev => ({ 
+            ...prev, 
+            occupation: profile.occupation,
+            dob: formatToInputDate(profile.dob),
+            annual_income: profile.annual_income,
+            spouse_name: profile.spouse_name || "",
+            spouse_dob: formatToInputDate(profile.spouse_dob || ""),
+            spouse_occupation: profile.spouse_occupation || "",
+            children: profile.children || [],
+            expenses: profile.expenses || prev.expenses,
+            assets: profile.assets || prev.assets,
+            liabilities: profile.liabilities || prev.liabilities,
+            insurance: profile.insurance || prev.insurance,
+            medical_bonus_years: profile.medical_bonus_years || 0,
+            medical_bonus_percentage: profile.medical_bonus_percentage || 0,
+            education_investment_pct: profile.education_investment_pct || 0,
+            marriage_investment_pct: profile.marriage_investment_pct || 0,
+            assumptions: profile.assumptions || prev.assumptions,
+            exclude_ai: !!profile.exclude_ai,
+            disclaimer_text: (profile.disclaimer_text || "").replace(FINANCIAL_GOAL_ANALYSIS_DISCLAIMER, "").trim(),
+            discussion_notes: profile.discussion_notes || "",
+            record_version_control_statement: profile.record_version_control_statement || prev.record_version_control_statement,
+            pan: profile.pan || "",
+            contact: profile.contact || "",
+            email: profile.email || "",
+            client_id: profile.client_id,
+            previous_profile_id: copyFromProfileId,
+          }));
+          
+          setClientFound(true);
+          toast.success("Historical snapshot loaded successfully.");
+        }
+      } catch (error) {
+        console.error("Error loading data:", error);
+        toast.error("Failed to load full data snapshot.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [clientId, copyFromProfileId]);
+
+  const populateClientData = (client: ClientCreate, skipFormFields = false) => {
+    if (!skipFormFields) {
+      setFormData(prev => ({
+        ...prev,
+        client_id: client.id || prev.client_id,
+        pan: client.pan_number,
+        occupation: client.occupation,
+        dob: formatToInputDate(client.date_of_birth),
+        annual_income: client.annual_income,
+        spouse_name: client.spouse_name || "",
+        spouse_dob: formatToInputDate(client.spouse_dob || ""),
+        contact: client.phone_number,
+        email: client.email
+      }));
+    }
+    
     setDisplayInfo({
       clientName: client.client_name,
       clientCode: client.client_code,
@@ -933,7 +1006,7 @@ export function AnalysisForm({ clientId, onSuccess, onCancel }: AnalysisFormProp
               </Button>
             ) : (
               <Button 
-                onClick={handleSubmit} 
+                onClick={() => setShowConfirmAlert(true)} 
                 className="gap-2 bg-green-600 hover:bg-green-700 px-12 font-black shadow-xl shadow-green-500/30 hover:scale-105 active:scale-95 transition-all w-full sm:w-auto"
                 disabled={loading}
               >
@@ -944,6 +1017,31 @@ export function AnalysisForm({ clientId, onSuccess, onCancel }: AnalysisFormProp
           </div>
         </CardFooter>
       </Card>
+
+      <AlertDialog open={showConfirmAlert} onOpenChange={setShowConfirmAlert}>
+        <AlertDialogContent className="bg-card border-primary/20 backdrop-blur-3xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-xl font-black text-primary flex items-center gap-2">
+              <AlertCircle className="w-6 h-6 text-orange-500" />
+              Verification Required
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-md font-bold text-foreground/80 py-4">
+              Check Accuracy before report generation
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-4">
+            <AlertDialogCancel className="font-bold border-primary/10">
+              NO, LET ME REVIEW
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleSubmit}
+              className="bg-green-600 hover:bg-green-700 font-black px-10"
+            >
+              YES, PROCEED
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

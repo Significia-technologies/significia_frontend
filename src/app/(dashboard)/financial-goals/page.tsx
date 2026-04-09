@@ -21,6 +21,7 @@ export default function FinancialAnalysisPage() {
   const [loading, setLoading] = useState(false);
   const [selectedResult, setSelectedResult] = useState<FinancialAnalysisResult | null>(null);
   const [selectedClientName, setSelectedClientName] = useState("");
+  const [editProfileId, setEditProfileId] = useState<string | undefined>(undefined);
 
   const handleSelectAnalysis = async (resultId: string) => {
     setLoading(true);
@@ -38,7 +39,13 @@ export default function FinancialAnalysisPage() {
   };
 
   const handleCreateSuccess = async (resultId: string) => {
+    setEditProfileId(undefined); // Clear edit state after success
     await handleSelectAnalysis(resultId);
+  };
+
+  const handleEdit = (result: FinancialAnalysisResult) => {
+    setEditProfileId(result.profile_id);
+    setView("FORM");
   };
 
   return (
@@ -55,11 +62,11 @@ export default function FinancialAnalysisPage() {
               <span className="p-1.5 rounded-lg bg-primary/10 shrink-0">
                 <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
               </span>
-              <span className="truncate">Financial Goal Setting</span>
+              <span className="truncate">Financial Goal Analysis</span>
             </h1>
             <p className="text-muted-foreground mt-1 text-sm sm:text-base leading-relaxed">
-              {view === "LIST" && "Analyze client portfolios and generate professional roadmap reports."}
-              {view === "FORM" && "Run precise HLV and retirement calculations."}
+              {view === "LIST" && "Analyze client portfolios and generate professional analysis reports."}
+              {view === "FORM" && "Run precise HLV and retirement analysis."}
               {view === "DASHBOARD" && `Detailed analysis for ${selectedClientName}`}
             </p>
           </div>
@@ -87,8 +94,12 @@ export default function FinancialAnalysisPage() {
 
       {view === "FORM" && (
         <AnalysisForm
+          copyFromProfileId={editProfileId}
           onSuccess={handleCreateSuccess}
-          onCancel={() => setView("LIST")}
+          onCancel={() => {
+            setView("LIST");
+            setEditProfileId(undefined);
+          }}
         />
       )}
 
@@ -96,6 +107,7 @@ export default function FinancialAnalysisPage() {
         <AnalysisDashboard
           result={selectedResult}
           clientName={selectedClientName}
+          onEdit={handleEdit}
         />
       )}
     </div>

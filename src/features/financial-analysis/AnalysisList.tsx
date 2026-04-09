@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect } from "react";
 import { 
@@ -142,6 +142,7 @@ export function AnalysisList({ clientId, onSelectAnalysis, onCreateNew }: Analys
                 <TableRow>
                   <TableHead className="font-semibold text-primary whitespace-nowrap">Client</TableHead>
                   <TableHead className="font-semibold text-primary whitespace-nowrap">Analysis Date</TableHead>
+                  <TableHead className="font-semibold text-primary whitespace-nowrap">Version</TableHead>
                   <TableHead className="font-semibold text-primary whitespace-nowrap">Net Worth (Calc)</TableHead>
                   <TableHead className="font-semibold text-primary whitespace-nowrap">HLV Gap (Income)</TableHead>
                   <TableHead className="text-right font-semibold text-primary whitespace-nowrap">Actions</TableHead>
@@ -155,12 +156,13 @@ export function AnalysisList({ clientId, onSelectAnalysis, onCreateNew }: Analys
                       <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                       <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                       <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                      <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                       <TableCell><Skeleton className="h-5 w-20 float-right" /></TableCell>
                     </TableRow>
                   ))
                 ) : filteredAnalyses.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-64 text-center">
+                    <TableCell colSpan={6} className="h-64 text-center">
                       <div className="flex flex-col items-center justify-center text-muted-foreground">
                         <div className="p-4 rounded-full bg-muted/50 mb-4">
                           <TrendingUp className="w-8 h-8 opacity-20" />
@@ -186,6 +188,11 @@ export function AnalysisList({ clientId, onSelectAnalysis, onCreateNew }: Analys
                             <Calendar className="w-4 h-4" />
                             {format(new Date(analysis.created_at), "dd MMM yyyy")}
                           </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20 border-primary/20">
+                            v{analysis.version_number || 1}
+                          </Badge>
                         </TableCell>
                         <TableCell>
                           <span className="font-mono text-sm whitespace-nowrap">
