@@ -20,6 +20,7 @@ import {
   Terminal,
   PieChart,
   FileCheck2,
+  Mail,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -117,6 +118,12 @@ const NAV_ITEMS = [
 ];
 
 const BOTTOM_NAV_ITEMS = [
+  {
+    label: "Email",
+    href: "/settings/email",
+    icon: Mail,
+    minRole: "admin",
+  },
   {
     label: "Settings",
     href: "/settings",
@@ -227,8 +234,11 @@ export function SidebarContent() {
 
       {/* ── Bottom Nav ── */}
       <div className="border-t border-border px-2 py-3">
-        {BOTTOM_NAV_ITEMS.map((item) => {
-          const isActive = pathname === item.href;
+        {BOTTOM_NAV_ITEMS.filter((item) => {
+          if ((item as any).minRole === "admin" && !(isIAOwner || isIAPartner || isSuperAdmin)) return false;
+          return true;
+        }).map((item) => {
+          const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
 
           const linkContent = (
             <Link

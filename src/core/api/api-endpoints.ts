@@ -188,4 +188,17 @@ export const API_ENDPOINTS = {
     REPORT_DELIVER: (id: string) => `${API_BASE}/ia-master/sebi/report-history/${id}/deliver`,
     CHANGE_SUMMARY: `${API_BASE}/ia-master/sebi/ia-master/change-summary`,
   },
+
+  // ── Email Management (IA Owner) ─────────────────────────────
+  EMAIL: {
+    SETTINGS: `${API_BASE}/email/settings`,
+    SETTINGS_TEST: `${API_BASE}/email/settings/test`,
+    TEMPLATES: `${API_BASE}/email/templates`,
+    TEMPLATE: (id: string) => `${API_BASE}/email/templates/${id}`,
+    DEFAULT_TEMPLATE: `${API_BASE}/email/templates/default`,
+    PLACEHOLDERS: `${API_BASE}/email/placeholders`,
+    SEND: `${API_BASE}/email/send`,
+    SEND_REPORT: `${API_BASE}/email/send/report`,
+    LOGS: `${API_BASE}/email/logs`,
+  },
 };
