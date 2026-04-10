@@ -21,6 +21,7 @@ import {
 import { AssetAllocationSlider, AllocationValues } from "./AssetAllocationSlider";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { ASSET_ALLOCATION_DISCLAIMER } from "../financial-analysis/constants";
 
 interface AssetAllocationFormProps {
   
@@ -43,8 +44,6 @@ const DEFAULT_VALUES: AllocationValues = {
   silver_etf: 0,
 };
 
-const DISCLAIMER_DEFAULT = `This asset allocation report is prepared based on the client's risk profile and financial goals as assessed by the Investment Advisor. The allocation percentages represent a recommended distribution of investable assets and should be reviewed periodically. Past performance is not indicative of future results. This report does not constitute investment advice and is prepared solely for informational and planning purposes in accordance with SEBI Investment Advisor Regulations.`;
-
 export function AssetAllocationForm({
   clientInfo,
   onSaved,
@@ -54,7 +53,8 @@ export function AssetAllocationForm({
   const [generateConclusion, setGenerateConclusion] = useState(true);
   const [conclusion, setConclusion] = useState("");
   const [discussionNotes, setDiscussionNotes] = useState("");
-  const [disclaimerText, setDisclaimerText] = useState(DISCLAIMER_DEFAULT);
+  const [tierRecommendation, setTierRecommendation] = useState(`${clientInfo.category_name || "Moderate"} — Balanced approach to growth and stability`);
+  const [disclaimerText, setDisclaimerText] = useState("");
   const [showOptionals, setShowOptionals] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -121,7 +121,7 @@ This asset allocation represents an evolution of investment strategy. Regular re
         client_code: clientInfo.client_code,
         ia_registration_number: clientInfo.registration_number || "",
         assigned_risk_tier: clientInfo.category_name || "",
-        tier_recommendation: `${clientInfo.category_name || "Moderate"} — Balanced approach to growth and stability`,
+        tier_recommendation: tierRecommendation,
         equities_percentage: values.equities,
         debt_securities_percentage: values.debt,
         commodities_percentage: values.commodities,
@@ -162,7 +162,14 @@ This asset allocation represents an evolution of investment strategy. Regular re
         <div className="h-10 w-px bg-primary/10" />
         <div>
           <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60">Risk Tier</p>
-          <p className="font-black text-sm">{clientInfo.category_name || "Not Assessed"}</p>
+          <div className="flex items-baseline gap-2">
+            <p className="font-black text-sm">{clientInfo.category_name || "Not Assessed"}</p>
+            {clientInfo.form_name && (
+              <span className="text-[9px] text-muted-foreground opacity-50 font-medium whitespace-nowrap">
+                via {clientInfo.form_name}
+              </span>
+            )}
+          </div>
         </div>
         <div className="h-10 w-px bg-primary/10" />
         <div>
@@ -204,29 +211,21 @@ This asset allocation represents an evolution of investment strategy. Regular re
         {showOptionals ? <ChevronUp className="w-4 h-4 opacity-50" /> : <ChevronDown className="w-4 h-4 opacity-50" />}
       </button>
 
-      {showOptionals && (
+        {showOptionals && (
         <div className="space-y-5 rounded-xl border border-primary/10 p-5 animate-in fade-in slide-in-from-top-2 duration-200">
-          {/* System Conclusion Toggle */}
-          {/* <div className="flex items-center justify-between p-3 rounded-lg bg-card/50 border border-primary/5">
-            <div className="flex items-center gap-3">
-              <Sparkles className="w-4 h-4 text-primary/70" />
-              <div>
-                <Label htmlFor="system-conclusion-toggle" className="text-xs font-black uppercase tracking-widest cursor-pointer">
-                  Generate System Conclusion
-                </Label>
-                <p className="text-[10px] text-muted-foreground opacity-60 mt-0.5">
-                  Auto-generate a structured conclusion based on the allocation
-                </p>
-              </div>
-            </div>
-            <input
-              id="system-conclusion-toggle"
-              type="checkbox"
-              checked={generateConclusion}
-              onChange={(e) => setGenerateConclusion(e.target.checked)}
-              className="w-4 h-4 accent-primary cursor-pointer"
+          {/* Advisor Recommendation */}
+          <div className="space-y-2">
+            <Label htmlFor="tier-recommendation" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-70">
+              Advisor Recommendation / Risk Alignment
+            </Label>
+            <Textarea
+              id="tier-recommendation"
+              value={tierRecommendation}
+              onChange={(e) => setTierRecommendation(e.target.value)}
+              placeholder="Provide specific risk alignment guidance for this allocation..."
+              className="min-h-[80px] bg-card/50 border-primary/15 text-sm resize-none focus:border-primary/40 leading-relaxed"
             />
-          </div> */}
+          </div>
 
           {/* Conclusion Textarea */}
           <div className="space-y-2">
@@ -260,16 +259,28 @@ This asset allocation represents an evolution of investment strategy. Regular re
           </div>
 
           {/* Disclaimer */}
-          <div className="space-y-2">
-            <Label htmlFor="disclaimer-text" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-70">
-              Disclaimer Text
-            </Label>
-            <Textarea
-              id="disclaimer-text"
-              value={disclaimerText}
-              onChange={(e) => setDisclaimerText(e.target.value)}
-              className="min-h-[120px] bg-card/50 border-primary/15 text-xs resize-none focus:border-primary/40"
-            />
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-70">
+                Standard Regulatory Disclaimer (Mandatory)
+              </Label>
+              <div className="p-3 rounded-lg bg-primary/5 border border-primary/10 text-[10px] leading-relaxed text-muted-foreground italic">
+                {ASSET_ALLOCATION_DISCLAIMER}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="disclaimer-text" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-70">
+                Additional Guidance / Custom Disclaimer (Optional)
+              </Label>
+              <Textarea
+                id="disclaimer-text"
+                value={disclaimerText}
+                onChange={(e) => setDisclaimerText(e.target.value)}
+                placeholder="Add any additional advisor-specific guidance or custom disclaimer points..."
+                className="min-h-[100px] bg-card/50 border-primary/15 text-xs resize-none focus:border-primary/40 leading-relaxed"
+              />
+            </div>
           </div>
         </div>
       )}

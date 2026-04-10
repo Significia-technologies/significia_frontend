@@ -1,4 +1,4 @@
-﻿import { API_ENDPOINTS } from "../api/api-endpoints";
+import { API_ENDPOINTS } from "../api/api-endpoints";
 import httpClient from "../api/http-client";
 
 export interface AssetAllocationCreate {
@@ -47,6 +47,7 @@ export interface AssetAllocation {
   discussion_notes?: string;
   disclaimer_text?: string;
   total_allocation: number;
+  form_name?: string;
   created_at: string;
   updated_at: string;
 }
@@ -56,6 +57,7 @@ export interface ClientValidateResponse {
   client_name?: string;
   registration_number?: string;
   category_name?: string;
+  form_name?: string;
   error?: string;
 }
 

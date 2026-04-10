@@ -117,6 +117,11 @@ export function ClientValidator({ onValidated }: ClientValidatorProps) {
                   <Badge variant="outline" className={`uppercase font-black text-[9px] tracking-tight ${getTierBadgeClass(result.category_name)}`}>
                     {result.category_name || "Unclassified"}
                   </Badge>
+                  {result.form_name && (
+                    <span className="text-[9px] text-muted-foreground opacity-50 font-medium">
+                      via {result.form_name}
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <CreditCard className="w-3.5 h-3.5 opacity-50" />

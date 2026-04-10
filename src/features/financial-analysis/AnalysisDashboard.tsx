@@ -13,7 +13,8 @@ import {
   Download,
   BrainCircuit,
   MessageSquare,
-  PieChart as PieChartIcon
+  PieChart as PieChartIcon,
+  Edit3
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -47,12 +48,12 @@ import {
 import { toast } from "sonner";
 
 interface AnalysisDashboardProps {
-  
   result: FinancialAnalysisResult;
   clientName: string;
+  onEdit?: (result: FinancialAnalysisResult) => void;
 }
 
-export function AnalysisDashboard({ result, clientName }: AnalysisDashboardProps) {
+export function AnalysisDashboard({ result, clientName, onEdit }: AnalysisDashboardProps) {
   const [downloading, setDownloading] = React.useState<string | null>(null);
   const [calcDetails, setCalcDetails] = React.useState<CalculationDetails | null>(null);
   const [loadingCalc, setLoadingCalc] = React.useState(false);
@@ -135,6 +136,15 @@ export function AnalysisDashboard({ result, clientName }: AnalysisDashboardProps
             Word Report
           </Button>
           
+          <Button 
+            variant="outline" 
+            className="gap-2 border-primary/20 bg-background/50 text-secondary hover:bg-secondary/5"
+            onClick={() => onEdit?.(result)}
+          >
+            <Edit3 className="w-4 h-4" />
+            Edit as New Version
+          </Button>
+
           <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
             <DialogTrigger asChild>
               <Button 

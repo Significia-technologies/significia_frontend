@@ -175,4 +175,17 @@ export const API_ENDPOINTS = {
     CASHFLOW: `${API_BASE}/analytics/bridge/cashflow`,
     CLIENT: (clientId: string) => `${API_BASE}/analytics/bridge/client/${clientId}`,
   },
+
+  // ── SEBI Compliance (Bridge-powered) ──────────────────────
+  SEBI: {
+    AUDIT_TRAIL: `${API_BASE}/ia-master/sebi/audit-trail`,
+    AUDIT_TRAIL_EXPORT: `${API_BASE}/ia-master/sebi/audit-trail/export`,
+    IA_VERSIONS: `${API_BASE}/ia-master/sebi/ia-master/versions`,
+    IA_VERSION: (version: number) => `${API_BASE}/ia-master/sebi/ia-master/versions/${version}`,
+    IA_LOCK: `${API_BASE}/ia-master/sebi/ia-master/lock`,
+    IA_UNLOCK: `${API_BASE}/ia-master/sebi/ia-master/unlock`,
+    REPORT_HISTORY: `${API_BASE}/ia-master/sebi/report-history`,
+    REPORT_DELIVER: (id: string) => `${API_BASE}/ia-master/sebi/report-history/${id}/deliver`,
+    CHANGE_SUMMARY: `${API_BASE}/ia-master/sebi/ia-master/change-summary`,
+  },
 };

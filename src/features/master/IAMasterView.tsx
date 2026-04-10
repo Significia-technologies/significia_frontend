@@ -196,11 +196,19 @@ export function IAMasterView() {
                   {data.nature_of_entity}
                 </Badge>
               </div>
-              <CardDescription className="text-base sm:text-lg mt-2 flex items-center gap-2">
-                <Database className="w-4 h-4 text-primary/60 shrink-0" />
-                <span className="flex flex-wrap items-center gap-1.5 justify-center sm:justify-start">
-                  Reg No: <span className="font-mono text-primary font-bold">{data.ia_registration_number}</span>
-                </span>
+              <CardDescription className="text-base sm:text-lg mt-2 flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Database className="w-4 h-4 text-primary/60 shrink-0" />
+                  <span className="flex items-center gap-1.5 whitespace-nowrap">
+                    BASL ID: <span className="font-mono text-primary font-bold">{data.basl_membership_id}</span>
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 border-l border-primary/20 pl-4">
+                  <ShieldCheck className="w-4 h-4 text-primary/60 shrink-0" />
+                  <span className="flex items-center gap-1.5 whitespace-nowrap">
+                    Reg No: <span className="font-mono text-primary font-bold">{data.ia_registration_number}</span>
+                  </span>
+                </div>
               </CardDescription>
             </div>
           </div>

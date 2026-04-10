@@ -1,4 +1,4 @@
-﻿import { API_ENDPOINTS } from "../api/api-endpoints";
+import { API_ENDPOINTS } from "../api/api-endpoints";
 import httpClient from "../api/http-client";
 
 export interface FinancialAnalysisProfile {
@@ -17,8 +17,17 @@ export interface FinancialAnalysisProfile {
   insurance: any;
   retirement_age: number;
   assumptions: any;
-  section_discussion?: string;
-  exclude_ai?: number;
+  medical_bonus_years?: number;
+  medical_bonus_percentage?: number;
+  education_investment_pct?: number;
+  marriage_investment_pct?: number;
+  discussion_notes?: string;
+  exclude_ai?: boolean | number;
+  pan?: string;
+  contact?: string;
+  email?: string;
+  disclaimer_text?: string;
+  record_version_control_statement?: string;
   created_at: string;
 }
 
@@ -31,6 +40,9 @@ export interface FinancialAnalysisResult {
   medical_data: any;
   ai_analysis: any;
   cash_flow_analysis: any[];
+  version_number?: number;
+  parent_profile_id?: string;
+  root_profile_id?: string;
   created_at: string;
 }
 
@@ -70,6 +82,8 @@ export interface FinancialAnalysisCreate {
   exclude_ai?: boolean;
   disclaimer_text?: string;
   discussion_notes?: string;
+  record_version_control_statement?: string;
+  previous_profile_id?: string;
 }
 
 // ── Financial Analysis Service (Bridge Architecture) ──────────────────────
@@ -86,6 +100,13 @@ export class FinancialAnalysisService {
   static async get(resultId: string): Promise<FinancialAnalysisResult> {
     const response = await httpClient.get<FinancialAnalysisResult>(
       API_ENDPOINTS.FINANCIAL_ANALYSIS.DETAIL(resultId)
+    );
+    return response.data;
+  }
+
+  static async getProfile(profileId: string): Promise<FinancialAnalysisProfile> {
+    const response = await httpClient.get<FinancialAnalysisProfile>(
+      `${API_ENDPOINTS.FINANCIAL_ANALYSIS.LIST}/profiles/id/${profileId}`
     );
     return response.data;
   }

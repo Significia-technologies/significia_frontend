@@ -19,6 +19,7 @@ import {
   ChevronRight,
   Terminal,
   PieChart,
+  FileCheck2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -84,6 +85,12 @@ const NAV_ITEMS = [
     href: "/team",
     icon: Users,
     minRole: "admin", // IA Owners and Partners
+  },
+  {
+    label: "Audit Log",
+    href: "/master/compliance",
+    icon: FileCheck2,
+    minRole: "admin",
   },
   {
     label: "Drawers",
@@ -182,7 +189,7 @@ export function SidebarContent() {
           if (item.href === "/") {
             isActive = pathname === "/";
           } else if (item.href === "/master") {
-            isActive = pathname === "/master" || (pathname.startsWith("/master") && !pathname.startsWith("/master/developer"));
+            isActive = pathname === "/master" || (pathname.startsWith("/master") && !pathname.startsWith("/master/developer") && !pathname.startsWith("/master/compliance"));
           } else {
             isActive = pathname.startsWith(item.href);
           }
