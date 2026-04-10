@@ -733,34 +733,89 @@ export default function EmailSettingsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[200px]">Recipient</TableHead>
-                      <TableHead>Subject</TableHead>
+                      <TableHead className="w-[180px]">Sender</TableHead>
+                      <TableHead className="w-[180px]">Recipient</TableHead>
+                      <TableHead>Subject / Template</TableHead>
+                      <TableHead className="w-[120px]">Attached</TableHead>
+                      <TableHead className="w-[90px]">Version</TableHead>
                       <TableHead className="w-[100px]">Status</TableHead>
-                      <TableHead className="w-[80px]">Retries</TableHead>
-                      <TableHead className="w-[160px]">Sent At</TableHead>
+                      <TableHead className="w-[150px]">Sent At</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {logs.map((log) => (
-                      <TableRow key={log.id}>
+                      <TableRow key={log.id} className="group">
                         <TableCell>
-                          <div>
-                            <p className="text-sm font-medium">{log.recipient_name || "—"}</p>
-                            <p className="text-xs text-muted-foreground">{log.recipient_email}</p>
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium">{log.sender_name || "System"}</span>
+                            <span className="text-[10px] text-muted-foreground font-mono truncate max-w-[120px]" title={log.user_id}>
+                              {log.user_id ? `${log.user_id.slice(0, 8)}...` : "—"}
+                            </span>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <p className="text-sm truncate max-w-[300px]">{log.subject}</p>
-                          {log.context_type && (
-                            <p className="text-[10px] text-muted-foreground">{log.context_type}</p>
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium">{log.recipient_name || "—"}</span>
+                            <span className="text-xs text-muted-foreground">{log.recipient_email}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <p className="text-sm line-clamp-1">{log.subject}</p>
+                            {log.template_name && (
+                              <p className="text-[10px] text-primary font-medium">
+                                Template: {log.template_name}
+                              </p>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col gap-0.5">
+                            {log.attachments_info && (() => {
+                              try {
+                                const files = JSON.parse(log.attachments_info);
+                                if (Array.isArray(files) && files.length > 0) {
+                                  return (
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <p className="text-[10px] text-muted-foreground cursor-default flex items-center gap-1">
+                                            <FileText className="h-3 w-3" /> {files.length} file{files.length > 1 ? "s" : ""}
+                                          </p>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="bottom" className="max-w-[200px]">
+                                          <div className="space-y-1">
+                                            {files.map((f: string, i: number) => (
+                                              <p key={i} className="text-[10px] truncate">{f}</p>
+                                            ))}
+                                          </div>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  );
+                                }
+                              } catch { /* ignore */ }
+                              return null;
+                            })()}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {log.report_version != null ? (
+                            <Badge variant="outline" className="text-[10px] font-mono px-2 py-0 bg-blue-50 text-blue-700 border-blue-200">
+                              v{log.report_version}
+                            </Badge>
+                          ) : (
+                            <span className="text-xs text-muted-foreground/40">—</span>
                           )}
                         </TableCell>
                         <TableCell>
                           <StatusBadge status={log.status} />
                         </TableCell>
-                        <TableCell className="text-center text-xs">{log.retry_count}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground">
-                          {log.sent_at || log.created_at}
+                        <TableCell className="text-[11px] text-muted-foreground">
+                          {log.sent_at 
+                            ? new Date(log.sent_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })
+                            : new Date(log.created_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })
+                          }
                         </TableCell>
                       </TableRow>
                     ))}

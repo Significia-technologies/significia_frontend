@@ -51,14 +51,19 @@ export interface EmailTemplatePayload {
 
 export interface EmailLog {
   id: string;
+  user_id: string;
+  sender_name?: string;
   recipient_email: string;
   recipient_name: string | null;
   subject: string;
+  template_id: string | null;
+  template_name?: string;
   status: "PENDING" | "SENT" | "FAILED";
   error_details: string | null;
   retry_count: number;
   context_type: string | null;
   context_id: string | null;
+  report_version?: number;
   attachments_info: string | null;
   sent_at: string | null;
   created_at: string;
