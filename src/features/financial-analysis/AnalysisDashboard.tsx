@@ -14,7 +14,8 @@ import {
   BrainCircuit,
   MessageSquare,
   PieChart as PieChartIcon,
-  Edit3
+  Edit3,
+  Mail
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -45,6 +46,7 @@ import {
   CalculationDetails, 
   FinancialAnalysisService 
 } from "@/core/services/financial-analysis.service";
+import { SEBIService } from "@/core/services/sebi.service";
 import { toast } from "sonner";
 
 interface AnalysisDashboardProps {
@@ -55,6 +57,7 @@ interface AnalysisDashboardProps {
 
 export function AnalysisDashboard({ result, clientName, onEdit }: AnalysisDashboardProps) {
   const [downloading, setDownloading] = React.useState<string | null>(null);
+  const [delivering, setDelivering] = React.useState(false);
   const [calcDetails, setCalcDetails] = React.useState<CalculationDetails | null>(null);
   const [loadingCalc, setLoadingCalc] = React.useState(false);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
@@ -80,6 +83,21 @@ export function AnalysisDashboard({ result, clientName, onEdit }: AnalysisDashbo
       toast.error(`Failed to download report`);
     } finally {
       setDownloading(null);
+    }
+  };
+
+  const handleEmailReport = async () => {
+    if (!result) return;
+    
+    setDelivering(true);
+    try {
+      await SEBIService.emailAnalysisReport(result.id);
+      toast.success("Financial Analysis report has been sent to client via email.");
+    } catch (err: any) {
+      console.error("Email error:", err);
+      toast.error(err.response?.data?.detail || "Failed to send email. Please check SMTP settings.");
+    } finally {
+      setDelivering(false);
     }
   };
 
@@ -143,6 +161,20 @@ export function AnalysisDashboard({ result, clientName, onEdit }: AnalysisDashbo
           >
             <Edit3 className="w-4 h-4" />
             Edit as New Version
+          </Button>
+
+          <Button 
+            variant="outline" 
+            className="gap-2 border-blue-500/20 bg-blue-500/5 text-blue-600 hover:bg-blue-500/10"
+            onClick={handleEmailReport}
+            disabled={delivering}
+          >
+            {delivering ? (
+              <span className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Mail className="w-4 h-4" />
+            )}
+            Email Client
           </Button>
 
           <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>

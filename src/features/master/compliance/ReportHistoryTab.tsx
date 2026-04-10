@@ -76,7 +76,7 @@ export function ReportHistoryTab() {
     setDelivering(reportId);
     try {
       await SEBIService.markReportDelivered(reportId);
-      toast.success("Report marked as delivered");
+      toast.success("Report emailed to client successfully");
       fetchReports();
     } catch {
       toast.error("Failed to mark report as delivered");
@@ -231,10 +231,14 @@ export function ReportHistoryTab() {
                           size="sm"
                           className="h-7 text-[11px] gap-1.5"
                           disabled={delivering === report.id}
-                          onClick={() => handleDeliver(report.id)}
+                          onClick={() => {
+                            if (confirm(`Send this ${report.report_type.replace('_', ' ')} report to the client via email?`)) {
+                              handleDeliver(report.id);
+                            }
+                          }}
                         >
                           <Send className="w-3 h-3" />
-                          Deliver
+                          Email Client
                         </Button>
                       )}
                     </TableCell>

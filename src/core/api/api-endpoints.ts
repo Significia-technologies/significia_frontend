@@ -84,6 +84,8 @@ export const API_ENDPOINTS = {
       `${API_BASE}/financial-analysis/bridge/analysis/${resultId}/pdf`,
     WORD: (resultId: string) =>
       `${API_BASE}/financial-analysis/bridge/analysis/${resultId}/word`,
+    EMAIL: (resultId: string) =>
+      `${API_BASE}/financial-analysis/bridge/analysis/${resultId}/email`,
     FORM: `${API_BASE}/financial-analysis/bridge/form`,
     BY_CLIENT: (clientId: string) =>
       `${API_BASE}/financial-analysis/bridge/analysis/client/${clientId}`,
@@ -185,6 +187,7 @@ export const API_ENDPOINTS = {
     IA_LOCK: `${API_BASE}/ia-master/sebi/ia-master/lock`,
     IA_UNLOCK: `${API_BASE}/ia-master/sebi/ia-master/unlock`,
     REPORT_HISTORY: `${API_BASE}/ia-master/sebi/report-history`,
+    REPORT_LOOKUP: `${API_BASE}/ia-master/sebi/report-history/lookup`,
     REPORT_DELIVER: (id: string) => `${API_BASE}/ia-master/sebi/report-history/${id}/deliver`,
     CHANGE_SUMMARY: `${API_BASE}/ia-master/sebi/ia-master/change-summary`,
   },

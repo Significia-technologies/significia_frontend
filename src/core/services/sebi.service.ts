@@ -138,12 +138,34 @@ export class SEBIService {
   static async getReportHistory(params?: {
     client_id?: string;
     report_type?: string;
+    source_record_id?: string;
   }): Promise<ReportHistoryEntry[]> {
     const response = await httpClient.get<ReportHistoryEntry[]>(
       API_ENDPOINTS.SEBI.REPORT_HISTORY,
       { params }
     );
     return response.data;
+  }
+
+  static async lookupLatestReport(
+    sourceRecordId: string, 
+    reportType?: string
+  ): Promise<ReportHistoryEntry | null> {
+    const response = await httpClient.get<ReportHistoryEntry | null>(
+      API_ENDPOINTS.SEBI.REPORT_LOOKUP,
+      { 
+        params: { 
+          source_record_id: sourceRecordId,
+          report_type: reportType 
+        } 
+      }
+    );
+    // Bridge returns metadata if found, or {id: null} if not
+    return response.data?.id ? response.data : null;
+  }
+
+  static async emailAnalysisReport(analysisId: string): Promise<any> {
+    return await httpClient.post(API_ENDPOINTS.FINANCIAL_ANALYSIS.EMAIL(analysisId));
   }
 
   static async markReportDelivered(reportId: string): Promise<{ status: string }> {
