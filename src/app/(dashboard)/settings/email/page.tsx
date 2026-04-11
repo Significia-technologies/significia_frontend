@@ -67,6 +67,8 @@ import {
   Shield,
   Zap,
   AlertTriangle,
+  User,
+  Cpu,
 } from "lucide-react";
 import {
   EmailService,
@@ -735,6 +737,7 @@ export default function EmailSettingsPage() {
                     <TableRow>
                       <TableHead className="w-[180px]">Sender</TableHead>
                       <TableHead className="w-[180px]">Recipient</TableHead>
+                      <TableHead className="w-[100px]">Source</TableHead>
                       <TableHead>Subject / Template</TableHead>
                       <TableHead className="w-[120px]">Attached</TableHead>
                       <TableHead className="w-[90px]">Version</TableHead>
@@ -758,6 +761,17 @@ export default function EmailSettingsPage() {
                             <span className="text-sm font-medium">{log.recipient_name || "—"}</span>
                             <span className="text-xs text-muted-foreground">{log.recipient_email}</span>
                           </div>
+                        </TableCell>
+                        <TableCell>
+                          {log.trigger_type === "MANUAL" ? (
+                            <Badge variant="outline" className="text-[10px] bg-purple-50 text-purple-700 border-purple-200 gap-1">
+                              <User className="h-3 w-3" /> Manual
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-[10px] bg-sky-50 text-sky-700 border-sky-200 gap-1">
+                              <Cpu className="h-3 w-3" /> System
+                            </Badge>
+                          )}
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-col">

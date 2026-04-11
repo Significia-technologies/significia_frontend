@@ -64,6 +64,7 @@ export interface EmailLog {
   context_type: string | null;
   context_id: string | null;
   report_version?: number;
+  trigger_type: "SYSTEM" | "MANUAL";
   attachments_info: string | null;
   sent_at: string | null;
   created_at: string;
