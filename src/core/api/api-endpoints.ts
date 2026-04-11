@@ -187,6 +187,7 @@ export const API_ENDPOINTS = {
     IA_LOCK: `${API_BASE}/ia-master/sebi/ia-master/lock`,
     IA_UNLOCK: `${API_BASE}/ia-master/sebi/ia-master/unlock`,
     REPORT_HISTORY: `${API_BASE}/ia-master/sebi/report-history`,
+    REPORT_HISTORY_EXPORT: `${API_BASE}/ia-master/sebi/report-history/export`,
     REPORT_LOOKUP: `${API_BASE}/ia-master/sebi/report-history/lookup`,
     REPORT_DELIVER: (id: string) => `${API_BASE}/ia-master/sebi/report-history/${id}/deliver`,
     CHANGE_SUMMARY: `${API_BASE}/ia-master/sebi/ia-master/change-summary`,

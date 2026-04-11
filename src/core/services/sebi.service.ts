@@ -49,6 +49,7 @@ export interface ReportHistoryEntry {
   source_version?: number;
   file_path?: string;
   file_format: string;
+  report_hash?: string;
   change_summary?: string;
   is_delivered: boolean;
   delivered_at?: string;
@@ -212,6 +213,43 @@ export class SEBIService {
     }
 
     // Trigger browser download
+    const blob = new Blob([response.data], {
+      type: params.format === "json" ? "application/json" : "text/csv",
+    });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  }
+
+  static async exportReportHistory(params: {
+    format: "csv" | "json";
+    report_type?: string;
+    client_id?: string;
+    from_date?: string;
+    to_date?: string;
+  }): Promise<void> {
+    const response = await httpClient.get(
+      API_ENDPOINTS.SEBI.REPORT_HISTORY_EXPORT,
+      {
+        params,
+        responseType: "blob",
+      }
+    );
+
+    const contentDisposition = response.headers["content-disposition"];
+    let filename = `Report_History.${params.format}`;
+    if (contentDisposition) {
+      const match = contentDisposition.match(/filename=(.+)/);
+      if (match) {
+        filename = match[1].replace(/['"]/g, "");
+      }
+    }
+
     const blob = new Blob([response.data], {
       type: params.format === "json" ? "application/json" : "text/csv",
     });

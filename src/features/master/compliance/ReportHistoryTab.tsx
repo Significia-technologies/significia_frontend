@@ -8,6 +8,8 @@ import {
   Send,
   User,
   Filter,
+  Download,
+  Calendar,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +29,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   SEBIService,
@@ -53,6 +66,13 @@ export function ReportHistoryTab() {
   const [loading, setLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState("");
   const [delivering, setDelivering] = useState<string | null>(null);
+
+  // Export State
+  const [exportFormat, setExportFormat] = useState<"csv" | "json">("csv");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [exporting, setExporting] = useState(false);
+  const [isExportOpen, setIsExportOpen] = useState(false);
 
   const fetchReports = async () => {
     setLoading(true);
@@ -82,6 +102,25 @@ export function ReportHistoryTab() {
       toast.error("Failed to mark report as delivered");
     } finally {
       setDelivering(null);
+    }
+  };
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      await SEBIService.exportReportHistory({
+        format: exportFormat,
+        report_type: typeFilter || undefined,
+        from_date: fromDate || undefined,
+        to_date: toDate || undefined,
+      });
+      toast.success(`Report history exported as ${exportFormat.toUpperCase()}`);
+      setIsExportOpen(false);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to export report history");
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -118,9 +157,106 @@ export function ReportHistoryTab() {
               enable lock recommendations.
             </CardDescription>
           </div>
-          <Badge variant="outline" className="text-xs font-mono">
-            {reports.length} reports
-          </Badge>
+          
+          <div className="flex items-center gap-3">
+            <Dialog open={isExportOpen} onOpenChange={setIsExportOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="h-9 gap-2">
+                  <Download className="w-4 h-4" />
+                  Export History
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Download className="w-5 h-5 text-primary" />
+                    Export Report History
+                  </DialogTitle>
+                  <DialogDescription>
+                    Download a comprehensive log of generated reports for regulatory compliance.
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label>Export Format</Label>
+                    <Select
+                      value={exportFormat}
+                      onValueChange={(v: "csv" | "json") => setExportFormat(v)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select format" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="csv">CSV (Standard Tabular)</SelectItem>
+                        <SelectItem value="json">JSON (Machine Readable)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="grid gap-2">
+                      <Label htmlFor="from_date">From Date</Label>
+                      <Input
+                        id="from_date"
+                        type="date"
+                        value={fromDate}
+                        onChange={(e) => setFromDate(e.target.value)}
+                        className="h-9"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="to_date">To Date</Label>
+                      <Input
+                        id="to_date"
+                        type="date"
+                        value={toDate}
+                        onChange={(e) => setToDate(e.target.value)}
+                        className="h-9"
+                      />
+                    </div>
+                  </div>
+
+                  {typeFilter && (
+                    <div className="flex items-center gap-2 p-2 rounded bg-muted/50 border border-border/50">
+                      <Filter className="w-3.5 h-3.5 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">
+                        Filtering by: <b>{REPORT_TYPE_LABELS[typeFilter] || typeFilter}</b>
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <DialogFooter>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsExportOpen(false)}
+                    disabled={exporting}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleExport}
+                    disabled={exporting}
+                    className="gap-2"
+                  >
+                    {exporting ? (
+                      <Clock className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Download className="w-4 h-4" />
+                    )}
+                    {exporting ? "Generating..." : "Download Export"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            <Badge variant="outline" className="text-xs font-mono py-1.5 px-3">
+              {reports.length} reports
+            </Badge>
+          </div>
         </div>
 
         <div className="flex gap-3 mt-4">
@@ -168,6 +304,7 @@ export function ReportHistoryTab() {
                   <TableHead className="text-xs">Report Type</TableHead>
                   <TableHead className="text-xs">Client</TableHead>
                   <TableHead className="text-xs">Format</TableHead>
+                  <TableHead className="text-xs">Integrity Hash</TableHead>
                   <TableHead className="text-xs">Change Summary</TableHead>
                   <TableHead className="text-xs w-[120px]">Delivery</TableHead>
                   <TableHead className="text-xs w-[100px]">Action</TableHead>
@@ -238,6 +375,17 @@ export function ReportHistoryTab() {
                       <Badge variant="outline" className="text-[10px] uppercase">
                         {report.file_format}
                       </Badge>
+                    </TableCell>
+                    <TableCell className="font-mono text-[10px]">
+                      {report.report_hash ? (
+                        <div className="flex items-center gap-1.5 group cursor-help" title={report.report_hash}>
+                           <span className="text-muted-foreground/60">
+                             {report.report_hash.slice(0, 8)}...
+                           </span>
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground/30">—</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">
                       {report.change_summary || "—"}
