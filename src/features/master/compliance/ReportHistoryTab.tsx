@@ -85,17 +85,22 @@ export function ReportHistoryTab() {
     }
   };
 
-  const formatDate = (iso: string) => {
+  const formatDateParts = (iso: string) => {
     try {
-      return new Date(iso).toLocaleString("en-IN", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
+      const date = new Date(iso);
+      return {
+        date: date.toLocaleDateString("en-IN", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        }),
+        time: date.toLocaleTimeString("en-IN", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      };
     } catch {
-      return iso;
+      return { date: iso, time: "" };
     }
   };
 
@@ -158,9 +163,10 @@ export function ReportHistoryTab() {
                 <TableHeader>
                 <TableRow className="bg-muted/30 hover:bg-muted/30">
                   <TableHead className="text-xs w-[140px]">Date</TableHead>
+                  <TableHead className="text-xs w-[100px]">Audit ID</TableHead>
+                  <TableHead className="text-xs text-center">Version</TableHead>
                   <TableHead className="text-xs">Report Type</TableHead>
                   <TableHead className="text-xs">Client</TableHead>
-                  <TableHead className="text-xs w-[80px]">Version</TableHead>
                   <TableHead className="text-xs">Format</TableHead>
                   <TableHead className="text-xs">Change Summary</TableHead>
                   <TableHead className="text-xs w-[120px]">Delivery</TableHead>
@@ -170,11 +176,34 @@ export function ReportHistoryTab() {
               <TableBody>
                 {reports.map((report) => (
                   <TableRow key={report.id} className="hover:bg-muted/20">
-                    <TableCell className="text-[11px] text-muted-foreground font-mono">
-                      <div className="flex items-center gap-1.5">
-                        <Clock className="w-3 h-3 shrink-0" />
-                        {formatDate(report.created_at)}
+                    <TableCell className="text-[11px] text-muted-foreground font-mono py-3">
+                      <div className="flex items-start gap-1.5">
+                        <Clock className="w-3 h-3 mt-0.5 shrink-0" />
+                        <div className="flex flex-col">
+                          <span className="text-foreground font-semibold uppercase tracking-tight">
+                            {formatDateParts(report.created_at).date}
+                          </span>
+                          <span className="text-[10px] opacity-70">
+                            {formatDateParts(report.created_at).time}
+                          </span>
+                        </div>
                       </div>
+                    </TableCell>
+                    <TableCell className="font-mono text-[11px]">
+                      {report.short_id ? (
+                        <Badge variant="secondary" className="bg-primary/5 text-primary border-primary/10 hover:bg-primary/10">
+                          {report.short_id}
+                        </Badge>
+                      ) : (
+                        <span className="text-muted-foreground/60">
+                          {report.id.slice(0, 8)}...
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Badge variant="outline" className="font-mono text-[10px]">
+                        v{report.version_number}
+                      </Badge>
                     </TableCell>
                     <TableCell>
                       <Badge
@@ -186,25 +215,24 @@ export function ReportHistoryTab() {
                         {REPORT_TYPE_LABELS[report.report_type] || report.report_type}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-xs">
+                    <TableCell className="text-xs py-3">
                       {report.client_name ? (
-                        <div className="flex items-center gap-1.5">
-                          <User className="w-3 h-3 text-muted-foreground" />
-                          <span className="font-medium">{report.client_name}</span>
-                          {report.client_code && (
-                            <span className="text-[10px] text-muted-foreground font-mono">
-                              ({report.client_code})
+                        <div className="flex items-start gap-1.5">
+                          <User className="w-3 h-3 mt-0.5 text-muted-foreground shrink-0" />
+                          <div className="flex flex-col">
+                            <span className="font-semibold text-foreground">
+                              {report.client_name}
                             </span>
-                          )}
+                            {report.client_code && (
+                              <span className="text-[10px] text-muted-foreground font-mono bg-muted/50 px-1 rounded inline-block w-fit mt-0.5">
+                                {report.client_code}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       ) : (
                         <span className="text-muted-foreground">—</span>
                       )}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant="outline" className="font-mono text-[10px]">
-                        v{report.version_number}
-                      </Badge>
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className="text-[10px] uppercase">

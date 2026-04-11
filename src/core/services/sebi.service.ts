@@ -39,6 +39,7 @@ export interface IAMasterVersion {
 
 export interface ReportHistoryEntry {
   id: string;
+  short_id?: string;
   client_id?: string;
   client_name?: string;
   client_code?: string;
