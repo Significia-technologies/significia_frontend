@@ -11,6 +11,7 @@ import {
   Gem,
   ChevronRight,
   Loader2,
+  Send
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,6 +43,7 @@ export function AssetAllocationHistory({  }: AssetAllocationHistoryProps) {
   const [allocations, setAllocations] = useState<AssetAllocation[]>([]);
   const [search, setSearch] = useState("");
   const [downloading, setDownloading] = useState<string | null>(null);
+  const [emailing, setEmailing] = useState<string | null>(null);
 
   useEffect(() => {
     loadAllocations();
@@ -78,6 +80,18 @@ export function AssetAllocationHistory({  }: AssetAllocationHistoryProps) {
       toast.error(`Failed to download ${type}`);
     } finally {
       setDownloading(null);
+    }
+  };
+
+  const handleEmail = async (item: AssetAllocation) => {
+    setEmailing(item.id);
+    try {
+      await AssetAllocationService.emailAllocation(item.id);
+      toast.success("Allocation emailed to client successfully");
+    } catch {
+      toast.error("Failed to email allocation");
+    } finally {
+      setEmailing(null);
     }
   };
 
@@ -290,6 +304,21 @@ export function AssetAllocationHistory({  }: AssetAllocationHistoryProps) {
                         >
                           <FileText className="w-3.5 h-3.5 text-blue-500" />
                           <span className="text-[9px] font-black uppercase">Word</span>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 px-2 gap-1.5 border-primary/10 hover:border-emerald-500/30 hover:bg-emerald-500/5 transition-all"
+                          onClick={() => handleEmail(a)}
+                          disabled={!!emailing || !!downloading}
+                          id={`email-${a.id}`}
+                        >
+                          {emailing === a.id ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-500" />
+                          ) : (
+                            <Send className="w-3.5 h-3.5 text-emerald-500" />
+                          )}
+                          <span className="text-[9px] font-black uppercase">Email</span>
                         </Button>
                       </div>
                     </TableCell>

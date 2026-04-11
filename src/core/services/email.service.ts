@@ -178,10 +178,49 @@ export class EmailService {
 
   // ── Logs ───────────────────────────────────────────────────
 
-  static async getLogs(skip = 0, limit = 50): Promise<{ total: number; items: EmailLog[] }> {
+  static async getLogs(
+    skip = 0, 
+    limit = 50,
+    filters?: {
+      client_id?: string;
+      recipient_email?: string;
+      status?: string;
+      start_date?: string;
+      end_date?: string;
+    }
+  ): Promise<{ total: number; items: EmailLog[] }> {
     const response = await httpClient.get(API_ENDPOINTS.EMAIL.LOGS, {
-      params: { skip, limit },
+      params: { 
+        offset: skip, 
+        limit,
+        ...filters
+      },
     });
     return response.data;
+  }
+
+  static async exportLogs(
+    filters?: {
+      client_id?: string;
+      recipient_email?: string;
+      status?: string;
+      start_date?: string;
+      end_date?: string;
+    }
+  ): Promise<void> {
+    const response = await httpClient.get(API_ENDPOINTS.EMAIL.LOGS + "/export", {
+      params: filters,
+      responseType: "blob"
+    });
+    
+    // Create a download link and trigger it
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement("a");
+    link.href = url;
+    const filename = `email_logs_${new Date().toISOString().split("T")[0]}.csv`;
+    link.setAttribute("download", filename);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
   }
 }

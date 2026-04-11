@@ -139,6 +139,13 @@ export default function EmailSettingsPage() {
   const [logs, setLogs] = useState<EmailLog[]>([]);
   const [logsTotal, setLogsTotal] = useState(0);
   const [loadingLogs, setLoadingLogs] = useState(false);
+  const [exportingLogs, setExportingLogs] = useState(false);
+  const [logFilters, setLogFilters] = useState({
+    recipient_email: "",
+    status: "ALL",
+    start_date: "",
+    end_date: "",
+  });
 
   // ── Data Loading ─────────────────────────────────────────────
 
@@ -183,12 +190,18 @@ export default function EmailSettingsPage() {
   const loadLogs = useCallback(async () => {
     setLoadingLogs(true);
     try {
-      const data = await EmailService.getLogs(0, 100);
+      const filters: any = {};
+      if (logFilters.recipient_email) filters.recipient_email = logFilters.recipient_email;
+      if (logFilters.status !== "ALL") filters.status = logFilters.status;
+      if (logFilters.start_date) filters.start_date = logFilters.start_date;
+      if (logFilters.end_date) filters.end_date = logFilters.end_date;
+
+      const data = await EmailService.getLogs(0, 100, filters);
       setLogs(data.items || []);
       setLogsTotal(data.total || 0);
     } catch { /* ignore */ }
     setLoadingLogs(false);
-  }, []);
+  }, [logFilters]);
 
   useEffect(() => {
     loadSettings();
@@ -202,6 +215,22 @@ export default function EmailSettingsPage() {
       loadLogs();
     }
   }, [activeTab, loadTemplates, loadPlaceholders, loadLogs]);
+
+  const handleExportLogs = async () => {
+    setExportingLogs(true);
+    try {
+      const filters: any = {};
+      if (logFilters.recipient_email) filters.recipient_email = logFilters.recipient_email;
+      if (logFilters.status !== "ALL") filters.status = logFilters.status;
+      if (logFilters.start_date) filters.start_date = logFilters.start_date;
+      if (logFilters.end_date) filters.end_date = logFilters.end_date;
+      
+      await EmailService.exportLogs(filters);
+    } catch { 
+      alert("Failed to export logs.");
+    }
+    setExportingLogs(false);
+  };
 
   // ── SMTP Handlers ────────────────────────────────────────────
 
@@ -556,7 +585,11 @@ export default function EmailSettingsPage() {
                     >
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="REPORT_DELIVERY">Report Delivery</SelectItem>
+                        <SelectItem value="REPORT_DELIVERY">Report Delivery (Generic)</SelectItem>
+                        <SelectItem value="FINANCIAL_ANALYSIS_DELIVERY">Financial Analysis Delivery</SelectItem>
+                        <SelectItem value="RISK_PROFILE_DELIVERY">Risk Profile Delivery</SelectItem>
+                        <SelectItem value="ASSET_ALLOCATION_DELIVERY">Asset Allocation Delivery</SelectItem>
+                        <SelectItem value="GOAL_PLAN_DELIVERY">Goal Plan Delivery</SelectItem>
                         <SelectItem value="WELCOME_CLIENT">Welcome Client</SelectItem>
                         <SelectItem value="GENERAL">General</SelectItem>
                         <SelectItem value="CUSTOM">Custom</SelectItem>
@@ -710,9 +743,61 @@ export default function EmailSettingsPage() {
                 Track every email sent from your account ({logsTotal} total)
               </p>
             </div>
-            <Button variant="outline" size="sm" onClick={loadLogs} disabled={loadingLogs}>
-              {loadingLogs ? <Loader2 className="h-4 w-4 animate-spin" /> : "Refresh"}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={handleExportLogs} disabled={exportingLogs || logs.length === 0}>
+                {exportingLogs ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4 mr-2" />}
+                Export Audit Log (CSV)
+              </Button>
+              <Button variant="outline" size="sm" onClick={loadLogs} disabled={loadingLogs}>
+                {loadingLogs ? <Loader2 className="h-4 w-4 animate-spin" /> : "Refresh"}
+              </Button>
+            </div>
+          </div>
+
+          {/* Filters Bar */}
+          <div className="grid grid-cols-4 gap-4 p-4 bg-muted/20 border rounded-lg">
+            <div className="space-y-1.5">
+              <Label className="text-[10px] uppercase text-muted-foreground">Recipient Email</Label>
+              <Input 
+                placeholder="Search email..." 
+                className="h-8 text-xs"
+                value={logFilters.recipient_email}
+                onChange={(e) => setLogFilters(f => ({ ...f, recipient_email: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-[10px] uppercase text-muted-foreground">Status</Label>
+              <Select 
+                value={logFilters.status} 
+                onValueChange={(v) => setLogFilters(f => ({ ...f, status: v }))}
+              >
+                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All Status</SelectItem>
+                  <SelectItem value="SENT">Sent</SelectItem>
+                  <SelectItem value="FAILED">Failed</SelectItem>
+                  <SelectItem value="PENDING">Pending</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-[10px] uppercase text-muted-foreground">Start Date (DD-MM-YYYY)</Label>
+              <Input 
+                placeholder="DD-MM-YYYY" 
+                className="h-8 text-xs"
+                value={logFilters.start_date}
+                onChange={(e) => setLogFilters(f => ({ ...f, start_date: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-[10px] uppercase text-muted-foreground">End Date (DD-MM-YYYY)</Label>
+              <Input 
+                placeholder="DD-MM-YYYY" 
+                className="h-8 text-xs"
+                value={logFilters.end_date}
+                onChange={(e) => setLogFilters(f => ({ ...f, end_date: e.target.value }))}
+              />
+            </div>
           </div>
 
           {loadingLogs ? (

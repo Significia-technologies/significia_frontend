@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect } from "react";
 import { 
@@ -10,7 +10,9 @@ import {
   ExternalLink,
   ChevronRight,
   Filter,
-  ArrowUpDown
+  ArrowUpDown,
+  Send,
+  Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,6 +45,7 @@ export function RiskProfileHistory({  }: RiskProfileHistoryProps) {
   const [assessments, setAssessments] = useState<RiskAssessment[]>([]);
   const [search, setSearch] = useState("");
   const [downloading, setDownloading] = useState<string | null>(null);
+  const [emailing, setEmailing] = useState<string | null>(null);
 
   useEffect(() => {
     loadAssessments();
@@ -101,6 +104,18 @@ export function RiskProfileHistory({  }: RiskProfileHistoryProps) {
       toast.error(`Failed to download ${type}`);
     } finally {
       setDownloading(null);
+    }
+  };
+
+  const handleEmail = async (item: any) => {
+    setEmailing(item.id);
+    try {
+      await RiskProfileService.emailAssessment(item.id, !!item.is_custom);
+      toast.success("Email sent to client successfully");
+    } catch {
+      toast.error("Failed to send email");
+    } finally {
+      setEmailing(null);
     }
   };
 
@@ -210,6 +225,20 @@ export function RiskProfileHistory({  }: RiskProfileHistoryProps) {
                         >
                           <FileText className="w-3.5 h-3.5 text-blue-500" />
                           <span className="text-[9px] font-black uppercase">Word</span>
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="h-8 px-2 gap-1.5 border-primary/10 hover:border-emerald-500/30 hover:bg-emerald-500/5 transition-all"
+                          onClick={() => handleEmail(a)}
+                          disabled={!!emailing || !!downloading}
+                        >
+                          {emailing === a.id ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-500" />
+                          ) : (
+                            <Send className="w-3.5 h-3.5 text-emerald-500" />
+                          )}
+                          <span className="text-[9px] font-black uppercase">Email</span>
                         </Button>
                       </div>
                     </TableCell>

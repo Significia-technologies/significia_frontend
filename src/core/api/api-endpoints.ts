@@ -114,6 +114,10 @@ export const API_ENDPOINTS = {
       `${API_BASE}/risk-profile/bridge/custom-assessment/${assessmentId}/docx`,
     BLANK_PDF: (questionnaireId: string) =>
       `${API_BASE}/risk-profile/bridge/questionnaires/${questionnaireId}/pdf`,
+    EMAIL: (id: string) =>
+      `${API_BASE}/risk-profile/bridge/assessment/${id}/email`,
+    CUSTOM_EMAIL: (id: string) =>
+      `${API_BASE}/risk-profile/bridge/custom-assessment/${id}/email`,
   },
 
   // ── Asset Allocation ───────────────────────────────────────
@@ -128,6 +132,8 @@ export const API_ENDPOINTS = {
     DOCX: (id: string) =>
       `${API_BASE}/asset-allocation/bridge/allocation/${id}/docx`,
     BLANK_PDF: `${API_BASE}/asset-allocation/bridge/blank-form/pdf`,
+    EMAIL: (id: string) =>
+      `${API_BASE}/asset-allocation/bridge/allocation/${id}/email`,
   },
 
   // ── Bridge Management (Super Admin only) ───────────────────
