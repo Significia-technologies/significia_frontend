@@ -711,11 +711,17 @@ export default function EmailSettingsPage() {
                           <div className="flex items-center gap-2">
                             <h4 className="font-medium">{t.template_name}</h4>
                             <Badge variant="outline" className="text-[10px]">{t.template_type}</Badge>
+                            <Badge className="text-[10px] bg-secondary text-secondary-foreground hover:bg-secondary/80 border-transparent">
+                              {t.version || 'v1.0'}
+                            </Badge>
+                            <Badge variant="outline" className="text-[10px] font-mono text-muted-foreground bg-muted/20">
+                              ID: {t.audit_id || '------'}
+                            </Badge>
                             {t.is_default && (
                               <Badge className="text-[10px] bg-primary/10 text-primary border-primary/20">Default</Badge>
                             )}
                           </div>
-                          <p className="text-xs text-muted-foreground font-mono">{t.subject}</p>
+                          <p className="text-xs text-muted-foreground font-mono truncate max-w-xl">{t.subject}</p>
                         </div>
                         <div className="flex items-center gap-1">
                           <Button variant="ghost" size="sm" onClick={() => handleEditTemplate(t)}>
@@ -862,8 +868,13 @@ export default function EmailSettingsPage() {
                           <div className="flex flex-col">
                             <p className="text-sm line-clamp-1">{log.subject}</p>
                             {log.template_name && (
-                              <p className="text-[10px] text-primary font-medium">
+                              <p className="text-[10px] text-primary font-medium flex items-center gap-1">
                                 Template: {log.template_name}
+                                {log.template_audit_id && (
+                                  <Badge variant="outline" className="text-[9px] py-0 px-1 border-primary/20 text-primary bg-primary/5">
+                                    ID: {log.template_audit_id}
+                                  </Badge>
+                                )}
                               </p>
                             )}
                           </div>

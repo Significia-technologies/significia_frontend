@@ -31,6 +31,10 @@ export interface EmailSettingsPayload {
 
 export interface EmailTemplate {
   id: string;
+  group_id: string;
+  version: string;
+  audit_id: string;
+  is_latest: boolean;
   template_name: string;
   template_type: string;
   subject: string;
@@ -57,6 +61,7 @@ export interface EmailLog {
   recipient_name: string | null;
   subject: string;
   template_id: string | null;
+  template_audit_id?: string | null;
   template_name?: string;
   status: "PENDING" | "SENT" | "FAILED";
   error_details: string | null;
