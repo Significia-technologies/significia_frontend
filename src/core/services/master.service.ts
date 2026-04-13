@@ -27,6 +27,7 @@ export interface ClientDocumentResponse {
   id: string;
   document_type: string;
   file_path: string;
+  category?: string; // e.g., KYC, Rectification, Reports
   uploaded_at: string;
 }
 
