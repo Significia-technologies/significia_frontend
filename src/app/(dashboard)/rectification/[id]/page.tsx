@@ -19,7 +19,8 @@ import {
   Plus,
   XCircle,
   Mic,
-  Music
+  Music,
+  Video
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -663,7 +664,7 @@ export default function RectificationDetailsPage() {
             </div>
             <div className="px-4 space-y-4">
                 <div className="flex gap-6 flex-wrap">
-                    {["Written/Email", "Verbal", "Not applicable"].map(opt => (
+                    {["Written/Email", "Verbal", "Video Call", "Not applicable"].map(opt => (
                         <div key={opt} className="flex items-center gap-2">
                            <Checkbox 
                               checked={confirmationMode.includes(opt)} 
@@ -703,8 +704,18 @@ export default function RectificationDetailsPage() {
                  <Card className="border-emerald-500/20 bg-emerald-500/5 shadow-none overflow-hidden h-full">
                     <CardHeader className="p-4 bg-emerald-500/20">
                       <CardTitle className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-emerald-900">
-                        {confirmationMode.includes("Verbal") ? <Mic className="w-4 h-4" /> : <User className="w-4 h-4" />} 
-                        {confirmationMode.includes("Verbal") ? "Investor Verbal Evidence (Audio)" : "Investor Request Evidence"}
+                        {confirmationMode.includes("Video Call") ? (
+                          <Video className="w-4 h-4" />
+                        ) : confirmationMode.includes("Verbal") ? (
+                          <Mic className="w-4 h-4" />
+                        ) : (
+                          <User className="w-4 h-4" />
+                        )} 
+                        {confirmationMode.includes("Video Call") 
+                          ? "Investor Video Evidence" 
+                          : confirmationMode.includes("Verbal") 
+                            ? "Investor Verbal Evidence (Audio)" 
+                            : "Investor Request Evidence"}
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="p-4 space-y-4">
@@ -713,11 +724,14 @@ export default function RectificationDetailsPage() {
                           <div className="flex items-center gap-3 overflow-hidden">
                              {rectification.investor_request_path.match(/\.(mp3|wav|m4a|ogg|aac)$/i) ? (
                                <Music className="w-5 h-5 text-emerald-600 shrink-0" />
+                             ) : rectification.investor_request_path.match(/\.(mp4|webm|mov|mkv)$/i) ? (
+                               <Video className="w-5 h-5 text-emerald-600 shrink-0" />
                              ) : (
                                <FileText className="w-5 h-5 text-emerald-600 shrink-0" />
                              )}
                              <span className="text-[10px] font-bold truncate text-emerald-900">
-                               {rectification.investor_request_path.split('/').pop()?.split('_').slice(3).join('_') || (confirmationMode.includes("Verbal") ? "Audio_Evidence.mp3" : "Investor_Request.pdf")}
+                               {rectification.investor_request_path.split('/').pop()?.split('_').slice(3).join('_') || 
+                                (confirmationMode.includes("Video Call") ? "Video_Evidence.mp4" : confirmationMode.includes("Verbal") ? "Audio_Evidence.mp3" : "Investor_Request.pdf")}
                              </span>
                           </div>
                           <div className="flex items-center gap-1">
@@ -742,9 +756,19 @@ export default function RectificationDetailsPage() {
                              <ProgressPie percentage={uploadProgress} />
                            ) : (
                              <>
-                               {confirmationMode.includes("Verbal") ? <Mic className="w-5 h-5 text-emerald-700 animate-pulse" /> : <AlertCircle className="w-5 h-5 text-emerald-700" />}
+                               {confirmationMode.includes("Video Call") ? (
+                                 <Video className="w-5 h-5 text-emerald-700 animate-pulse" />
+                               ) : confirmationMode.includes("Verbal") ? (
+                                 <Mic className="w-5 h-5 text-emerald-700 animate-pulse" />
+                               ) : (
+                                 <AlertCircle className="w-5 h-5 text-emerald-700" />
+                               )}
                                <p className="text-[9px] font-black uppercase text-emerald-800">
-                                 {confirmationMode.includes("Verbal") ? "Missing Audio Proof" : "Missing Request Copy"}
+                                 {confirmationMode.includes("Video Call") 
+                                   ? "Missing Video Recording" 
+                                   : confirmationMode.includes("Verbal") 
+                                     ? "Missing Audio Proof" 
+                                     : "Missing Request Copy"}
                                </p>
                                <div className="relative w-full">
                                   <input 
@@ -752,10 +776,14 @@ export default function RectificationDetailsPage() {
                                     className="absolute inset-0 opacity-0 cursor-pointer" 
                                     onChange={(e) => handleFileUpload(e, "investor_request")}
                                     disabled={uploading}
-                                    accept={confirmationMode.includes("Verbal") ? "audio/*" : undefined}
+                                    accept={confirmationMode.includes("Video Call") ? "video/*,audio/*" : confirmationMode.includes("Verbal") ? "audio/*" : undefined}
                                   />
                                   <Button variant="outline" size="sm" className="w-full text-[9px] font-black uppercase h-7 border-emerald-500/30 hover:bg-emerald-500/10 text-emerald-900">
-                                    {confirmationMode.includes("Verbal") ? "Upload Recording" : "Upload Copy"}
+                                    {confirmationMode.includes("Video Call") 
+                                      ? "Upload Video" 
+                                      : confirmationMode.includes("Verbal") 
+                                        ? "Upload Recording" 
+                                        : "Upload Copy"}
                                   </Button>
                                </div>
                              </>
