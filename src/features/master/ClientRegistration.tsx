@@ -201,11 +201,11 @@ export default function ClientRegistrationForm({
             }));
           }
 
-          if (isEdit) {
-              const rects = await RectificationService.list(clientId);
-              const relevant = rects.filter(r => r.module === "CLIENT");
-              setAvailableRectifications(relevant);
-          }
+            if (isEdit) {
+                const response = await RectificationService.list({ client_id: clientId });
+                const relevant = response.records.filter(r => r.module === "CLIENT");
+                setAvailableRectifications(relevant);
+            }
 
         } catch (error) {
           console.error("Failed to fetch client for edit", error);
@@ -235,8 +235,8 @@ export default function ClientRegistrationForm({
   // Fetch relevant Rectifications (DRAFT, UPDATED, or APPROVED) for tracing and unlocking
   React.useEffect(() => {
     if (isEdit && clientId) {
-        RectificationService.list(clientId).then(rects => {
-            const relevant = rects.filter(r => r.module === "CLIENT");
+        RectificationService.list({ client_id: clientId }).then(response => {
+            const relevant = response.records.filter(r => r.module === "CLIENT");
             setAvailableRectifications(relevant);
         }).catch(err => {
             console.error("Failed to load rectifications", err);

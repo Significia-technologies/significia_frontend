@@ -62,8 +62,9 @@ export interface RectificationResponse {
   approved_by_id?: string;
   approved_by_name?: string;
   approved_by_role?: string;
+  client_name?: string;
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
 }
 
 
@@ -91,12 +92,17 @@ export class RectificationService {
   }
 
   /**
-   * List all rectifications (optionally filtered by client).
+   * List rectification records with pagination and search.
    */
-  static async list(clientId?: string): Promise<RectificationResponse[]> {
-    const response = await httpClient.get<RectificationResponse[]>(
+  static async list(params: {
+    client_id?: string;
+    page?: number;
+    limit?: number;
+    search?: string;
+  } = {}): Promise<{ records: RectificationResponse[]; total: number; page: number; limit: number }> {
+    const response = await httpClient.get<{ records: RectificationResponse[]; total: number; page: number; limit: number }>(
       API_ENDPOINTS.RECTIFICATION.LIST,
-      { params: { client_id: clientId } }
+      { params }
     );
     return response.data;
   }
