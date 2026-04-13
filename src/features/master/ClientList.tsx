@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { UserPlus, Search, Filter, MoreHorizontal, Mail, Phone, MapPin, Trash2, Pencil, Eye, Database, CheckCircle2, FileText, Download } from "lucide-react";
+import { UserPlus, Search, Filter, MoreHorizontal, Mail, Phone, MapPin, Trash2, Pencil, Eye, Database, CheckCircle2, FileText, Download, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MasterDataService, Client } from "@/core/services/master.service";
 import { IAMasterService, Employee } from "@/core/services/ia-master.service";
+import { RectificationService } from "@/core/services/rectification.service";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
@@ -35,6 +36,32 @@ export function ClientList() {
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
   const [showChecklist, setShowChecklist] = useState(false);
+  const [initiating, setInitiating] = useState<string | null>(null);
+
+  const handleInitiateRectification = async (client: Client) => {
+    setInitiating(client.id);
+    try {
+      const draft = await RectificationService.initiate({
+        client_id: client.id,
+        module: "CLIENT",
+        record_id: client.id,
+        current_version: 1,
+        proposed_changes: [],
+        justification_details: { q1: "", q2: "", q3: "" },
+        impact_declaration: { financial: false, risk: false },
+        confirmation_mode: "Client Update",
+        is_investor_requested: false,
+        initiation_reason: "Internal rectification initiated from Client List"
+      });
+
+      toast.success("Rectification Draft Created (E-Serial No Assigned)");
+      router.push(`/rectification/${draft.id}`);
+    } catch (error) {
+      toast.error("Failed to initiate rectification protocol");
+    } finally {
+      setInitiating(null);
+    }
+  };
 
   useEffect(() => {
     const init = async () => {
@@ -214,16 +241,29 @@ export function ClientList() {
                             <Eye className="w-4 h-4" /> View Details
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => router.push(`/clients/${client.id}/edit`)} className="gap-2">
-                            <Pencil className="w-4 h-4" /> Edit Details
+                            <Pencil className="w-4 h-4" /> Edit Records
                           </DropdownMenuItem>
-                          <DropdownMenuSeparator className="bg-primary/10" />
+                          {/* <DropdownMenuSeparator className="bg-primary/10" />
                           <DropdownMenuItem 
+                            onClick={() => handleInitiateRectification(client)} 
+                            className="gap-2 text-amber-600 focus:text-amber-600 focus:bg-amber-50"
+                            disabled={!!initiating}
+                          >
+                            {initiating === client.id ? (
+                                <span className="w-4 h-4 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                                <RefreshCcw className="w-4 h-4" />
+                            )}
+                            Data Rectification
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator className="bg-primary/10" /> */}
+                          {/* <DropdownMenuItem 
                             onClick={() => handleDelete(client.id)} 
                             variant="destructive"
                             className="gap-2"
                           >
                             <Trash2 className="w-4 h-4" /> Delete Client
-                          </DropdownMenuItem>
+                          </DropdownMenuItem> */}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>

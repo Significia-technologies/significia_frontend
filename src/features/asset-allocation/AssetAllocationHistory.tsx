@@ -11,7 +11,8 @@ import {
   Gem,
   ChevronRight,
   Loader2,
-  Send
+  Send,
+  RefreshCcw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,21 +30,50 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { AssetAllocationService, AssetAllocation } from "@/core/services/asset-allocation.service";
+import { RectificationService } from "@/core/services/rectification.service";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { useRouter } from "next/navigation";
 
 interface AssetAllocationHistoryProps {
   
 }
 
 export function AssetAllocationHistory({  }: AssetAllocationHistoryProps) {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [allocations, setAllocations] = useState<AssetAllocation[]>([]);
   const [search, setSearch] = useState("");
   const [downloading, setDownloading] = useState<string | null>(null);
   const [emailing, setEmailing] = useState<string | null>(null);
+  const [initiating, setInitiating] = useState<string | null>(null);
+
+  const handleInitiateRectification = async (item: AssetAllocation) => {
+    setInitiating(item.id);
+    try {
+      const draft = await RectificationService.initiate({
+        client_id: item.client_id,
+        module: "ASSET",
+        record_id: item.id,
+        current_version: 1,
+        proposed_changes: [],
+        justification_details: { q1: "", q2: "", q3: "" },
+        impact_declaration: { financial: false, risk: false },
+        confirmation_mode: "Data Correction",
+        is_investor_requested: false,
+        initiation_reason: "Internal rectification initiated from Asset Allocation vault"
+      });
+
+      toast.success("Rectification Draft Created (E-Serial No Assigned)");
+      router.push(`/rectification/${draft.id}`);
+    } catch (error) {
+      toast.error("Failed to initiate rectification protocol");
+    } finally {
+      setInitiating(null);
+    }
+  };
 
   useEffect(() => {
     loadAllocations();
@@ -319,6 +349,20 @@ export function AssetAllocationHistory({  }: AssetAllocationHistoryProps) {
                             <Send className="w-3.5 h-3.5 text-emerald-500" />
                           )}
                           <span className="text-[9px] font-black uppercase">Email</span>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 px-2 gap-1.5 border-amber-500/10 hover:border-amber-500/30 hover:bg-amber-500/5 transition-all text-amber-500"
+                          onClick={() => handleInitiateRectification(a)}
+                          disabled={!!initiating}
+                        >
+                          {initiating === a.id ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <RefreshCcw className="w-3.5 h-3.5" />
+                          )}
+                          <span className="text-[9px] font-black uppercase">Correct</span>
                         </Button>
                       </div>
                     </TableCell>

@@ -12,7 +12,8 @@ import {
   Filter,
   ArrowUpDown,
   Send,
-  Loader2
+  Loader2,
+  RefreshCcw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,23 +34,52 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { RiskProfileService, RiskAssessment } from "@/core/services/risk-profile.service";
+import { RectificationService } from "@/core/services/rectification.service";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { useRouter } from "next/navigation";
 
 interface RiskProfileHistoryProps {
   
 }
 
 export function RiskProfileHistory({  }: RiskProfileHistoryProps) {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [assessments, setAssessments] = useState<RiskAssessment[]>([]);
   const [search, setSearch] = useState("");
   const [downloading, setDownloading] = useState<string | null>(null);
   const [emailing, setEmailing] = useState<string | null>(null);
+  const [initiating, setInitiating] = useState<string | null>(null);
 
   useEffect(() => {
     loadAssessments();
   }, []);
+
+  const handleInitiateRectification = async (item: any) => {
+    setInitiating(item.id);
+    try {
+      const draft = await RectificationService.initiate({
+        client_id: item.client_id,
+        module: "RISK",
+        record_id: item.id,
+        current_version: 1,
+        proposed_changes: [],
+        justification_details: { q1: "", q2: "", q3: "" },
+        impact_declaration: { financial: false, risk: true },
+        confirmation_mode: "Data Correction",
+        is_investor_requested: false,
+        initiation_reason: "Internal rectification initiated from Risk Profile vault"
+      });
+
+      toast.success("Rectification Draft Created (E-Serial No Assigned)");
+      router.push(`/rectification/${draft.id}`);
+    } catch (error) {
+      toast.error("Failed to initiate rectification protocol");
+    } finally {
+      setInitiating(null);
+    }
+  };
 
   const loadAssessments = async () => {
     setLoading(true);
@@ -239,6 +269,20 @@ export function RiskProfileHistory({  }: RiskProfileHistoryProps) {
                             <Send className="w-3.5 h-3.5 text-emerald-500" />
                           )}
                           <span className="text-[9px] font-black uppercase">Email</span>
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="h-8 px-2 gap-1.5 border-amber-500/10 hover:border-amber-500/30 hover:bg-amber-500/5 transition-all"
+                          onClick={() => handleInitiateRectification(a)}
+                          disabled={!!initiating}
+                        >
+                          {initiating === a.id ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-500" />
+                          ) : (
+                            <RefreshCcw className="w-3.5 h-3.5 text-amber-500" />
+                          )}
+                          <span className="text-[9px] font-black uppercase">Correct</span>
                         </Button>
                       </div>
                     </TableCell>

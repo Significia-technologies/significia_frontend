@@ -8,19 +8,19 @@ import {
   Database,
   BarChart3,
   ShieldCheck,
-  TrendingUp,
-  Activity,
-  Users,
-  Archive,
-  Wrench,
-  UserCog,
-  Settings,
-  ChevronLeft,
-  ChevronRight,
-  Terminal,
   PieChart,
   FileCheck2,
   Mail,
+  ClipboardCheck,
+  Users,
+  TrendingUp,
+  Archive,
+  Wrench,
+  Terminal,
+  UserCog,
+  Settings,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -77,9 +77,10 @@ const NAV_ITEMS = [
     icon: TrendingUp,
   },
   {
-    label: "Operations",
-    href: "/operations",
-    icon: Activity,
+    label: "Data Rectification",
+    href: "/rectification",
+    icon: ClipboardCheck,
+    minRole: "admin",
   },
   {
     label: "Team",
@@ -173,7 +174,7 @@ export function SidebarContent() {
   return (
     <>
       {/* ── Logo ── */}
-      <div className="flex h-16 items-center gap-3 px-4">
+      <div className="flex h-14 items-center gap-3 px-4">
         <TenantLogo
           logoType={publicBranding?.logo_type || (isMasterContext ? "significia" : "shield")}
           logoUrl={publicBranding?.logo_url}

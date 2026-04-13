@@ -199,6 +199,18 @@ export const API_ENDPOINTS = {
     CHANGE_SUMMARY: `${API_BASE}/ia-master/sebi/ia-master/change-summary`,
   },
 
+  // ── Data Rectification (E-Serial No Workflow) ────────────────
+  RECTIFICATION: {
+    INITIATE: `${API_BASE}/data-rectification/initiate`,
+    LIST: `${API_BASE}/data-rectification/list`,
+    DETAIL: (id: string) => `${API_BASE}/data-rectification/${id}`,
+    UPLOAD: (id: string) => `${API_BASE}/data-rectification/${id}/upload`,
+    DOCUMENT: (id: string) => `${API_BASE}/data-rectification/${id}/document`,
+    APPROVE: (id: string) => `${API_BASE}/data-rectification/${id}/approve`,
+    CURRENT_VALUES: (module: string, recordId: string) => 
+      `${API_BASE}/data-rectification/current-values/${module}/${recordId}`,
+  },
+
   // ── Email Management (IA Owner) ─────────────────────────────
   EMAIL: {
     SETTINGS: `${API_BASE}/email/settings`,

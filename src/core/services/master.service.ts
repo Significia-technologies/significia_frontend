@@ -94,6 +94,7 @@ export interface ClientCreate {
   ipv_done_by_id?: string;
   ipv_date?: string;
   documents?: ClientDocumentResponse[];
+  rectification_serial_no?: string;
 }
 
 // ── Master Data Service (Bridge Architecture) ─────────────────────────────
