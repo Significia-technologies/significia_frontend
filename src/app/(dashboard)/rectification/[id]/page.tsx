@@ -17,7 +17,9 @@ import {
   Loader2,
   Trash2,
   Plus,
-  XCircle
+  XCircle,
+  Mic,
+  Music
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -207,7 +209,9 @@ export default function RectificationDetailsPage() {
 
   const handleDocDownload = async (docType: "investor_request" | "signed_form", path: string) => {
     try {
-      const filename = path.split('/').pop()?.split('_').slice(3).join('_') || "document.pdf";
+      const parts = path.split('.');
+      const extension = parts.length > 1 ? parts[parts.length - 1] : "pdf";
+      const filename = path.split('/').pop()?.split('_').slice(3).join('_') || `document.${extension}`;
       await RectificationService.downloadDocument(id, docType, filename);
     } catch (error) {
       toast.error("Failed to download document.");
@@ -699,26 +703,36 @@ export default function RectificationDetailsPage() {
                  <Card className="border-emerald-500/20 bg-emerald-500/5 shadow-none overflow-hidden h-full">
                     <CardHeader className="p-4 bg-emerald-500/20">
                       <CardTitle className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-emerald-900">
-                        <User className="w-4 h-4" /> Investor Request Evidence
+                        {confirmationMode.includes("Verbal") ? <Mic className="w-4 h-4" /> : <User className="w-4 h-4" />} 
+                        {confirmationMode.includes("Verbal") ? "Investor Verbal Evidence (Audio)" : "Investor Request Evidence"}
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="p-4 space-y-4">
                       {rectification.investor_request_path ? (
                         <div className="flex items-center justify-between p-3 bg-white/50 border border-emerald-500/20 rounded-lg">
                           <div className="flex items-center gap-3 overflow-hidden">
-                             <FileText className="w-5 h-5 text-emerald-600 shrink-0" />
+                             {rectification.investor_request_path.match(/\.(mp3|wav|m4a|ogg|aac)$/i) ? (
+                               <Music className="w-5 h-5 text-emerald-600 shrink-0" />
+                             ) : (
+                               <FileText className="w-5 h-5 text-emerald-600 shrink-0" />
+                             )}
                              <span className="text-[10px] font-bold truncate text-emerald-900">
-                               {rectification.investor_request_path.split('/').pop()?.split('_').slice(3).join('_') || "Investor_Request.pdf"}
+                               {rectification.investor_request_path.split('/').pop()?.split('_').slice(3).join('_') || (confirmationMode.includes("Verbal") ? "Audio_Evidence.mp3" : "Investor_Request.pdf")}
                              </span>
                           </div>
                           <div className="flex items-center gap-1">
+                            {rectification.investor_request_path.match(/\.(mp3|wav|m4a|ogg|aac)$/i) && (
+                                <audio controls className="h-6 w-32 mr-2 scale-75 origin-right">
+                                    <source src={`${process.env.NEXT_PUBLIC_BRIDGE_URL || 'http://localhost:8001'}/api/bridge/storage${rectification.investor_request_path}`} />
+                                </audio>
+                            )}
                             <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-emerald-500/10" onClick={() => handleDocDownload("investor_request", rectification.investor_request_path!)}>
                                <FileDown className="w-3.5 h-3.5" />
                             </Button>
                             {rectification?.status !== "APPROVED" && (
                               <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-red-500/10 text-red-500" onClick={() => handleDeleteDoc("investor_request")}>
                                  <Trash2 className="w-3.5 h-3.5" />
-                              </Button>
+                               </Button>
                             )}
                           </div>
                         </div>
@@ -728,17 +742,20 @@ export default function RectificationDetailsPage() {
                              <ProgressPie percentage={uploadProgress} />
                            ) : (
                              <>
-                               <AlertCircle className="w-5 h-5 text-emerald-700" />
-                               <p className="text-[9px] font-black uppercase text-emerald-800">Missing Request Copy</p>
+                               {confirmationMode.includes("Verbal") ? <Mic className="w-5 h-5 text-emerald-700 animate-pulse" /> : <AlertCircle className="w-5 h-5 text-emerald-700" />}
+                               <p className="text-[9px] font-black uppercase text-emerald-800">
+                                 {confirmationMode.includes("Verbal") ? "Missing Audio Proof" : "Missing Request Copy"}
+                               </p>
                                <div className="relative w-full">
                                   <input 
                                     type="file" 
                                     className="absolute inset-0 opacity-0 cursor-pointer" 
                                     onChange={(e) => handleFileUpload(e, "investor_request")}
                                     disabled={uploading}
+                                    accept={confirmationMode.includes("Verbal") ? "audio/*" : undefined}
                                   />
                                   <Button variant="outline" size="sm" className="w-full text-[9px] font-black uppercase h-7 border-emerald-500/30 hover:bg-emerald-500/10 text-emerald-900">
-                                    Upload Copy
+                                    {confirmationMode.includes("Verbal") ? "Upload Recording" : "Upload Copy"}
                                   </Button>
                                </div>
                              </>
