@@ -65,7 +65,7 @@ export function CreateRectificationModal() {
         current_version: 1,
         proposed_changes: [],
         justification_details: { q1: "", q2: "", q3: "" },
-        impact_declaration: { financial: false, risk: false },
+        impact_declaration: { financial: false, risk: false, asset_allocation: false, portfolio: false },
         confirmation_mode: isInvestorRequested ? "Physical Document" : "Internal Audit",
         is_investor_requested: isInvestorRequested,
         initiation_reason: reason

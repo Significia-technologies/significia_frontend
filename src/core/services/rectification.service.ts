@@ -17,6 +17,8 @@ export interface JustificationDetails {
 export interface ImpactDeclaration {
   financial: boolean;
   risk: boolean;
+  asset_allocation: boolean;
+  portfolio: boolean;
   remarks?: string;
 }
 

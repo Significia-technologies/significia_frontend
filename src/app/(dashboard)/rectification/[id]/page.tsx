@@ -92,6 +92,9 @@ export default function RectificationDetailsPage() {
 
   // Form State for Section 4
   const [proposedChanges, setProposedChanges] = useState<ProposedChange[]>([]);
+  const [justification, setJustification] = useState({ q1: "", q2: "", q3: "" });
+  const [impact, setImpact] = useState({ financial: false, risk: false, asset_allocation: false, portfolio: false, remarks: "" });
+  const [confirmationMode, setConfirmationMode] = useState<string[]>([]);
   const [currentModuleValues, setCurrentModuleValues] = useState<Record<string, any>>({});
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -106,6 +109,15 @@ export default function RectificationDetailsPage() {
       const r = await RectificationService.getById(id);
       setRectification(r);
       setProposedChanges(r.proposed_changes || []);
+      setJustification(r.justification_details || { q1: "", q2: "", q3: "" });
+      setImpact({
+        financial: r.impact_declaration?.financial || false,
+        risk: r.impact_declaration?.risk || false,
+        asset_allocation: r.impact_declaration?.asset_allocation || false,
+        portfolio: r.impact_declaration?.portfolio || false,
+        remarks: r.impact_declaration?.remarks || ""
+      });
+      setConfirmationMode(r.confirmation_mode ? r.confirmation_mode.split(',') : []);
       
       if (r.client_id) {
         const c = await MasterDataService.getClient(r.client_id);
@@ -227,7 +239,12 @@ export default function RectificationDetailsPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await RectificationService.update(id, { proposed_changes: proposedChanges });
+      await RectificationService.update(id, { 
+        proposed_changes: proposedChanges,
+        justification_details: justification,
+        impact_declaration: impact,
+        confirmation_mode: confirmationMode.join(',')
+      });
       toast.success("Rectification progress saved locally and in vault.");
       loadData(true);
     } catch (error) {
@@ -457,9 +474,11 @@ export default function RectificationDetailsPage() {
                             <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-emerald-500/10" onClick={() => handleDocDownload("investor_request", rectification.investor_request_path!)}>
                                <FileDown className="w-3.5 h-3.5" />
                             </Button>
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-red-500/10 text-red-500" onClick={() => handleDeleteDoc("investor_request")}>
-                               <Trash2 className="w-3.5 h-3.5" />
-                            </Button>
+                            {rectification?.status !== "APPROVED" && (
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-red-500/10 text-red-500" onClick={() => handleDeleteDoc("investor_request")}>
+                                 <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            )}
                           </div>
                         </div>
                       ) : (
@@ -509,9 +528,11 @@ export default function RectificationDetailsPage() {
                             <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-emerald-500/10" onClick={() => handleDocDownload("signed_form", rectification.signed_form_path!)}>
                                <FileDown className="w-3.5 h-3.5" />
                             </Button>
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-red-500/10 text-red-500" onClick={() => handleDeleteDoc("signed_form")}>
-                               <Trash2 className="w-3.5 h-3.5" />
-                            </Button>
+                            {rectification?.status !== "APPROVED" && (
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-red-500/10 text-red-500" onClick={() => handleDeleteDoc("signed_form")}>
+                                 <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            )}
                           </div>
                         </div>
                     ) : (
@@ -555,7 +576,15 @@ export default function RectificationDetailsPage() {
                 <div className="flex gap-6 flex-wrap">
                     {["Data Correction", "Client Update", "Assumption Change", "Input Error", "Other"].map(opt => (
                         <div key={opt} className="flex items-center gap-2">
-                           <Checkbox checked={rectification.confirmation_mode?.includes(opt)} disabled className="w-5 h-5 border-black" />
+                           <Checkbox 
+                              checked={confirmationMode.includes(opt)} 
+                              onCheckedChange={(checked) => {
+                                if (checked) setConfirmationMode([...confirmationMode, opt]);
+                                else setConfirmationMode(confirmationMode.filter(m => m !== opt));
+                              }}
+                              disabled={rectification?.status === "APPROVED"} 
+                              className="w-5 h-5 border-black" 
+                           />
                            <span className="text-xs font-bold uppercase">{opt}</span>
                         </div>
                     ))}
@@ -704,15 +733,33 @@ export default function RectificationDetailsPage() {
             <div className="px-4 space-y-6">
                 <div>
                    <Label className="text-[10px] font-black uppercase opacity-60">1. What is incorrect in current data?</Label>
-                   <p className="text-sm border-b border-black/10 mt-1 pb-2">{rectification.justification_details?.q1 || "---"}</p>
+                   <Textarea 
+                      value={justification.q1} 
+                      onChange={(e) => setJustification({...justification, q1: e.target.value})}
+                      disabled={rectification?.status === "APPROVED"}
+                      className="text-sm border-0 border-b border-black/10 mt-1 pb-2 shadow-none focus-visible:ring-0 rounded-none bg-transparent min-h-[60px]"
+                      placeholder="Detail the discovered inaccuracy..."
+                   />
                 </div>
                 <div>
                    <Label className="text-[10px] font-black uppercase opacity-60">2. Why is change required?</Label>
-                   <p className="text-sm border-b border-black/10 mt-1 pb-2">{rectification.justification_details?.q2 || "---"}</p>
+                   <Textarea 
+                      value={justification.q2} 
+                      onChange={(e) => setJustification({...justification, q2: e.target.value})}
+                      disabled={rectification?.status === "APPROVED"}
+                      className="text-sm border-0 border-b border-black/10 mt-1 pb-2 shadow-none focus-visible:ring-0 rounded-none bg-transparent min-h-[60px]"
+                      placeholder="Explain why this correction is necessary (Compliance, Client Request, etc.)"
+                   />
                 </div>
                 <div>
                    <Label className="text-[10px] font-black uppercase opacity-60">3. Source of revised data?</Label>
-                   <p className="text-sm border-b border-black/10 mt-1 pb-2">{rectification.justification_details?.q3 || "---"}</p>
+                   <Textarea 
+                      value={justification.q3} 
+                      onChange={(e) => setJustification({...justification, q3: e.target.value})}
+                      disabled={rectification?.status === "APPROVED"}
+                      className="text-sm border-0 border-b border-black/10 mt-1 pb-2 shadow-none focus-visible:ring-0 rounded-none bg-transparent min-h-[60px]"
+                      placeholder="Mention the physical document or source used for verification..."
+                   />
                 </div>
             </div>
           </section>
@@ -726,17 +773,51 @@ export default function RectificationDetailsPage() {
             <div className="px-4 grid grid-cols-2 gap-8">
                 <div className="space-y-3">
                    <div className="flex items-center gap-3">
-                       <Checkbox checked={rectification.impact_declaration?.financial} disabled className="w-5 h-5 border-black" />
+                       <Checkbox 
+                          checked={impact.financial} 
+                          onCheckedChange={(val) => setImpact({...impact, financial: !!val})}
+                          disabled={rectification?.status === "APPROVED"} 
+                          className="w-5 h-5 border-black" 
+                        />
                        <span className="text-xs font-bold uppercase">Impacts Financial Analysis</span>
                    </div>
                    <div className="flex items-center gap-3">
-                       <Checkbox checked={rectification.impact_declaration?.risk} disabled className="w-5 h-5 border-black" />
+                       <Checkbox 
+                          checked={impact.risk} 
+                          onCheckedChange={(val) => setImpact({...impact, risk: !!val})}
+                          disabled={rectification?.status === "APPROVED"} 
+                          className="w-5 h-5 border-black" 
+                        />
                        <span className="text-xs font-bold uppercase">Impacts Risk Profile</span>
+                   </div>
+                   <div className="flex items-center gap-3">
+                       <Checkbox 
+                          checked={impact.asset_allocation} 
+                          onCheckedChange={(val) => setImpact({...impact, asset_allocation: !!val})}
+                          disabled={rectification?.status === "APPROVED"} 
+                          className="w-5 h-5 border-black" 
+                        />
+                       <span className="text-xs font-bold uppercase">Impacts Asset Allocation</span>
+                   </div>
+                   <div className="flex items-center gap-3">
+                       <Checkbox 
+                          checked={impact.portfolio} 
+                          onCheckedChange={(val) => setImpact({...impact, portfolio: !!val})}
+                          disabled={rectification?.status === "APPROVED"} 
+                          className="w-5 h-5 border-black" 
+                        />
+                       <span className="text-xs font-bold uppercase">Impacts Portfolio / Holdings</span>
                    </div>
                 </div>
                 <div>
                     <Label className="text-[9px] font-black uppercase opacity-40">Remarks / Mitigation</Label>
-                    <p className="text-[11px] font-medium leading-relaxed italic">{rectification.impact_declaration?.remarks || "No specific remarks"}</p>
+                    <Textarea 
+                        value={impact.remarks || ""} 
+                        onChange={(e) => setImpact({...impact, remarks: e.target.value})}
+                        disabled={rectification?.status === "APPROVED"}
+                        className="text-[11px] font-medium leading-relaxed italic border-0 border-b border-black/10 shadow-none focus-visible:ring-0 rounded-none bg-transparent p-0 min-h-[60px]"
+                        placeholder="Add mitigation steps if any..."
+                    />
                 </div>
             </div>
           </section>
