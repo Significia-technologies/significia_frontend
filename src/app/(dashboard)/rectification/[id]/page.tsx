@@ -415,10 +415,12 @@ export default function RectificationDetailsPage() {
                 <Label className="text-[9px] font-black uppercase opacity-40">Record ID (Original)</Label>
                 <div className="font-mono text-[9px] border-b border-black/10 pb-1">{rectification.record_id}</div>
               </div>
-              <div className="space-y-1">
-                <Label className="text-[9px] font-black uppercase opacity-40">Current Version</Label>
-                <div className="font-bold border-b border-black/10 pb-1">v{rectification.current_version}</div>
-              </div>
+              {rectification.module !== 'CLIENT' && (
+                <div className="space-y-1">
+                  <Label className="text-[9px] font-black uppercase opacity-40">Current Version</Label>
+                  <div className="font-bold border-b border-black/10 pb-1">v{rectification.current_version}</div>
+                </div>
+              )}
               <div className="space-y-1">
                 <Label className="text-[9px] font-black uppercase opacity-40">Edit Serial No.</Label>
                 <div className="font-black text-primary border-b border-black/10 pb-1">{rectification.serial_no}</div>
