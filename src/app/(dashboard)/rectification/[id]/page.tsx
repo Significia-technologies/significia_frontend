@@ -94,7 +94,9 @@ export default function RectificationDetailsPage() {
   const [proposedChanges, setProposedChanges] = useState<ProposedChange[]>([]);
   const [justification, setJustification] = useState({ q1: "", q2: "", q3: "" });
   const [impact, setImpact] = useState({ financial: false, risk: false, asset_allocation: false, portfolio: false, remarks: "" });
+  const [purposeOfEdit, setPurposeOfEdit] = useState<string[]>([]);
   const [confirmationMode, setConfirmationMode] = useState<string[]>([]);
+  const [confirmationReference, setConfirmationReference] = useState("");
   const [currentModuleValues, setCurrentModuleValues] = useState<Record<string, any>>({});
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -117,7 +119,9 @@ export default function RectificationDetailsPage() {
         portfolio: r.impact_declaration?.portfolio || false,
         remarks: r.impact_declaration?.remarks || ""
       });
+      setPurposeOfEdit(r.purpose_of_edit ? r.purpose_of_edit.split(',') : []);
       setConfirmationMode(r.confirmation_mode ? r.confirmation_mode.split(',') : []);
+      setConfirmationReference(r.confirmation_reference || "");
       
       if (r.client_id) {
         const c = await MasterDataService.getClient(r.client_id);
@@ -243,7 +247,9 @@ export default function RectificationDetailsPage() {
         proposed_changes: proposedChanges,
         justification_details: justification,
         impact_declaration: impact,
-        confirmation_mode: confirmationMode.join(',')
+        purpose_of_edit: purposeOfEdit.join(','),
+        confirmation_mode: confirmationMode.join(','),
+        confirmation_reference: confirmationReference
       });
       toast.success("Rectification progress saved locally and in vault.");
       loadData(true);
@@ -446,125 +452,6 @@ export default function RectificationDetailsPage() {
             </div>
           </section>
 
-          {/* NEW SECTION: COMPLIANCE DOCUMENTATION */}
-          <section className="print:hidden">
-             <div className="bg-black/5 p-4 flex items-center gap-3 border-l-4 border-emerald-500 mb-6">
-              <ShieldAlert className="w-5 h-5 text-emerald-600" />
-              <h2 className="text-sm font-black uppercase tracking-widest text-emerald-900">Compliance Documentation</h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-4">
-               {/* 1. Investor Request Copy */}
-               {rectification.is_investor_requested && (
-                 <Card className="border-emerald-500/20 bg-emerald-500/5 shadow-none overflow-hidden h-full">
-                    <CardHeader className="p-4 bg-emerald-500/20">
-                      <CardTitle className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-emerald-900">
-                        <User className="w-4 h-4" /> Investor Request Evidence
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-4 space-y-4">
-                      {rectification.investor_request_path ? (
-                        <div className="flex items-center justify-between p-3 bg-white/50 border border-emerald-500/20 rounded-lg">
-                          <div className="flex items-center gap-3 overflow-hidden">
-                             <FileText className="w-5 h-5 text-emerald-600 shrink-0" />
-                             <span className="text-[10px] font-bold truncate text-emerald-900">
-                               {rectification.investor_request_path.split('/').pop()?.split('_').slice(3).join('_') || "Investor_Request.pdf"}
-                             </span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-emerald-500/10" onClick={() => handleDocDownload("investor_request", rectification.investor_request_path!)}>
-                               <FileDown className="w-3.5 h-3.5" />
-                            </Button>
-                            {rectification?.status !== "APPROVED" && (
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-red-500/10 text-red-500" onClick={() => handleDeleteDoc("investor_request")}>
-                                 <Trash2 className="w-3.5 h-3.5" />
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="p-3 border-2 border-dashed border-emerald-500/20 rounded-lg bg-emerald-500/5 flex flex-col items-center gap-2 text-center min-h-[80px] justify-center relative">
-                           {uploading && activeUploadType === "investor_request" ? (
-                             <ProgressPie percentage={uploadProgress} />
-                           ) : (
-                             <>
-                               <AlertCircle className="w-5 h-5 text-emerald-700" />
-                               <p className="text-[9px] font-black uppercase text-emerald-800">Missing Request Copy</p>
-                               <div className="relative w-full">
-                                  <input 
-                                    type="file" 
-                                    className="absolute inset-0 opacity-0 cursor-pointer" 
-                                    onChange={(e) => handleFileUpload(e, "investor_request")}
-                                    disabled={uploading}
-                                  />
-                                  <Button variant="outline" size="sm" className="w-full text-[9px] font-black uppercase h-7 border-emerald-500/30 hover:bg-emerald-500/10 text-emerald-900">
-                                    Upload Copy
-                                  </Button>
-                               </div>
-                             </>
-                           )}
-                        </div>
-                      )}
-                    </CardContent>
-                 </Card>
-               )}
-
-               {/* 2. IA Signed Authorization */}
-               <Card className={`border-emerald-500/20 bg-emerald-500/5 shadow-none overflow-hidden h-full ${!rectification.is_investor_requested ? 'md:col-span-2' : ''}`}>
-                  <CardHeader className="p-4 bg-emerald-500/20">
-                    <CardTitle className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-emerald-900">
-                      <ShieldAlert className="w-4 h-4" /> IA Signed Authorization
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4 space-y-4">
-                    {rectification.signed_form_path ? (
-                        <div className="flex items-center justify-between p-3 bg-white/50 border border-emerald-500/20 rounded-lg">
-                          <div className="flex items-center gap-3 overflow-hidden">
-                             <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                             <span className="text-[10px] font-bold truncate text-emerald-900">
-                               {rectification.signed_form_path.split('/').pop()?.split('_').slice(3).join('_') || "Final_Authorization.pdf"}
-                             </span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-emerald-500/10" onClick={() => handleDocDownload("signed_form", rectification.signed_form_path!)}>
-                               <FileDown className="w-3.5 h-3.5" />
-                            </Button>
-                            {rectification?.status !== "APPROVED" && (
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-red-500/10 text-red-500" onClick={() => handleDeleteDoc("signed_form")}>
-                                 <Trash2 className="w-3.5 h-3.5" />
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                    ) : (
-                      <div className="p-3 border-2 border-dashed border-emerald-500/20 rounded-lg bg-emerald-500/5 flex flex-col items-center gap-2 text-center min-h-[80px] justify-center relative">
-                         {uploading && activeUploadType === "signed_form" ? (
-                             <ProgressPie percentage={uploadProgress} />
-                         ) : (
-                           <>
-                             <AlertCircle className="w-5 h-5 text-emerald-700" />
-                             <p className="text-[9px] font-black uppercase text-emerald-800">Missing Internal Sign-off</p>
-                             <p className="text-[8px] font-bold text-emerald-700/60 uppercase tracking-tighter">Download form, get signature, and upload.</p>
-                             <div className="relative w-full">
-                                <input 
-                                  type="file" 
-                                  className="absolute inset-0 opacity-0 cursor-pointer" 
-                                  onChange={(e) => handleFileUpload(e, "signed_form")}
-                                  disabled={uploading}
-                                />
-                                <Button variant="outline" size="sm" className="w-full text-[9px] font-black uppercase h-7 border-emerald-500/30 hover:bg-emerald-500/10 text-emerald-900">
-                                  Upload Signed Form
-                                </Button>
-                             </div>
-                           </>
-                         )}
-                      </div>
-                    )}
-                  </CardContent>
-               </Card>
-
-
-            </div>
-          </section>
 
           {/* SECTION 3: PURPOSE OF EDIT */}
            <section>
@@ -577,10 +464,10 @@ export default function RectificationDetailsPage() {
                     {["Data Correction", "Client Update", "Assumption Change", "Input Error", "Other"].map(opt => (
                         <div key={opt} className="flex items-center gap-2">
                            <Checkbox 
-                              checked={confirmationMode.includes(opt)} 
+                              checked={purposeOfEdit.includes(opt)} 
                               onCheckedChange={(checked) => {
-                                if (checked) setConfirmationMode([...confirmationMode, opt]);
-                                else setConfirmationMode(confirmationMode.filter(m => m !== opt));
+                                if (checked) setPurposeOfEdit([...purposeOfEdit, opt]);
+                                else setPurposeOfEdit(purposeOfEdit.filter(m => m !== opt));
                               }}
                               disabled={rectification?.status === "APPROVED"} 
                               className="w-5 h-5 border-black" 
@@ -761,6 +648,162 @@ export default function RectificationDetailsPage() {
                       placeholder="Mention the physical document or source used for verification..."
                    />
                 </div>
+            </div>
+          </section>
+
+          {/* SECTION 6: CLIENT CONFIRMATION */}
+          <section>
+             <div className="bg-black/5 p-4 flex items-center gap-3 border-l-4 border-black mb-6">
+              <div className="w-8 h-8 rounded bg-black text-white flex items-center justify-center font-bold">6</div>
+              <h2 className="text-sm font-black uppercase tracking-widest">Client Confirmation (If Available)</h2>
+            </div>
+            <div className="px-4 space-y-4">
+                <div className="flex gap-6 flex-wrap">
+                    {["Written/Email", "Verbal", "Not applicable"].map(opt => (
+                        <div key={opt} className="flex items-center gap-2">
+                           <Checkbox 
+                              checked={confirmationMode.includes(opt)} 
+                              onCheckedChange={(checked) => {
+                                if (checked) setConfirmationMode([...confirmationMode, opt]);
+                                else setConfirmationMode(confirmationMode.filter(m => m !== opt));
+                              }}
+                              disabled={rectification?.status === "APPROVED"} 
+                              className="w-5 h-5 border-black" 
+                           />
+                           <span className="text-xs font-bold uppercase">{opt}</span>
+                        </div>
+                    ))}
+                </div>
+                <div>
+                   <Label className="text-[10px] font-black uppercase opacity-60">Reference</Label>
+                   <Input 
+                      value={confirmationReference} 
+                      onChange={(e) => setConfirmationReference(e.target.value)}
+                      disabled={rectification?.status === "APPROVED"}
+                      className="text-sm border-0 border-b border-black/10 mt-1 pb-2 shadow-none focus-visible:ring-0 rounded-none bg-transparent"
+                      placeholder="e.g. Email Date, Call Log ID..."
+                   />
+                </div>
+            </div>
+          </section>
+
+          {/* SECTION: COMPLIANCE DOCUMENTATION */}
+          <section className="print:hidden">
+             <div className="bg-black/5 p-4 flex items-center gap-3 border-l-4 border-emerald-500 mb-6">
+              <ShieldAlert className="w-5 h-5 text-emerald-600" />
+              <h2 className="text-sm font-black uppercase tracking-widest text-emerald-900">Compliance Documentation</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-4">
+               {/* 1. Investor Request Copy */}
+               {rectification.is_investor_requested && (
+                 <Card className="border-emerald-500/20 bg-emerald-500/5 shadow-none overflow-hidden h-full">
+                    <CardHeader className="p-4 bg-emerald-500/20">
+                      <CardTitle className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-emerald-900">
+                        <User className="w-4 h-4" /> Investor Request Evidence
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4 space-y-4">
+                      {rectification.investor_request_path ? (
+                        <div className="flex items-center justify-between p-3 bg-white/50 border border-emerald-500/20 rounded-lg">
+                          <div className="flex items-center gap-3 overflow-hidden">
+                             <FileText className="w-5 h-5 text-emerald-600 shrink-0" />
+                             <span className="text-[10px] font-bold truncate text-emerald-900">
+                               {rectification.investor_request_path.split('/').pop()?.split('_').slice(3).join('_') || "Investor_Request.pdf"}
+                             </span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-emerald-500/10" onClick={() => handleDocDownload("investor_request", rectification.investor_request_path!)}>
+                               <FileDown className="w-3.5 h-3.5" />
+                            </Button>
+                            {rectification?.status !== "APPROVED" && (
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-red-500/10 text-red-500" onClick={() => handleDeleteDoc("investor_request")}>
+                                 <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="p-3 border-2 border-dashed border-emerald-500/20 rounded-lg bg-emerald-500/5 flex flex-col items-center gap-2 text-center min-h-[80px] justify-center relative">
+                           {uploading && activeUploadType === "investor_request" ? (
+                             <ProgressPie percentage={uploadProgress} />
+                           ) : (
+                             <>
+                               <AlertCircle className="w-5 h-5 text-emerald-700" />
+                               <p className="text-[9px] font-black uppercase text-emerald-800">Missing Request Copy</p>
+                               <div className="relative w-full">
+                                  <input 
+                                    type="file" 
+                                    className="absolute inset-0 opacity-0 cursor-pointer" 
+                                    onChange={(e) => handleFileUpload(e, "investor_request")}
+                                    disabled={uploading}
+                                  />
+                                  <Button variant="outline" size="sm" className="w-full text-[9px] font-black uppercase h-7 border-emerald-500/30 hover:bg-emerald-500/10 text-emerald-900">
+                                    Upload Copy
+                                  </Button>
+                               </div>
+                             </>
+                           )}
+                        </div>
+                      )}
+                    </CardContent>
+                 </Card>
+               )}
+
+               {/* 2. IA Signed Authorization */}
+               <Card className={`border-emerald-500/20 bg-emerald-500/5 shadow-none overflow-hidden h-full ${!rectification.is_investor_requested ? 'md:col-span-2' : ''}`}>
+                  <CardHeader className="p-4 bg-emerald-500/20">
+                    <CardTitle className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-emerald-900">
+                      <ShieldAlert className="w-4 h-4" /> IA Signed Authorization
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4 space-y-4">
+                    {rectification.signed_form_path ? (
+                        <div className="flex items-center justify-between p-3 bg-white/50 border border-emerald-500/20 rounded-lg">
+                          <div className="flex items-center gap-3 overflow-hidden">
+                             <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                             <span className="text-[10px] font-bold truncate text-emerald-900">
+                               {rectification.signed_form_path.split('/').pop()?.split('_').slice(3).join('_') || "Final_Authorization.pdf"}
+                             </span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-emerald-500/10" onClick={() => handleDocDownload("signed_form", rectification.signed_form_path!)}>
+                               <FileDown className="w-3.5 h-3.5" />
+                            </Button>
+                            {rectification?.status !== "APPROVED" && (
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-red-500/10 text-red-500" onClick={() => handleDeleteDoc("signed_form")}>
+                                 <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                    ) : (
+                      <div className="p-3 border-2 border-dashed border-emerald-500/20 rounded-lg bg-emerald-500/5 flex flex-col items-center gap-2 text-center min-h-[80px] justify-center relative">
+                         {uploading && activeUploadType === "signed_form" ? (
+                             <ProgressPie percentage={uploadProgress} />
+                         ) : (
+                           <>
+                             <AlertCircle className="w-5 h-5 text-emerald-700" />
+                             <p className="text-[9px] font-black uppercase text-emerald-800">Missing Internal Sign-off</p>
+                             <p className="text-[8px] font-bold text-emerald-700/60 uppercase tracking-tighter">Download form, get signature, and upload.</p>
+                             <div className="relative w-full">
+                                <input 
+                                  type="file" 
+                                  className="absolute inset-0 opacity-0 cursor-pointer" 
+                                  onChange={(e) => handleFileUpload(e, "signed_form")}
+                                  disabled={uploading}
+                                />
+                                <Button variant="outline" size="sm" className="w-full text-[9px] font-black uppercase h-7 border-emerald-500/30 hover:bg-emerald-500/10 text-emerald-900">
+                                  Upload Signed Form
+                                </Button>
+                             </div>
+                           </>
+                         )}
+                      </div>
+                    )}
+                  </CardContent>
+               </Card>
+
+
             </div>
           </section>
 

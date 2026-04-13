@@ -30,6 +30,7 @@ export interface RectificationCreate {
   proposed_changes: ProposedChange[];
   justification_details: JustificationDetails;
   impact_declaration: ImpactDeclaration;
+  purpose_of_edit?: string;
   confirmation_mode: string;
   confirmation_reference?: string;
   is_investor_requested: boolean;
@@ -46,6 +47,7 @@ export interface RectificationResponse {
   proposed_changes: ProposedChange[];
   justification_details: JustificationDetails;
   impact_declaration: ImpactDeclaration;
+  purpose_of_edit?: string;
   confirmation_mode: string;
   confirmation_reference?: string;
   is_investor_requested: boolean;
