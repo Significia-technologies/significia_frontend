@@ -1,9 +1,16 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { UserPlus, Search, Filter, MoreHorizontal, Mail, Phone, MapPin, Trash2, Pencil, Eye, Database, CheckCircle2, FileText, Download, RefreshCcw } from "lucide-react";
+import { UserPlus, Search, Filter, MoreHorizontal, Mail, Phone, MapPin, Trash2, Pencil, Eye, Database, CheckCircle2, FileText, Download, RefreshCcw, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
@@ -33,6 +40,11 @@ export function ClientList() {
   const router = useRouter();
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [downloading, setDownloading] = useState(false);
   const [showChecklist, setShowChecklist] = useState(false);
   const [initiating, setInitiating] = useState<string | null>(null);
@@ -63,14 +75,27 @@ export function ClientList() {
   };
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setPage(1); // Reset to first page on search
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  useEffect(() => {
     fetchClients();
-  }, []);
+  }, [page, pageSize, debouncedSearch]);
 
   const fetchClients = async () => {
     try {
       setLoading(true);
-      const data = await MasterDataService.listClients();
-      setClients(data);
+      const response = await MasterDataService.listClients({
+        page,
+        limit: pageSize,
+        search: debouncedSearch
+      });
+      setClients(response.clients);
+      setTotal(response.total);
     } catch (error) {
       toast.error("Failed to load clients from your private database");
     } finally {
@@ -106,7 +131,12 @@ export function ClientList() {
       <div className="flex flex-col xl:flex-row gap-4 items-center justify-between">
         <div className="relative w-full xl:max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Search clients in private DB..." className="pl-10 bg-background/50 border-primary/20" />
+          <Input 
+            placeholder="Search clients in private DB..." 
+            className="pl-10 bg-background/50 border-primary/20" 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full xl:w-auto">
           {/* <Button variant="outline" className="flex-1 sm:flex-none gap-2 border-primary/20 h-9 text-xs sm:text-sm">
@@ -258,16 +288,72 @@ export function ClientList() {
               )}
             </TableBody>
           </Table>
-        </div>
-      </CardContent>
+          </div>
+
+          <div className="flex items-center justify-between px-4 py-4 border-t border-primary/10 bg-primary/5">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground whitespace-nowrap">Items per page</span>
+                <Select
+                  value={pageSize.toString()}
+                  onValueChange={(val) => {
+                    setPageSize(parseInt(val));
+                    setPage(1);
+                  }}
+                >
+                  <SelectTrigger className="h-8 w-[70px] bg-background border-primary/20">
+                    <SelectValue placeholder={pageSize} />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card border-primary/20">
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="25">25</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Showing <span className="font-medium text-foreground">{Math.min((page - 1) * pageSize + 1, total)}</span> to{" "}
+                <span className="font-medium text-foreground">{Math.min(page * pageSize, total)}</span> of{" "}
+                <span className="font-medium text-foreground">{total}</span> entries
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1 px-2 border-primary/20"
+                onClick={() => setPage(prev => Math.max(1, prev - 1))}
+                disabled={page === 1 || loading}
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Previous
+              </Button>
+              <div className="flex items-center gap-1 font-medium text-xs">
+                <span className="text-primary">{page}</span>
+                <span className="text-muted-foreground">/</span>
+                <span className="text-muted-foreground">{Math.ceil(total / pageSize) || 1}</span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1 px-2 border-primary/20"
+                onClick={() => setPage(prev => Math.min(Math.ceil(total / pageSize), prev + 1))}
+                disabled={page >= Math.ceil(total / pageSize) || loading}
+              >
+                Next
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        </CardContent>
       </Card>
       
-      {!loading && clients.length > 0 && (
-        <div className="flex items-center justify-between text-sm text-muted-foreground px-2">
-          <p>Showing {clients.length} clients from your private database.</p>
-          <div className="flex items-center gap-1 p-1 rounded-md bg-green-500/10 border border-green-500/20 text-[10px] text-green-600 font-bold uppercase tracking-widest px-2">
-            <CheckCircle2 className="w-3 h-3" />
-            Live Remote Storage
+      {!loading && total > 0 && (
+        <div className="flex items-center justify-between text-[10px] text-muted-foreground px-2 uppercase tracking-widest font-bold">
+          <p>Significia Bridge is managing {total} private client records.</p>
+          <div className="flex items-center gap-1 text-emerald-500">
+            <Database className="w-3 h-3" />
+            Vault Encrypted
           </div>
         </div>
       )}

@@ -104,12 +104,23 @@ export interface ClientCreate {
 // No  required — backend resolves tenant from JWT + X-Tenant-Slug
 
 export class MasterDataService {
-  static async listClients(): Promise<Client[]> {
+  static async listClients(params: { page?: number; limit?: number; search?: string } = {}): Promise<{ clients: Client[]; total: number }> {
+    const { page = 1, limit = 10, search } = params;
+    
     const response = await httpClient.get<{ clients: Client[]; total: number }>(
-      API_ENDPOINTS.MASTER.CLIENTS.LIST
+      API_ENDPOINTS.MASTER.CLIENTS.LIST,
+      {
+        params: {
+          skip: (page - 1) * limit,
+          limit,
+          search: search || undefined
+        }
+      }
     );
-    // Bridge Architecture returns { clients: [], total: 0 }
-    return response.data.clients || [];
+    return {
+      clients: response.data.clients || [],
+      total: response.data.total || 0
+    };
   }
 
   static async getClient(clientId: string): Promise<ClientCreate> {

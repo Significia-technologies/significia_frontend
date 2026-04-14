@@ -40,8 +40,8 @@ export function CreateRectificationModal() {
 
   useEffect(() => {
     if (open && clients.length === 0) {
-      MasterDataService.listClients()
-        .then((data) => setClients(data))
+      MasterDataService.listClients({ limit: 1000 })
+        .then((response) => setClients(response.clients))
         .catch(() => toast.error("Failed to load clients"));
     }
   }, [open, clients.length]);
