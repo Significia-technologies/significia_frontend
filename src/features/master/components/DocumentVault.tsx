@@ -90,8 +90,8 @@ export function DocumentVault({ clientId, documents, onUploadSuccess, readOnly =
   const categoriesMap = documents.reduce((acc, doc) => {
     let category = doc.category || "General";
     
-    // According to user: "for now just implement the Rectification and Reports"
-    if (category !== "Rectification" && category !== "Reports") {
+    // Grouping according to business preference: Rectification, Reports, and KYC
+    if (category !== "Rectification" && category !== "Reports" && category !== "KYC") {
       category = "General";
     }
 

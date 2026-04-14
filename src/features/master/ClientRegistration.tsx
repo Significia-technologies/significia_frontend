@@ -361,11 +361,13 @@ export default function ClientRegistrationForm({
           router.push(`/clients/${clientId}`);
       } else {
           const client = await MasterDataService.createClient(submissionData);
-          if (client.id && Object.keys(pendingDocuments).length > 0) {
+          const newClientId = client.user_id || client.id;
+          
+          if (newClientId && Object.keys(pendingDocuments).length > 0) {
               toast.info("Registration saving. Uploading secure documents...", { duration: 5000 });
               for (const [docType, file] of Object.entries(pendingDocuments)) {
                   try {
-                      await MasterDataService.uploadDocument(client.id, file, docType);
+                      await MasterDataService.uploadDocument(newClientId, file, docType);
                   } catch (e) {
                       console.error(`Failed to upload ${docType}`, e);
                   }
