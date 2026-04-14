@@ -16,6 +16,7 @@ export interface Client {
   created_at: string;
   updated_at: string;
   assigned_employee_id?: string;
+  assigned_employee_name?: string;
   kyc_verified: boolean;
   ckyc_number?: string;
   ipv_done_by_id?: string;

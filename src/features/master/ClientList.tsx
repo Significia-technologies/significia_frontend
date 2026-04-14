@@ -32,7 +32,6 @@ import { PreRegistrationChecklist } from "./components/PreRegistrationChecklist"
 export function ClientList() {
   const router = useRouter();
   const [clients, setClients] = useState<Client[]>([]);
-  const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
   const [showChecklist, setShowChecklist] = useState(false);
@@ -48,7 +47,7 @@ export function ClientList() {
         current_version: 1,
         proposed_changes: [],
         justification_details: { q1: "", q2: "", q3: "" },
-        impact_declaration: { financial: false, risk: false },
+        impact_declaration: { financial: false, risk: false, asset_allocation: false, portfolio: false },
         confirmation_mode: "Client Update",
         is_investor_requested: false,
         initiation_reason: "Internal rectification initiated from Client List"
@@ -64,25 +63,12 @@ export function ClientList() {
   };
 
   useEffect(() => {
-    const init = async () => {
-      setLoading(true);
-      await Promise.all([fetchClients(), fetchEmployees()]);
-      setLoading(false);
-    };
-    init();
+    fetchClients();
   }, []);
-
-  const fetchEmployees = async () => {
-    try {
-      const validEmployees = await IAMasterService.listEmployees();
-      setEmployees(validEmployees);
-    } catch (error) {
-      console.error("Failed to fetch employees", error);
-    }
-  };
 
   const fetchClients = async () => {
     try {
+      setLoading(true);
       const data = await MasterDataService.listClients();
       setClients(data);
     } catch (error) {
@@ -194,7 +180,12 @@ export function ClientList() {
               ) : (
                 clients.map((client) => (
                   <TableRow key={client.id} className="hover:bg-primary/5 transition-colors">
-                    <TableCell className="font-medium whitespace-nowrap">{client.client_name}</TableCell>
+                    <TableCell className="font-medium whitespace-nowrap">
+                      <div className="flex flex-col">
+                        <span>{client.client_name}</span>
+                        <span className="text-[10px] text-primary/60 font-mono font-normal uppercase tracking-wider">{client.client_code}</span>
+                      </div>
+                    </TableCell>
                     <TableCell className="whitespace-nowrap">
                       <div className="flex flex-col gap-1 text-sm">
                         <span className="flex items-center gap-1.5 text-muted-foreground">
@@ -213,12 +204,7 @@ export function ClientList() {
                     <TableCell className="whitespace-nowrap">
                       {client.assigned_employee_id ? (
                         <Badge variant="outline" className="bg-primary/5 text-primary border-primary/10">
-                          {(() => {
-                            const emp = employees.find(e => (e.id || (e as any)._id) === client.assigned_employee_id);
-                            return emp 
-                              ? (emp.full_name || emp.name || emp.name_of_employee || "Staff Member") 
-                              : (loading ? "Loading..." : "Unknown Professional");
-                          })()}
+                          {client.assigned_employee_name || "Staff Member"}
                         </Badge>
                       ) : (
                         <span className="text-xs text-muted-foreground italic">Unassigned</span>
