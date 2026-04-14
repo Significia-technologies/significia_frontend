@@ -320,7 +320,7 @@ export default function ClientRegistrationForm({
       toast.error("Client must be at least 18 years old.");
       return;
     }
-    if (!isEdit) {
+    if (!isEdit && activeTab === "documents") {
         const missingDocs = REQUIRED_DOCUMENTS.filter(doc => !pendingDocuments[doc]);
         if (missingDocs.length > 0) {
             toast.error(`Missing mandatory documents: ${missingDocs.join(', ')}`);
@@ -328,6 +328,18 @@ export default function ClientRegistrationForm({
             return;
         }
     }
+
+    // If submitted from a non-document tab (e.g. via Enter key), proceed to next step instead of preview
+    if (activeTab !== "documents") {
+        const tabs = ["personal", "financial", "bank", "investment", "compliance", "documents"];
+        const nextIndex = tabs.indexOf(activeTab) + 1;
+        if (nextIndex < tabs.length) {
+          setActiveTab(tabs[nextIndex]);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        return;
+    }
+
     setShowPreview(true);
   };
 
@@ -1088,6 +1100,7 @@ export default function ClientRegistrationForm({
                             />
                             {ipvSearchTerm && (
                               <button 
+                                type="button"
                                 onClick={() => {
                                   setIpvSearchTerm("");
                                   setFormData(prev => ({ ...prev, ipv_done_by_id: "" }));
@@ -1240,19 +1253,27 @@ export default function ClientRegistrationForm({
                 <div className="flex gap-4 w-full sm:w-auto">
                   {activeTab !== "documents" ? (
                     <Button 
+                      key="btn-next"
                       type="button" 
                       onClick={() => {
                         const tabs = ["personal", "financial", "bank", "investment", "compliance", "documents"];
                         const nextIndex = tabs.indexOf(activeTab) + 1;
-                        setActiveTab(tabs[nextIndex]);
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        if (nextIndex < tabs.length) {
+                          setActiveTab(tabs[nextIndex]);
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }
                       }}
                       className="w-full sm:px-10 h-11 sm:h-auto"
                     >
                       Next Step
                     </Button>
                   ) : (
-                    <Button type="submit" disabled={loading || !formData.kyc_verified} className="w-full sm:px-12 gap-2 h-12 text-lg font-bold shadow-lg shadow-primary/20 transition-all active:scale-95 disabled:opacity-50 disabled:grayscale">
+                    <Button 
+                      key="btn-submit"
+                      type="submit" 
+                      disabled={loading || !formData.kyc_verified} 
+                      className="w-full sm:px-12 gap-2 h-12 text-lg font-bold shadow-lg shadow-primary/20 transition-all active:scale-95 disabled:opacity-50 disabled:grayscale"
+                    >
                       {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (isEdit ? <CheckCircle2 className="w-5 h-5" /> : <UserPlus className="w-5 h-5" />)}
                       {loading ? (isEdit ? "Updating..." : "Registering...") : (isEdit ? "Update Client" : "Finalize Registration")}
                     </Button>
