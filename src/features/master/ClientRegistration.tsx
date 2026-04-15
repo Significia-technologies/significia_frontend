@@ -413,7 +413,7 @@ export default function ClientRegistrationForm({
                 <div>
                     <h3 className="text-sm font-bold flex items-center gap-2">
                         <History className="w-4 h-4 text-primary" />
-                        SEBI-Compliant Data Rectification
+                        Regulatory-Compliant Data Rectification
                     </h3>
                     <p className="text-[10px] text-muted-foreground mt-1">If this edit is part of a formalized authorization, attach the approved serial number for the audit trail.</p>
                 </div>
@@ -1180,9 +1180,9 @@ export default function ClientRegistrationForm({
                         <div className="flex items-start gap-4">
                             <CheckCircle2 className="w-6 h-6 text-primary mt-1" />
                             <div className="space-y-2">
-                                <h3 className="font-bold">SEBI Compliance Declaration</h3>
+                                <h3 className="font-bold">Compliance Declaration</h3>
                                 <p className="text-sm text-muted-foreground">
-                                    I hereby confirm that all details provided are accurate to the best of my knowledge and comply with SEBI Investment Advisor guidelines. The client's identity has been verified via KYC documents.
+                                    I hereby confirm that all details provided are accurate to the best of my knowledge and comply with Regulatory Investment Advisor guidelines. The client's identity has been verified via KYC documents.
                                 </p>
                             </div>
                         </div>

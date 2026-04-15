@@ -78,7 +78,7 @@ export function VersionHistoryTab() {
             </CardTitle>
             <CardDescription className="mt-1">
               Every edit creates an immutable snapshot. Old versions are never
-              overwritten — ensuring full SEBI traceability.
+              overwritten — ensuring full regulatory traceability.
             </CardDescription>
           </div>
           <Badge variant="outline" className="text-xs font-mono">

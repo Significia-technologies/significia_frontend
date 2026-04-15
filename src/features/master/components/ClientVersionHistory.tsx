@@ -232,7 +232,7 @@ export function ClientVersionHistory({ clientId, clientName }: ClientVersionHist
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-bold flex items-center gap-2">
             <CalendarSearch className="w-5 h-5 text-primary" />
-            SEBI Point-in-Time Query
+            Point-in-Time Query
           </CardTitle>
           <p className="text-xs text-muted-foreground">
             Enter a date to find which version of this client was active at that time.
