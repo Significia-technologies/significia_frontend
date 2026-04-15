@@ -63,6 +63,8 @@ export const API_ENDPOINTS = {
       VERSIONS: (id: string) => `${API_BASE}/master/clients/${id}/versions`,
       VERSION_DETAIL: (id: string, versionId: string) =>
         `${API_BASE}/master/clients/${id}/versions/${versionId}`,
+      VERSION_PDF: (id: string, versionId: string) =>
+        `${API_BASE}/master/clients/${id}/versions/${versionId}/pdf`,
       VERSION_AT_DATE: (id: string) =>
         `${API_BASE}/master/clients/${id}/version-at`,
     },

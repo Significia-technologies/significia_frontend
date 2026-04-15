@@ -251,6 +251,29 @@ export class MasterDataService {
     );
     return response.data;
   }
+
+  static async downloadClientVersionPDF(
+    clientId: string,
+    versionId: string,
+    clientName: string,
+    versionNumber: number
+  ): Promise<void> {
+    const response = await httpClient.get(
+      API_ENDPOINTS.MASTER.CLIENTS.VERSION_PDF(clientId, versionId),
+      { responseType: "blob" }
+    );
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute(
+      "download",
+      `Report_${clientName.replace(/\s+/g, "_")}_V${versionNumber}.pdf`
+    );
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  }
 }
 
 // ── Client Versioning Types ──────────────────────────────────

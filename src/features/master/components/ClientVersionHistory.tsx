@@ -37,6 +37,7 @@ export function ClientVersionHistory({ clientId, clientName }: ClientVersionHist
   const [loading, setLoading] = useState(true);
   const [selectedVersion, setSelectedVersion] = useState<ClientVersionDetail | null>(null);
   const [loadingVersion, setLoadingVersion] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState<string | null>(null);
   const [searchDate, setSearchDate] = useState("");
   const [searching, setSearching] = useState(false);
   const [dateSearchResult, setDateSearchResult] = useState<ClientVersionDetail | null>(null);
@@ -106,6 +107,24 @@ export function ClientVersionHistory({ clientId, clientName }: ClientVersionHist
     toast.success(`Version ${versionNumber} downloaded`);
   };
 
+  const handleDownloadPDF = async (versionId: string, versionNumber: number) => {
+    setDownloadingPdf(versionId);
+    try {
+      await MasterDataService.downloadClientVersionPDF(
+        clientId,
+        versionId,
+        clientName,
+        versionNumber
+      );
+      toast.success(`PDF Report for version ${versionNumber} downloaded`);
+    } catch (error) {
+      console.error("Failed to download PDF", error);
+      toast.error("Failed to generate PDF report");
+    } finally {
+      setDownloadingPdf(null);
+    }
+  };
+
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return "—";
     try {
@@ -121,7 +140,7 @@ export function ClientVersionHistory({ clientId, clientName }: ClientVersionHist
     }
   };
 
-  const SnapshotViewer = ({ snapshot, versionNumber }: { snapshot: Record<string, any>; versionNumber: number }) => {
+  const SnapshotViewer = ({ snapshot, versionId, versionNumber }: { snapshot: Record<string, any>; versionId: string; versionNumber: number }) => {
     // Field display categories
     const IDENTITY_FIELDS = ["client_name", "user_name", "email", "client_code", "pan_number", "date_of_birth", "phone_number", "aadhar_number"];
     const FINANCIAL_FIELDS = ["annual_income", "net_worth", "income_source", "occupation", "existing_portfolio_value"];
@@ -161,15 +180,31 @@ export function ClientVersionHistory({ clientId, clientName }: ClientVersionHist
           <h3 className="text-sm font-bold text-primary">
             Version {versionNumber} — Full Snapshot
           </h3>
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2 text-xs"
-            onClick={() => handleDownloadSnapshot(snapshot, versionNumber)}
-          >
-            <Download className="w-3.5 h-3.5" />
-            Download JSON
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 text-xs"
+              onClick={() => handleDownloadSnapshot(snapshot, versionNumber)}
+            >
+              <Download className="w-3.5 h-3.5" />
+              JSON
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 text-xs border-primary/30 text-primary hover:bg-primary/5"
+              disabled={downloadingPdf === versionId}
+              onClick={() => handleDownloadPDF(versionId, versionNumber)}
+            >
+              {downloadingPdf === versionId ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Download className="w-3.5 h-3.5" />
+              )}
+              PDF Report
+            </Button>
+          </div>
         </div>
         <div className="bg-muted/30 border border-border/50 rounded-xl p-4 space-y-5 max-h-[500px] overflow-y-auto">
           {renderSection("Identity", IDENTITY_FIELDS)}
@@ -240,10 +275,24 @@ export function ClientVersionHistory({ clientId, clientName }: ClientVersionHist
                     variant="outline"
                     size="sm"
                     className="gap-1.5 text-xs border-green-500/30 text-green-700 hover:bg-green-50"
+                    disabled={downloadingPdf === dateSearchResult.id}
+                    onClick={() => handleDownloadPDF(dateSearchResult.id, dateSearchResult.version_number)}
+                  >
+                    {downloadingPdf === dateSearchResult.id ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Download className="w-3.5 h-3.5" />
+                    )}
+                    PDF
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 text-xs border-green-500/30 text-green-700 hover:bg-green-50"
                     onClick={() => handleDownloadSnapshot(dateSearchResult.snapshot, dateSearchResult.version_number)}
                   >
                     <Download className="w-3.5 h-3.5" />
-                    Download
+                    JSON
                   </Button>
                   <Button
                     variant="ghost"
@@ -263,7 +312,11 @@ export function ClientVersionHistory({ clientId, clientName }: ClientVersionHist
                 )}
               </div>
               <div className="mt-3">
-                <SnapshotViewer snapshot={dateSearchResult.snapshot} versionNumber={dateSearchResult.version_number} />
+                <SnapshotViewer 
+                  snapshot={dateSearchResult.snapshot} 
+                  versionId={dateSearchResult.id}
+                  versionNumber={dateSearchResult.version_number} 
+                />
               </div>
             </div>
           )}
@@ -373,6 +426,7 @@ export function ClientVersionHistory({ clientId, clientName }: ClientVersionHist
                       ) : (
                         <SnapshotViewer
                           snapshot={selectedVersion.snapshot}
+                          versionId={selectedVersion.id}
                           versionNumber={selectedVersion.version_number}
                         />
                       )}
