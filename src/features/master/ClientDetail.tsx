@@ -15,7 +15,8 @@ import {
   MapPin,
   Fingerprint,
   Info,
-  FolderOpen
+  FolderOpen,
+  History
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -41,6 +42,7 @@ import { AnalysisForm } from "@/features/financial-analysis/AnalysisForm";
 import { AnalysisDashboard } from "@/features/financial-analysis/AnalysisDashboard";
 import { FinancialAnalysisResult, FinancialAnalysisService } from "@/core/services/financial-analysis.service";
 import { DocumentVault } from "./components/DocumentVault";
+import { ClientVersionHistory } from "./components/ClientVersionHistory";
 
 interface ClientDetailProps {
   client: ClientCreate;
@@ -199,6 +201,9 @@ export default function ClientDetail({ client }: ClientDetailProps) {
                   </TabsTrigger>
                   <TabsTrigger value="vault" className="px-6 py-4 gap-2 data-[state=active]:bg-primary/5 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none text-xs sm:text-sm transition-all">
                     <FolderOpen className="w-4 h-4 text-blue-500" /> Document Vault
+                  </TabsTrigger>
+                  <TabsTrigger value="versions" className="px-6 py-4 gap-2 data-[state=active]:bg-primary/5 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none text-xs sm:text-sm transition-all">
+                    <History className="w-4 h-4 text-purple-500" /> Version History
                   </TabsTrigger>
               </TabsList>
             </div>
@@ -383,6 +388,13 @@ export default function ClientDetail({ client }: ClientDetailProps) {
                             setCurrentClient(updatedClient);
                         }).catch(console.error);
                     }}
+                 />
+              </TabsContent>
+
+              <TabsContent value="versions" className="mt-0 space-y-8">
+                 <ClientVersionHistory 
+                    clientId={client.id!} 
+                    clientName={client.client_name}
                  />
               </TabsContent>
             </div>

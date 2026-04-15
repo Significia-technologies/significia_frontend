@@ -227,4 +227,59 @@ export class MasterDataService {
       params: { staff_id: staffId }
     });
   }
+
+  // ── Client Versioning (SEBI Temporal Audit) ──────────────────────
+
+  static async listClientVersions(clientId: string): Promise<ClientVersionListResponse> {
+    const response = await httpClient.get<ClientVersionListResponse>(
+      API_ENDPOINTS.MASTER.CLIENTS.VERSIONS(clientId)
+    );
+    return response.data;
+  }
+
+  static async getClientVersion(clientId: string, versionId: string): Promise<ClientVersionDetail> {
+    const response = await httpClient.get<ClientVersionDetail>(
+      API_ENDPOINTS.MASTER.CLIENTS.VERSION_DETAIL(clientId, versionId)
+    );
+    return response.data;
+  }
+
+  static async getClientVersionAtDate(clientId: string, targetDate: string): Promise<ClientVersionDetail> {
+    const response = await httpClient.get<ClientVersionDetail>(
+      API_ENDPOINTS.MASTER.CLIENTS.VERSION_AT_DATE(clientId),
+      { params: { target_date: targetDate } }
+    );
+    return response.data;
+  }
+}
+
+// ── Client Versioning Types ──────────────────────────────────
+
+export interface ClientVersionSummary {
+  id: string;
+  version_number: number;
+  valid_from: string | null;
+  valid_to: string | null;
+  is_current: boolean;
+  change_reason: string | null;
+  changed_by: string | null;
+  created_at: string | null;
+}
+
+export interface ClientVersionListResponse {
+  client_id: string;
+  versions: ClientVersionSummary[];
+  total: number;
+}
+
+export interface ClientVersionDetail {
+  id: string;
+  version_number: number;
+  snapshot: Record<string, any>;
+  valid_from: string | null;
+  valid_to: string | null;
+  is_current: boolean;
+  change_reason: string | null;
+  created_at: string | null;
+  queried_date?: string;
 }

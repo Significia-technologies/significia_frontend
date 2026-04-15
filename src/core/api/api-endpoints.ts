@@ -60,6 +60,11 @@ export const API_ENDPOINTS = {
       BLANK_FORM: `${API_BASE}/master/blank-form`,
       UPLOAD_DOCUMENT: (id: string) =>
         `${API_BASE}/master/clients/${id}/upload-document`,
+      VERSIONS: (id: string) => `${API_BASE}/master/clients/${id}/versions`,
+      VERSION_DETAIL: (id: string, versionId: string) =>
+        `${API_BASE}/master/clients/${id}/versions/${versionId}`,
+      VERSION_AT_DATE: (id: string) =>
+        `${API_BASE}/master/clients/${id}/version-at`,
     },
     IA_MASTER: {
       LATEST: `${API_BASE}/ia-master/latest`,
