@@ -249,7 +249,14 @@ export function ClientList() {
                       )}
                     </TableCell>
                     <TableCell className="text-center whitespace-nowrap">
-                      <Badge variant={client.is_active ? 'default' : 'secondary'} className="capitalize bg-primary/20 text-primary border-primary/20">
+                      <Badge 
+                        variant={client.is_active ? 'default' : 'secondary'} 
+                        className={`capitalize px-2 py-0.5 text-[10px] ${
+                          client.is_active 
+                            ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' 
+                            : 'bg-red-500/10 text-red-600 border-red-500/20'
+                        }`}
+                      >
                         {client.is_active ? 'Active' : 'Deactivated'}
                       </Badge>
                     </TableCell>
