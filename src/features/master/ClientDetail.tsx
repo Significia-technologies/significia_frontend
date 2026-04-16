@@ -269,6 +269,40 @@ export default function ClientDetail({ client }: ClientDetailProps) {
                         </div>
                     </div>
                 </div>
+
+                <div className="space-y-4 pt-4">
+                    <SectionHeader icon={ShieldCheck} title="IPV Verification & Relationship" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-primary/5 p-6 rounded-xl border border-primary/10">
+                        <div className="space-y-4">
+                            <DetailItem label="Assigned Professional" value={
+                              currentClient.assigned_employee_id 
+                                ? (() => {
+                                    if (loadingEmployees) return "Loading...";
+                                    const emp = employees.find(e => (e.id || (e as any)._id) === currentClient.assigned_employee_id);
+                                    return emp 
+                                      ? (emp.full_name || emp.name || emp.name_of_employee || "Staff Member") 
+                                      : "Professional Not Found";
+                                  })()
+                                : "Unassigned"
+                            } />
+                            <DetailItem label="IPV Performer (Assigned Staff)" value={
+                              currentClient.ipv_done_by_id 
+                                ? (() => {
+                                    if (loadingEmployees) return "Loading...";
+                                    const emp = employees.find(e => (e.id || (e as any)._id) === currentClient.ipv_done_by_id);
+                                    return emp 
+                                      ? (emp.full_name || emp.name || emp.name_of_employee || "Staff Member") 
+                                      : "I-PV Performer Not Found";
+                                  })()
+                                : "In-Person Verification Pending"
+                            } />
+                        </div>
+                        <div className="space-y-4">
+                            <DetailItem label="IPV Verification Date" value={currentClient.ipv_date || "Pending"} />
+                            <DetailItem label="Onboarding Approval" value={currentClient.is_active !== false ? <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">Approved & Active</Badge> : <Badge variant="secondary">Pending / Inactive</Badge>} />
+                        </div>
+                    </div>
+                </div>
               </TabsContent>
 
               <TabsContent value="personal" className="mt-0 space-y-8">
@@ -403,9 +437,9 @@ export default function ClientDetail({ client }: ClientDetailProps) {
       </Card>
       
       <div className="mt-8 flex flex-col sm:flex-row justify-end gap-3 sm:gap-4">
-        <Button variant="outline" className="w-full sm:w-auto px-8 border-primary/20 h-11" onClick={() => router.push(`/clients/${currentClient.id}/edit`)}>
+        {/* <Button variant="outline" className="w-full sm:w-auto px-8 border-primary/20 h-11" onClick={() => router.push(`/clients/${currentClient.id}/edit`)}>
             Edit Profile
-        </Button>
+        </Button> */}
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button 
