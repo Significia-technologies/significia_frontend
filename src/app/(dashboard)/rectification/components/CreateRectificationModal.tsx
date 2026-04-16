@@ -243,7 +243,10 @@ export function CreateRectificationModal() {
   useEffect(() => {
     if (open && clients.length === 0) {
       MasterDataService.listClients({ limit: 1000 })
-        .then((response) => setClients(response.clients))
+        .then((response) => {
+          // Filter to only show active clients for new rectifications
+          setClients(response.clients.filter((c: Client) => c.is_active));
+        })
         .catch(() => toast.error("Failed to load clients"));
     }
   }, [open, clients.length]);
@@ -275,7 +278,15 @@ export function CreateRectificationModal() {
         current_version: 1,
         proposed_changes: [],
         justification_details: { q1: "", q2: "", q3: "" },
-        impact_declaration: { financial: false, risk: false, asset_allocation: false, portfolio: false },
+        impact_declaration: { 
+          financial: false, 
+          risk: false, 
+          asset_allocation: false, 
+          portfolio: false,
+          product_basket: false,
+          target_portfolio: false,
+          other: false
+        },
         confirmation_mode: isInvestorRequested ? "Physical Document" : "Internal Audit",
         is_investor_requested: isInvestorRequested,
         initiation_reason: reason,

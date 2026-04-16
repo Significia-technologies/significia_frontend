@@ -59,7 +59,15 @@ export function ClientList() {
         current_version: 1,
         proposed_changes: [],
         justification_details: { q1: "", q2: "", q3: "" },
-        impact_declaration: { financial: false, risk: false, asset_allocation: false, portfolio: false },
+        impact_declaration: { 
+          financial: false, 
+          risk: false, 
+          asset_allocation: false, 
+          portfolio: false,
+          product_basket: false,
+          target_portfolio: false,
+          other: false
+        },
         confirmation_mode: "Client Update",
         is_investor_requested: false,
         initiation_reason: "Internal rectification initiated from Client List"
@@ -256,7 +264,11 @@ export function ClientList() {
                           <DropdownMenuItem onClick={() => router.push(`/clients/${client.id}`)} className="gap-2">
                             <Eye className="w-4 h-4" /> View Details
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => router.push(`/clients/${client.id}/edit`)} className="gap-2">
+                          <DropdownMenuItem 
+                            onClick={() => router.push(`/clients/${client.id}/edit`)} 
+                            className="gap-2"
+                            disabled={!client.is_active}
+                          >
                             <Pencil className="w-4 h-4" /> Edit Records
                           </DropdownMenuItem>
                           {/* <DropdownMenuSeparator className="bg-primary/10" />

@@ -93,6 +93,7 @@ const FIELD_CONFIG: Record<string, { type: 'select' | 'number' | 'date' | 'text'
   agreement_copy_path: { type: 'file' },
   financial_analysis_path: { type: 'file' },
   other_document_path: { type: 'file' },
+  is_active: { type: 'select', options: ['true', 'false'] },
 };
 
 const ProgressPie = ({ percentage }: { percentage: number }) => {
@@ -510,8 +511,12 @@ export default function RectificationDetailsPage() {
         
         {/* PRINT HEADER - ONLY VISIBLE ON PRINT */}
         <div className="hidden print:block mb-8 border-b-2 border-black pb-6 text-center">
-            <h1 className="text-2xl font-black uppercase tracking-tight">Data Correction Authorization Form</h1>
-            <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Pre-Edit Approval for Version Creation</p>
+            <h1 className="text-2xl font-black uppercase tracking-tight">
+              {rectification.module === 'DEACTIVATION' ? "Client Deactivation Authorization Form" : "Data Correction Authorization Form"}
+            </h1>
+            <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">
+              {rectification.module === 'DEACTIVATION' ? "Permanent Termination of Service Authorization" : "Pre-Edit Approval for Version Creation"}
+            </p>
         </div>
 
         <div className="space-y-10">
@@ -539,7 +544,7 @@ export default function RectificationDetailsPage() {
                 <Label className="text-[9px] font-black uppercase opacity-40">Record ID (Original)</Label>
                 <div className="font-mono text-[9px] border-b border-black/10 pb-1">{rectification.record_id}</div>
               </div>
-              {rectification.module !== 'CLIENT' && (
+              {rectification.module !== 'CLIENT' && rectification.module !== 'DEACTIVATION' && (
                 <div className="space-y-1">
                   <Label className="text-[9px] font-black uppercase opacity-40">Current Version</Label>
                   <div className="font-bold border-b border-black/10 pb-1">v{rectification.current_version}</div>
@@ -691,7 +696,7 @@ export default function RectificationDetailsPage() {
                                                         'risk_profile', 'investment_experience',
                                                         'investment_horizon', 'liquidity_needs', 'investment_objectives',
                                                       ]);
-                                                      return !NON_RECTIFIABLE.has(f);
+                                                      return !NON_RECTIFIABLE.has(f) || (rectification.module === 'DEACTIVATION' && f === 'is_active');
                                                     })
                                                     .map(f => (
                                                     <option key={f} value={f}>{f.toUpperCase()}</option>
@@ -1318,13 +1323,18 @@ export default function RectificationDetailsPage() {
           <section className="bg-black/[0.02] p-6 border-2 border-black rounded-lg">
              <div className="flex items-center gap-3 mb-6">
               <div className="w-8 h-8 rounded bg-black text-white flex items-center justify-center font-bold">9</div>
-              <h2 className="text-sm font-black uppercase tracking-[0.2em]">IA Authorization Case</h2>
+              <h2 className="text-sm font-black uppercase tracking-[0.2em]">
+                {rectification.module === 'DEACTIVATION' ? "IA TERMINATION AUTHORIZATION" : "IA Authorization Case"}
+              </h2>
             </div>
             <div className="space-y-6">
                  <div className="flex items-center gap-4 bg-white p-4 border border-black/10 shadow-sm">
                     <Checkbox checked={!!rectification.signed_form_path} disabled className="w-6 h-6 border-black" />
                     <p className="text-[11px] font-black uppercase leading-tight">
-                        I, THE INVESTMENT ADVISER, HAVE REVIEWED THE JUSTIFICATION AND UPLOADED EVIDENCE (IA SIGNED FORM), AND HEREBY AUTHORIZE THIS DATA RECTIFICATION.
+                        {rectification.module === 'DEACTIVATION' 
+                          ? "I, THE INVESTMENT ADVISER, HAVE REVIEWED THE TERMINATION JUSTIFICATION AND HEREBY AUTHORIZE THE PERMANENT DEACTIVATION OF THIS CLIENT ACCOUNT."
+                          : "I, THE INVESTMENT ADVISER, HAVE REVIEWED THE JUSTIFICATION AND UPLOADED EVIDENCE (IA SIGNED FORM), AND HEREBY AUTHORIZE THIS DATA RECTIFICATION."
+                        }
                     </p>
                 </div>
                 
