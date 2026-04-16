@@ -41,6 +41,7 @@ import {
 import { toast } from "sonner";
 import { RectificationService, RectificationResponse, ProposedChange } from "@/core/services/rectification.service";
 import { MasterDataService } from "@/core/services/master.service";
+import { IAMasterService, Employee } from "@/core/services/ia-master.service";
 import { format } from "date-fns";
 import {
   Select,
@@ -138,10 +139,26 @@ export default function RectificationDetailsPage() {
   const [currentModuleValues, setCurrentModuleValues] = useState<Record<string, any>>({});
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [employees, setEmployees] = useState<Employee[]>([]);
 
   useEffect(() => {
     loadData();
   }, [id]);
+
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        const allEmployees = await IAMasterService.listEmployees();
+        if (allEmployees) {
+          // Filter valid employees and map to consistent format if needed
+          setEmployees((allEmployees as any[]).filter(emp => emp && typeof emp === "object" && (emp.id || (emp as any)._id)));
+        }
+      } catch (error) {
+        console.error("Failed to fetch employees", error);
+      }
+    };
+    fetchEmployees();
+  }, []);
 
   const loadData = async (silent = false) => {
     if (!silent && !rectification) setLoading(true);
@@ -608,8 +625,12 @@ export default function RectificationDetailsPage() {
                                             {(() => {
                                                 const formatValue = (val: any): string => {
                                                     if (val === null || val === undefined) return "---";
+                                                    if (item.field === 'assigned_employee_id') {
+                                                      const emp = employees.find(e => (e.id === val || (e as any)._id === val));
+                                                      return emp ? (emp.name || (emp as any).full_name || String(val)) : String(val);
+                                                    }
                                                     if (Array.isArray(val)) {
-                                                        return val.map((item, i) => `${i + 1}. ${formatValue(item)}`).join("\n");
+                                                        return val.map((v, i) => `${i + 1}. ${formatValue(v)}`).join("\n");
                                                     }
                                                     if (typeof val === 'object') {
                                                         return Object.entries(val)
@@ -632,6 +653,24 @@ export default function RectificationDetailsPage() {
                                                 const config = FIELD_CONFIG[item.field];
                                                 const val = typeof item.proposed === 'object' ? JSON.stringify(item.proposed) : String(item.proposed || "");
                                                 
+                                                // Special case for database-driven dropdowns (Assigned Employee)
+                                                if (item.field === 'assigned_employee_id') {
+                                                    return (
+                                                        <Select value={val} onValueChange={(v) => updateField(idx, 'proposed', v)}>
+                                                            <SelectTrigger className="h-8 border-black/20 font-bold text-[10px] bg-white text-black">
+                                                                <SelectValue placeholder="Select Employee..." />
+                                                            </SelectTrigger>
+                                                            <SelectContent className="bg-white">
+                                                                {employees.map(emp => (
+                                                                    <SelectItem key={emp.id || (emp as any)._id} value={emp.id || (emp as any)._id} className="text-[10px] text-black focus:bg-slate-100 focus:text-black">
+                                                                        {emp.name || (emp as any).full_name}
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    );
+                                                }
+
                                                 if (config?.type === 'select') {
                                                     return (
                                                         <Select value={val} onValueChange={(v) => updateField(idx, 'proposed', v)}>
@@ -673,8 +712,12 @@ export default function RectificationDetailsPage() {
                                                 {(() => {
                                                     const formatValue = (val: any): string => {
                                                         if (val === null || val === undefined) return "---";
+                                                        if (item.field === 'assigned_employee_id') {
+                                                          const emp = employees.find(e => (e.id === val || (e as any)._id === val));
+                                                          return emp ? (emp.name || (emp as any).full_name || String(val)) : String(val);
+                                                        }
                                                         if (Array.isArray(val)) {
-                                                            return val.map((item, i) => `${i + 1}. ${formatValue(item)}`).join("\n");
+                                                            return val.map((v, i) => `${i + 1}. ${formatValue(v)}`).join("\n");
                                                         }
                                                         if (typeof val === 'object') {
                                                             return Object.entries(val)
