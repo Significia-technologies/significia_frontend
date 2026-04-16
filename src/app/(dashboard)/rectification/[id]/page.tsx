@@ -39,7 +39,7 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { toast } from "sonner";
-import { RectificationService, RectificationResponse, ProposedChange } from "@/core/services/rectification.service";
+import { RectificationService, RectificationResponse, ProposedChange, ImpactDeclaration } from "@/core/services/rectification.service";
 import { MasterDataService } from "@/core/services/master.service";
 import { IAMasterService, Employee } from "@/core/services/ia-master.service";
 import { format } from "date-fns";
@@ -147,7 +147,17 @@ export default function RectificationDetailsPage() {
   // Form State for Section 4
   const [proposedChanges, setProposedChanges] = useState<ProposedChange[]>([]);
   const [justification, setJustification] = useState({ q1: "", q2: "", q3: "" });
-  const [impact, setImpact] = useState({ financial: false, risk: false, asset_allocation: false, portfolio: false, remarks: "" });
+  const [impact, setImpact] = useState<ImpactDeclaration>({ 
+    financial: false, 
+    risk: false, 
+    asset_allocation: false, 
+    portfolio: false, 
+    product_basket: false,
+    target_portfolio: false,
+    other: false,
+    other_details: "",
+    remarks: "" 
+  });
   const [purposeOfEdit, setPurposeOfEdit] = useState<string[]>([]);
   const [confirmationMode, setConfirmationMode] = useState<string[]>([]);
   const [confirmationReference, setConfirmationReference] = useState("");
@@ -188,6 +198,10 @@ export default function RectificationDetailsPage() {
         risk: r.impact_declaration?.risk || false,
         asset_allocation: r.impact_declaration?.asset_allocation || false,
         portfolio: r.impact_declaration?.portfolio || false,
+        product_basket: r.impact_declaration?.product_basket || false,
+        target_portfolio: r.impact_declaration?.target_portfolio || false,
+        other: r.impact_declaration?.other || false,
+        other_details: r.impact_declaration?.other_details || "",
         remarks: r.impact_declaration?.remarks || ""
       });
       setPurposeOfEdit(r.purpose_of_edit ? r.purpose_of_edit.split(',') : []);
@@ -378,25 +392,55 @@ export default function RectificationDetailsPage() {
           
           return (
             <div key={step.label} className="relative group">
-              <div className={`p-4 rounded-xl border transition-all duration-300 ${
-                isActive 
-                  ? "bg-primary/10 border-primary shadow-lg shadow-primary/10" 
-                  : isCompleted 
-                    ? "bg-emerald-500/5 border-emerald-500/20 opacity-60" 
-                    : "bg-muted/30 border-primary/10 opacity-30 grayscale"
-              }`}>
-                <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                    isActive ? "bg-primary text-white" : isCompleted ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground"
+              {step.label === "Verification" && (rectification.status === "DRAFT" || rectification.status === "UPDATED") && !rectification.signed_form_path && !isDirty && (rectification.proposed_changes?.length > 0) ? (
+                <label className="cursor-pointer block">
+                  <input 
+                    type="file" 
+                    className="hidden" 
+                    onChange={(e) => { handleFileUpload(e, "signed_form"); setIsDirty(true); }}
+                    disabled={uploading}
+                  />
+                  <div className={`p-4 rounded-xl border transition-all duration-300 hover:ring-2 hover:ring-emerald-500/50 ${
+                    isActive 
+                      ? "bg-primary/10 border-primary shadow-lg shadow-primary/10" 
+                      : isCompleted 
+                        ? "bg-emerald-500/5 border-emerald-500/20 opacity-60" 
+                        : "bg-muted/30 border-primary/10 opacity-30 grayscale"
                   }`}>
-                    <step.icon className="w-4 h-4" />
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                        isActive ? "bg-primary text-white" : isCompleted ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground"
+                      }`}>
+                        {uploading && activeUploadType === "signed_form" ? <Loader2 className="w-4 h-4 animate-spin" /> : <step.icon className="w-4 h-4" />}
+                      </div>
+                      <div>
+                        <h4 className="text-[10px] font-black uppercase tracking-widest">{step.label}</h4>
+                        <p className="text-[9px] font-bold opacity-50">{step.description}</p>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-[10px] font-black uppercase tracking-widest">{step.label}</h4>
-                    <p className="text-[9px] font-bold opacity-50">{step.description}</p>
+                </label>
+              ) : (
+                <div className={`p-4 rounded-xl border transition-all duration-300 ${
+                  isActive 
+                    ? "bg-primary/10 border-primary shadow-lg shadow-primary/10" 
+                    : isCompleted 
+                      ? "bg-emerald-500/5 border-emerald-500/20 opacity-60" 
+                      : "bg-muted/30 border-primary/10 opacity-30 grayscale"
+                }`}>
+                  <div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                      isActive ? "bg-primary text-white" : isCompleted ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground"
+                    }`}>
+                      <step.icon className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-[10px] font-black uppercase tracking-widest">{step.label}</h4>
+                      <p className="text-[9px] font-bold opacity-50">{step.description}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
               {idx < arr.length - 1 && (
                 <div className={`absolute -right-0.5 top-1/2 -translate-y-1/2 w-1 h-8 rounded-full z-10 ${
                   isCompleted ? "bg-emerald-500/20" : "bg-primary/10"
@@ -946,14 +990,14 @@ export default function RectificationDetailsPage() {
           </section>
 
           {/* SECTION: COMPLIANCE DOCUMENTATION */}
-          <section className="print:hidden">
-             <div className="bg-black/5 p-4 flex items-center gap-3 border-l-4 border-emerald-500 mb-6">
-              <ShieldAlert className="w-5 h-5 text-emerald-600" />
-              <h2 className="text-sm font-black uppercase tracking-widest text-emerald-900">Compliance Documentation</h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-4">
-               {/* 1. Investor Request Copy */}
-               {rectification.is_investor_requested && (
+          {rectification.is_investor_requested && (
+            <section className="print:hidden">
+               <div className="bg-black/5 p-4 flex items-center gap-3 border-l-4 border-emerald-500 mb-6">
+                <ShieldAlert className="w-5 h-5 text-emerald-600" />
+                <h2 className="text-sm font-black uppercase tracking-widest text-emerald-900">Compliance Documentation</h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-4">
+                 {/* 1. Investor Request Copy */}
                  <Card className="border-emerald-500/20 bg-emerald-500/5 shadow-none overflow-hidden h-full">
                     <CardHeader className="p-4 bg-emerald-500/20">
                       <CardTitle className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-emerald-900">
@@ -1045,9 +1089,8 @@ export default function RectificationDetailsPage() {
                       )}
                     </CardContent>
                  </Card>
-               )}
 
-                {/* 2. IA Signed Authorization */}
+                 {/* 2. IA Signed Authorization */}
                 {!isDirty && (rectification.proposed_changes?.length > 0) && (
                   <Card className={`border-emerald-500/20 bg-emerald-500/5 shadow-none overflow-hidden h-full ${!rectification.is_investor_requested ? 'md:col-span-2' : ''}`}>
                      <CardHeader className="p-4 bg-emerald-500/20">
@@ -1102,10 +1145,9 @@ export default function RectificationDetailsPage() {
                      </CardContent>
                   </Card>
                 )}
-
-
-            </div>
-          </section>
+              </div>
+            </section>
+           )}
 
           {/* SECTION 7: IMPACT DECLARATION */}
           <section>
@@ -1113,59 +1155,126 @@ export default function RectificationDetailsPage() {
               <div className="w-8 h-8 rounded bg-black text-white flex items-center justify-center font-bold">7</div>
               <h2 className="text-sm font-black uppercase tracking-widest">Impact Declaration</h2>
             </div>
-            <div className="px-4 grid grid-cols-2 gap-8">
-                <div className="space-y-3">
-                   <div className="flex items-center gap-3">
-                       <Checkbox 
+            <div className="px-4 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-4 gap-x-8">
+                    {/* Financial */}
+                    <div className="flex items-center gap-3 hover:bg-black/5 p-2 rounded-md transition-colors">
+                        <Checkbox 
+                          id="impact-financial"
                           checked={impact.financial} 
                           onCheckedChange={(val) => {
                              setImpact({...impact, financial: !!val});
                              setIsDirty(true);
                            }}
                           disabled={rectification?.status === "APPROVED"} 
-                          className="w-5 h-5 border-black" 
+                          className="w-5 h-5 border-black/20" 
                         />
-                       <span className="text-xs font-bold uppercase">Impacts Financial Analysis</span>
-                   </div>
-                   <div className="flex items-center gap-3">
-                       <Checkbox 
+                        <Label htmlFor="impact-financial" className="text-xs font-bold uppercase cursor-pointer">Financial Analysis</Label>
+                    </div>
+                    {/* Risk */}
+                    <div className="flex items-center gap-3 hover:bg-black/5 p-2 rounded-md transition-colors">
+                        <Checkbox 
+                          id="impact-risk"
                           checked={impact.risk} 
                           onCheckedChange={(val) => {
                              setImpact({...impact, risk: !!val});
                              setIsDirty(true);
                            }}
                           disabled={rectification?.status === "APPROVED"} 
-                          className="w-5 h-5 border-black" 
+                          className="w-5 h-5 border-black/20" 
                         />
-                       <span className="text-xs font-bold uppercase">Impacts Risk Profile</span>
-                   </div>
-                   <div className="flex items-center gap-3">
-                       <Checkbox 
+                        <Label htmlFor="impact-risk" className="text-xs font-bold uppercase cursor-pointer">Risk Profile</Label>
+                    </div>
+                    {/* Asset Allocation */}
+                    <div className="flex items-center gap-3 hover:bg-black/5 p-2 rounded-md transition-colors">
+                        <Checkbox 
+                          id="impact-aa"
                           checked={impact.asset_allocation} 
                           onCheckedChange={(val) => {
                              setImpact({...impact, asset_allocation: !!val});
                              setIsDirty(true);
                            }}
                           disabled={rectification?.status === "APPROVED"} 
-                          className="w-5 h-5 border-black" 
+                          className="w-5 h-5 border-black/20" 
                         />
-                       <span className="text-xs font-bold uppercase">Impacts Asset Allocation</span>
-                   </div>
-                   <div className="flex items-center gap-3">
-                       <Checkbox 
+                        <Label htmlFor="impact-aa" className="text-xs font-bold uppercase cursor-pointer">Asset Allocation</Label>
+                    </div>
+                    {/* Portfolio */}
+                    <div className="flex items-center gap-3 hover:bg-black/5 p-2 rounded-md transition-colors">
+                        <Checkbox 
+                          id="impact-portfolio"
                           checked={impact.portfolio} 
                           onCheckedChange={(val) => {
                              setImpact({...impact, portfolio: !!val});
                              setIsDirty(true);
                            }}
                           disabled={rectification?.status === "APPROVED"} 
-                          className="w-5 h-5 border-black" 
+                          className="w-5 h-5 border-black/20" 
                         />
-                       <span className="text-xs font-bold uppercase">Impacts Portfolio / Holdings</span>
-                   </div>
+                        <Label htmlFor="impact-portfolio" className="text-xs font-bold uppercase cursor-pointer">Portfolio / Holdings</Label>
+                    </div>
+                    {/* Product Basket */}
+                    <div className="flex items-center gap-3 hover:bg-black/5 p-2 rounded-md transition-colors">
+                        <Checkbox 
+                          id="impact-basket"
+                          checked={impact.product_basket} 
+                          onCheckedChange={(val) => {
+                             setImpact({...impact, product_basket: !!val});
+                             setIsDirty(true);
+                           }}
+                          disabled={rectification?.status === "APPROVED"} 
+                          className="w-5 h-5 border-black/20" 
+                        />
+                        <Label htmlFor="impact-basket" className="text-xs font-bold uppercase cursor-pointer">Product Basket</Label>
+                    </div>
+                    {/* Target Portfolio */}
+                    <div className="flex items-center gap-3 hover:bg-black/5 p-2 rounded-md transition-colors">
+                        <Checkbox 
+                          id="impact-target"
+                          checked={impact.target_portfolio} 
+                          onCheckedChange={(val) => {
+                             setImpact({...impact, target_portfolio: !!val});
+                             setIsDirty(true);
+                           }}
+                          disabled={rectification?.status === "APPROVED"} 
+                          className="w-5 h-5 border-black/20" 
+                        />
+                        <Label htmlFor="impact-target" className="text-xs font-bold uppercase cursor-pointer">Target Portfolio</Label>
+                    </div>
+                    {/* Others */}
+                    <div className="flex items-center gap-3 hover:bg-black/5 p-2 rounded-md transition-colors">
+                        <Checkbox 
+                          id="impact-other"
+                          checked={impact.other} 
+                          onCheckedChange={(val) => {
+                             setImpact({...impact, other: !!val});
+                             setIsDirty(true);
+                           }}
+                          disabled={rectification?.status === "APPROVED"} 
+                          className="w-5 h-5 border-black/20" 
+                        />
+                        <Label htmlFor="impact-other" className="text-xs font-bold uppercase cursor-pointer text-orange-600">Others</Label>
+                    </div>
                 </div>
+
+                {impact.other && (
+                  <div className="animate-in slide-in-from-top-2 duration-300">
+                      <Label className="text-[9px] font-black uppercase text-orange-600 mb-1 block">Specify Other Impact Areas</Label>
+                      <Textarea 
+                          value={impact.other_details || ""} 
+                          onChange={(e) => {
+                             setImpact({...impact, other_details: e.target.value});
+                             setIsDirty(true);
+                           }}
+                          disabled={rectification?.status === "APPROVED"}
+                          className="text-[11px] font-medium leading-relaxed border-0 border-b border-orange-200 shadow-none focus-visible:ring-0 rounded-none bg-orange-50/30 p-2 min-h-[60px]"
+                          placeholder="Describe the other impact areas..."
+                      />
+                  </div>
+                )}
+
                 <div>
-                    <Label className="text-[9px] font-black uppercase opacity-40">Remarks / Mitigation</Label>
+                    <Label className="text-[9px] font-black uppercase opacity-40 mb-1 block">Remarks / Mitigation</Label>
                     <Textarea 
                         value={impact.remarks || ""} 
                         onChange={(e) => {

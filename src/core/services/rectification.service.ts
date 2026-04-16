@@ -19,6 +19,10 @@ export interface ImpactDeclaration {
   risk: boolean;
   asset_allocation: boolean;
   portfolio: boolean;
+  product_basket: boolean;
+  target_portfolio: boolean;
+  other: boolean;
+  other_details?: string;
   remarks?: string;
 }
 
