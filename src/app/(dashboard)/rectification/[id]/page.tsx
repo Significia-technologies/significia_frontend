@@ -586,7 +586,7 @@ export default function RectificationDetailsPage() {
                                                       const NON_RECTIFIABLE = new Set([
                                                         // System / Auth
                                                         'id', 'user_id', 'role', 'password', 'tenant_id',
-                                                        'created_at', 'updated_at', 'is_active', 'status',
+                                                        'created_at', 'updated_at', 'deleted_at', 'is_active', 'status',
                                                         'client_id', 'root_profile_id', 'parent_profile_id',
                                                         'version_number', 'record_id', 'custom_id', 'is_custom', 'base_custom_id',
                                                         // Document / File paths (system-managed)
