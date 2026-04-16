@@ -124,7 +124,7 @@ export class RectificationService {
   static async uploadSignedForm(
     id: string, 
     file: File, 
-    docType: "investor_request" | "signed_form" = "signed_form",
+    docType: "investor_request" | "signed_form" | "proposed_change" = "signed_form",
     onProgress?: (percent: number) => void
   ): Promise<any> {
     const formData = new FormData();
@@ -150,7 +150,7 @@ export class RectificationService {
   /**
    * Delete an uploaded document.
    */
-  static async deleteDocument(id: string, docType: "investor_request" | "signed_form"): Promise<any> {
+  static async deleteDocument(id: string, docType: "investor_request" | "signed_form" | "proposed_change"): Promise<any> {
     const response = await httpClient.delete(
         `${API_ENDPOINTS.RECTIFICATION.DOCUMENT(id)}?doc_type=${docType}`
     );
@@ -189,7 +189,7 @@ export class RectificationService {
   /**
    * Download an uploaded document (Proxied through Backend).
    */
-  static async downloadDocument(id: string, docType: "investor_request" | "signed_form", filename: string): Promise<void> {
+  static async downloadDocument(id: string, docType: "investor_request" | "signed_form" | "proposed_change", filename: string): Promise<void> {
     const response = await httpClient.get(
         `${API_ENDPOINTS.RECTIFICATION.DOCUMENT(id)}?doc_type=${docType}`,
         { responseType: "blob" }
@@ -205,6 +205,14 @@ export class RectificationService {
     window.URL.revokeObjectURL(url);
   }
   
+  /**
+   * Get a URL for viewing a document.
+   */
+  static getStorageUrl(id: string, docType: "investor_request" | "signed_form" | "proposed_change", path: string): string {
+    const filename = path.split('/').pop() || 'document';
+    return `${process.env.NEXT_PUBLIC_API_URL}${API_ENDPOINTS.RECTIFICATION.DOCUMENT(id)}?doc_type=${docType}&filename=${encodeURIComponent(filename)}`;
+  }
+
   /**
    * Update an existing rectification record.
    */

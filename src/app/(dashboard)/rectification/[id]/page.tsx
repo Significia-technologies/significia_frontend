@@ -53,7 +53,7 @@ import {
 import { useRouter, useParams } from "next/navigation";
 
 // Configuration for rectifiable fields to provide appropriate UI controls
-const FIELD_CONFIG: Record<string, { type: 'select' | 'number' | 'date' | 'text' | 'textarea', options?: string[] }> = {
+const FIELD_CONFIG: Record<string, { type: 'select' | 'number' | 'date' | 'text' | 'textarea' | 'file', options?: string[] }> = {
   // Choice Fields (Dropdowns)
   gender: { type: 'select', options: ['Male', 'Female', 'Other'] },
   marital_status: { type: 'select', options: ['Single', 'Married', 'Divorced', 'Widowed'] },
@@ -78,6 +78,21 @@ const FIELD_CONFIG: Record<string, { type: 'select' | 'number' | 'date' | 'text'
   address: { type: 'textarea' },
   existing_portfolio_composition: { type: 'textarea' },
   investment_objectives: { type: 'textarea' },
+
+  // Document Paths
+  pan_card_copy: { type: 'file' },
+  aadhar_card_copy: { type: 'file' },
+  passport_copy: { type: 'file' },
+  cancelled_cheque_copy: { type: 'file' },
+  profile_photo: { type:  'file' },
+  certificate_path: { type: 'file' },
+  income_proof_path: { type: 'file' },
+  address_proof_path: { type: 'file' },
+  client_signature_path: { type: 'file' },
+  advisor_signature_path: { type: 'file' },
+  agreement_copy_path: { type: 'file' },
+  financial_analysis_path: { type: 'file' },
+  other_document_path: { type: 'file' },
 };
 
 const ProgressPie = ({ percentage }: { percentage: number }) => {
@@ -590,9 +605,10 @@ export default function RectificationDetailsPage() {
                                                         'client_id', 'root_profile_id', 'parent_profile_id',
                                                         'version_number', 'record_id', 'custom_id', 'is_custom', 'base_custom_id',
                                                         // Document / File paths (system-managed)
-                                                        'documents', 'certificate_path', 'financial_analysis_path',
-                                                        'other_document_path', 'agreement_copy_path',
-                                                        'client_signature_path', 'advisor_signature_path',
+                                                        'documents', 
+                                                        // Note: We are now allowing rectification of these paths
+                                                        // but they will go through the versioned upload process
+                                                        'certificate_path', 
                                                         // Core Identity — immutable after onboarding
                                                         'client_name', 'name', 'client_code',
                                                         'pan_number', 'aadhar_number', 'passport_number', 'date_of_birth',
@@ -688,16 +704,58 @@ export default function RectificationDetailsPage() {
                                                     );
                                                 }
                                                 
-                                                if (config?.type === 'textarea') {
+                                                if (config?.type === 'file') {
+                                                    const isTemp = typeof val === 'string' && val.includes('/proposed/');
                                                     return (
-                                                        <Textarea 
-                                                            className="min-h-[2rem] py-1 border-black/20 font-bold text-[10px]" 
-                                                            value={val}
-                                                            onChange={(e) => updateField(idx, 'proposed', e.target.value)}
-                                                        />
+                                                        <div className="flex flex-col gap-2">
+                                                            {val && (
+                                                                <div className="flex items-center gap-2 mb-1 p-1.5 bg-primary/5 rounded border border-primary/10">
+                                                                    <FileText className="w-3 h-3 text-primary" />
+                                                                    <span className="text-[9px] font-mono truncate max-w-[120px]">
+                                                                        {val.split('/').pop()}
+                                                                    </span>
+                                                                    {isTemp && <Badge className="text-[8px] h-3 px-1 bg-amber-500 hover:bg-amber-600">PENDING</Badge>}
+                                                                    <Button 
+                                                                        variant="ghost" 
+                                                                        size="icon" 
+                                                                        className="h-4 w-4 ml-auto"
+                                                                        onClick={() => {
+                                                                            // Handle viewing the file
+                                                                            window.open(RectificationService.getStorageUrl(id, 'proposed_change', val), '_blank');
+                                                                        }}
+                                                                    >
+                                                                        <FileDown className="w-3 h-3" />
+                                                                    </Button>
+                                                                </div>
+                                                            )}
+                                                            <div className="relative">
+                                                                <input 
+                                                                    type="file" 
+                                                                    className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                                                                    onChange={async (e) => {
+                                                                        const file = e.target.files?.[0];
+                                                                        if (!file) return;
+                                                                        setUploading(true);
+                                                                        try {
+                                                                            const res = await RectificationService.uploadSignedForm(id, file, "proposed_change");
+                                                                            updateField(idx, 'proposed', res.document_path);
+                                                                            toast.success("Document uploaded for rectification");
+                                                                        } catch (error) {
+                                                                            toast.error("Failed to upload proposed document");
+                                                                        } finally {
+                                                                            setUploading(false);
+                                                                        }
+                                                                    }}
+                                                                />
+                                                                <Button variant="outline" size="sm" className="w-full h-8 gap-2 text-[9px] border-dashed border-primary/30 text-primary">
+                                                                    <Upload className="w-3 h-3" />
+                                                                    {val ? "Replace File" : "Upload Proposed File"}
+                                                                </Button>
+                                                            </div>
+                                                        </div>
                                                     );
                                                 }
-                                                
+
                                                 return (
                                                     <Input 
                                                         type={config?.type || 'text'}
@@ -712,6 +770,15 @@ export default function RectificationDetailsPage() {
                                                 {(() => {
                                                     const formatValue = (val: any): string => {
                                                         if (val === null || val === undefined) return "---";
+                                                        
+                                                        // If it's a file path, show a friendly name or icon
+                                                        if (typeof val === 'string' && (val.includes('/') || val.includes('\\'))) {
+                                                            const config = FIELD_CONFIG[item.field];
+                                                            if (config?.type === 'file') {
+                                                                return `📄 ${val.split('/').pop()}`;
+                                                            }
+                                                        }
+
                                                         if (item.field === 'assigned_employee_id') {
                                                           const emp = employees.find(e => (e.id === val || (e as any)._id === val));
                                                           return emp ? (emp.name || (emp as any).full_name || String(val)) : String(val);
