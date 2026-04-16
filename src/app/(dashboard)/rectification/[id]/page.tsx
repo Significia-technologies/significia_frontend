@@ -529,8 +529,37 @@ export default function RectificationDetailsPage() {
                                             >
                                                 <option value="">Select Field...</option>
                                                 {Object.keys(currentModuleValues)
-                                                    .filter(f => !['id', 'client_id', 'created_at', 'updated_at', 'root_profile_id', 'parent_profile_id', 'version_number', 'record_id', 'custom_id', 'tenant_id', 'is_custom', 'base_custom_id'].includes(f))
-                                                    .filter(f => rectification.module !== 'CLIENT' || !['client_name', 'pan_number', 'aadhar_number', 'date_of_birth', 'name'].includes(f))
+                                                    .filter(f => {
+                                                      // Single source-of-truth filter for all non-rectifiable CLIENT fields
+                                                      const NON_RECTIFIABLE = new Set([
+                                                        // System / Auth
+                                                        'id', 'user_id', 'role', 'password', 'tenant_id',
+                                                        'created_at', 'updated_at', 'is_active', 'status',
+                                                        'client_id', 'root_profile_id', 'parent_profile_id',
+                                                        'version_number', 'record_id', 'custom_id', 'is_custom', 'base_custom_id',
+                                                        // Document / File paths (system-managed)
+                                                        'documents', 'certificate_path', 'financial_analysis_path',
+                                                        'other_document_path', 'agreement_copy_path',
+                                                        'client_signature_path', 'advisor_signature_path',
+                                                        // Core Identity — immutable after onboarding
+                                                        'client_name', 'name', 'client_code',
+                                                        'pan_number', 'aadhar_number', 'passport_number', 'date_of_birth',
+                                                        // KYC / Compliance audit
+                                                        'kyc_verified', 'ckyc_number',
+                                                        // IPV
+                                                        'ipv_done_by_id', 'ipv_date',
+                                                        // Advisor / IA
+                                                        'advisor_name', 'advisor_registration_number',
+                                                        // Dates — system-generated
+                                                        'client_date', 'agreement_date',
+                                                        // Audit trail
+                                                        'rectification_serial_no',
+                                                        // Assessment outcomes — managed via own modules
+                                                        'risk_profile', 'investment_experience',
+                                                        'investment_horizon', 'liquidity_needs', 'investment_objectives',
+                                                      ]);
+                                                      return !NON_RECTIFIABLE.has(f);
+                                                    })
                                                     .map(f => (
                                                     <option key={f} value={f}>{f.toUpperCase()}</option>
                                                 ))}

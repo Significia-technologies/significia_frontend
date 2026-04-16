@@ -75,8 +75,29 @@ export default function ClientRegistrationForm({
 
   const isFieldDisabled = (fieldName: string) => {
     if (!isEdit) return false;
-    // Core Identity fields are strictly immutable after onboarding
-    if (["client_name", "date_of_birth", "pan_number", "aadhar_number", "name"].includes(fieldName)) return true;
+    // Permanent read-only fields — never editable via data rectification
+    const IMMUTABLE_FIELDS = new Set([
+      // Core Identity
+      "client_name", "name", "client_code", "date_of_birth", "pan_number", "aadhar_number", "passport_number",
+      // KYC / Compliance
+      "kyc_verified", "ckyc_number",
+      // IPV
+      "ipv_done_by_id", "ipv_date",
+      // Advisor / IA (system-assigned)
+      "advisor_name", "advisor_registration_number",
+      // System dates
+      "client_date", "agreement_date",
+      // System status & document paths
+      "status", "is_active",
+      "documents", "certificate_path", "financial_analysis_path",
+      "other_document_path", "agreement_copy_path",
+      "client_signature_path", "advisor_signature_path",
+      // Audit trail
+      "rectification_serial_no",
+      // Assessment outcomes — managed via Risk Profile / Financial Analysis modules
+      "risk_profile", "investment_experience", "investment_horizon", "liquidity_needs", "investment_objectives",
+    ]);
+    if (IMMUTABLE_FIELDS.has(fieldName)) return true;
     return !authorizedFields.includes(fieldName);
   };
 
