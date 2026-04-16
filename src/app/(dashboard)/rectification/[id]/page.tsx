@@ -155,6 +155,7 @@ export default function RectificationDetailsPage() {
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [saving, setSaving] = useState(false);
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [isDirty, setIsDirty] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -205,17 +206,20 @@ export default function RectificationDetailsPage() {
       toast.error("Failed to load rectification data");
     } finally {
       setLoading(false);
+      setIsDirty(false);
     }
   };
 
   const handleAddField = () => {
     setProposedChanges([...proposedChanges, { field: "", current: "", proposed: "", reason: "" }]);
+    setIsDirty(true);
   };
 
   const handleRemoveField = (index: number) => {
     const next = [...proposedChanges];
     next.splice(index, 1);
     setProposedChanges(next);
+    setIsDirty(true);
   };
 
   const updateField = (index: number, key: keyof ProposedChange, value: any) => {
@@ -227,6 +231,7 @@ export default function RectificationDetailsPage() {
     }
     
     setProposedChanges(next);
+    setIsDirty(true);
   };
 
   const handleDownload = async () => {
@@ -313,6 +318,13 @@ export default function RectificationDetailsPage() {
   };
 
   const handleSave = async () => {
+    // Validation: Check if every proposed change has a reason
+    const missingReasons = proposedChanges.filter(cp => !cp.field || !cp.reason || cp.reason.trim() === "");
+    if (proposedChanges.length > 0 && missingReasons.length > 0) {
+      toast.error("Validation Error: Please provide a reason for every changed field.");
+      return;
+    }
+
     setSaving(true);
     try {
       await RectificationService.update(id, { 
@@ -324,7 +336,8 @@ export default function RectificationDetailsPage() {
         confirmation_reference: confirmationReference
       });
       toast.success("Rectification progress saved locally and in vault.");
-      loadData(true);
+      await loadData(true);
+      setIsDirty(false);
     } catch (error) {
       toast.error("Persistence failure. Check Bridge status.");
     } finally {
@@ -416,19 +429,19 @@ export default function RectificationDetailsPage() {
             variant="outline" 
             className="gap-2 border-primary/20 bg-card hover:bg-primary/5" 
             onClick={handleDownload}
-            disabled={downloadingPdf}
+            disabled={downloadingPdf || isDirty || (rectification.proposed_changes?.length === 0)}
           >
             {downloadingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />} 
             Download Form
           </Button>
           
           {/* Action: Upload (Mandatory for all before approval) */}
-          {(rectification.status === "DRAFT" || rectification.status === "UPDATED") && !rectification.signed_form_path && (
+          {(rectification.status === "DRAFT" || rectification.status === "UPDATED") && !rectification.signed_form_path && !isDirty && (rectification.proposed_changes?.length > 0) && (
             <div className="relative">
               <input 
                 type="file" 
                 className="absolute inset-0 opacity-0 cursor-pointer z-10" 
-                onChange={(e) => handleFileUpload(e, "signed_form")}
+                onChange={(e) => { handleFileUpload(e, "signed_form"); setIsDirty(true); }}
                 disabled={uploading}
               />
               <Button className="gap-2 shadow-lg shadow-emerald-500/20 bg-emerald-600 hover:bg-emerald-700">
@@ -540,8 +553,14 @@ export default function RectificationDetailsPage() {
                            <Checkbox 
                               checked={purposeOfEdit.includes(opt)} 
                               onCheckedChange={(checked) => {
-                                if (checked) setPurposeOfEdit([...purposeOfEdit, opt]);
-                                else setPurposeOfEdit(purposeOfEdit.filter(m => m !== opt));
+                                if (checked) {
+                                  setPurposeOfEdit([...purposeOfEdit, opt]);
+                                  setIsDirty(true);
+                                }
+                                else {
+                                  setPurposeOfEdit(purposeOfEdit.filter(m => m !== opt));
+                                  setIsDirty(true);
+                                }
                               }}
                               disabled={rectification?.status === "APPROVED"} 
                               className="w-5 h-5 border-black" 
@@ -573,7 +592,9 @@ export default function RectificationDetailsPage() {
                             <TableHead className="text-[9px] font-black text-black">Field Name</TableHead>
                             <TableHead className="text-[9px] font-black text-black">Current Value</TableHead>
                             <TableHead className="text-[9px] font-black text-black">Proposed Value</TableHead>
-                            <TableHead className="text-[9px] font-black text-black">Reason</TableHead>
+                            <TableHead className="text-[9px] font-black text-black flex items-center gap-1">
+                              Reason <span className="text-red-500">*</span>
+                            </TableHead>
                             {(rectification.status === "DRAFT" || rectification.status === "UPDATED") && <TableHead className="print:hidden"></TableHead>}
                         </TableRow>
                     </TableHeader>
@@ -802,12 +823,15 @@ export default function RectificationDetailsPage() {
 
                                     <TableCell className="p-2">
                                          {(rectification.status === "DRAFT" || rectification.status === "UPDATED") ? (
-                                            <Input 
-                                                className="h-8 border-black/20 text-xs" 
-                                                value={item.reason}
-                                                placeholder="Brief reason..."
-                                                onChange={(e) => updateField(idx, 'reason', e.target.value)}
-                                            />
+                                            <div className="relative">
+                                                <Input 
+                                                    className={`h-8 border-black/20 text-xs ${!item.reason ? 'border-red-500/50 bg-red-50/10' : ''}`} 
+                                                    value={item.reason}
+                                                    placeholder="Mandatory reason..."
+                                                    onChange={(e) => updateField(idx, 'reason', e.target.value)}
+                                                />
+                                                {!item.reason && <div className="absolute right-2 top-2.5 w-1.5 h-1.5 rounded-full bg-red-500" />}
+                                            </div>
                                         ) : (
                                             <span className="text-xs">{item.reason}</span>
                                         )}
@@ -838,7 +862,10 @@ export default function RectificationDetailsPage() {
                    <Label className="text-[10px] font-black uppercase opacity-60">1. What is incorrect in current data?</Label>
                    <Textarea 
                       value={justification.q1} 
-                      onChange={(e) => setJustification({...justification, q1: e.target.value})}
+                      onChange={(e) => {
+                         setJustification({...justification, q1: e.target.value});
+                         setIsDirty(true);
+                       }}
                       disabled={rectification?.status === "APPROVED"}
                       className="text-sm border-0 border-b border-black/10 mt-1 pb-2 shadow-none focus-visible:ring-0 rounded-none bg-transparent min-h-[60px]"
                       placeholder="Detail the discovered inaccuracy..."
@@ -848,7 +875,10 @@ export default function RectificationDetailsPage() {
                    <Label className="text-[10px] font-black uppercase opacity-60">2. Why is change required?</Label>
                    <Textarea 
                       value={justification.q2} 
-                      onChange={(e) => setJustification({...justification, q2: e.target.value})}
+                      onChange={(e) => {
+                         setJustification({...justification, q2: e.target.value});
+                         setIsDirty(true);
+                       }}
                       disabled={rectification?.status === "APPROVED"}
                       className="text-sm border-0 border-b border-black/10 mt-1 pb-2 shadow-none focus-visible:ring-0 rounded-none bg-transparent min-h-[60px]"
                       placeholder="Explain why this correction is necessary (Compliance, Client Request, etc.)"
@@ -858,7 +888,10 @@ export default function RectificationDetailsPage() {
                    <Label className="text-[10px] font-black uppercase opacity-60">3. Source of revised data?</Label>
                    <Textarea 
                       value={justification.q3} 
-                      onChange={(e) => setJustification({...justification, q3: e.target.value})}
+                      onChange={(e) => {
+                         setJustification({...justification, q3: e.target.value});
+                         setIsDirty(true);
+                       }}
                       disabled={rectification?.status === "APPROVED"}
                       className="text-sm border-0 border-b border-black/10 mt-1 pb-2 shadow-none focus-visible:ring-0 rounded-none bg-transparent min-h-[60px]"
                       placeholder="Mention the physical document or source used for verification..."
@@ -880,8 +913,14 @@ export default function RectificationDetailsPage() {
                            <Checkbox 
                               checked={confirmationMode.includes(opt)} 
                               onCheckedChange={(checked) => {
-                                if (checked) setConfirmationMode([...confirmationMode, opt]);
-                                else setConfirmationMode(confirmationMode.filter(m => m !== opt));
+                                if (checked) {
+                                  setConfirmationMode([...confirmationMode, opt]);
+                                  setIsDirty(true);
+                                }
+                                else {
+                                  setConfirmationMode(confirmationMode.filter(m => m !== opt));
+                                  setIsDirty(true);
+                                }
                               }}
                               disabled={rectification?.status === "APPROVED"} 
                               className="w-5 h-5 border-black" 
@@ -894,7 +933,10 @@ export default function RectificationDetailsPage() {
                    <Label className="text-[10px] font-black uppercase opacity-60">Reference</Label>
                    <Input 
                       value={confirmationReference} 
-                      onChange={(e) => setConfirmationReference(e.target.value)}
+                      onChange={(e) => {
+                         setConfirmationReference(e.target.value);
+                         setIsDirty(true);
+                       }}
                       disabled={rectification?.status === "APPROVED"}
                       className="text-sm border-0 border-b border-black/10 mt-1 pb-2 shadow-none focus-visible:ring-0 rounded-none bg-transparent"
                       placeholder="e.g. Email Date, Call Log ID..."
@@ -955,7 +997,7 @@ export default function RectificationDetailsPage() {
                                <FileDown className="w-3.5 h-3.5" />
                             </Button>
                             {rectification?.status !== "APPROVED" && (
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-red-500/10 text-red-500" onClick={() => handleDeleteDoc("investor_request")}>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-red-500/10 text-red-500" onClick={() => { handleDeleteDoc("investor_request"); setIsDirty(true); }}>
                                  <Trash2 className="w-3.5 h-3.5" />
                                </Button>
                             )}
@@ -985,7 +1027,7 @@ export default function RectificationDetailsPage() {
                                   <input 
                                     type="file" 
                                     className="absolute inset-0 opacity-0 cursor-pointer" 
-                                    onChange={(e) => handleFileUpload(e, "investor_request")}
+                                    onChange={(e) => { handleFileUpload(e, "investor_request"); setIsDirty(true); }}
                                     disabled={uploading}
                                     accept={confirmationMode.includes("Video Call") ? "video/*,audio/*" : confirmationMode.includes("Verbal") ? "audio/*" : undefined}
                                   />
@@ -1005,59 +1047,61 @@ export default function RectificationDetailsPage() {
                  </Card>
                )}
 
-               {/* 2. IA Signed Authorization */}
-               <Card className={`border-emerald-500/20 bg-emerald-500/5 shadow-none overflow-hidden h-full ${!rectification.is_investor_requested ? 'md:col-span-2' : ''}`}>
-                  <CardHeader className="p-4 bg-emerald-500/20">
-                    <CardTitle className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-emerald-900">
-                      <ShieldAlert className="w-4 h-4" /> IA Signed Authorization
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4 space-y-4">
-                    {rectification.signed_form_path ? (
-                        <div className="flex items-center justify-between p-3 bg-white/50 border border-emerald-500/20 rounded-lg">
-                          <div className="flex items-center gap-3 overflow-hidden">
-                             <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                             <span className="text-[10px] font-bold truncate text-emerald-900">
-                               {rectification.signed_form_path.split('/').pop()?.split('_').slice(3).join('_') || "Final_Authorization.pdf"}
-                             </span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-emerald-500/10" onClick={() => handleDocDownload("signed_form", rectification.signed_form_path!)}>
-                               <FileDown className="w-3.5 h-3.5" />
-                            </Button>
-                            {rectification?.status !== "APPROVED" && (
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-red-500/10 text-red-500" onClick={() => handleDeleteDoc("signed_form")}>
-                                 <Trash2 className="w-3.5 h-3.5" />
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                    ) : (
-                      <div className="p-3 border-2 border-dashed border-emerald-500/20 rounded-lg bg-emerald-500/5 flex flex-col items-center gap-2 text-center min-h-[80px] justify-center relative">
-                         {uploading && activeUploadType === "signed_form" ? (
-                             <ProgressPie percentage={uploadProgress} />
-                         ) : (
-                           <>
-                             <AlertCircle className="w-5 h-5 text-emerald-700" />
-                             <p className="text-[9px] font-black uppercase text-emerald-800">Missing Internal Sign-off</p>
-                             <p className="text-[8px] font-bold text-emerald-700/60 uppercase tracking-tighter">Download form, get signature, and upload.</p>
-                             <div className="relative w-full">
-                                <input 
-                                  type="file" 
-                                  className="absolute inset-0 opacity-0 cursor-pointer" 
-                                  onChange={(e) => handleFileUpload(e, "signed_form")}
-                                  disabled={uploading}
-                                />
-                                <Button variant="outline" size="sm" className="w-full text-[9px] font-black uppercase h-7 border-emerald-500/30 hover:bg-emerald-500/10 text-emerald-900">
-                                  Upload Signed Form
-                                </Button>
+                {/* 2. IA Signed Authorization */}
+                {!isDirty && (rectification.proposed_changes?.length > 0) && (
+                  <Card className={`border-emerald-500/20 bg-emerald-500/5 shadow-none overflow-hidden h-full ${!rectification.is_investor_requested ? 'md:col-span-2' : ''}`}>
+                     <CardHeader className="p-4 bg-emerald-500/20">
+                       <CardTitle className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-emerald-900">
+                         <ShieldAlert className="w-4 h-4" /> IA Signed Authorization
+                       </CardTitle>
+                     </CardHeader>
+                     <CardContent className="p-4 space-y-4">
+                       {rectification.signed_form_path ? (
+                           <div className="flex items-center justify-between p-3 bg-white/50 border border-emerald-500/20 rounded-lg">
+                             <div className="flex items-center gap-3 overflow-hidden">
+                                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                                <span className="text-[10px] font-bold truncate text-emerald-900">
+                                  {rectification.signed_form_path.split('/').pop()?.split('_').slice(3).join('_') || "Final_Authorization.pdf"}
+                                </span>
                              </div>
-                           </>
-                         )}
-                      </div>
-                    )}
-                  </CardContent>
-               </Card>
+                             <div className="flex items-center gap-1">
+                               <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-emerald-500/10" onClick={() => handleDocDownload("signed_form", rectification.signed_form_path!)}>
+                                  <FileDown className="w-3.5 h-3.5" />
+                               </Button>
+                               {rectification?.status !== "APPROVED" && (
+                                 <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-red-500/10 text-red-500" onClick={() => { handleDeleteDoc("signed_form"); setIsDirty(true); }}>
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                 </Button>
+                               )}
+                             </div>
+                           </div>
+                       ) : (
+                         <div className="p-3 border-2 border-dashed border-emerald-500/20 rounded-lg bg-emerald-500/5 flex flex-col items-center gap-2 text-center min-h-[80px] justify-center relative">
+                            {uploading && activeUploadType === "signed_form" ? (
+                                <ProgressPie percentage={uploadProgress} />
+                            ) : (
+                              <>
+                                <AlertCircle className="w-5 h-5 text-emerald-700" />
+                                <p className="text-[9px] font-black uppercase text-emerald-800">Missing Internal Sign-off</p>
+                                <p className="text-[8px] font-bold text-emerald-700/60 uppercase tracking-tighter">Download form, get signature, and upload.</p>
+                                <div className="relative w-full">
+                                   <input 
+                                     type="file" 
+                                     className="absolute inset-0 opacity-0 cursor-pointer" 
+                                     onChange={(e) => { handleFileUpload(e, "signed_form"); setIsDirty(true); }}
+                                     disabled={uploading}
+                                   />
+                                   <Button variant="outline" size="sm" className="w-full text-[9px] font-black uppercase h-7 border-emerald-500/30 hover:bg-emerald-500/10 text-emerald-900">
+                                     Upload Signed Form
+                                   </Button>
+                                </div>
+                              </>
+                            )}
+                         </div>
+                       )}
+                     </CardContent>
+                  </Card>
+                )}
 
 
             </div>
@@ -1074,7 +1118,10 @@ export default function RectificationDetailsPage() {
                    <div className="flex items-center gap-3">
                        <Checkbox 
                           checked={impact.financial} 
-                          onCheckedChange={(val) => setImpact({...impact, financial: !!val})}
+                          onCheckedChange={(val) => {
+                             setImpact({...impact, financial: !!val});
+                             setIsDirty(true);
+                           }}
                           disabled={rectification?.status === "APPROVED"} 
                           className="w-5 h-5 border-black" 
                         />
@@ -1083,7 +1130,10 @@ export default function RectificationDetailsPage() {
                    <div className="flex items-center gap-3">
                        <Checkbox 
                           checked={impact.risk} 
-                          onCheckedChange={(val) => setImpact({...impact, risk: !!val})}
+                          onCheckedChange={(val) => {
+                             setImpact({...impact, risk: !!val});
+                             setIsDirty(true);
+                           }}
                           disabled={rectification?.status === "APPROVED"} 
                           className="w-5 h-5 border-black" 
                         />
@@ -1092,7 +1142,10 @@ export default function RectificationDetailsPage() {
                    <div className="flex items-center gap-3">
                        <Checkbox 
                           checked={impact.asset_allocation} 
-                          onCheckedChange={(val) => setImpact({...impact, asset_allocation: !!val})}
+                          onCheckedChange={(val) => {
+                             setImpact({...impact, asset_allocation: !!val});
+                             setIsDirty(true);
+                           }}
                           disabled={rectification?.status === "APPROVED"} 
                           className="w-5 h-5 border-black" 
                         />
@@ -1101,7 +1154,10 @@ export default function RectificationDetailsPage() {
                    <div className="flex items-center gap-3">
                        <Checkbox 
                           checked={impact.portfolio} 
-                          onCheckedChange={(val) => setImpact({...impact, portfolio: !!val})}
+                          onCheckedChange={(val) => {
+                             setImpact({...impact, portfolio: !!val});
+                             setIsDirty(true);
+                           }}
                           disabled={rectification?.status === "APPROVED"} 
                           className="w-5 h-5 border-black" 
                         />
@@ -1112,7 +1168,10 @@ export default function RectificationDetailsPage() {
                     <Label className="text-[9px] font-black uppercase opacity-40">Remarks / Mitigation</Label>
                     <Textarea 
                         value={impact.remarks || ""} 
-                        onChange={(e) => setImpact({...impact, remarks: e.target.value})}
+                        onChange={(e) => {
+                           setImpact({...impact, remarks: e.target.value});
+                           setIsDirty(true);
+                         }}
                         disabled={rectification?.status === "APPROVED"}
                         className="text-[11px] font-medium leading-relaxed italic border-0 border-b border-black/10 shadow-none focus-visible:ring-0 rounded-none bg-transparent p-0 min-h-[60px]"
                         placeholder="Add mitigation steps if any..."
