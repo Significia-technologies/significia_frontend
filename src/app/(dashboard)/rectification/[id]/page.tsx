@@ -42,7 +42,42 @@ import { toast } from "sonner";
 import { RectificationService, RectificationResponse, ProposedChange } from "@/core/services/rectification.service";
 import { MasterDataService } from "@/core/services/master.service";
 import { format } from "date-fns";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useRouter, useParams } from "next/navigation";
+
+// Configuration for rectifiable fields to provide appropriate UI controls
+const FIELD_CONFIG: Record<string, { type: 'select' | 'number' | 'date' | 'text' | 'textarea', options?: string[] }> = {
+  // Choice Fields (Dropdowns)
+  gender: { type: 'select', options: ['Male', 'Female', 'Other'] },
+  marital_status: { type: 'select', options: ['Single', 'Married', 'Divorced', 'Widowed'] },
+  residential_status: { type: 'select', options: ['Resident Individual', 'Non-Resident Indian', 'Person of Indian Origin', 'Foreign National'] },
+  income_source: { type: 'select', options: ['Salaried', 'Business', 'Professional', 'Agriculture', 'Investments', 'Other'] },
+  pep_status: { type: 'select', options: ['Not a PEP', 'PEP', 'Family Member of PEP', 'Close Associate of PEP'] },
+  fatca_compliance: { type: 'select', options: ['FATCA Compliant', 'Non-Compliant', 'Not Applicable'] },
+  referral_source: { type: 'select', options: ['Existing Client', 'Friend/Family', 'Online Search', 'Advertisement', 'Other'] },
+  
+  // Numeric Fields
+  annual_income: { type: 'number' },
+  net_worth: { type: 'number' },
+  existing_portfolio_value: { type: 'number' },
+  
+  // Date Fields
+  date_of_birth: { type: 'date' },
+  client_date: { type: 'date' },
+  agreement_date: { type: 'date' },
+  ipv_date: { type: 'date' },
+  
+  // Long Text
+  address: { type: 'textarea' },
+  existing_portfolio_composition: { type: 'textarea' },
+  investment_objectives: { type: 'textarea' },
+};
 
 const ProgressPie = ({ percentage }: { percentage: number }) => {
   const radius = 16;
@@ -593,11 +628,46 @@ export default function RectificationDetailsPage() {
                                     </TableCell>
                                     <TableCell className="p-2">
                                         {(rectification.status === "DRAFT" || rectification.status === "UPDATED") ? (
-                                            <Input 
-                                                className="h-8 border-black/20 font-bold text-[10px]" 
-                                                value={typeof item.proposed === 'object' ? JSON.stringify(item.proposed) : item.proposed} 
-                                                onChange={(e) => updateField(idx, 'proposed', e.target.value)}
-                                            />
+                                            (() => {
+                                                const config = FIELD_CONFIG[item.field];
+                                                const val = typeof item.proposed === 'object' ? JSON.stringify(item.proposed) : String(item.proposed || "");
+                                                
+                                                if (config?.type === 'select') {
+                                                    return (
+                                                        <Select value={val} onValueChange={(v) => updateField(idx, 'proposed', v)}>
+                                                            <SelectTrigger className="h-8 border-black/20 font-bold text-[10px] bg-white text-black">
+                                                                <SelectValue placeholder="Select..." />
+                                                            </SelectTrigger>
+                                                            <SelectContent className="bg-white">
+                                                                {config.options?.map(opt => (
+                                                                    <SelectItem key={opt} value={opt} className="text-[10px] text-black focus:bg-slate-100 focus:text-black">
+                                                                        {opt}
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    );
+                                                }
+                                                
+                                                if (config?.type === 'textarea') {
+                                                    return (
+                                                        <Textarea 
+                                                            className="min-h-[2rem] py-1 border-black/20 font-bold text-[10px]" 
+                                                            value={val}
+                                                            onChange={(e) => updateField(idx, 'proposed', e.target.value)}
+                                                        />
+                                                    );
+                                                }
+                                                
+                                                return (
+                                                    <Input 
+                                                        type={config?.type || 'text'}
+                                                        className="h-8 border-black/20 font-bold text-[10px]" 
+                                                        value={val} 
+                                                        onChange={(e) => updateField(idx, 'proposed', e.target.value)}
+                                                    />
+                                                );
+                                            })()
                                         ) : (
                                             <div className="text-[10px] font-black whitespace-pre-wrap max-w-xs leading-relaxed">
                                                 {(() => {
