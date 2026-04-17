@@ -72,7 +72,15 @@ export function AnalysisList({ clientId, onSelectAnalysis, onCreateNew }: Analys
         current_version: item.version_number || 1,
         proposed_changes: [],
         justification_details: { q1: "", q2: "", q3: "" },
-        impact_declaration: { financial: true, risk: false },
+        impact_declaration: { 
+          financial: true, 
+          risk: false,
+          asset_allocation: false,
+          portfolio: false,
+          product_basket: false,
+          target_portfolio: false,
+          other: false
+        },
         confirmation_mode: "Data Correction",
         is_investor_requested: false,
         initiation_reason: "Internal rectification initiated from Financial Analysis vault"
@@ -98,7 +106,8 @@ export function AnalysisList({ clientId, onSelectAnalysis, onCreateNew }: Analys
 
         // Map clients for quick lookup
         const clientMap: Record<string, Client> = {};
-        clientData.forEach(c => {
+        const clientsArray = Array.isArray(clientData) ? clientData : (clientData?.clients || []);
+        clientsArray.forEach(c => {
           clientMap[c.id] = c;
         });
         setClients(clientMap);

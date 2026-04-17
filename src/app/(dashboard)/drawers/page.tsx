@@ -82,7 +82,8 @@ export default function DrawersPage() {
         }
       }
 
-      const clientFolders: DrawerFolder[] = clientsData.map((client) => ({
+      const clients = Array.isArray(clientsData) ? clientsData : (clientsData?.clients || []);
+      const clientFolders: DrawerFolder[] = clients.map((client) => ({
         id: client.id,
         name: client.client_name,
         code: client.client_code,

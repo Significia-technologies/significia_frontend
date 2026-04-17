@@ -60,7 +60,15 @@ export function AssetAllocationHistory({  }: AssetAllocationHistoryProps) {
         current_version: 1,
         proposed_changes: [],
         justification_details: { q1: "", q2: "", q3: "" },
-        impact_declaration: { financial: false, risk: false },
+        impact_declaration: { 
+          financial: false, 
+          risk: false,
+          asset_allocation: false,
+          portfolio: false,
+          product_basket: false,
+          target_portfolio: false,
+          other: false
+        },
         confirmation_mode: "Data Correction",
         is_investor_requested: false,
         initiation_reason: "Internal rectification initiated from Asset Allocation vault"
