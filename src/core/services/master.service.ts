@@ -228,6 +228,10 @@ export class MasterDataService {
     });
   }
 
+  static async sendOnboardingEmail(clientId: string): Promise<void> {
+    await httpClient.post(API_ENDPOINTS.EMAIL.SEND_ONBOARDING, { client_id: clientId });
+  }
+
   // ── Client Versioning (SEBI Temporal Audit) ──────────────────────
 
   static async listClientVersions(clientId: string): Promise<ClientVersionListResponse> {

@@ -82,6 +82,15 @@ export function ClientList() {
     }
   };
 
+  const handleSendOnboardingEmail = async (clientId: string) => {
+    try {
+      await MasterDataService.sendOnboardingEmail(clientId);
+      toast.success("Welcome email sent to client");
+    } catch (error) {
+      toast.error("Failed to send onboarding email");
+    }
+  };
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchQuery);
@@ -277,6 +286,13 @@ export function ClientList() {
                             disabled={!client.is_active}
                           >
                             <Pencil className="w-4 h-4" /> Edit Records
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => handleSendOnboardingEmail(client.id)} 
+                            className="gap-2"
+                            disabled={!client.is_active}
+                          >
+                            <Mail className="w-4 h-4" /> Send Onboarding Email
                           </DropdownMenuItem>
                           {/* <DropdownMenuSeparator className="bg-primary/10" />
                           <DropdownMenuItem 

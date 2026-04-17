@@ -233,6 +233,7 @@ export const API_ENDPOINTS = {
     DEFAULT_TEMPLATE: `${API_BASE}/email/templates/default`,
     PLACEHOLDERS: `${API_BASE}/email/placeholders`,
     SEND: `${API_BASE}/email/send`,
+    SEND_ONBOARDING: `${API_BASE}/email/onboarding/send`,
     SEND_REPORT: `${API_BASE}/email/send/report`,
     LOGS: `${API_BASE}/email/logs`,
   },
