@@ -253,7 +253,7 @@ export default function TeamManagement() {
       if (role === 'partner') {
         return { ...p, can_read: true, can_create: true, can_update: true, can_delete: true };
       }
-      if (role === 'analyst') {
+      if (role === 'research_analyst') {
         // Analysts start with generic Read access to everything? 
         // Or "No Access" is better as requested.
         return { ...p, can_read: false, can_create: false, can_update: false, can_delete: false };
