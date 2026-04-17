@@ -79,6 +79,12 @@ export const API_ENDPOINTS = {
       PDF: (iaId: string) => `${API_BASE}/ia-master/${iaId}/pdf`,
       EMPLOYEES: `${API_BASE}/ia-master/employees`,
     },
+    DEPARTMENTS: {
+      LIST: `${API_BASE}/departments`,
+      CREATE: `${API_BASE}/departments`,
+      UPDATE: (id: string) => `${API_BASE}/departments/${id}`,
+      DELETE: (id: string) => `${API_BASE}/departments/${id}`,
+    },
   },
 
   // ── Financial Analysis ─────────────────────────────────────
