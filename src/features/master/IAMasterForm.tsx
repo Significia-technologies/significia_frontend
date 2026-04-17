@@ -351,7 +351,7 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
                     <div className="mt-8 p-6 rounded-xl border border-amber-200 bg-amber-50/30 dark:bg-amber-950/10 space-y-4 animate-in fade-in slide-in-from-top-2 duration-500">
                       <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
                         <ShieldCheck className="w-5 h-5" />
-                        <h3 className="font-bold text-sm uppercase tracking-wider">Change Rationale (Required for SEBI Compliance)</h3>
+                        <h3 className="font-bold text-sm uppercase tracking-wider">Change Rationale (Required for Regulatory Compliance)</h3>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
@@ -384,7 +384,7 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
                         </div>
                       </div>
                       <p className="text-[10px] text-amber-600/70 italic">
-                        This reason will be permanently stored in the SEBI-Safe audit trail and version history.
+                        This reason will be permanently stored in the Regulatory-Safe audit trail and version history.
                       </p>
                     </div>
                   )}

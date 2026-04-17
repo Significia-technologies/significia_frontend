@@ -187,7 +187,7 @@ export function LockManagementTab() {
             </CardTitle>
             <CardDescription className="text-xs">
               Lock the IA Master record after delivering a report to a client.
-              This is a SEBI best-practice to prevent accidental tampering.
+              This is the best-practice to prevent accidental tampering.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -226,7 +226,7 @@ export function LockManagementTab() {
             </CardTitle>
             <CardDescription className="text-xs">
               Unlocking requires a mandatory reason that is permanently recorded
-              in the audit trail for SEBI compliance.
+              in the audit trail for Regulatory compliance.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -340,10 +340,10 @@ export function LockManagementTab() {
         </div>
         <div className="space-y-1">
           <h4 className="text-sm font-bold text-emerald-700">
-            SEBI Auditor&apos;s Perspective
+            Regulatory Auditor&apos;s Perspective
           </h4>
           <p className="text-xs text-emerald-600/80">
-            If SEBI inspects your system, they will ask: &ldquo;Show me
+            If a Regulator inspects your system, they will ask: &ldquo;Show me
             how this number was changed.&rdquo; With this system, you can show:
             ✅ Original value, ✅ Updated value, ✅ Reason for change,
             ✅ Timestamp, ✅ Who changed it — all in one audit trail.

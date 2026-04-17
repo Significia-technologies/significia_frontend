@@ -8,18 +8,19 @@ import {
   Database,
   BarChart3,
   ShieldCheck,
-  TrendingUp,
-  Activity,
+  PieChart,
+  FileCheck2,
+  Mail,
+  ClipboardCheck,
   Users,
+  TrendingUp,
   Archive,
   Wrench,
+  Terminal,
   UserCog,
   Settings,
   ChevronLeft,
-  ChevronRight,
-  Terminal,
-  PieChart,
-  FileCheck2,
+  ChevronRight
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -76,9 +77,10 @@ const NAV_ITEMS = [
     icon: TrendingUp,
   },
   {
-    label: "Operations",
-    href: "/operations",
-    icon: Activity,
+    label: "Data Rectification",
+    href: "/rectification",
+    icon: ClipboardCheck,
+    minRole: "admin",
   },
   {
     label: "Team",
@@ -117,6 +119,12 @@ const NAV_ITEMS = [
 ];
 
 const BOTTOM_NAV_ITEMS = [
+  {
+    label: "Email",
+    href: "/settings/email",
+    icon: Mail,
+    minRole: "admin",
+  },
   {
     label: "Settings",
     href: "/settings",
@@ -166,7 +174,7 @@ export function SidebarContent() {
   return (
     <>
       {/* ── Logo ── */}
-      <div className="flex h-16 items-center gap-3 px-4">
+      <div className="flex h-14 items-center gap-3 px-4">
         <TenantLogo
           logoType={publicBranding?.logo_type || (isMasterContext ? "significia" : "shield")}
           logoUrl={publicBranding?.logo_url}
@@ -227,8 +235,11 @@ export function SidebarContent() {
 
       {/* ── Bottom Nav ── */}
       <div className="border-t border-border px-2 py-3">
-        {BOTTOM_NAV_ITEMS.map((item) => {
-          const isActive = pathname === item.href;
+        {BOTTOM_NAV_ITEMS.filter((item) => {
+          if ((item as any).minRole === "admin" && !(isIAOwner || isIAPartner || isSuperAdmin)) return false;
+          return true;
+        }).map((item) => {
+          const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
 
           const linkContent = (
             <Link

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { FolderOpen, UploadCloud, FileText, Download, Trash2, X, Plus } from "lucide-react";
+import { FolderOpen, UploadCloud, FileText, Download, Trash2, X, Plus, Folder, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +14,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 
 interface DocumentVaultProps {
-  
   clientId: string;
   documents: ClientDocumentResponse[];
   onUploadSuccess: () => void;
@@ -40,6 +39,7 @@ export function DocumentVault({ clientId, documents, onUploadSuccess, readOnly =
   const [selectedType, setSelectedType] = useState<string>("");
   const [customType, setCustomType] = useState<string>("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
   const handleFileDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -78,7 +78,6 @@ export function DocumentVault({ clientId, documents, onUploadSuccess, readOnly =
   };
 
   const downloadFile = (filePath: string, docType: string) => {
-    // Navigate via proper paths
     const isUrl = filePath.startsWith('http');
     if (isUrl) {
       window.open(filePath, '_blank');
@@ -87,14 +86,45 @@ export function DocumentVault({ clientId, documents, onUploadSuccess, readOnly =
     }
   };
 
+  // Grouping logic based on user preference
+  const categoriesMap = documents.reduce((acc, doc) => {
+    let category = doc.category || "General";
+    
+    // Grouping according to business preference: Rectification, Reports, and KYC
+    if (category !== "Rectification" && category !== "Reports" && category !== "KYC") {
+      category = "General";
+    }
+
+    if (!acc[category]) acc[category] = [];
+    acc[category].push(doc);
+    return acc;
+  }, {} as Record<string, ClientDocumentResponse[]>);
+
+  const availableCategories = Object.keys(categoriesMap).sort((a, b) => {
+      const order = ["Rectification", "Reports", "General"];
+      return order.indexOf(a) - order.indexOf(b);
+  });
+
+  const displayDocs = activeCategory ? (categoriesMap[activeCategory] || []) : [];
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between border-b border-primary/10 pb-4">
-        <div>
-            <h2 className="text-xl font-bold flex items-center gap-2">
-                <FolderOpen className="w-5 h-5 text-primary" /> Document Vault
-            </h2>
-            <p className="text-sm text-muted-foreground mt-1">Secure repository for client verification files</p>
+        <div className="flex items-center gap-4">
+            {activeCategory && (
+                <Button variant="ghost" size="icon" onClick={() => setActiveCategory(null)} className="rounded-full h-8 w-8">
+                    <ChevronLeft className="w-5 h-5" />
+                </Button>
+            )}
+            <div>
+                <h2 className="text-xl font-bold flex items-center gap-2">
+                    <FolderOpen className="w-5 h-5 text-primary" /> 
+                    {activeCategory ? activeCategory : "Document Vault"}
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                    {activeCategory ? `Viewing ${displayDocs.length} files in ${activeCategory}` : "Secure repository for client verification files"}
+                </p>
+            </div>
         </div>
         {!readOnly && (
             <Button onClick={() => setIsModalOpen(true)} className="gap-2 shadow-md shadow-primary/20">
@@ -118,16 +148,43 @@ export function DocumentVault({ clientId, documents, onUploadSuccess, readOnly =
                 </Button>
             )}
         </div>
+      ) : !activeCategory ? (
+        // Folders View
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {availableCategories.map(cat => (
+                <Card 
+                    key={cat} 
+                    className="cursor-pointer group hover:border-primary/40 transition-all shadow-sm hover:shadow-md bg-card/50 backdrop-blur-sm"
+                    onClick={() => setActiveCategory(cat)}
+                >
+                    <CardContent className="p-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                                <Folder className="w-6 h-6 text-primary" />
+                            </div>
+                            <Badge variant="secondary" className="bg-primary/5 text-primary border-primary/10">
+                                {categoriesMap[cat].length} Files
+                            </Badge>
+                        </div>
+                        <h3 className="font-bold text-lg">{cat}</h3>
+                        <p className="text-xs text-muted-foreground mt-1 truncate">
+                            {categoriesMap[cat][0]?.document_type || "No files"}
+                        </p>
+                    </CardContent>
+                </Card>
+            ))}
+        </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {documents.map((doc) => (
+        // Files View
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          {displayDocs.map((doc) => (
             <Card key={doc.id} className="group overflow-hidden border-primary/10 hover:border-primary/30 transition-all shadow-sm hover:shadow-md bg-card/50 backdrop-blur-sm">
                 <CardContent className="p-0">
                     <div className="h-24 bg-gradient-to-br from-primary/5 to-primary/10 flex items-center justify-center relative border-b border-primary/5">
                         <FileText className="w-10 h-10 text-primary/40 group-hover:text-primary/60 transition-colors" />
                         <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100 backdrop-blur-[1px]">
                             <Button size="sm" variant="secondary" onClick={() => downloadFile(doc.file_path, doc.document_type)} className="gap-2 shadow-lg">
-                                <Download className="w-4 h-4" /> View Match
+                                <Download className="w-4 h-4" /> View File
                             </Button>
                         </div>
                     </div>
@@ -150,14 +207,7 @@ export function DocumentVault({ clientId, documents, onUploadSuccess, readOnly =
       {/* Upload Modal */}
       <Dialog 
         open={isModalOpen} 
-        onOpenChange={(open) => {
-          setIsModalOpen(open);
-          if (!open) {
-            setSelectedType("");
-            setCustomType("");
-            setSelectedFile(null);
-          }
-        }}
+        onOpenChange={setIsModalOpen}
       >
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -168,7 +218,7 @@ export function DocumentVault({ clientId, documents, onUploadSuccess, readOnly =
           </DialogHeader>
           
           <div className="grid gap-6 py-4 w-full overflow-hidden">
-            <div className="space-y-2 w-full overflow-hidden">
+            <div className="space-y-2 w-full">
               <Label>Document Category *</Label>
               <Select value={selectedType} onValueChange={setSelectedType}>
                 <SelectTrigger className="w-full">
@@ -183,23 +233,22 @@ export function DocumentVault({ clientId, documents, onUploadSuccess, readOnly =
             </div>
 
             {selectedType === "Other" && (
-              <div className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-200 w-full overflow-hidden">
+              <div className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
                 <Label>Custom Document Name *</Label>
                 <Input 
                   placeholder="Enter document name (e.g. Electricity Bill)" 
                   value={customType}
-                  className="w-full"
                   onChange={(e) => setCustomType(e.target.value)}
                 />
               </div>
             )}
 
-            <div className="space-y-2 w-full overflow-hidden">
+            <div className="space-y-2">
                 <Label>File *</Label>
                 <div 
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={handleFileDrop}
-                    className="border-2 border-dashed border-primary/20 hover:border-primary/50 transition-colors rounded-lg p-8 flex flex-col items-center justify-center text-center cursor-pointer bg-primary/5 w-full max-w-full overflow-hidden min-w-0"
+                    className="border-2 border-dashed border-primary/20 hover:border-primary/50 transition-colors rounded-lg p-8 flex flex-col items-center justify-center text-center cursor-pointer bg-primary/5"
                     onClick={() => document.getElementById("fileUpload")?.click()}
                 >
                     <input 
@@ -221,10 +270,10 @@ export function DocumentVault({ clientId, documents, onUploadSuccess, readOnly =
                     {selectedFile ? (
                         <div className="flex flex-col items-center justify-center w-full min-w-0">
                             <FileText className="w-10 h-10 text-primary mb-2 flex-shrink-0" />
-                            <p className="font-medium text-sm text-foreground truncate w-full max-w-full px-2 text-center" title={selectedFile.name}>
+                            <p className="font-medium text-sm text-foreground truncate w-full px-2 text-center">
                                 {selectedFile.name}
                             </p>
-                            <p className="text-xs text-muted-foreground mt-1 flex-shrink-0">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                            <p className="text-xs text-muted-foreground mt-1">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
                         </div>
                     ) : (
                         <>

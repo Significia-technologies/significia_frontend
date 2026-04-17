@@ -8,6 +8,8 @@ import {
   Send,
   User,
   Filter,
+  Download,
+  Calendar,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +29,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   SEBIService,
@@ -54,6 +67,13 @@ export function ReportHistoryTab() {
   const [typeFilter, setTypeFilter] = useState("");
   const [delivering, setDelivering] = useState<string | null>(null);
 
+  // Export State
+  const [exportFormat, setExportFormat] = useState<"csv" | "json">("csv");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [exporting, setExporting] = useState(false);
+  const [isExportOpen, setIsExportOpen] = useState(false);
+
   const fetchReports = async () => {
     setLoading(true);
     try {
@@ -76,7 +96,7 @@ export function ReportHistoryTab() {
     setDelivering(reportId);
     try {
       await SEBIService.markReportDelivered(reportId);
-      toast.success("Report marked as delivered");
+      toast.success("Report emailed to client successfully");
       fetchReports();
     } catch {
       toast.error("Failed to mark report as delivered");
@@ -85,17 +105,41 @@ export function ReportHistoryTab() {
     }
   };
 
-  const formatDate = (iso: string) => {
+  const handleExport = async () => {
+    setExporting(true);
     try {
-      return new Date(iso).toLocaleString("en-IN", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
+      await SEBIService.exportReportHistory({
+        format: exportFormat,
+        report_type: typeFilter || undefined,
+        from_date: fromDate || undefined,
+        to_date: toDate || undefined,
       });
+      toast.success(`Report history exported as ${exportFormat.toUpperCase()}`);
+      setIsExportOpen(false);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to export report history");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const formatDateParts = (iso: string) => {
+    try {
+      const date = new Date(iso);
+      return {
+        date: date.toLocaleDateString("en-IN", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        }),
+        time: date.toLocaleTimeString("en-IN", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      };
     } catch {
-      return iso;
+      return { date: iso, time: "" };
     }
   };
 
@@ -113,9 +157,106 @@ export function ReportHistoryTab() {
               enable lock recommendations.
             </CardDescription>
           </div>
-          <Badge variant="outline" className="text-xs font-mono">
-            {reports.length} reports
-          </Badge>
+          
+          <div className="flex items-center gap-3">
+            <Dialog open={isExportOpen} onOpenChange={setIsExportOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="h-9 gap-2">
+                  <Download className="w-4 h-4" />
+                  Export History
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Download className="w-5 h-5 text-primary" />
+                    Export Report History
+                  </DialogTitle>
+                  <DialogDescription>
+                    Download a comprehensive log of generated reports for regulatory compliance.
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label>Export Format</Label>
+                    <Select
+                      value={exportFormat}
+                      onValueChange={(v: "csv" | "json") => setExportFormat(v)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select format" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="csv">CSV (Standard Tabular)</SelectItem>
+                        <SelectItem value="json">JSON (Machine Readable)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="grid gap-2">
+                      <Label htmlFor="from_date">From Date</Label>
+                      <Input
+                        id="from_date"
+                        type="date"
+                        value={fromDate}
+                        onChange={(e) => setFromDate(e.target.value)}
+                        className="h-9"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="to_date">To Date</Label>
+                      <Input
+                        id="to_date"
+                        type="date"
+                        value={toDate}
+                        onChange={(e) => setToDate(e.target.value)}
+                        className="h-9"
+                      />
+                    </div>
+                  </div>
+
+                  {typeFilter && (
+                    <div className="flex items-center gap-2 p-2 rounded bg-muted/50 border border-border/50">
+                      <Filter className="w-3.5 h-3.5 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">
+                        Filtering by: <b>{REPORT_TYPE_LABELS[typeFilter] || typeFilter}</b>
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <DialogFooter>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsExportOpen(false)}
+                    disabled={exporting}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleExport}
+                    disabled={exporting}
+                    className="gap-2"
+                  >
+                    {exporting ? (
+                      <Clock className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Download className="w-4 h-4" />
+                    )}
+                    {exporting ? "Generating..." : "Download Export"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            <Badge variant="outline" className="text-xs font-mono py-1.5 px-3">
+              {reports.length} reports
+            </Badge>
+          </div>
         </div>
 
         <div className="flex gap-3 mt-4">
@@ -158,10 +299,12 @@ export function ReportHistoryTab() {
                 <TableHeader>
                 <TableRow className="bg-muted/30 hover:bg-muted/30">
                   <TableHead className="text-xs w-[140px]">Date</TableHead>
+                  <TableHead className="text-xs w-[100px]">Audit ID</TableHead>
+                  <TableHead className="text-xs text-center">Version</TableHead>
                   <TableHead className="text-xs">Report Type</TableHead>
                   <TableHead className="text-xs">Client</TableHead>
-                  <TableHead className="text-xs w-[80px]">Version</TableHead>
                   <TableHead className="text-xs">Format</TableHead>
+                  <TableHead className="text-xs">Integrity Hash</TableHead>
                   <TableHead className="text-xs">Change Summary</TableHead>
                   <TableHead className="text-xs w-[120px]">Delivery</TableHead>
                   <TableHead className="text-xs w-[100px]">Action</TableHead>
@@ -170,11 +313,34 @@ export function ReportHistoryTab() {
               <TableBody>
                 {reports.map((report) => (
                   <TableRow key={report.id} className="hover:bg-muted/20">
-                    <TableCell className="text-[11px] text-muted-foreground font-mono">
-                      <div className="flex items-center gap-1.5">
-                        <Clock className="w-3 h-3 shrink-0" />
-                        {formatDate(report.created_at)}
+                    <TableCell className="text-[11px] text-muted-foreground font-mono py-3">
+                      <div className="flex items-start gap-1.5">
+                        <Clock className="w-3 h-3 mt-0.5 shrink-0" />
+                        <div className="flex flex-col">
+                          <span className="text-foreground font-semibold uppercase tracking-tight">
+                            {formatDateParts(report.created_at).date}
+                          </span>
+                          <span className="text-[10px] opacity-70">
+                            {formatDateParts(report.created_at).time}
+                          </span>
+                        </div>
                       </div>
+                    </TableCell>
+                    <TableCell className="font-mono text-[11px]">
+                      {report.short_id ? (
+                        <Badge variant="secondary" className="bg-primary/5 text-primary border-primary/10 hover:bg-primary/10">
+                          {report.short_id}
+                        </Badge>
+                      ) : (
+                        <span className="text-muted-foreground/60">
+                          {report.id.slice(0, 8)}...
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Badge variant="outline" className="font-mono text-[10px]">
+                        v{report.version_number}
+                      </Badge>
                     </TableCell>
                     <TableCell>
                       <Badge
@@ -186,30 +352,40 @@ export function ReportHistoryTab() {
                         {REPORT_TYPE_LABELS[report.report_type] || report.report_type}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-xs">
+                    <TableCell className="text-xs py-3">
                       {report.client_name ? (
-                        <div className="flex items-center gap-1.5">
-                          <User className="w-3 h-3 text-muted-foreground" />
-                          <span className="font-medium">{report.client_name}</span>
-                          {report.client_code && (
-                            <span className="text-[10px] text-muted-foreground font-mono">
-                              ({report.client_code})
+                        <div className="flex items-start gap-1.5">
+                          <User className="w-3 h-3 mt-0.5 text-muted-foreground shrink-0" />
+                          <div className="flex flex-col">
+                            <span className="font-semibold text-foreground">
+                              {report.client_name}
                             </span>
-                          )}
+                            {report.client_code && (
+                              <span className="text-[10px] text-muted-foreground font-mono bg-muted/50 px-1 rounded inline-block w-fit mt-0.5">
+                                {report.client_code}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       ) : (
                         <span className="text-muted-foreground">—</span>
                       )}
                     </TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant="outline" className="font-mono text-[10px]">
-                        v{report.version_number}
-                      </Badge>
-                    </TableCell>
                     <TableCell>
                       <Badge variant="outline" className="text-[10px] uppercase">
                         {report.file_format}
                       </Badge>
+                    </TableCell>
+                    <TableCell className="font-mono text-[10px]">
+                      {report.report_hash ? (
+                        <div className="flex items-center gap-1.5 group cursor-help" title={report.report_hash}>
+                           <span className="text-muted-foreground/60">
+                             {report.report_hash.slice(0, 8)}...
+                           </span>
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground/30">—</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">
                       {report.change_summary || "—"}
@@ -231,10 +407,14 @@ export function ReportHistoryTab() {
                           size="sm"
                           className="h-7 text-[11px] gap-1.5"
                           disabled={delivering === report.id}
-                          onClick={() => handleDeliver(report.id)}
+                          onClick={() => {
+                            if (confirm(`Send this ${report.report_type.replace('_', ' ')} report to the client via email?`)) {
+                              handleDeliver(report.id);
+                            }
+                          }}
                         >
                           <Send className="w-3 h-3" />
-                          Deliver
+                          Email Client
                         </Button>
                       )}
                     </TableCell>

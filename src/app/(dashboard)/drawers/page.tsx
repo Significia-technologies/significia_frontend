@@ -223,19 +223,7 @@ export default function DrawersPage() {
           })()
         : (
           <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-300">
-            <div className="flex items-center justify-between bg-primary/5 p-4 rounded-lg border border-primary/10">
-              <div>
-                <h2 className="text-lg font-bold flex items-center gap-2">
-                  {React.createElement(activeFolder.icon, { className: "w-5 h-5 text-primary" })} Directory: {activeFolder.name}
-                </h2>
-                <p className="text-sm text-muted-foreground ml-7">
-                  {activeFolder.type === "CLIENT" ? "Manage files directly inside this client's bucket." : "Read-only system documents."}
-                </p>
-              </div>
-              <Button variant="outline" size="sm" onClick={() => setActiveFolder(null)} className="gap-2 border-primary/20">
-                <ArrowLeft className="w-4 h-4" /> Back to Drawers
-              </Button>
-            </div>
+            {/* Document Vault Section */}
 
             <div className="bg-card rounded-xl p-6 border border-primary/10 shadow-sm">
               <DocumentVault

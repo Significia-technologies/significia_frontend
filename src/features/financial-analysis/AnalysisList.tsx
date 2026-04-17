@@ -13,7 +13,9 @@ import {
   User, 
   Calendar,
   ChevronRight,
-  Database
+  Database,
+  Mail,
+  RefreshCcw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,9 +38,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { FinancialAnalysisService, FinancialAnalysisResult } from "@/core/services/financial-analysis.service";
 import { MasterDataService, Client } from "@/core/services/master.service";
+import { RectificationService } from "@/core/services/rectification.service";
+import { SEBIService } from "@/core/services/sebi.service";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
+import { useRouter } from "next/navigation";
 
 interface AnalysisListProps {
   
@@ -48,11 +53,39 @@ interface AnalysisListProps {
 }
 
 export function AnalysisList({ clientId, onSelectAnalysis, onCreateNew }: AnalysisListProps) {
+  const router = useRouter();
   const [analyses, setAnalyses] = useState<FinancialAnalysisResult[]>([]);
   const [clients, setClients] = useState<Record<string, Client>>({});
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [downloading, setDownloading] = useState<string | null>(null);
+  const [delivering, setDelivering] = useState<string | null>(null);
+  const [initiating, setInitiating] = useState<string | null>(null);
+
+  const handleInitiateRectification = async (item: FinancialAnalysisResult) => {
+    setInitiating(item.id);
+    try {
+      const draft = await RectificationService.initiate({
+        client_id: item.client_id,
+        module: "FINANCIAL",
+        record_id: item.id,
+        current_version: item.version_number || 1,
+        proposed_changes: [],
+        justification_details: { q1: "", q2: "", q3: "" },
+        impact_declaration: { financial: true, risk: false },
+        confirmation_mode: "Data Correction",
+        is_investor_requested: false,
+        initiation_reason: "Internal rectification initiated from Financial Analysis vault"
+      });
+
+      toast.success("Rectification Draft Created (E-Serial No Assigned)");
+      router.push(`/rectification/${draft.id}`);
+    } catch (error) {
+      toast.error("Failed to initiate rectification protocol");
+    } finally {
+      setInitiating(null);
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -100,6 +133,19 @@ export function AnalysisList({ clientId, onSelectAnalysis, onCreateNew }: Analys
       toast.error(`Failed to download ${format.toUpperCase()} report`);
     } finally {
       setDownloading(null);
+    }
+  };
+
+  const handleEmailReport = async (analysisId: string) => {
+    try {
+      setDelivering(analysisId);
+      await SEBIService.emailAnalysisReport(analysisId);
+      toast.success("Financial Analysis report has been sent to client via email.");
+    } catch (err: any) {
+      console.error("Email error:", err);
+      toast.error(err.response?.data?.detail || "Failed to send email. Please check SMTP settings.");
+    } finally {
+      setDelivering(null);
     }
   };
 
@@ -237,6 +283,31 @@ export function AnalysisList({ clientId, onSelectAnalysis, onCreateNew }: Analys
                                     <FileText className="w-4 h-4" />
                                   )}
                                   Download Word
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem 
+                                  className="gap-2 text-blue-600 focus:text-blue-600 focus:bg-blue-50" 
+                                  onClick={() => handleEmailReport(analysis.id)}
+                                >
+                                  {delivering === analysis.id ? (
+                                    <span className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                                  ) : (
+                                    <Mail className="w-4 h-4" />
+                                  )}
+                                  Send via Email
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem 
+                                  className="gap-2 text-amber-600 focus:text-amber-600 focus:bg-amber-50" 
+                                  onClick={() => handleInitiateRectification(analysis)}
+                                  disabled={!!initiating}
+                                >
+                                  {initiating === analysis.id ? (
+                                    <span className="w-4 h-4 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" />
+                                  ) : (
+                                    <RefreshCcw className="w-4 h-4" />
+                                  )}
+                                  Initiate Data Rectification
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>

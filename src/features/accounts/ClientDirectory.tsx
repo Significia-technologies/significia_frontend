@@ -46,7 +46,7 @@ export default function ClientDirectory() {
           MasterDataService.listClients(),
           TeamService.getTeamMembers()
         ]);
-        setClients(clientData);
+        setClients(clientData.clients);
         setTeam(teamData);
       } catch (error) {
         toast.error("Failed to load directory data");
@@ -68,6 +68,15 @@ export default function ClientDirectory() {
       ));
     } catch (error) {
       toast.error("Assignment failed");
+    }
+  };
+
+  const handleSendOnboardingEmail = async (clientId: string) => {
+    try {
+      await MasterDataService.sendOnboardingEmail(clientId);
+      toast.success("Welcome email sent to client");
+    } catch (error) {
+      toast.error("Failed to send onboarding email");
     }
   };
 
@@ -222,6 +231,9 @@ export default function ClientDirectory() {
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => router.push(`/clients/${client.id}/edit`)}>
                               <Pencil className="w-4 h-4 mr-2" /> Edit Records
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleSendOnboardingEmail(client.id)}>
+                              <Mail className="w-4 h-4 mr-2" /> Send Onboarding Email
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem className="text-destructive">

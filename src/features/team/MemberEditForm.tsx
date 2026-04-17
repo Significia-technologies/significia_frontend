@@ -39,19 +39,28 @@ export default function MemberEditForm() {
     phone_number: "",
     role: "ia_staff",
     designation: "",
+    staff_code: "",
+    date_of_joining: "",
+    date_of_leaving: "",
+    employee_type: "non-advisory",
+    department_id: "",
     ia_registration_number: "",
     date_of_registration: "",
+    certificate_issue_date: "",
     date_of_registration_expiry: "",
   });
+
+  const [departments, setDepartments] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
       if (!id) return;
       try {
         setIsLoading(true);
-        const [allMembers, profile] = await Promise.all([
+        const [allMembers, profile, depts] = await Promise.all([
           TeamService.getTeamMembers(),
-          IAMasterService.getLatest()
+          IAMasterService.getLatest(),
+          IAMasterService.listDepartments()
         ]);
         
         const found = allMembers.find(m => m.id === id);
@@ -63,6 +72,7 @@ export default function MemberEditForm() {
         
         setMember(found);
         setIaProfile(profile);
+        setDepartments(depts);
         
         setFormData({
           full_name: found.full_name,
@@ -70,8 +80,14 @@ export default function MemberEditForm() {
           phone_number: found.phone_number || "",
           role: found.role,
           designation: found.designation || "",
+          staff_code: found.staff_code || "",
+          date_of_joining: found.date_of_joining || "",
+          date_of_leaving: found.date_of_leaving || "",
+          employee_type: (found.employee_type as any) || "non-advisory",
+          department_id: found.department_id || "",
           ia_registration_number: found.ia_registration_number || "",
           date_of_registration: found.date_of_registration || "",
+          certificate_issue_date: found.certificate_issue_date || "",
           date_of_registration_expiry: found.date_of_registration_expiry || "",
         });
       } catch (error) {
@@ -95,11 +111,17 @@ export default function MemberEditForm() {
         phone_number: formData.phone_number,
         role: formData.role,
         designation: formData.designation,
+        staff_code: formData.staff_code,
+        date_of_joining: formData.date_of_joining,
+        date_of_leaving: formData.date_of_leaving || null,
+        employee_type: formData.employee_type,
+        department_id: formData.department_id || null,
       };
 
       if (showExtraFields) {
         updateData.ia_registration_number = formData.ia_registration_number;
         updateData.date_of_registration = formData.date_of_registration;
+        updateData.certificate_issue_date = formData.certificate_issue_date;
         updateData.date_of_registration_expiry = formData.date_of_registration_expiry;
       }
 
@@ -194,15 +216,81 @@ export default function MemberEditForm() {
                       value={formData.role}
                       onValueChange={(val) => setFormData({...formData, role: val})}
                   >
-                    <SelectTrigger id="role">
+                    <SelectTrigger id="role" className="bg-background/50">
                       <SelectValue placeholder="Select role" />
                     </SelectTrigger>
                     <SelectContent>
                       {!isBodyCorporate && <SelectItem value="partner">Partner</SelectItem>}
                       <SelectItem value="ia_staff">Staff</SelectItem>
-                      <SelectItem value="analyst">Analyst</SelectItem>
+                      <SelectItem value="research_analyst">Research Analyst</SelectItem>
+                      <SelectItem value="investment_advisor">Investment Advisor</SelectItem>
+                      <SelectItem value="management">Management</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="type">Employee Type</Label>
+                  <Select 
+                      value={formData.employee_type}
+                      onValueChange={(val: any) => setFormData({...formData, employee_type: val})}
+                  >
+                    <SelectTrigger id="type" className="bg-background/50">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="advisory">Advisory</SelectItem>
+                      <SelectItem value="non-advisory">Non-Advisory</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="staff_code">Staff Code / ID</Label>
+                  <Input 
+                    id="staff_code" 
+                    value={formData.staff_code}
+                    onChange={(e) => setFormData({...formData, staff_code: e.target.value})}
+                    placeholder="SIG-001"
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="department">Department</Label>
+                  <Select 
+                      value={formData.department_id}
+                      onValueChange={(val) => setFormData({...formData, department_id: val})}
+                  >
+                    <SelectTrigger id="department" className="bg-background/50">
+                      <SelectValue placeholder="Not Assigned" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {departments.map(dept => (
+                        <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-dashed">
+                <div className="grid gap-2">
+                  <Label>Date of Joining</Label>
+                  <Input 
+                    type="date"
+                    value={formData.date_of_joining}
+                    onChange={(e) => setFormData({...formData, date_of_joining: e.target.value})}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label className="text-destructive font-bold">Date of Leaving (if any)</Label>
+                  <Input 
+                    type="date"
+                    className="border-destructive/30"
+                    value={formData.date_of_leaving}
+                    onChange={(e) => setFormData({...formData, date_of_leaving: e.target.value})}
+                  />
                 </div>
               </div>
             </CardContent>

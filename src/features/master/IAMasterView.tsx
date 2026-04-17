@@ -413,7 +413,7 @@ export function IAMasterView() {
               <div className="space-y-1">
                 <h5 className="text-sm font-bold">White-labeling Active</h5>
                 <p className="text-xs text-muted-foreground italic">
-                  SEBI Regulation Note: Your portal is now correctly isolated on your own domain. All client PII data stays in your Bridge.
+                  Regulation Note: Your portal is now correctly isolated on your own domain. All client PII data stays in your Bridge.
                 </p>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {tenant?.subdomain && (

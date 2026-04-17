@@ -137,4 +137,8 @@ export class AssetAllocationService {
     link.click();
     link.remove();
   }
+
+  static async emailAllocation(allocationId: string): Promise<any> {
+    return await httpClient.post(API_ENDPOINTS.ASSET_ALLOCATION.EMAIL(allocationId));
+  }
 }

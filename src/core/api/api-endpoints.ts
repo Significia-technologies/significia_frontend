@@ -60,6 +60,13 @@ export const API_ENDPOINTS = {
       BLANK_FORM: `${API_BASE}/master/blank-form`,
       UPLOAD_DOCUMENT: (id: string) =>
         `${API_BASE}/master/clients/${id}/upload-document`,
+      VERSIONS: (id: string) => `${API_BASE}/master/clients/${id}/versions`,
+      VERSION_DETAIL: (id: string, versionId: string) =>
+        `${API_BASE}/master/clients/${id}/versions/${versionId}`,
+      VERSION_PDF: (id: string, versionId: string) =>
+        `${API_BASE}/master/clients/${id}/versions/${versionId}/pdf`,
+      VERSION_AT_DATE: (id: string) =>
+        `${API_BASE}/master/clients/${id}/version-at`,
     },
     IA_MASTER: {
       LATEST: `${API_BASE}/ia-master/latest`,
@@ -71,6 +78,12 @@ export const API_ENDPOINTS = {
         `${API_BASE}/ia-master/validate/${iaNumber}`,
       PDF: (iaId: string) => `${API_BASE}/ia-master/${iaId}/pdf`,
       EMPLOYEES: `${API_BASE}/ia-master/employees`,
+    },
+    DEPARTMENTS: {
+      LIST: `${API_BASE}/departments`,
+      CREATE: `${API_BASE}/departments`,
+      UPDATE: (id: string) => `${API_BASE}/departments/${id}`,
+      DELETE: (id: string) => `${API_BASE}/departments/${id}`,
     },
   },
 
@@ -84,6 +97,8 @@ export const API_ENDPOINTS = {
       `${API_BASE}/financial-analysis/bridge/analysis/${resultId}/pdf`,
     WORD: (resultId: string) =>
       `${API_BASE}/financial-analysis/bridge/analysis/${resultId}/word`,
+    EMAIL: (resultId: string) =>
+      `${API_BASE}/financial-analysis/bridge/analysis/${resultId}/email`,
     FORM: `${API_BASE}/financial-analysis/bridge/form`,
     BY_CLIENT: (clientId: string) =>
       `${API_BASE}/financial-analysis/bridge/analysis/client/${clientId}`,
@@ -112,6 +127,10 @@ export const API_ENDPOINTS = {
       `${API_BASE}/risk-profile/bridge/custom-assessment/${assessmentId}/docx`,
     BLANK_PDF: (questionnaireId: string) =>
       `${API_BASE}/risk-profile/bridge/questionnaires/${questionnaireId}/pdf`,
+    EMAIL: (id: string) =>
+      `${API_BASE}/risk-profile/bridge/assessment/${id}/email`,
+    CUSTOM_EMAIL: (id: string) =>
+      `${API_BASE}/risk-profile/bridge/custom-assessment/${id}/email`,
   },
 
   // ── Asset Allocation ───────────────────────────────────────
@@ -126,6 +145,8 @@ export const API_ENDPOINTS = {
     DOCX: (id: string) =>
       `${API_BASE}/asset-allocation/bridge/allocation/${id}/docx`,
     BLANK_PDF: `${API_BASE}/asset-allocation/bridge/blank-form/pdf`,
+    EMAIL: (id: string) =>
+      `${API_BASE}/asset-allocation/bridge/allocation/${id}/email`,
   },
 
   // ── Bridge Management (Super Admin only) ───────────────────
@@ -185,7 +206,35 @@ export const API_ENDPOINTS = {
     IA_LOCK: `${API_BASE}/ia-master/sebi/ia-master/lock`,
     IA_UNLOCK: `${API_BASE}/ia-master/sebi/ia-master/unlock`,
     REPORT_HISTORY: `${API_BASE}/ia-master/sebi/report-history`,
+    REPORT_HISTORY_EXPORT: `${API_BASE}/ia-master/sebi/report-history/export`,
+    REPORT_LOOKUP: `${API_BASE}/ia-master/sebi/report-history/lookup`,
     REPORT_DELIVER: (id: string) => `${API_BASE}/ia-master/sebi/report-history/${id}/deliver`,
     CHANGE_SUMMARY: `${API_BASE}/ia-master/sebi/ia-master/change-summary`,
+  },
+
+  // ── Data Rectification (E-Serial No Workflow) ────────────────
+  RECTIFICATION: {
+    INITIATE: `${API_BASE}/data-rectification/initiate`,
+    LIST: `${API_BASE}/data-rectification/list`,
+    DETAIL: (id: string) => `${API_BASE}/data-rectification/${id}`,
+    UPLOAD: (id: string) => `${API_BASE}/data-rectification/${id}/upload`,
+    DOCUMENT: (id: string) => `${API_BASE}/data-rectification/${id}/document`,
+    APPROVE: (id: string) => `${API_BASE}/data-rectification/${id}/approve`,
+    CURRENT_VALUES: (module: string, recordId: string) => 
+      `${API_BASE}/data-rectification/current-values/${module}/${recordId}`,
+  },
+
+  // ── Email Management (IA Owner) ─────────────────────────────
+  EMAIL: {
+    SETTINGS: `${API_BASE}/email/settings`,
+    SETTINGS_TEST: `${API_BASE}/email/settings/test`,
+    TEMPLATES: `${API_BASE}/email/templates`,
+    TEMPLATE: (id: string) => `${API_BASE}/email/templates/${id}`,
+    DEFAULT_TEMPLATE: `${API_BASE}/email/templates/default`,
+    PLACEHOLDERS: `${API_BASE}/email/placeholders`,
+    SEND: `${API_BASE}/email/send`,
+    SEND_ONBOARDING: `${API_BASE}/email/onboarding/send`,
+    SEND_REPORT: `${API_BASE}/email/send/report`,
+    LOGS: `${API_BASE}/email/logs`,
   },
 };

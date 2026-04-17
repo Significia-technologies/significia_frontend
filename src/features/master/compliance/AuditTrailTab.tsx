@@ -196,7 +196,7 @@ export function AuditTrailTab() {
               Audit Trail
             </h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Field-level change history for SEBI regulatory compliance. Every
+              Field-level change history for regulatory compliance. Every
               modification is tracked with old/new values and mandatory reasons.
             </p>
           </div>
@@ -230,7 +230,7 @@ export function AuditTrailTab() {
                     Export Audit Report
                   </DialogTitle>
                   <DialogDescription>
-                    Configure the time period and format for your SEBI compliance audit trail export.
+                    Configure the time period and format for your compliance audit trail export.
                   </DialogDescription>
                 </DialogHeader>
 
