@@ -105,7 +105,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       // ── Profile Completion Gate ──
       // If IA Owner has not completed their profile, force them to the Master Data page
       if (user && user.role === "owner" && !user.is_profile_completed) {
-        if (!pathname.startsWith("/master") && pathname !== "/") {
+        if (!pathname.startsWith("/master") && pathname !== "/dashboard") {
           router.push("/master");
         }
       }

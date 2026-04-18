@@ -60,18 +60,18 @@ export default function LoginPage() {
       if (result.user.role === "super_admin") {
         router.push("/admin");
       } else if (result.user.role === "client") {
-        router.push("/");
+        router.push("/dashboard");
       } else {
         // IA Master (owner) or other internal roles
         if (isRootDomain && !isSimulating) {
-            router.push("/");
+            router.push("/dashboard");
         } else if (result.subdomain) {
           const currentHost = window.location.host;
           const isLocalhost = currentHost.includes('localhost');
           const baseDomain = isLocalhost ? 'localhost:3000' : 'significia.com';
-          window.location.href = `${window.location.protocol}//${result.subdomain}.${baseDomain}/?token=${result.accessToken}&refreshToken=${result.refreshToken}`;
+          window.location.href = `${window.location.protocol}//${result.subdomain}.${baseDomain}/dashboard?token=${result.accessToken}&refreshToken=${result.refreshToken}`;
         } else {
-          router.push("/");
+          router.push("/dashboard");
         }
       }
     } catch (err: unknown) {

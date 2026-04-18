@@ -133,6 +133,15 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Hide scrollbar globally — page remains scrollable */
+  html {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE / Edge */
+  }
+  html::-webkit-scrollbar {
+    display: none; /* Chrome / Safari */
+  }
 }
 
 /* Hide number input spinners */
