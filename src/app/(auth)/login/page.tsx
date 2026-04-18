@@ -38,41 +38,45 @@ export default function LoginPage() {
       const rootDomains = ['localhost', '127.0.0.1', 'significia.com', 'www.significia.com', 'app.significia.com'];
       const isRootDomain = rootDomains.includes(hostname) || hostname.endsWith('.vercel.app');
 
-      let result;
-      // If we are simulating a tenant, we should use the client login flow
-      const isSimulating = !!localStorage.getItem("simulatedTenantSlug") && localStorage.getItem("simulatedTenantSlug") !== 'master';
-      
-      if (isRootDomain && !isSimulating) {
-        result = await AuthService.login({ email, password });
-      } else {
-        result = await AuthService.clientLogin({ email, password });
-      }
-      
-      // Strict Role Isolation: Check if user belongs to this portal
-      if (isSimulating && result.user.role === "super_admin") {
-        setIsLoading(false);
-        setError("Unauthorized: Super Admins must log in via the master portal at app.significia.com");
-        return;
-      }
-      
-      setUser(result.user);
-      
-      if (result.user.role === "super_admin") {
-        router.push("/admin");
-      } else if (result.user.role === "client") {
-        router.push("/");
-      } else {
-        // IA Master (owner) or other internal roles
-        if (isRootDomain && !isSimulating) {
-            router.push("/");
-        } else if (result.subdomain) {
-          const currentHost = window.location.host;
-          const isLocalhost = currentHost.includes('localhost');
-          const baseDomain = isLocalhost ? 'localhost:3000' : 'significia.com';
-          window.location.href = `${window.location.protocol}//${result.subdomain}.${baseDomain}/?token=${result.accessToken}&refreshToken=${result.refreshToken}`;
-        } else {
-          router.push("/");
+      // If we are simulating a tenant on localhost, we treat it as a subdomain
+      const simulatedSlug = typeof window !== "undefined" ? localStorage.getItem("simulatedTenantSlug") : null;
+      const hasSimulatedSlug = !!simulatedSlug && simulatedSlug !== 'master';
+      const isSubdomain = !isRootDomain || hasSimulatedSlug;
+
+      if (!isSubdomain) {
+        // --- ROOT DOMAIN LOGIN (Super Admin & Staff) ---
+        const result = await AuthService.login({ email, password });
+        
+        // Ensure the user belongs to the master/significia organization
+        const userSubdomain = result.subdomain || result.user.subdomain;
+        if (userSubdomain !== "master") {
+          setIsLoading(false);
+          setError("This portal is restricted to Significia Super Admins and Staff. Please use your organization's subdomain to log in.");
+          AuthService.logout();
+          return;
         }
+
+        setUser(result.user);
+        router.push("/admin");
+      } else {
+        // --- SUBDOMAIN LOGIN (IA Staff / Owner) ---
+        // iaStaffLogin calls the Bridge proxy on the backend
+        const result = await AuthService.iaStaffLogin({ email, password });
+        
+        // iaStaffLogin returns { access_token, refresh_token, user_name, user_role, tenant_name }
+        // We hydrate the store with the decentralized user info
+        setUser({
+          id: "local-user", 
+          email: email,
+          name: result.user_name,
+          role: result.user_role as any,
+          tenant_id: "local-tenant",
+          company_name: result.tenant_name,
+          is_profile_completed: true,
+          max_client_permit: 0
+        });
+
+        router.push("/");
       }
     } catch (err: unknown) {
       let message = "Invalid email or password. Please try again.";
