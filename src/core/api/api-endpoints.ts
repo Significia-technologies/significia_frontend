@@ -159,6 +159,8 @@ export const API_ENDPOINTS = {
       `${API_BASE}/bridge/tenants/${tenantId}/revoke`,
     INITIALIZE: (tenantId: string) =>
       `${API_BASE}/bridge/tenants/${tenantId}/initialize`,
+    REGENERATE_TOKEN: (tenantId: string) =>
+      `${API_BASE}/bridge/tenants/${tenantId}/regenerate-token`,
     PING: (tenantId: string) =>
       `${API_BASE}/bridge/tenants/${tenantId}/ping`,
   },

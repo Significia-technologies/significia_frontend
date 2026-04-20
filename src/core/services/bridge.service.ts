@@ -147,4 +147,13 @@ export class BridgeService {
     const response = await httpClient.patch(`${API_ENDPOINTS.BRIDGE.BASE}/${tenantId}`, data);
     return response.data;
   }
+
+  /**
+   * POST /bridge/tenants/{tenantId}/regenerate-token
+   * Super Admin only — reset bridge registration token.
+   */
+  static async regenerateToken(tenantId: string): Promise<any> {
+    const response = await httpClient.post(API_ENDPOINTS.BRIDGE.REGENERATE_TOKEN(tenantId), {});
+    return response.data;
+  }
 }

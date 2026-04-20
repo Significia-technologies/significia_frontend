@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { PlusCircle, Building2, Activity, Shield, Zap, MoreVertical, Edit, Power, PowerOff, CheckCircle2, Loader2 } from "lucide-react";
+import { PlusCircle, Building2, Activity, Shield, Zap, MoreVertical, Edit, Power, PowerOff, CheckCircle2, Loader2, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
   DropdownMenu, 
@@ -260,6 +260,42 @@ export default function AdminDashboardPage() {
                             }}
                           >
                             <Shield className="mr-2 h-4 w-4" /> Initialize DB
+                          </DropdownMenuItem>
+
+                          <DropdownMenuSeparator />
+
+                          <DropdownMenuItem 
+                            onClick={async () => {
+                              if (confirm(`Regenerate token for ${bridge.tenant_name}? This will invalidate any existing token and reset the Bridge to PENDING.`)) {
+                                try {
+                                  await BridgeService.regenerateToken(bridge.tenant_id);
+                                  alert("Token regenerated successfully!");
+                                  fetchData();
+                                } catch (err: any) {
+                                  alert(`Failed to regenerate: ${err.response?.data?.detail || err.message}`);
+                                }
+                              }
+                            }}
+                          >
+                            <Zap className="mr-2 h-4 w-4" /> Regenerate Token
+                          </DropdownMenuItem>
+
+                          <DropdownMenuItem 
+                            className="text-destructive"
+                            disabled={bridge.bridge_status === "PENDING" || bridge.bridge_status === "REVOKED"}
+                            onClick={async () => {
+                              if (confirm(`Immediately revoke Bridge access for ${bridge.tenant_name}? The IA will lose all portal access until they re-register.`)) {
+                                try {
+                                  await BridgeService.revoke(bridge.tenant_id);
+                                  alert("Bridge access revoked.");
+                                  fetchData();
+                                } catch (err: any) {
+                                  alert(`Failed to revoke: ${err.response?.data?.detail || err.message}`);
+                                }
+                              }
+                            }}
+                          >
+                            <AlertTriangle className="mr-2 h-4 w-4" /> Revoke Bridge
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
