@@ -217,7 +217,8 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
       }
     }
 
-    if (initialData && (!formData.change_reason_text || formData.change_reason_text.length < 5)) {
+    const isRealUpdate = initialData && initialData.ia_registration_number && initialData.registered_address && initialData.bank_account_number;
+    if (isRealUpdate && (!formData.change_reason_text || formData.change_reason_text.length < 5)) {
       toast.error("Please provide a valid reason for this update (min 5 characters)");
       return;
     }
@@ -356,7 +357,7 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
                           name="name_of_entity" 
                           value={formData.name_of_entity} 
                           onChange={handleChange} 
-                          placeholder="e.g. Acme Financial LLC" 
+                          placeholder="Your Entity Name" 
                           className={`bg-background/50 ${isNonPersonEntity ? "opacity-60" : ""}`}
                           disabled={isNonPersonEntity}
                           required={isProprietorship}
@@ -465,8 +466,8 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
                     </div>
                   </div>
 
-                  {/* ── Change Rationale (Required for Updates) ── */}
-                  {initialData && (
+                  {/* ── Change Rationale (Required for Updates, not first-time setup) ── */}
+                  {initialData && initialData.ia_registration_number && initialData.registered_address && initialData.bank_account_number && (
                     <div className="mt-8 p-6 rounded-xl border border-amber-200 bg-amber-50/30 dark:bg-amber-950/10 space-y-4 animate-in fade-in slide-in-from-top-2 duration-500">
                       <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
                         <ShieldCheck className="w-5 h-5" />
