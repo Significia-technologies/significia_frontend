@@ -335,6 +335,13 @@ export default function ClientRegistrationForm({
         ...prev,
         [name]: cleaned,
       }));
+    } else if (name === "ifsc_code") {
+      // Restrict to Alphanumeric and Max 11 characters, auto-uppercase
+      const cleaned = value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 11);
+      setFormData((prev) => ({
+        ...prev,
+        [name]: cleaned,
+      }));
     } else {
       setFormData((prev) => ({
         ...prev,
@@ -875,8 +882,21 @@ export default function ClientRegistrationForm({
                       <Input name="bank_branch" disabled={isFieldDisabled("bank_branch")} value={formData.bank_branch} onChange={handleChange} required />
                     </div>
                     <div className="space-y-2">
-                      <Label>IFSC Code *</Label>
-                      <Input name="ifsc_code" disabled={isFieldDisabled("ifsc_code")} value={formData.ifsc_code} onChange={handleChange} required placeholder="HDFC0001234" />
+                      <Label className={formData.ifsc_code && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(formData.ifsc_code) ? "text-orange-500 font-medium" : ""}>
+                        IFSC Code *
+                      </Label>
+                      <Input 
+                        name="ifsc_code" 
+                        disabled={isFieldDisabled("ifsc_code")} 
+                        value={formData.ifsc_code} 
+                        onChange={handleChange} 
+                        required 
+                        placeholder="e.g. HDFC0001234" 
+                        className={formData.ifsc_code && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(formData.ifsc_code) ? "border-orange-500" : ""}
+                      />
+                      {formData.ifsc_code && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(formData.ifsc_code) && (
+                        <p className="text-[10px] text-orange-500">Invalid format (e.g. ABCD0123456). 5th char must be 0.</p>
+                      )}
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
