@@ -12,7 +12,11 @@ import {
   Loader2,
   CheckCircle2,
   FolderOpen,
-  UploadCloud
+  UploadCloud,
+  Eye,
+  EyeOff,
+  Check,
+  X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,8 +70,10 @@ export default function ClientRegistrationForm({
   const [showPreview, setShowPreview] = useState(false);
   const [activeTab, setActiveTab] = useState("personal");
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [ipvSearchTerm, setIpvSearchTerm] = useState("");
-  const [showIpvResults, setShowIpvResults] = useState(false);
+  const [ipvSearchTerm, setIpvSearchTerm] = React.useState("");
+  const [showIpvResults, setShowIpvResults] = React.useState(false);
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [passwordBlurred, setPasswordBlurred] = React.useState(false);
   const [assignedSearchTerm, setAssignedSearchTerm] = useState("");
   const [showAssignedResults, setShowAssignedResults] = useState(false);
   const [pendingDocuments, setPendingDocuments] = useState<Record<string, File>>({});
@@ -320,6 +326,26 @@ export default function ClientRegistrationForm({
   const currentAge = calculateAge(formData.date_of_birth);
   const isUnderage = formData.date_of_birth !== "" && currentAge < 18;
 
+  const passwordCriteria = {
+    length: formData.password.length >= 8,
+    upper: /[A-Z]/.test(formData.password),
+    lower: /[a-z]/.test(formData.password),
+    number: /[0-9]/.test(formData.password),
+    special: /[^A-Za-z0-9]/.test(formData.password)
+  };
+
+  const getMissingPasswordRequirements = () => {
+    const missing = [];
+    if (!passwordCriteria.length) missing.push("8+ characters");
+    if (!passwordCriteria.upper) missing.push("one Uppercase letter");
+    if (!passwordCriteria.lower) missing.push("one Lowercase letter");
+    if (!passwordCriteria.number) missing.push("one Number (0-9)");
+    if (!passwordCriteria.special) missing.push("one Special character");
+    return missing;
+  };
+
+  const missingReqs = getMissingPasswordRequirements();
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     
@@ -567,8 +593,36 @@ export default function ClientRegistrationForm({
                     </div>
                     {!isEdit && (
                       <div className="space-y-2">
-                          <Label>Password for Client Login *</Label>
-                          <Input type="password" name="password" disabled={isFieldDisabled("password")} value={formData.password} onChange={handleChange} required placeholder="Temporary password" />
+                          <Label className={passwordBlurred && missingReqs.length > 0 ? "text-red-500 font-medium" : ""}>
+                            Password for Client Login *
+                          </Label>
+                          <div className="relative">
+                            <Input 
+                              type={showPassword ? "text" : "password"} 
+                              name="password" 
+                              disabled={isFieldDisabled("password")} 
+                              value={formData.password} 
+                              onChange={handleChange} 
+                              onBlur={() => setPasswordBlurred(true)}
+                              onFocus={() => setPasswordBlurred(false)}
+                              required 
+                              placeholder="Temporary password" 
+                              className={`pr-10 ${passwordBlurred && missingReqs.length > 0 ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowPassword(!showPassword)}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
+                          </div>
+                          
+                          {passwordBlurred && missingReqs.length > 0 && (
+                            <p className="text-[10px] text-red-500 font-medium animate-in fade-in slide-in-from-top-1 duration-200">
+                              Missing: {missingReqs.join(", ")}.
+                            </p>
+                          )}
                       </div>
                     )}
                   </div>
