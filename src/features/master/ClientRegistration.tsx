@@ -342,6 +342,13 @@ export default function ClientRegistrationForm({
         ...prev,
         [name]: cleaned,
       }));
+    } else if (name === "pan_number") {
+      // Restrict to Alphanumeric and Max 10 characters, auto-uppercase
+      const cleaned = value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 10);
+      setFormData((prev) => ({
+        ...prev,
+        [name]: cleaned,
+      }));
     } else {
       setFormData((prev) => ({
         ...prev,
@@ -611,8 +618,21 @@ export default function ClientRegistrationForm({
 
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <div className="space-y-2">
-                       <Label>PAN Number *</Label>
-                       <Input name="pan_number" disabled={isFieldDisabled("pan_number")} value={formData.pan_number.toUpperCase()} onChange={handleChange} required placeholder="ABCDE1234F" />
+                       <Label className={formData.pan_number && !/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(formData.pan_number) ? "text-orange-500 font-medium" : ""}>
+                         PAN Number *
+                       </Label>
+                       <Input 
+                         name="pan_number" 
+                         disabled={isFieldDisabled("pan_number")} 
+                         value={formData.pan_number} 
+                         onChange={handleChange} 
+                         required 
+                         placeholder="ABCDE1234F" 
+                         className={formData.pan_number && !/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(formData.pan_number) ? "border-orange-500" : ""}
+                       />
+                       {formData.pan_number && !/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(formData.pan_number) && (
+                         <p className="text-[10px] text-orange-500">Invalid PAN format (e.g. ABCDE1234F).</p>
+                       )}
                     </div>
                     <div className="space-y-2">
                       <Label>Phone Number *</Label>
