@@ -13,7 +13,9 @@ import {
   Plus,
   ArrowLeft,
   Loader2,
-  FileText
+  FileText,
+  Eye,
+  EyeOff
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -43,7 +45,9 @@ export default function MemberOnboardingForm() {
   const router = useRouter();
 
   const [iaProfile, setIaProfile] = useState<any>(null);
-  const [departments, setDepartments] = useState<any[]>([]);
+  const [departments, setDepartments] = useState<{id: string, name: string}[]>([]);
+  const [showPassword, setShowPassword] = useState(false);
+  const [passwordBlurred, setPasswordBlurred] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -63,6 +67,26 @@ export default function MemberOnboardingForm() {
     date_of_registration_expiry: "",
     certificate: null as File | null
   });
+
+  const passwordCriteria = {
+    length: newMember.password.length >= 8,
+    upper: /[A-Z]/.test(newMember.password),
+    lower: /[a-z]/.test(newMember.password),
+    number: /[0-9]/.test(newMember.password),
+    special: /[^A-Za-z0-9]/.test(newMember.password)
+  };
+
+  const getMissingPasswordRequirements = () => {
+    const missing = [];
+    if (!passwordCriteria.length) missing.push("8+ characters");
+    if (!passwordCriteria.upper) missing.push("one Uppercase letter");
+    if (!passwordCriteria.lower) missing.push("one Lowercase letter");
+    if (!passwordCriteria.number) missing.push("one Number (0-9)");
+    if (!passwordCriteria.special) missing.push("one Special character");
+    return missing;
+  };
+
+  const missingReqs = getMissingPasswordRequirements();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -181,25 +205,54 @@ export default function MemberOnboardingForm() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="phone">Phone Number *</Label>
+                  <Label htmlFor="phone" className={newMember.phone_number && !/^[6-9][0-9]{9}$/.test(newMember.phone_number) ? "text-orange-500 font-medium" : ""}>
+                    Phone Number *
+                  </Label>
                   <Input 
                     id="phone" 
+                    type="tel"
                     required
-                    placeholder="+91 00000 00000"
+                    placeholder="10-digit mobile"
                     value={newMember.phone_number}
-                    onChange={(e) => setNewMember({...newMember, phone_number: e.target.value})}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      setNewMember({...newMember, phone_number: val});
+                    }}
+                    className={newMember.phone_number && !/^[6-9][0-9]{9}$/.test(newMember.phone_number) ? "border-orange-500 focus-visible:ring-orange-500" : ""}
                   />
+                  {newMember.phone_number && !/^[6-9][0-9]{9}$/.test(newMember.phone_number) && (
+                    <p className="text-[10px] text-orange-500">Invalid 10-digit mobile number.</p>
+                  )}
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="password">Temporary Password *</Label>
-                  <Input 
-                    id="password" 
-                    type="password" 
-                    required
-                    placeholder="Assign a temporary password"
-                    value={newMember.password}
-                    onChange={(e) => setNewMember({...newMember, password: e.target.value})}
-                  />
+                  <Label htmlFor="password" className={passwordBlurred && missingReqs.length > 0 ? "text-red-500 font-medium" : ""}>
+                    Temporary Password *
+                  </Label>
+                  <div className="relative">
+                    <Input 
+                      id="password" 
+                      type={showPassword ? "text" : "password"} 
+                      required
+                      placeholder="Assign a temporary password"
+                      value={newMember.password}
+                      onBlur={() => setPasswordBlurred(true)}
+                      onFocus={() => setPasswordBlurred(false)}
+                      onChange={(e) => setNewMember({...newMember, password: e.target.value})}
+                      className={`pr-10 ${passwordBlurred && missingReqs.length > 0 ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  {passwordBlurred && missingReqs.length > 0 && (
+                    <p className="text-[10px] text-red-500 font-medium">
+                      Missing: {missingReqs.join(", ")}.
+                    </p>
+                  )}
                 </div>
               </div>
 
