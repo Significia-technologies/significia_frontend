@@ -16,7 +16,8 @@ import {
   Eye,
   EyeOff,
   Check,
-  X
+  X,
+  RotateCcw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,6 +59,62 @@ const REQUIRED_DOCUMENTS = [
   "Client Agreement",
   "Signature"
 ];
+
+const STORAGE_KEY = "client_registration_draft";
+
+const DEFAULT_FORM_DATA: ClientCreate = {
+  email: "",
+  password: "",
+  client_code: "",
+  client_name: "",
+  date_of_birth: "",
+  pan_number: "",
+  phone_number: "",
+  address: "",
+  occupation: "",
+  gender: "",
+  marital_status: "",
+  nationality: "Indian",
+  residential_status: "Resident Individual",
+  tax_residency: "India",
+  pep_status: "Not a PEP",
+  father_name: "",
+  mother_name: "",
+  spouse_name: "",
+  aadhar_number: "",
+  passport_number: "",
+  annual_income: "" as any,
+  net_worth: "" as any,
+  income_source: "",
+  fatca_compliance: "FATCA Compliant",
+  existing_portfolio_value: "" as any,
+  existing_portfolio_composition: "",
+  bank_account_number: "",
+  bank_name: "",
+  bank_branch: "",
+  ifsc_code: "",
+  demat_account_number: "",
+  trading_account_number: "",
+  risk_profile: "Moderate",
+  investment_experience: "Beginner",
+  investment_objectives: "",
+  investment_horizon: "Medium Term",
+  liquidity_needs: "Medium",
+  advisor_name: "",
+  advisor_registration_number: "",
+  client_date: new Date().toISOString().split('T')[0],
+  nominee_name: "",
+  nominee_relationship: "",
+  previous_advisor_name: "",
+  referral_source: "",
+  declaration_signed: true,
+  agreement_date: new Date().toISOString().split('T')[0],
+  assigned_employee_id: "",
+  kyc_verified: false,
+  ckyc_number: "",
+  ipv_done_by_id: "",
+  ipv_date: "",
+};
 
 export default function ClientRegistrationForm({ 
   
@@ -108,58 +165,29 @@ export default function ClientRegistrationForm({
     return !authorizedFields.includes(fieldName);
   };
 
-  const [formData, setFormData] = useState<ClientCreate>(initialData || {
-    email: "",
-    password: "",
-    client_code: "",
-    client_name: "",
-    date_of_birth: "",
-    pan_number: "",
-    phone_number: "",
-    address: "",
-    occupation: "",
-    gender: "",
-    marital_status: "",
-    nationality: "Indian",
-    residential_status: "Resident Individual",
-    tax_residency: "India",
-    pep_status: "Not a PEP",
-    father_name: "",
-    mother_name: "",
-    spouse_name: "",
-    aadhar_number: "",
-    passport_number: "",
-    annual_income: "" as any,
-    net_worth: "" as any,
-    income_source: "",
-    fatca_compliance: "FATCA Compliant",
-    existing_portfolio_value: "" as any,
-    existing_portfolio_composition: "",
-    bank_account_number: "",
-    bank_name: "",
-    bank_branch: "",
-    ifsc_code: "",
-    demat_account_number: "",
-    trading_account_number: "",
-    risk_profile: "Moderate",
-    investment_experience: "Beginner",
-    investment_objectives: "",
-    investment_horizon: "Medium Term",
-    liquidity_needs: "Medium",
-    advisor_name: "",
-    advisor_registration_number: "",
-    client_date: new Date().toISOString().split('T')[0],
-    nominee_name: "",
-    nominee_relationship: "",
-    previous_advisor_name: "",
-    referral_source: "",
-    declaration_signed: true,
-    agreement_date: new Date().toISOString().split('T')[0],
-    assigned_employee_id: "",
-    kyc_verified: false,
-    ckyc_number: "",
-    ipv_done_by_id: "",
-    ipv_date: "",
+  const [formData, setFormData] = useState<ClientCreate>(() => {
+    if (initialData) return initialData;
+    // Restore draft from localStorage for new registrations
+    if (!isEdit) {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          // Refresh system dates to today and never restore password
+          return {
+            ...DEFAULT_FORM_DATA,
+            ...parsed,
+            password: "",
+            client_date: new Date().toISOString().split('T')[0],
+            agreement_date: new Date().toISOString().split('T')[0],
+          };
+        }
+      } catch (e) {
+        console.warn("Failed to restore draft from localStorage", e);
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    }
+    return { ...DEFAULT_FORM_DATA };
   });
 
   React.useEffect(() => {
@@ -311,6 +339,21 @@ export default function ClientRegistrationForm({
     }
   }, [employees, formData.ipv_done_by_id, formData.assigned_employee_id]);
 
+  // Auto-save form data to localStorage (only in create mode, debounced)
+  React.useEffect(() => {
+    if (isEdit) return;
+    const timer = setTimeout(() => {
+      try {
+        // Exclude password from persisted draft for security
+        const { password, ...draftData } = formData;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(draftData));
+      } catch (e) {
+        console.warn("Failed to save draft to localStorage", e);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [formData, isEdit]);
+
   const calculateAge = (dob: string) => {
     if (!dob) return 0;
     const birthDate = new Date(dob);
@@ -449,6 +492,8 @@ export default function ClientRegistrationForm({
                   }
               }
           }
+          // Clear the localStorage draft on successful registration
+          localStorage.removeItem(STORAGE_KEY);
           toast.success("Client registered and documents secured!");
           router.push("/clients");
       }
@@ -1408,9 +1453,32 @@ export default function ClientRegistrationForm({
               </div>
 
               <div className="p-6 sm:p-8 border-t border-primary/10 bg-muted/20 flex flex-col-reverse sm:flex-row items-center justify-between gap-4">
-                <Button type="button" variant="outline" onClick={() => router.back()} disabled={loading} className="w-full sm:w-auto px-8 border-primary/20 h-11 sm:h-auto">
-                  Cancel
-                </Button>
+                <div className="flex gap-3 w-full sm:w-auto">
+                  <Button type="button" variant="outline" onClick={() => router.back()} disabled={loading} className="w-full sm:w-auto px-8 border-primary/20 h-11 sm:h-auto">
+                    Cancel
+                  </Button>
+                  {!isEdit && (
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      disabled={loading}
+                      className="w-full sm:w-auto px-6 border-red-500/20 text-red-500 hover:bg-red-500/10 hover:text-red-600 hover:border-red-500/30 h-11 sm:h-auto gap-2 transition-all"
+                      onClick={() => {
+                        localStorage.removeItem(STORAGE_KEY);
+                        setFormData({ ...DEFAULT_FORM_DATA });
+                        setPendingDocuments({});
+                        setIpvSearchTerm("");
+                        setAssignedSearchTerm("");
+                        setActiveTab("personal");
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        toast.success("Form cleared. Starting fresh.", { icon: "🗑️" });
+                      }}
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                      Reset Form
+                    </Button>
+                  )}
+                </div>
                 
                 <div className="flex gap-4 w-full sm:w-auto">
                   {activeTab !== "documents" ? (
