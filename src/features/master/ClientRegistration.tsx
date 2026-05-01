@@ -328,6 +328,13 @@ export default function ClientRegistrationForm({
         ...prev,
         [name]: value === "" ? "" : parseFloat(value),
       }));
+    } else if (name === "ckyc_number") {
+      // Restrict to Alphanumeric and Max 14 characters, auto-uppercase
+      const cleaned = value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 14);
+      setFormData((prev) => ({
+        ...prev,
+        [name]: cleaned,
+      }));
     } else {
       setFormData((prev) => ({
         ...prev,
@@ -1073,13 +1080,22 @@ export default function ClientRegistrationForm({
                           )}
                         </div>
                         <div className="space-y-2">
-                          <Label>CKYC Number</Label>
+                          <Label className={formData.ckyc_number && !/^[SLOM][0-9A-Z]{13}$|^[0-9]{14}$/.test(formData.ckyc_number) ? "text-orange-500 font-medium" : ""}>
+                            CKYC Number
+                          </Label>
                           <Input 
-                            name="ckyc_number" disabled={isFieldDisabled("ckyc_number")} 
+                            name="ckyc_number" 
+                            disabled={isFieldDisabled("ckyc_number")} 
                             value={formData.ckyc_number} 
                             onChange={handleChange} 
-                            placeholder="Central KYC Number" 
+                            placeholder="Central KYC Number (14 chars)" 
+                            className={formData.ckyc_number && !/^[SLOM][0-9A-Z]{13}$|^[0-9]{14}$/.test(formData.ckyc_number) ? "border-orange-500" : ""}
                           />
+                          {formData.ckyc_number && !/^[SLOM][0-9A-Z]{13}$|^[0-9]{14}$/.test(formData.ckyc_number) && (
+                            <p className="text-[10px] text-orange-500">
+                              Must be 14 digits or start with S, L, O, M followed by 13 chars.
+                            </p>
+                          )}
                         </div>
                       </div>
                     </div>
