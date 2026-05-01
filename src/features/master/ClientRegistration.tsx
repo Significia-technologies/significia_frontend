@@ -349,6 +349,13 @@ export default function ClientRegistrationForm({
         ...prev,
         [name]: cleaned,
       }));
+    } else if (name === "phone_number") {
+      // Restrict to Digits and Max 10 characters
+      const cleaned = value.replace(/\D/g, '').slice(0, 10);
+      setFormData((prev) => ({
+        ...prev,
+        [name]: cleaned,
+      }));
     } else {
       setFormData((prev) => ({
         ...prev,
@@ -635,8 +642,22 @@ export default function ClientRegistrationForm({
                        )}
                     </div>
                     <div className="space-y-2">
-                      <Label>Phone Number *</Label>
-                      <Input type="tel" name="phone_number" disabled={isFieldDisabled("phone_number")} value={formData.phone_number} onChange={handleChange} required placeholder="+91 98765 43210" />
+                      <Label className={formData.phone_number && !/^[6-9][0-9]{9}$/.test(formData.phone_number) ? "text-orange-500 font-medium" : ""}>
+                        Phone Number *
+                      </Label>
+                      <Input 
+                        type="tel" 
+                        name="phone_number" 
+                        disabled={isFieldDisabled("phone_number")} 
+                        value={formData.phone_number} 
+                        onChange={handleChange} 
+                        required 
+                        placeholder="9876543210" 
+                        className={formData.phone_number && !/^[6-9][0-9]{9}$/.test(formData.phone_number) ? "border-orange-500" : ""}
+                      />
+                      {formData.phone_number && !/^[6-9][0-9]{9}$/.test(formData.phone_number) && (
+                        <p className="text-[10px] text-orange-500">Invalid 10-digit mobile number.</p>
+                      )}
                     </div>
                     <div className="space-y-2">
                         <Label>Gender *</Label>
