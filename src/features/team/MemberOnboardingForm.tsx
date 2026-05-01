@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { DatePicker } from "@/components/ui/date-picker";
 
 export default function MemberOnboardingForm() {
   const { user } = useAppStore();
@@ -280,11 +281,9 @@ export default function MemberOnboardingForm() {
                 </div>
                 <div className="grid gap-2">
                   <Label>Date of Joining *</Label>
-                  <Input 
-                    type="date"
-                    required
-                    value={newMember.date_of_joining}
-                    onChange={(e) => setNewMember({...newMember, date_of_joining: e.target.value})}
+                  <DatePicker 
+                    date={newMember.date_of_joining}
+                    onChange={(val) => setNewMember({...newMember, date_of_joining: val})}
                   />
                 </div>
               </div>
@@ -321,32 +320,20 @@ export default function MemberOnboardingForm() {
 
               <div className="grid gap-2">
                   <Label htmlFor="issue_date">Certificate Issue Date *</Label>
-                  <div className="relative">
-                    <Calendar className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input 
-                        id="issue_date" 
-                        type="date"
-                        className="pl-9"
-                        required
-                        value={newMember.certificate_issue_date}
-                        onChange={(e) => setNewMember({...newMember, certificate_issue_date: e.target.value})}
-                    />
-                  </div>
+                  <DatePicker 
+                      date={newMember.certificate_issue_date}
+                      onChange={(val) => setNewMember({...newMember, certificate_issue_date: val})}
+                      placeholder="Select issue date"
+                  />
               </div>
 
               <div className="grid gap-2">
                   <Label htmlFor="exp_date">Registration Expiry Date *</Label>
-                  <div className="relative">
-                    <Calendar className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input 
-                        id="exp_date" 
-                        type="date"
-                        className="pl-9"
-                        required
-                        value={newMember.date_of_registration_expiry}
-                        onChange={(e) => setNewMember({...newMember, date_of_registration_expiry: e.target.value})}
-                    />
-                  </div>
+                  <DatePicker 
+                      date={newMember.date_of_registration_expiry}
+                      onChange={(val) => setNewMember({...newMember, date_of_registration_expiry: val})}
+                      placeholder="Select expiry date"
+                  />
               </div>
 
               <div className="grid gap-2 pt-2">

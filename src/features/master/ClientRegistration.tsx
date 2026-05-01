@@ -27,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { DatePicker } from "@/components/ui/date-picker";
 import { MasterDataService, ClientCreate } from "@/core/services/master.service";
 import { IAMasterService, Employee } from "@/core/services/ia-master.service";
 import { toast } from "sonner";
@@ -517,12 +518,12 @@ export default function ClientRegistrationForm({
                     </div>
                     <div className="space-y-2">
                       <Label className={isUnderage ? "text-red-500" : ""}>Date of Birth *</Label>
-                      <Input 
-                        type="date" 
-                        name="date_of_birth" disabled={isFieldDisabled("date_of_birth")} 
-                        value={formData.date_of_birth} 
-                        onChange={handleChange} 
-                        required 
+                      <DatePicker 
+                        date={formData.date_of_birth} 
+                        onChange={(val) => setFormData(prev => ({ ...prev, date_of_birth: val }))}
+                        disabled={isFieldDisabled("date_of_birth")}
+                        placeholder="Select Date of Birth"
+                        fromYear={1930}
                         className={isUnderage ? "border-red-500 ring-offset-red-500 focus-visible:ring-red-500" : ""}
                       />
                       <p className={`text-[10px] italic ${isUnderage ? "text-red-500 font-bold" : "text-muted-foreground"}`}>
@@ -1095,11 +1096,19 @@ export default function ClientRegistrationForm({
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
                           <Label>Client Onboarding Date *</Label>
-                          <Input type="date" name="client_date" disabled={isFieldDisabled("client_date")} value={formData.client_date} onChange={handleChange} required />
+                          <DatePicker 
+                            date={formData.client_date} 
+                            onChange={(val) => setFormData(prev => ({ ...prev, client_date: val }))}
+                            disabled={isFieldDisabled("client_date")}
+                          />
                         </div>
                         <div className="space-y-2">
                           <Label>Agreement Date *</Label>
-                          <Input type="date" name="agreement_date" disabled={isFieldDisabled("agreement_date")} value={formData.agreement_date} onChange={handleChange} required />
+                          <DatePicker 
+                            date={formData.agreement_date} 
+                            onChange={(val) => setFormData(prev => ({ ...prev, agreement_date: val }))}
+                            disabled={isFieldDisabled("agreement_date")}
+                          />
                         </div>
                       </div>
 
@@ -1184,12 +1193,11 @@ export default function ClientRegistrationForm({
                         </div>
                         <div className="space-y-2">
                           <Label>IPV Date *</Label>
-                          <Input 
-                            type="date" 
-                            name="ipv_date" disabled={isFieldDisabled("ipv_date")} 
-                            value={formData.ipv_date} 
-                            onChange={handleChange} 
-                            required 
+                          <DatePicker 
+                            date={formData.ipv_date} 
+                            onChange={(val) => setFormData(prev => ({ ...prev, ipv_date: val }))}
+                            disabled={isFieldDisabled("ipv_date")}
+                            placeholder="Select IPV Date"
                           />
                         </div>
                       </div>

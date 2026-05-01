@@ -37,6 +37,7 @@ import {
   FinancialAnalysisService, 
   FinancialAnalysisCreate 
 } from "@/core/services/financial-analysis.service";
+import { DatePicker } from "@/components/ui/date-picker";
 import { MasterDataService, ClientCreate } from "@/core/services/master.service";
 import {
   AlertDialog,
@@ -518,10 +519,11 @@ export function AnalysisForm({ clientId, copyFromProfileId, onSuccess, onCancel 
                   </div>
                   <div className="space-y-2">
                     <Label>Date of Birth *</Label>
-                    <Input 
-                      type="date"
-                      value={formData.dob} 
-                      onChange={e => handleTopLevelChange('dob', e.target.value)}
+                    <DatePicker 
+                      date={formData.dob} 
+                      onChange={val => handleTopLevelChange('dob', val)}
+                      placeholder="Select DOB"
+                      fromYear={1930}
                     />
                   </div>
                   <div className="space-y-2">
@@ -553,10 +555,11 @@ export function AnalysisForm({ clientId, copyFromProfileId, onSuccess, onCancel 
                     <Label className={formData.spouse_dob && !isEighteenPlus(formData.spouse_dob) ? "text-destructive" : ""}>
                       Date of Birth {formData.spouse_dob && !isEighteenPlus(formData.spouse_dob) && "(Must be 18+)"}
                     </Label>
-                    <Input 
-                      type="date"
-                      value={formData.spouse_dob} 
-                      onChange={e => handleTopLevelChange('spouse_dob', e.target.value)} 
+                    <DatePicker 
+                      date={formData.spouse_dob} 
+                      onChange={val => handleTopLevelChange('spouse_dob', val)}
+                      placeholder="Select Spouse DOB"
+                      fromYear={1930}
                       className={formData.spouse_dob && !isEighteenPlus(formData.spouse_dob) ? "border-destructive focus-visible:ring-destructive" : ""}
                     />
                   </div>
@@ -590,7 +593,13 @@ export function AnalysisForm({ clientId, copyFromProfileId, onSuccess, onCancel 
                       </div>
                       <div className="space-y-1">
                         <Label className="text-[10px] uppercase opacity-50">DOB</Label>
-                        <Input type="date" value={child.dob} onChange={e => updateChild(idx, 'dob', e.target.value)} className="h-9" />
+                        <DatePicker 
+                          date={child.dob} 
+                          onChange={val => updateChild(idx, 'dob', val)}
+                          className="h-9"
+                          placeholder="Child DOB"
+                          fromYear={1990}
+                        />
                       </div>
                       <div className="space-y-1">
                         <Label className="text-[10px] uppercase opacity-50">Occupation / Status</Label>

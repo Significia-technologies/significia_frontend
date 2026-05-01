@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/select";
 import { AuthService } from "@/core/services/auth.service";
 import { useAppStore } from "@/store/useAppStore";
+import { DatePicker } from "@/components/ui/date-picker";
 
 
 interface IAMasterFormProps {
@@ -376,13 +377,12 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
                             <Label className={calculateAge(formData.date_of_birth) < 18 && formData.date_of_birth ? "text-destructive font-bold" : ""}>
                               Date of Birth * {calculateAge(formData.date_of_birth) < 18 && formData.date_of_birth && `(Age: ${calculateAge(formData.date_of_birth)})`}
                             </Label>
-                            <Input 
-                              type="date" 
-                              name="date_of_birth" 
-                              value={formData.date_of_birth} 
-                              onChange={handleChange} 
-                              required 
-                              className={`bg-background/50 ${calculateAge(formData.date_of_birth) < 18 && formData.date_of_birth ? "border-destructive ring-destructive focus-visible:ring-destructive" : ""}`} 
+                            <DatePicker 
+                              date={formData.date_of_birth} 
+                              onChange={(val) => setFormData(prev => ({ ...prev, date_of_birth: val }))}
+                              placeholder="Select Date"
+                              fromYear={1930}
+                              className={calculateAge(formData.date_of_birth) < 18 && formData.date_of_birth ? "border-destructive ring-destructive focus-visible:ring-destructive" : ""} 
                             />
                             {calculateAge(formData.date_of_birth) < 18 && formData.date_of_birth && (
                               <p className="text-[10px] text-destructive font-bold animate-pulse italic">Minimum age requirement is 18 years.</p>
@@ -393,14 +393,13 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
                             <Label className={isFormationDateInvalid || isFormationDateFuture ? "text-destructive font-bold" : ""}>
                               Date of Formation / Incorporation *
                             </Label>
-                            <Input 
-                              type="date" 
-                              name="date_of_birth" 
-                              value={formData.date_of_birth} 
-                              onChange={handleChange} 
-                              required 
-                              max={new Date().toISOString().split("T")[0]}
-                              className={`bg-background/50 ${isFormationDateInvalid || isFormationDateFuture ? "border-destructive ring-1 ring-destructive focus-visible:ring-destructive" : ""}`} 
+                            <DatePicker 
+                              date={formData.date_of_birth} 
+                              onChange={(val) => setFormData(prev => ({ ...prev, date_of_birth: val }))}
+                              placeholder="Select Formation Date"
+                              fromYear={1930}
+                              toYear={new Date().getFullYear()}
+                              className={isFormationDateInvalid || isFormationDateFuture ? "border-destructive ring-1 ring-destructive focus-visible:ring-destructive" : ""} 
                             />
                             {isFormationDateFuture ? (
                               <p className="text-[10px] text-destructive font-bold animate-pulse italic">Date of Formation cannot be in the future.</p>
@@ -442,11 +441,17 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
                     </div>
                     <div className="space-y-2">
                       <Label>Reg Date *</Label>
-                      <Input type="date" name="date_of_registration" value={formData.date_of_registration} onChange={handleChange} required className="bg-background/50" />
+                      <DatePicker 
+                        date={formData.date_of_registration} 
+                        onChange={(val) => setFormData(prev => ({ ...prev, date_of_registration: val }))}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label>Expiry Date *</Label>
-                      <Input type="date" name="date_of_registration_expiry" value={formData.date_of_registration_expiry} onChange={handleChange} required className="bg-background/50" />
+                      <DatePicker 
+                        date={formData.date_of_registration_expiry} 
+                        onChange={(val) => setFormData(prev => ({ ...prev, date_of_registration_expiry: val }))}
+                      />
                     </div>
                   </div>
 

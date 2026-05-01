@@ -19,6 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { DatePicker } from "@/components/ui/date-picker";
 
 export default function MemberEditForm() {
   const { identifier } = useParams() as { identifier: string };
@@ -277,19 +278,17 @@ export default function MemberEditForm() {
               <div className="grid grid-cols-2 gap-4 pt-4 border-t border-dashed">
                 <div className="grid gap-2">
                   <Label>Date of Joining</Label>
-                  <Input 
-                    type="date"
-                    value={formData.date_of_joining}
-                    onChange={(e) => setFormData({...formData, date_of_joining: e.target.value})}
+                  <DatePicker 
+                    date={formData.date_of_joining}
+                    onChange={(val) => setFormData({...formData, date_of_joining: val})}
                   />
                 </div>
                 <div className="grid gap-2">
                   <Label className="text-destructive font-bold">Date of Leaving (if any)</Label>
-                  <Input 
-                    type="date"
+                  <DatePicker 
+                    date={formData.date_of_leaving}
+                    onChange={(val) => setFormData({...formData, date_of_leaving: val})}
                     className="border-destructive/30"
-                    value={formData.date_of_leaving}
-                    onChange={(e) => setFormData({...formData, date_of_leaving: e.target.value})}
                   />
                 </div>
               </div>
@@ -324,32 +323,18 @@ export default function MemberEditForm() {
 
                 <div className="grid gap-2">
                     <Label htmlFor="reg_date">Registration Date</Label>
-                    <div className="relative">
-                        <Calendar className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input 
-                            id="reg_date" 
-                            type="date"
-                            className="pl-9"
-                            value={formData.date_of_registration}
-                            onChange={(e) => setFormData({...formData, date_of_registration: e.target.value})}
-                            required={showExtraFields}
-                        />
-                    </div>
+                    <DatePicker 
+                        date={formData.date_of_registration}
+                        onChange={(val) => setFormData({...formData, date_of_registration: val})}
+                    />
                 </div>
 
                 <div className="grid gap-2">
                     <Label htmlFor="exp_date">Expiry Date</Label>
-                    <div className="relative">
-                        <Calendar className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input 
-                            id="exp_date" 
-                            type="date"
-                            className="pl-9"
-                            value={formData.date_of_registration_expiry}
-                            onChange={(e) => setFormData({...formData, date_of_registration_expiry: e.target.value})}
-                            required={showExtraFields}
-                        />
-                    </div>
+                    <DatePicker 
+                        date={formData.date_of_registration_expiry}
+                        onChange={(val) => setFormData({...formData, date_of_registration_expiry: val})}
+                    />
                 </div>
               </CardContent>
             </Card>
