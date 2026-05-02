@@ -401,11 +401,40 @@ export function AnalysisForm({ clientId, copyFromProfileId, onSuccess, onCancel 
   };
 
   const nextStep = () => {
-    // Basic validation for spouse age
-    if (step === 1 && formData.spouse_dob && !isEighteenPlus(formData.spouse_dob)) {
-      toast.error("Spouse must be at least 18 years old.");
-      return;
+    // Validation for Step 1
+    if (step === 1) {
+      if (!formData.client_id) {
+        toast.error("Please validate Client Code first.");
+        return;
+      }
+      if (!formData.occupation) {
+        toast.error("Occupation is required.");
+        return;
+      }
+      if (!formData.dob) {
+        toast.error("Date of Birth is required.");
+        return;
+      }
+      if (formData.annual_income <= 0) {
+        toast.error("Annual Income must be greater than 0.");
+        return;
+      }
+      
+      // Mandatory Spouse info
+      if (!formData.spouse_name?.trim()) {
+        toast.error("Spouse Name is required.");
+        return;
+      }
+      if (!formData.spouse_dob) {
+        toast.error("Spouse Date of Birth is required.");
+        return;
+      }
+      if (formData.spouse_dob && !isEighteenPlus(formData.spouse_dob)) {
+        toast.error("Spouse must be at least 18 years old.");
+        return;
+      }
     }
+    
     setStep(s => Math.min(s + 1, 6));
   };
   const prevStep = () => setStep(s => Math.max(s - 1, 1));
@@ -582,12 +611,12 @@ export function AnalysisForm({ clientId, copyFromProfileId, onSuccess, onCancel 
                 <SectionHeader title="2. Spouse Information" icon={User} number="2" />
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="space-y-2">
-                    <Label>Spouse Name</Label>
+                    <Label>Spouse Name *</Label>
                     <Input value={formData.spouse_name} onChange={e => handleTopLevelChange('spouse_name', e.target.value)} />
                   </div>
                   <div className="space-y-2">
                     <Label className={formData.spouse_dob && !isEighteenPlus(formData.spouse_dob) ? "text-destructive" : ""}>
-                      Date of Birth {formData.spouse_dob && !isEighteenPlus(formData.spouse_dob) && "(Must be 18+)"}
+                      Date of Birth * {formData.spouse_dob && !isEighteenPlus(formData.spouse_dob) && "(Must be 18+)"}
                     </Label>
                     <DatePicker 
                       date={formData.spouse_dob} 
