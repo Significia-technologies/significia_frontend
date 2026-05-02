@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Bell, Search, LogOut, User, ChevronDown, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +20,14 @@ import { useAppStore } from "@/store/useAppStore";
 import { AuthService } from "@/core/services/auth.service";
 import { ThemeToggle } from "@/components/shared/ThemeToggle";
 
-export function Topbar() {
+import Image from "next/image";
+
+interface TopbarProps {
+  showSearch?: boolean;
+  showLogo?: boolean;
+}
+
+export function Topbar({ showSearch = true, showLogo = false }: TopbarProps) {
   const router = useRouter();
   const { user, clearUser, setMobileMenuOpen } = useAppStore();
 
@@ -51,14 +59,33 @@ export function Topbar() {
           <Menu className="h-5 w-5" />
         </Button>
 
+        {/* ── Logo ── */}
+        {showLogo && (
+          <Link href="/" className="flex items-center gap-2.5">
+            <Image 
+              src="/logo.png" 
+              alt="Significia Logo" 
+              width={32} 
+              height={32} 
+              className="h-8 w-8 object-contain"
+              priority
+            />
+            <span className="hidden text-lg font-bold tracking-tight md:block">
+              Significia
+            </span>
+          </Link>
+        )}
+
         {/* ── Search Bar ── */}
-        <div className="relative hidden w-full max-w-md sm:block">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search transactions, accounts..."
-            className="pl-10"
-          />
-        </div>
+        {showSearch && (
+          <div className="relative hidden w-full max-w-md sm:block">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search transactions, accounts..."
+              className="pl-10"
+            />
+          </div>
+        )}
       </div>
 
       {/* ── Right Actions ── */}

@@ -25,7 +25,7 @@ export default function AdminRouteLayout({
     <SuperAdminGuard>
       <div className="h-screen bg-background flex flex-col overflow-hidden">
         {/* We reuse the active Topbar for Auth User context */}
-        <Topbar />
+        <Topbar showSearch={false} showLogo={true} />
         
         <div className="flex flex-1 overflow-hidden">
           {/* Mobile Sidebar */}
