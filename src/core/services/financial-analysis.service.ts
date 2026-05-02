@@ -12,7 +12,7 @@ export interface FinancialAnalysisProfile {
   children?: any[];
   annual_income: number;
   expenses: any;
-  assets: any;
+  assets: { land: number; inv: number; cash: number; retirement: number; others?: { label: string; amount: number }[] };
   liabilities: { personal: number; cc: number; hb: number; others?: { label: string; amount: number }[] };
   insurance: any;
   retirement_age: number;
@@ -71,7 +71,7 @@ export interface FinancialAnalysisCreate {
   children?: any[];
   annual_income: number;
   expenses: { hh: number; med: number; travel: number; elec: number; tele: number; maid: number; edu: number; ent: number; emi: number; savings: number; misc: number };
-  assets: { land: number; inv: number; cash: number; retirement: number };
+  assets: { land: number; inv: number; cash: number; retirement: number; others?: { label: string; amount: number }[] };
   liabilities: { personal: number; cc: number; hb: number; others?: { label: string; amount: number }[] };
   insurance: { life_cover: number; life_premium: number; med_cover: number; med_premium: number; veh_cover: number; veh_premium: number; other_cover: number; other_premium: number };
   medical_bonus_years: number;

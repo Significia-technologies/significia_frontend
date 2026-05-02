@@ -110,7 +110,7 @@ export function AnalysisForm({ clientId, copyFromProfileId, onSuccess, onCancel 
       maid: 0, edu: 0, ent: 0, emi: 0, savings: 0, misc: 0
     },
     assets: {
-      land: 0, inv: 0, cash: 0, retirement: 0
+      land: 0, inv: 0, cash: 0, retirement: 0, others: []
     },
     liabilities: {
       personal: 0, cc: 0, hb: 0, others: []
@@ -337,6 +337,40 @@ export function AnalysisForm({ clientId, copyFromProfileId, onSuccess, onCancel 
         ...prev,
         liabilities: {
           ...prev.liabilities,
+          others: newOthers
+        }
+      };
+    });
+  };
+
+  const addOtherAsset = () => {
+    setFormData(prev => ({
+      ...prev,
+      assets: {
+        ...prev.assets,
+        others: [...(prev.assets.others || []), { label: "", amount: 0 }]
+      }
+    }));
+  };
+
+  const removeOtherAsset = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      assets: {
+        ...prev.assets,
+        others: prev.assets.others?.filter((_, i) => i !== index)
+      }
+    }));
+  };
+
+  const updateOtherAsset = (index: number, field: string, value: any) => {
+    setFormData(prev => {
+      const newOthers = [...(prev.assets.others || [])];
+      newOthers[index] = { ...newOthers[index], [field]: value };
+      return {
+        ...prev,
+        assets: {
+          ...prev.assets,
           others: newOthers
         }
       };
@@ -697,6 +731,51 @@ export function AnalysisForm({ clientId, copyFromProfileId, onSuccess, onCancel 
                         />
                       </div>
                     ))}
+
+                    {/* Other Assets List */}
+                    {formData.assets.others?.map((other, idx) => (
+                      <div key={idx} className="p-3 border border-dashed border-primary/20 rounded-lg space-y-3 relative group">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="absolute -right-2 -top-2 h-6 w-6 rounded-full bg-background border shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => removeOtherAsset(idx)}
+                        >
+                          <Trash2 className="h-3 w-3 text-destructive" />
+                        </Button>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <Label className="text-[10px] uppercase opacity-50">Label</Label>
+                            <Input 
+                              placeholder="e.g. Fixed Deposits" 
+                              value={other.label} 
+                              onChange={e => updateOtherAsset(idx, 'label', e.target.value)}
+                              className="h-8 text-xs"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-[10px] uppercase opacity-50">Amount (₹)</Label>
+                            <Input 
+                              type="number" 
+                              min={0}
+                              placeholder="0"
+                              value={other.amount === 0 ? "" : other.amount} 
+                              onChange={e => updateOtherAsset(idx, 'amount', e.target.value === "" ? 0 : parseFloat(e.target.value))}
+                              className="h-8 text-xs"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={addOtherAsset}
+                      className="w-full border-dashed border-primary/30 text-primary/60 hover:text-primary hover:border-primary/50 text-xs h-8"
+                    >
+                      <Plus className="w-3 h-3 mr-2" /> Add Other Asset
+                    </Button>
                   </div>
                 </div>
                 <div>
