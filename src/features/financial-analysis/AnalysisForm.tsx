@@ -578,28 +578,39 @@ export function AnalysisForm({ clientId, copyFromProfileId, onSuccess, onCancel 
                       value={formData.occupation} 
                       onChange={e => handleTopLevelChange('occupation', e.target.value)}
                       placeholder="e.g. Professional / Salaried"
+                      readOnly={clientFound}
+                      className={clientFound ? "font-bold uppercase text-primary/80 cursor-default" : ""}
                     />
                   </div>
                   <div className="space-y-2">
                     <Label>Date of Birth *</Label>
-                    <DatePicker 
-                      date={formData.dob} 
-                      onChange={val => handleTopLevelChange('dob', val)}
-                      placeholder="Select DOB"
-                      fromYear={1930}
-                    />
+                    {clientFound ? (
+                      <Input 
+                        value={formData.dob} 
+                        readOnly 
+                        className="font-bold text-primary/80 cursor-default"
+                      />
+                    ) : (
+                      <DatePicker 
+                        date={formData.dob} 
+                        onChange={val => handleTopLevelChange('dob', val)}
+                        placeholder="Select DOB"
+                        fromYear={1930}
+                      />
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label>Annual Income (₹) *</Label>
                     <div className="relative">
                       <span className="absolute left-3 top-2.5 text-xs opacity-50">₹</span>
                       <Input 
-                        type="number"
+                        type={clientFound ? "text" : "number"}
                         min={0}
-                        value={formData.annual_income === 0 ? "" : formData.annual_income} 
+                        value={clientFound ? formData.annual_income.toLocaleString() : (formData.annual_income === 0 ? "" : formData.annual_income)} 
                         onChange={e => handleTopLevelChange('annual_income', e.target.value === "" ? 0 : parseFloat(e.target.value))}
                         placeholder="0"
-                        className="pl-7 font-bold text-primary"
+                        readOnly={clientFound}
+                        className={`pl-7 font-bold text-primary ${clientFound ? 'cursor-default' : ''}`}
                       />
                     </div>
                   </div>
