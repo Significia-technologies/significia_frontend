@@ -6,7 +6,7 @@ import { DashboardSidebar, SidebarContent } from "./DashboardSidebar";
 import { Topbar } from "./Topbar";
 import { useAppStore } from "@/store/useAppStore";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 import { useRouter, usePathname } from "next/navigation";
 import { AuthService } from "@/core/services/auth.service";
@@ -130,6 +130,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         {/* Mobile Sidebar */}
         <Sheet open={isMobileMenuOpen} onOpenChange={setMobileMenuOpen}>
           <SheetContent side="left" className="p-0 w-64 border-r-0 bg-sidebar">
+            <SheetHeader className="sr-only">
+              <SheetTitle>Navigation Menu</SheetTitle>
+            </SheetHeader>
             <div className="flex flex-col h-full border-r border-border">
               <SidebarContent />
             </div>

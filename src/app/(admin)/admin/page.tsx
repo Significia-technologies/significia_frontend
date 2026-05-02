@@ -79,15 +79,15 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Bridge Dashboard</h1>
-          <p className="text-muted-foreground mt-2">
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Bridge Dashboard</h1>
+          <p className="text-muted-foreground mt-1 text-sm md:text-base">
             Monitor all IA tenants and their Bridge connections.
           </p>
         </div>
-        <Link href="/admin/clients/new">
-          <Button className="gap-2">
+        <Link href="/admin/clients/new" className="w-full md:w-auto">
+          <Button className="gap-2 w-full">
             <PlusCircle className="h-4 w-4" />
             Provision New IA Tenant
           </Button>
@@ -95,7 +95,7 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Stats Row */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Tenants</CardTitle>
@@ -135,177 +135,181 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Bridge Table */}
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Tenant Name</TableHead>
-              <TableHead>Domain</TableHead>
-              <TableHead>Plan</TableHead>
-              <TableHead>Clients</TableHead>
-              <TableHead>Bridge Status</TableHead>
-              <TableHead>Bridge Token</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
+      <div className="rounded-md border overflow-hidden">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center">
-                  <div className="flex justify-center items-center">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                  </div>
-                </TableCell>
+                <TableHead>Tenant Name</TableHead>
+                <TableHead>Domain</TableHead>
+                <TableHead>Plan</TableHead>
+                <TableHead>Clients</TableHead>
+                <TableHead>Bridge Status</TableHead>
+                <TableHead>Bridge Token</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
-            ) : bridges.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
-                  No tenants found. Provision a new one.
-                </TableCell>
-              </TableRow>
-            ) : (
-              bridges.map((bridge) => (
-                <TableRow key={bridge.tenant_id}>
-                  <TableCell className="font-medium">
-                    <div className="flex items-center gap-2">
-                      {bridge.tenant_name}
-                      {!bridge.is_active && (
-                        <Badge variant="destructive" className="h-4 px-1 text-[8px] uppercase tracking-tighter">Inactive</Badge>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="font-mono text-xs text-muted-foreground">
-                    {bridge.custom_domain || (bridge.subdomain ? `${bridge.subdomain}.significia.com` : "—")}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="capitalize">{bridge.billing_plan || "Standard"}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    {bridge.current_client_count ?? 0} / {bridge.max_client_permit ?? 10}
-                  </TableCell>
-                  <TableCell>
-                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusColor[bridge.bridge_status] || "bg-gray-100 text-gray-700"}`}>
-                      {bridge.bridge_status}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    {bridge.bridge_registration_token ? (
-                      <div className="flex items-center gap-2">
-                        <code className="text-[10px] bg-muted px-1.5 py-0.5 rounded max-w-[120px] truncate">
-                          {bridge.bridge_registration_token}
-                        </code>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-7 w-7"
-                          onClick={() => {
-                            navigator.clipboard.writeText(bridge.bridge_registration_token!);
-                            alert("Token copied to clipboard!");
-                          }}
-                        >
-                          <Zap className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <span className="text-xs text-muted-foreground italic">Registered</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          
-                          <DropdownMenuItem onClick={() => {
-                            setEditingTenant(bridge);
-                            setIsEditOpen(true);
-                          }}>
-                            <Edit className="mr-2 h-4 w-4" /> Edit Details
-                          </DropdownMenuItem>
-
-                          <DropdownMenuItem 
-                            className={bridge.is_active ? "text-destructive" : "text-emerald-600"}
-                            onClick={async () => {
-                              try {
-                                await BridgeService.updateTenantStatus(bridge.tenant_id, !bridge.is_active);
-                                fetchData(); // Refresh
-                              } catch (err: any) {
-                                alert(`Failed to toggle status: ${err.message}`);
-                              }
-                            }}
-                          >
-                            {bridge.is_active ? <PowerOff className="mr-2 h-4 w-4" /> : <Power className="mr-2 h-4 w-4" />}
-                            {bridge.is_active ? "Deactivate Tenant" : "Activate Tenant"}
-                          </DropdownMenuItem>
-
-                          <DropdownMenuSeparator />
-                          
-                          <DropdownMenuItem 
-                            disabled={bridge.bridge_status !== "ACTIVE"}
-                            onClick={async () => {
-                              if (confirm(`Initialize database for ${bridge.tenant_name}?`)) {
-                                try {
-                                  const res = await BridgeService.initializeBridge(bridge.tenant_id);
-                                  alert(res.message || "Database initialized successfully!");
-                                } catch (err: any) {
-                                  alert(`Failed to initialize: ${err.response?.data?.detail || err.message}`);
-                                }
-                              }
-                            }}
-                          >
-                            <Shield className="mr-2 h-4 w-4" /> Initialize DB
-                          </DropdownMenuItem>
-
-                          <DropdownMenuSeparator />
-
-                          <DropdownMenuItem 
-                            onClick={async () => {
-                              if (confirm(`Regenerate token for ${bridge.tenant_name}? This will invalidate any existing token and reset the Bridge to PENDING.`)) {
-                                try {
-                                  await BridgeService.regenerateToken(bridge.tenant_id);
-                                  alert("Token regenerated successfully!");
-                                  fetchData();
-                                } catch (err: any) {
-                                  alert(`Failed to regenerate: ${err.response?.data?.detail || err.message}`);
-                                }
-                              }
-                            }}
-                          >
-                            <Zap className="mr-2 h-4 w-4" /> Regenerate Token
-                          </DropdownMenuItem>
-
-                          <DropdownMenuItem 
-                            className="text-destructive"
-                            disabled={bridge.bridge_status === "PENDING" || bridge.bridge_status === "REVOKED"}
-                            onClick={async () => {
-                              if (confirm(`Immediately revoke Bridge access for ${bridge.tenant_name}? The IA will lose all portal access until they re-register.`)) {
-                                try {
-                                  await BridgeService.revoke(bridge.tenant_id);
-                                  alert("Bridge access revoked.");
-                                  fetchData();
-                                } catch (err: any) {
-                                  alert(`Failed to revoke: ${err.response?.data?.detail || err.message}`);
-                                }
-                              }
-                            }}
-                          >
-                            <AlertTriangle className="mr-2 h-4 w-4" /> Revoke Bridge
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="h-24 text-center">
+                    <div className="flex justify-center items-center">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
                     </div>
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : bridges.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+                    No tenants found. Provision a new one.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                bridges.map((bridge) => (
+                  <TableRow key={bridge.tenant_id}>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        {bridge.tenant_name}
+                        {!bridge.is_active && (
+                          <Badge variant="destructive" className="h-4 px-1 text-[8px] uppercase tracking-tighter">Inactive</Badge>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-mono text-xs text-muted-foreground">
+                      {bridge.custom_domain || (bridge.subdomain ? `${bridge.subdomain}.significia.com` : "—")}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="capitalize">{bridge.billing_plan || "Standard"}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      {bridge.current_client_count ?? 0} / {bridge.max_client_permit ?? 10}
+                    </TableCell>
+                    <TableCell>
+                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusColor[bridge.bridge_status] || "bg-gray-100 text-gray-700"}`}>
+                        {bridge.bridge_status}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      {bridge.bridge_registration_token ? (
+                        <div className="flex items-center gap-2">
+                          <code className="text-[10px] bg-muted px-1.5 py-0.5 rounded max-w-[120px] truncate">
+                            {bridge.bridge_registration_token}
+                          </code>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-7 w-7"
+                            onClick={() => {
+                              navigator.clipboard.writeText(bridge.bridge_registration_token!);
+                              alert("Token copied to clipboard!");
+                            }}
+                          >
+                            <Zap className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground italic">Registered</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            
+                            <DropdownMenuItem onClick={() => {
+                              setEditingTenant(bridge);
+                              setIsEditOpen(true);
+                            }}>
+                              <Edit className="mr-2 h-4 w-4" /> Edit Details
+                            </DropdownMenuItem>
+
+                            <DropdownMenuItem 
+                              className={bridge.is_active ? "text-destructive" : "text-emerald-600"}
+                              onClick={async () => {
+                                try {
+                                  await BridgeService.updateTenantStatus(bridge.tenant_id, !bridge.is_active);
+                                  fetchData(); // Refresh
+                                } catch (err: any) {
+                                  alert(`Failed to toggle status: ${err.message}`);
+                                }
+                              }}
+                            >
+                              {bridge.is_active ? <PowerOff className="mr-2 h-4 w-4" /> : <Power className="mr-2 h-4 w-4" />}
+                              {bridge.is_active ? "Deactivate Tenant" : "Activate Tenant"}
+                            </DropdownMenuItem>
+
+                            <DropdownMenuSeparator />
+                            
+                            <DropdownMenuItem 
+                              disabled={bridge.bridge_status !== "ACTIVE"}
+                              onClick={async () => {
+                                if (confirm(`Initialize database for ${bridge.tenant_name}?`)) {
+                                  try {
+                                    const res = await BridgeService.initializeBridge(bridge.tenant_id);
+                                    alert(res.message || "Database initialized successfully!");
+                                  } catch (err: any) {
+                                    alert(`Failed to initialize: ${err.response?.data?.detail || err.message}`);
+                                  }
+                                }
+                              }}
+                            >
+                              <Shield className="mr-2 h-4 w-4" /> Initialize DB
+                            </DropdownMenuItem>
+
+                            <DropdownMenuSeparator />
+
+                            <DropdownMenuItem 
+                              onClick={async () => {
+                                if (confirm(`Regenerate token for ${bridge.tenant_name}? This will invalidate any existing token and reset the Bridge to PENDING.`)) {
+                                  try {
+                                    await BridgeService.regenerateToken(bridge.tenant_id);
+                                    alert("Token regenerated successfully!");
+                                    fetchData();
+                                  } catch (err: any) {
+                                    alert(`Failed to regenerate: ${err.response?.data?.detail || err.message}`);
+                                  }
+                                }
+                              }}
+                            >
+                              <Zap className="mr-2 h-4 w-4" /> Regenerate Token
+                            </DropdownMenuItem>
+
+                            <DropdownMenuItem 
+                              className="text-destructive"
+                              disabled={bridge.bridge_status === "PENDING" || bridge.bridge_status === "REVOKED"}
+                              onClick={async () => {
+                                if (confirm(`Immediately revoke Bridge access for ${bridge.tenant_name}? The IA will lose all portal access until they re-register.`)) {
+                                  try {
+                                    await BridgeService.revoke(bridge.tenant_id);
+                                    alert("Bridge access revoked.");
+                                    fetchData();
+                                  } catch (err: any) {
+                                    alert(`Failed to revoke: ${err.response?.data?.detail || err.message}`);
+                                  }
+                                }
+                              }}
+                            >
+                              <AlertTriangle className="mr-2 h-4 w-4" /> Revoke Bridge
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+
       {/* Edit Tenant Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
         <DialogContent className="sm:max-w-[425px]">
@@ -399,7 +403,6 @@ export default function AdminDashboardPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      </div>
     </div>
   );
 }
