@@ -61,20 +61,11 @@ export default function LoginPage() {
       } else {
         // --- SUBDOMAIN LOGIN (IA Staff / Owner) ---
         // iaStaffLogin calls the Bridge proxy on the backend
-        const result = await AuthService.iaStaffLogin({ email, password });
-        
-        // iaStaffLogin returns { access_token, refresh_token, user_name, user_role, tenant_name }
-        // We hydrate the store with the decentralized user info
-        setUser({
-          id: "local-user", 
-          email: email,
-          name: result.user_name,
-          role: result.user_role as any,
-          tenant_id: "local-tenant",
-          company_name: result.tenant_name,
-          is_profile_completed: true,
-          max_client_permit: 0
-        });
+        await AuthService.iaStaffLogin({ email, password });
+
+        // Fetch the real user profile from the backend so is_profile_completed reflects actual state
+        const authUser = await AuthService.getCurrentUser();
+        setUser(authUser);
 
         router.push("/");
       }

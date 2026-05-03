@@ -114,7 +114,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     };
     
     initAuth();
-  }, [user, setUser, clearUser, router]);
+  }, [user, setUser, clearUser, router, pathname]);
 
   if (isInitializing) {
     return (

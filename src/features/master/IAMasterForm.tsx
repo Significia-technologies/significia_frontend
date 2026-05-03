@@ -111,10 +111,9 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
         change_reason_text: "",
       });
     } else if (user && !formData.registered_email_id) {
-      // First-time setup: pre-populate from user session if not already filled
+      // First-time setup: pre-populate contact fields only — name_of_ia is the registered IA entity name, not the portal owner's name
       setFormData(prev => ({
         ...prev,
-        name_of_ia: prev.name_of_ia || user.company_name || "",
         registered_email_id: prev.registered_email_id || user.email || "",
         registered_contact_number: prev.registered_contact_number || user.phone_number || ""
       }));
