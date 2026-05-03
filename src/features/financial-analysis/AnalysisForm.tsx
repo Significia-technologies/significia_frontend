@@ -420,15 +420,7 @@ export function AnalysisForm({ clientId, copyFromProfileId, onSuccess, onCancel 
         return;
       }
       
-      // Mandatory Spouse info
-      if (!formData.spouse_name?.trim()) {
-        toast.error("Spouse Name is required.");
-        return;
-      }
-      if (!formData.spouse_dob) {
-        toast.error("Spouse Date of Birth is required.");
-        return;
-      }
+      /* Mandatory Spouse info removed - making it optional */
       if (formData.spouse_dob && !isEighteenPlus(formData.spouse_dob)) {
         toast.error("Spouse must be at least 18 years old.");
         return;
@@ -436,8 +428,12 @@ export function AnalysisForm({ clientId, copyFromProfileId, onSuccess, onCancel 
     }
     
     setStep(s => Math.min(s + 1, 6));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-  const prevStep = () => setStep(s => Math.max(s - 1, 1));
+  const prevStep = () => {
+    setStep(s => Math.max(s - 1, 1));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const formatToInputDate = (dateStr: string | undefined): string => {
     if (!dateStr) return "";
@@ -622,12 +618,12 @@ export function AnalysisForm({ clientId, copyFromProfileId, onSuccess, onCancel 
                 <SectionHeader title="2. Spouse Information" icon={User} number="2" />
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="space-y-2">
-                    <Label>Spouse Name *</Label>
+                    <Label>Spouse Name</Label>
                     <Input value={formData.spouse_name} onChange={e => handleTopLevelChange('spouse_name', e.target.value)} />
                   </div>
                   <div className="space-y-2">
                     <Label className={formData.spouse_dob && !isEighteenPlus(formData.spouse_dob) ? "text-destructive" : ""}>
-                      Date of Birth * {formData.spouse_dob && !isEighteenPlus(formData.spouse_dob) && "(Must be 18+)"}
+                      Date of Birth {formData.spouse_dob && !isEighteenPlus(formData.spouse_dob) && "(Must be 18+)"}
                     </Label>
                     <DatePicker 
                       date={formData.spouse_dob} 
@@ -1130,7 +1126,7 @@ export function AnalysisForm({ clientId, copyFromProfileId, onSuccess, onCancel 
             
             {step < 6 ? (
               <Button className="gap-2 bg-primary px-10 font-black shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all w-full sm:w-auto" onClick={nextStep}>
-                PROCEED TO {STEP_TITLES[step + 1].toUpperCase()} <ChevronRight className="w-4 h-4" />
+                NEXT STEP <ChevronRight className="w-4 h-4" />
               </Button>
             ) : (
               <Button 
