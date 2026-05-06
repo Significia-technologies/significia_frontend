@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect } from "react";
 import { 
@@ -124,8 +124,10 @@ export function QuestionnaireManagement({ onEdit, onView, onAddNew, onBack }: Qu
       {/* Search & Actions Bar (Consolidated Navigation) */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-card/40 p-4 rounded-xl border border-primary/10 backdrop-blur-sm shadow-xl">
         <div className="flex items-center gap-2">
-           <LayoutGrid className="w-4 h-4 text-primary/40" />
-           <p className="text-[10px] font-black uppercase text-muted-foreground/60 tracking-widest pl-2">System Protocol Registry</p>
+           <Button variant="ghost" size="icon" onClick={onBack} className="h-8 w-8 text-muted-foreground hover:text-primary">
+             <ChevronLeft className="w-5 h-5" />
+           </Button>
+           <p className="text-[10px] font-black uppercase text-muted-foreground/60 tracking-widest pl-1">System Protocol Registry</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="relative group">

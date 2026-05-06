@@ -13,8 +13,18 @@ import {
   ArrowUpDown,
   Send,
   Loader2,
-  RefreshCcw
+  RefreshCcw,
+  PlusCircle,
+  Settings
 } from "lucide-react";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger, 
+  DropdownMenuSeparator 
+} from "@/components/ui/dropdown-menu";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -40,10 +50,12 @@ import { format } from "date-fns";
 import { useRouter } from "next/navigation";
 
 interface RiskProfileHistoryProps {
-  
+  onNewAssessment: () => void;
+  onNewCustomAssessment: (id: string) => void;
+  questionnaires: any[];
 }
 
-export function RiskProfileHistory({  }: RiskProfileHistoryProps) {
+export function RiskProfileHistory({ onNewAssessment, onNewCustomAssessment, questionnaires }: RiskProfileHistoryProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [assessments, setAssessments] = useState<RiskAssessment[]>([]);
@@ -178,14 +190,47 @@ export function RiskProfileHistory({  }: RiskProfileHistoryProps) {
           <h2 className="text-2xl font-black tracking-tight text-primary uppercase">Risk Profile Vault</h2>
           <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest opacity-60">Historical Risk Assessments & Reporting</p>
         </div>
-        <div className="relative w-full md:w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground opacity-50" />
-          <Input 
-            placeholder="Search by Code or Name..." 
-            className="pl-10 bg-card/50 border-primary/10 font-medium"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          <div className="relative w-full md:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground opacity-50" />
+            <Input 
+              placeholder="Search by Code or Name..." 
+              className="pl-10 bg-card/50 border-primary/10 font-medium"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          
+          <Link href="/risk-profiles/manage">
+            <Button variant="outline" className="gap-2 border-primary/20">
+              <Settings className="w-4 h-4" />
+              Protocols
+            </Button>
+          </Link>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className="gap-2 bg-primary hover:bg-primary/90">
+                <PlusCircle className="w-4 h-4" />
+                New
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 bg-card/95 backdrop-blur-md border-primary/20">
+              <DropdownMenuItem onClick={onNewAssessment} className="cursor-pointer font-bold uppercase text-[10px] tracking-widest py-3">
+                System &quot;Sample&quot; Form
+              </DropdownMenuItem>
+              {questionnaires.length > 0 && <DropdownMenuSeparator className="bg-primary/10" />}
+              {questionnaires.map((q) => (
+                <DropdownMenuItem
+                  key={q.id}
+                  onClick={() => onNewCustomAssessment(q.id)}
+                  className="cursor-pointer font-bold uppercase text-[10px] tracking-widest py-3"
+                >
+                  {q.portfolio_name}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
