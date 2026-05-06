@@ -46,13 +46,13 @@ import { format } from "date-fns";
 import { useRouter } from "next/navigation";
 
 interface AnalysisListProps {
-  
   clientId?: string;
   onSelectAnalysis: (resultId: string) => void;
   onCreateNew: () => void;
+  onDownloadBlank?: () => void;
 }
 
-export function AnalysisList({ clientId, onSelectAnalysis, onCreateNew }: AnalysisListProps) {
+export function AnalysisList({ clientId, onSelectAnalysis, onCreateNew, onDownloadBlank }: AnalysisListProps) {
   const router = useRouter();
   const [analyses, setAnalyses] = useState<FinancialAnalysisResult[]>([]);
   const [clients, setClients] = useState<Record<string, Client>>({});
@@ -167,24 +167,34 @@ export function AnalysisList({ clientId, onSelectAnalysis, onCreateNew }: Analys
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-        <div className="relative w-full md:w-96">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input 
-            placeholder="Search by client name or code..." 
-            className="pl-10 bg-background/50 border-primary/20"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+        <div className="min-w-0">
+          <h2 className="text-2xl font-black tracking-tight text-primary uppercase truncate">Financial Analysis Vault</h2>
+          <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest opacity-60 truncate">Analyze client portfolios and generate professional reports</p>
         </div>
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-          <Button variant="outline" className="gap-2 border-primary/20 flex-1 md:flex-none">
-            <Filter className="w-4 h-4" />
-            Filters
-          </Button>
-          <Button className="gap-2 bg-primary hover:bg-primary/90 flex-1 md:flex-none whitespace-nowrap" onClick={onCreateNew}>
+        <div className="flex flex-row items-center gap-2 w-full lg:w-auto shrink-0">
+          <div className="relative flex-1 md:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground opacity-50" />
+            <Input 
+              placeholder="Search Client..." 
+              className="pl-10 h-10 bg-card/50 border-primary/10 font-medium w-full"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          
+          {onDownloadBlank && (
+            <Button variant="outline" onClick={onDownloadBlank} className="h-10 gap-2 border-primary/20 shrink-0">
+              <FileText className="w-4 h-4" />
+              <span className="hidden xl:inline">Download Form</span>
+              <span className="xl:hidden">Form</span>
+            </Button>
+          )}
+
+          <Button className="h-10 gap-2 bg-primary hover:bg-primary/90 shrink-0" onClick={onCreateNew}>
             <PlusCircle className="w-4 h-4" />
-            New Analysis
+            <span className="hidden xl:inline">New Analysis</span>
+            <span className="xl:hidden">New</span>
           </Button>
         </div>
       </div>

@@ -185,34 +185,36 @@ export function RiskProfileHistory({ onNewAssessment, onNewCustomAssessment, que
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h2 className="text-2xl font-black tracking-tight text-primary uppercase">Risk Profile Vault</h2>
-          <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest opacity-60">Historical Risk Assessments & Reporting</p>
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+        <div className="min-w-0">
+          <h2 className="text-2xl font-black tracking-tight text-primary uppercase truncate">Risk Profile Vault</h2>
+          <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest opacity-60 truncate">Historical Risk Assessments & Reporting</p>
         </div>
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-          <div className="relative w-full md:w-64">
+        <div className="flex flex-row items-center gap-2 w-full lg:w-auto shrink-0">
+          <div className="relative flex-1 md:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground opacity-50" />
             <Input 
-              placeholder="Search by Code or Name..." 
-              className="pl-10 bg-card/50 border-primary/10 font-medium"
+              placeholder="Search Client..." 
+              className="pl-10 h-10 bg-card/50 border-primary/10 font-medium w-full"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
           
-          <Link href="/risk-profiles/manage">
-            <Button variant="outline" className="gap-2 border-primary/20">
+          <Link href="/risk-profiles/manage" className="shrink-0">
+            <Button variant="outline" className="h-10 gap-2 border-primary/20">
               <Settings className="w-4 h-4" />
-              Protocols
+              <span className="hidden xl:inline">Protocols</span>
+              <span className="xl:hidden">Forms</span>
             </Button>
           </Link>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button className="gap-2 bg-primary hover:bg-primary/90">
+              <Button className="h-10 gap-2 bg-primary hover:bg-primary/90 shrink-0">
                 <PlusCircle className="w-4 h-4" />
-                New
+                <span className="hidden xl:inline">New Assessment</span>
+                <span className="xl:hidden">New</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 bg-card/95 backdrop-blur-md border-primary/20">
