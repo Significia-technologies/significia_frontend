@@ -27,7 +27,7 @@ interface TopbarProps {
   showLogo?: boolean;
 }
 
-export function Topbar({ showSearch = true, showLogo = false }: TopbarProps) {
+export function Topbar({ showSearch = false, showLogo = false }: TopbarProps) {
   const router = useRouter();
   const { user, clearUser, setMobileMenuOpen } = useAppStore();
 
