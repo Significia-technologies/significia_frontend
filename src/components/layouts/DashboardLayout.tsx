@@ -35,8 +35,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     setMobileMenuOpen(false);
   }, [pathname, setMobileMenuOpen]);
 
+  // ── Session Restoration (Run only on mount) ──
   React.useEffect(() => {
-    const initAuth = async () => {
+    const restoreSession = async () => {
+      // 1. Handle URL tokens (from email links)
       if (typeof window !== "undefined") {
         const urlParams = new URLSearchParams(window.location.search);
         const urlToken = urlParams.get("token");
@@ -47,26 +49,24 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           if (urlRefreshToken) {
             localStorage.setItem("refreshToken", urlRefreshToken);
           }
-          // Clean the URL so tokens don't sit in the browser history
           window.history.replaceState({}, document.title, window.location.pathname);
         }
       }
 
       const token = localStorage.getItem("accessToken");
-      
       if (!token) {
         clearUser();
         router.push("/login");
         return;
       }
-      
+
+      // 2. Fetch user if not in store
       if (!user) {
         try {
           const hostname = window.location.hostname;
           const parts = hostname.split('.');
           const isSubdomain = parts.length >= 3 || (parts.length >= 2 && hostname.includes('localhost') && parts[0] !== 'www' && parts[0] !== 'app');
 
-          // If token exists but Zustand is empty (e.g. hard refresh), restore session
           let authUser;
           if (isSubdomain) {
             try {
@@ -77,52 +77,38 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           } else {
              authUser = await AuthService.getCurrentUser();
           }
-
           setUser(authUser);
-          
-          if (authUser.role === "super_admin") {
-            router.push("/admin");
-            return;
-          }
-        } catch (err: any) {
+        } catch (err) {
           console.error("Failed to restore session", err);
-          const errorDetail = err.response?.data?.detail;
-          
-          if (errorDetail === "SESSION_INVALIDATED") {
-            // Optional: You can set a global notify state here to show a toast
-            console.warn("Session invalidated by another device.");
-          }
-          
           clearUser();
           router.push("/login");
           return;
-        }
-      } else if (user.role === "super_admin") {
-        router.push("/admin");
-        return;
-      }
-      
-      // ── Profile Completion Gate ──
-      // If IA Owner has not completed their profile, force them to the Master Data page
-      if (user && user.role === "owner" && !user.is_profile_completed) {
-        if (!pathname.startsWith("/master") && pathname !== "/") {
-          router.push("/master");
         }
       }
       
       setIsInitializing(false);
     };
-    
-    initAuth();
-  }, [user, setUser, clearUser, router, pathname]);
 
-  if (isInitializing) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+    restoreSession();
+  }, [user, setUser, clearUser, router]); // Only runs when user state is missing
+
+  // ── Routing Gates (Run on every pathname change) ──
+  React.useEffect(() => {
+    if (isInitializing || !user) return;
+
+    // 1. Super Admin Redirection (Force to admin portal if they hit dashboard root)
+    if (user.role === "super_admin" && pathname === "/") {
+      router.push("/admin");
+      return;
+    }
+
+    // 2. IA Owner Profile Gate
+    if (user.role === "owner" && !user.is_profile_completed) {
+      if (!pathname.startsWith("/master") && pathname !== "/") {
+        router.push("/master");
+      }
+    }
+  }, [user, pathname, isInitializing, router]);
 
   return (
     <TooltipProvider>
@@ -151,31 +137,39 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           )}
         >
           {/* Top Navigation */}
-        {/* ── Top Navigation ── */}
-        <Topbar />
+          <Topbar />
 
-        {/* ── Profile Incomplete Warning ── */}
-        {user?.role === "owner" && !user.is_profile_completed && (
-          <div className="mx-4 mt-4 md:mx-6">
-            <div className="flex items-center gap-3 rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 text-amber-600 dark:text-amber-400">
-              <ShieldCheck className="h-5 w-5 shrink-0" />
-              <div className="flex-1 text-sm font-medium">
-                Your IA Master profile is incomplete. Please provide your Registration and Bank details to unlock all features.
+          {/* Page Content */}
+          <main className="flex-1 p-3 md:p-4">
+            {isInitializing ? (
+              <div className="flex h-[60vh] items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="h-7 border-amber-500/50 hover:bg-amber-500/20 text-[10px] uppercase font-bold"
-                onClick={() => router.push("/master/ia-master/new")}
-              >
-                Complete Profile
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Page Content */}
-        <main className="flex-1 p-3 md:p-4">{children}</main>
+            ) : (
+              <>
+                {/* ── Profile Incomplete Warning ── */}
+                {user?.role === "owner" && !user.is_profile_completed && (
+                  <div className="mb-6">
+                    <div className="flex items-center gap-3 rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 text-amber-600 dark:text-amber-400">
+                      <ShieldCheck className="h-5 w-5 shrink-0" />
+                      <div className="flex-1 text-sm font-medium">
+                        Your IA Master profile is incomplete. Please provide your Registration and Bank details to unlock all features.
+                      </div>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="h-7 border-amber-500/50 hover:bg-amber-500/20 text-[10px] uppercase font-bold"
+                        onClick={() => router.push("/master/ia-master/new")}
+                      >
+                        Complete Profile
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                {children}
+              </>
+            )}
+          </main>
         </div>
       </div>
     </TooltipProvider>

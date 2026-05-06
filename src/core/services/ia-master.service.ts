@@ -53,6 +53,10 @@ export interface IAMaster {
   ia_certificate_path?: string;
   ia_signature_path?: string;
   ia_logo_path?: string;
+  brand_color?: string;
+  portal_title?: string;
+  portal_description?: string;
+  favicon_path?: string;
   max_client_permit: number;
   current_client_count: number;
   created_at: string;

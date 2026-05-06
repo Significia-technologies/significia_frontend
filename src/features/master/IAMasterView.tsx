@@ -41,6 +41,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { getAssetUrl } from "@/core/api/api-utils";
+import { BrandingCard } from "./BrandingCard";
 
 export function IAMasterView() {
   const router = useRouter();
@@ -432,6 +433,9 @@ export function IAMasterView() {
           )}
         </CardContent>
       </Card>
+
+      {/* ── Brand Customization ────────────────────────── */}
+      <BrandingCard data={data} onRefresh={fetchData} />
 
     </div>
   );

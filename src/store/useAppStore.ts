@@ -36,6 +36,10 @@ interface AppState {
     is_master: boolean;
     logo_type: "significia" | "shield" | "custom";
     logo_url?: string | null;
+    brand_color?: string | null;
+    portal_title?: string | null;
+    portal_description?: string | null;
+    favicon_url?: string | null;
   } | null;
   setPublicBranding: (branding: AppState["publicBranding"]) => void;
 

@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Significia — Financial Analysis Software",
+  title: "Portal — Significia",
   description:
     "Enterprise-grade financial analytics, transaction management, and investment tracking dashboard.",
 };
