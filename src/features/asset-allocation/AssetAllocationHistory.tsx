@@ -12,7 +12,9 @@ import {
   ChevronRight,
   Loader2,
   Send,
-  RefreshCcw
+  PlusCircle,
+  RefreshCcw,
+  PieChart
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,10 +40,10 @@ import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 
 interface AssetAllocationHistoryProps {
-  
+  onNewAllocation: () => void;
 }
 
-export function AssetAllocationHistory({  }: AssetAllocationHistoryProps) {
+export function AssetAllocationHistory({ onNewAllocation }: AssetAllocationHistoryProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [allocations, setAllocations] = useState<AssetAllocation[]>([]);
@@ -199,21 +201,36 @@ export function AssetAllocationHistory({  }: AssetAllocationHistoryProps) {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h2 className="text-2xl font-black tracking-tight text-primary uppercase">
-            Allocation Vault
-          </h2>
-          <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest opacity-60">
-            Historical Asset Allocation Records & On-Demand Reports
-          </p>
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+        <div className="flex items-center gap-4">
+          <div className="p-2 rounded-xl bg-primary/10">
+            <PieChart className="w-8 h-8 text-primary" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-black tracking-tight text-primary uppercase">
+              Asset Allocation
+            </h2>
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest opacity-60">
+              Client Portfolio Distribution Management
+            </p>
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+
+        <div className="flex flex-row items-center gap-2 w-full lg:w-auto shrink-0">
+          <div className="relative flex-1 md:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground opacity-50" />
+            <Input
+              placeholder="Search by Code or Name..."
+              className="pl-10 h-10 bg-card/50 border-primary/10 font-medium"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+
           <Button
             id="download-blank-form-btn"
             variant="outline"
-            size="sm"
-            className="h-10 px-4 gap-2 border-primary/20 bg-primary/5 hover:bg-primary/10 transition-all text-[10px] font-black uppercase tracking-widest"
+            className="h-10 px-4 gap-2 border-primary/20 bg-primary/5 hover:bg-primary/10 transition-all text-[10px] font-black uppercase tracking-widest hidden xl:flex"
             onClick={async () => {
               setDownloading("BLANK");
               try {
@@ -232,17 +249,18 @@ export function AssetAllocationHistory({  }: AssetAllocationHistoryProps) {
             ) : (
               <Download className="w-4 h-4" />
             )}
-            Download Blank Form
+            Blank Form
           </Button>
-          <div className="relative w-full md:w-72">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground opacity-50" />
-            <Input
-              placeholder="Search by Code or Name..."
-              className="pl-10 bg-card/50 border-primary/10 font-medium"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
+
+          <Button
+            id="new-allocation-btn-history"
+            onClick={onNewAllocation}
+            className="h-10 gap-2 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 font-black uppercase text-[10px] tracking-widest px-6"
+          >
+            <PlusCircle className="w-4 h-4" />
+            <span className="hidden sm:inline">New Allocation</span>
+            <span className="sm:hidden">New</span>
+          </Button>
         </div>
       </div>
 
