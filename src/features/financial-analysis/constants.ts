@@ -2,7 +2,12 @@ export const RISK_PROFILE_DISCLAIMER = `This sample risk profile analysis report
 All projections and calculations are based on assumptions and are not guaranteed. Actual results may vary due to market conditions and other factors beyond the scope of this analysis.
 The Investment Adviser is responsible for reviewing, interpreting, and validating the data, assumptions, and outputs of this report.
 This document does not constitute legal or tax advice.
-This report is generated using a technology platform for computation and documentation purposes and does not provide or influence investment advice.`;
+This report is generated using a technology platform for computation and documentation purposes and does not provide or influence investment advice.
+Risk profiling is based solely on the client's responses to the questionnaire. The client has the right to agree or disagree with the resulting profile.
+
+Final risk profiling and suitability assessment shall be determined by the Investment Adviser based on client interaction and not solely on questionnaire output.
+
+This report does NOT provide specific asset allocation or product recommendations and should not be construed as investment advice.`;
 
 export const RISK_PROFILE_DISCUSSION_INIT = `Discussion Notes:
 
@@ -20,7 +25,12 @@ export const CUSTOM_RISK_PROFILE_DISCLAIMER = `This risk profile analysis report
 All projections and calculations are based on assumptions and are not guaranteed. Actual results may vary due to market conditions and other factors beyond the scope of this analysis.
 The Investment Adviser is responsible for reviewing, interpreting, and validating the data, assumptions, and outputs of this report.
 This document does not constitute legal or tax advice.
-This report is generated using a technology platform for computation and documentation purposes and does not provide or influence investment advice.`;
+This report is generated using a technology platform for computation and documentation purposes and does not provide or influence investment advice.
+Risk profiling is based solely on the client's responses to the questionnaire. The client has the right to agree or disagree with the resulting profile.
+
+Final risk profiling and suitability assessment shall be determined by the Investment Adviser based on client interaction and not solely on questionnaire output.
+
+This report does NOT provide specific asset allocation or product recommendations and should not be construed as investment advice.`;
 export const ASSET_ALLOCATION_DISCLAIMER = `This Asset Allocation report is generated based on data and assumptions provided by the Investment Adviser (RIA)/ Financial Advisor. This report provides computational and illustrative financial analysis based on inputs and assumptions provided by the Investment Adviser and/or client. It does not constitute investment advice, recommendation, or opinion on any investment products, strategies, or asset allocation. Any advisory services, interpretation, or recommendations are provided separately by the Investment Adviser. This report should be read in conjunction with advisory services provided separately by the Investment Adviser.This report is for information and illustrative purposes only.
 All projections and calculations are based on assumptions and are not guaranteed. Actual results may vary due to market conditions and other factors beyond the scope of this analysis.
 The Investment Adviser is responsible for reviewing, interpreting, and validating the data, assumptions, and outputs of this report.
