@@ -3,11 +3,11 @@
 import React, { useState, useEffect } from "react";
 import { ShieldCheck, PlusCircle, History, Settings, Plus, LayoutGrid, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { RiskProfileHistory } from "@/features/financial-analysis/RiskProfileHistory";
+import { RiskProfileHistory } from "@/features/risk-profile/RiskProfileHistory";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { RiskProfileForm } from "@/features/financial-analysis/RiskProfileForm";
-import { DynamicRiskForm } from "@/features/financial-analysis/CustomRiskForm/DynamicRiskForm";
+import { RiskProfileForm } from "@/features/risk-profile/RiskProfileForm";
+import { DynamicRiskForm } from "@/features/risk-profile/CustomRiskForm/DynamicRiskForm";
 import {
   DropdownMenu,
   DropdownMenuContent,

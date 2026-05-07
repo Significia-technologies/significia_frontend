@@ -3,9 +3,9 @@
 import React, { useState } from "react";
 import { ShieldCheck, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { QuestionnaireManagement } from "@/features/financial-analysis/RiskFormBuilder/QuestionnaireManagement";
-import { FormBuilderPage } from "@/features/financial-analysis/RiskFormBuilder/FormBuilderPage";
-import { DynamicRiskForm } from "@/features/financial-analysis/CustomRiskForm/DynamicRiskForm";
+import { QuestionnaireManagement } from "@/features/risk-profile/RiskFormBuilder/QuestionnaireManagement";
+import { FormBuilderPage } from "@/features/risk-profile/RiskFormBuilder/FormBuilderPage";
+import { DynamicRiskForm } from "@/features/risk-profile/CustomRiskForm/DynamicRiskForm";
 import Link from "next/link";
 
 type ManagementView = "LIST" | "BUILDER" | "PREVIEW";

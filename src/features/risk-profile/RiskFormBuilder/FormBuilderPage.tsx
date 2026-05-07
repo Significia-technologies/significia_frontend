@@ -26,7 +26,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { RiskProfileService } from "@/core/services/risk-profile.service";
-import { CUSTOM_RISK_PROFILE_DISCLAIMER} from "../constants";
+import { CUSTOM_RISK_PROFILE_DISCLAIMER} from "../../financial-analysis/constants";
 
 interface Option {
   id: string;

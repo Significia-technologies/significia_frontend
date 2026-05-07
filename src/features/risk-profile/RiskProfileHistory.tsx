@@ -62,44 +62,11 @@ export function RiskProfileHistory({ onNewAssessment, onNewCustomAssessment, que
   const [search, setSearch] = useState("");
   const [downloading, setDownloading] = useState<string | null>(null);
   const [emailing, setEmailing] = useState<string | null>(null);
-  const [initiating, setInitiating] = useState<string | null>(null);
 
   useEffect(() => {
     loadAssessments();
   }, []);
 
-  const handleInitiateRectification = async (item: any) => {
-    setInitiating(item.id);
-    try {
-      const draft = await RectificationService.initiate({
-        client_id: item.client_id,
-        module: "RISK",
-        record_id: item.id,
-        current_version: 1,
-        proposed_changes: [],
-        justification_details: { q1: "", q2: "", q3: "" },
-        impact_declaration: { 
-          financial: false, 
-          risk: true,
-          asset_allocation: false,
-          portfolio: false,
-          product_basket: false,
-          target_portfolio: false,
-          other: false
-        },
-        confirmation_mode: "Data Correction",
-        is_investor_requested: false,
-        initiation_reason: "Internal rectification initiated from Risk Profile vault"
-      });
-
-      toast.success("Rectification Draft Created (E-Serial No Assigned)");
-      router.push(`/rectification/${draft.id}`);
-    } catch (error) {
-      toast.error("Failed to initiate rectification protocol");
-    } finally {
-      setInitiating(null);
-    }
-  };
 
   const loadAssessments = async () => {
     setLoading(true);
@@ -325,20 +292,7 @@ export function RiskProfileHistory({ onNewAssessment, onNewCustomAssessment, que
                           )}
                           <span className="text-[9px] font-black uppercase">Email</span>
                         </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="h-8 px-2 gap-1.5 border-amber-500/10 hover:border-amber-500/30 hover:bg-amber-500/5 transition-all"
-                          onClick={() => handleInitiateRectification(a)}
-                          disabled={!!initiating}
-                        >
-                          {initiating === a.id ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-500" />
-                          ) : (
-                            <RefreshCcw className="w-3.5 h-3.5 text-amber-500" />
-                          )}
-                          <span className="text-[9px] font-black uppercase">Correct</span>
-                        </Button>
+
                       </div>
                     </TableCell>
                   </TableRow>

@@ -35,7 +35,7 @@ import {
   RISK_PROFILE_DISCLAIMER, 
   RISK_PROFILE_DISCUSSION_INIT, 
   Q2_FACTORS 
-} from "./constants";
+} from "../financial-analysis/constants";
 
 interface RiskProfileFormProps {
   
@@ -164,6 +164,7 @@ export function RiskProfileForm({ clientId }: RiskProfileFormProps) {
   
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [lastAssessmentId, setLastAssessmentId] = useState<string | null>(null);
+  const resultRef = React.useRef<HTMLDivElement>(null);
 
   // Load client if ID provided
   useEffect(() => {
@@ -220,6 +221,11 @@ export function RiskProfileForm({ clientId }: RiskProfileFormProps) {
       const resp = await RiskProfileService.calculate({ answers });
       setResult(resp);
       toast.success("Score calculated successfully!");
+      
+      // Smooth scroll to result
+      setTimeout(() => {
+        resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
     } catch (error) {
       toast.error("Failed to calculate score. Ensure all questions are answered.");
     } finally {
@@ -268,8 +274,8 @@ export function RiskProfileForm({ clientId }: RiskProfileFormProps) {
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       {/* Header Info */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="md:col-span-2 border-primary/20 shadow-lg bg-card/50 backdrop-blur-sm">
+      <div className="grid grid-cols-1 gap-6">
+        <Card className="border-primary/20 shadow-lg bg-card/50 backdrop-blur-sm">
           <CardContent className="pt-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div className="space-y-2">
@@ -297,23 +303,6 @@ export function RiskProfileForm({ clientId }: RiskProfileFormProps) {
               </div>
             </div>
           </CardContent>
-        </Card>
-
-        <Card className="border-primary/20 shadow-lg bg-primary/5 flex flex-col justify-center items-center p-6 text-center">
-          {result ? (
-            <div className="space-y-2 animate-in zoom-in duration-300">
-              <span className="text-[10px] font-bold uppercase tracking-widest opacity-60">Calculated Risk Score</span>
-              <div className="text-5xl font-black text-primary">{result.total_score}</div>
-              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 uppercase font-black tracking-tighter">
-                {result.risk_tier}
-              </Badge>
-            </div>
-          ) : (
-            <div className="space-y-3 opacity-40">
-              <Calculator className="w-12 h-12 mx-auto" />
-              <p className="text-xs font-bold uppercase tracking-tighter">Enter answers & calculate</p>
-            </div>
-          )}
         </Card>
       </div>
 
@@ -543,29 +532,57 @@ export function RiskProfileForm({ clientId }: RiskProfileFormProps) {
         <CardContent className="space-y-6">
           <div className="space-y-2">
             <Label className="text-xs uppercase font-black tracking-widest opacity-50">Disclaimer to Risk Analysis (Sample only Editable)</Label>
-            <div 
-              className="p-4 rounded-md border border-primary/10 bg-muted/5 text-sm leading-relaxed whitespace-pre-line min-h-[100px]"
-              contentEditable
-              onBlur={e => setDisclaimer(e.currentTarget.innerText)}
-            >
-              {disclaimer}
-            </div>
+            <Textarea 
+              className="p-4 rounded-md border border-primary/10 bg-muted/5 text-sm leading-relaxed min-h-[120px] focus-visible:ring-primary/20"
+              value={disclaimer}
+              onChange={e => setDisclaimer(e.target.value)}
+            />
           </div>
           <div className="space-y-2">
             <Label className="text-xs uppercase font-black tracking-widest opacity-50">Discussion Notes (500 Words Max)</Label>
-             <div 
-              className="p-4 rounded-md border border-primary/10 bg-muted/5 text-sm leading-relaxed whitespace-pre-line min-h-[100px]"
-              contentEditable
-              onBlur={e => setDiscussionNotes(e.currentTarget.innerText)}
-            >
-              {discussionNotes}
-            </div>
-            {/* <Textarea 
-              className="p-4 rounded-md border border-primary/10 bg-muted/5 text-sm leading-relaxed whitespace-pre-line min-h-[300px"
+             <Textarea 
+              className="p-4 rounded-md border border-primary/10 bg-muted/5 text-sm leading-relaxed min-h-[200px] focus-visible:ring-primary/20"
               value={discussionNotes}
               onChange={e => setDiscussionNotes(e.target.value)}
-            /> */}
+              placeholder="Enter final observations or client interaction context..."
+            />
           </div>          
+
+          {/* Moved Result Display to Bottom */}
+          <div ref={resultRef} className="animate-in fade-in duration-500 pt-4">
+            <div className="p-6 rounded-2xl border-2 border-primary/20 bg-primary/5 flex flex-col md:flex-row items-center justify-between gap-6 shadow-inner">
+               <div className="flex items-center gap-4">
+                  <div className="p-3 rounded-xl bg-primary/10">
+                    <Calculator className="w-8 h-8 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black uppercase tracking-tight">Risk Assessment Outcome</h3>
+                    <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest">Calculated based on 16 regulatory factors</p>
+                  </div>
+               </div>
+
+               {result ? (
+                  <div className="flex items-center gap-8 animate-in zoom-in duration-500">
+                    <div className="text-right">
+                      <span className="text-[10px] font-bold uppercase tracking-widest opacity-60 block">Total Score</span>
+                      <div className="text-4xl font-black text-primary">{result.total_score}</div>
+                    </div>
+                    <div className="h-12 w-[2px] bg-primary/20" />
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-widest opacity-60 block">Profile Tier</span>
+                      <Badge className="bg-primary text-black uppercase font-black tracking-tighter text-xs py-1">
+                        {result.risk_tier}
+                      </Badge>
+                    </div>
+                  </div>
+               ) : (
+                  <div className="flex items-center gap-3 opacity-40 italic">
+                    <span className="text-xs font-bold uppercase tracking-tighter">Click 'Calculate Risk' to see score</span>
+                    <AlertCircle className="w-4 h-4" />
+                  </div>
+               )}
+            </div>
+          </div>
         </CardContent>
         <CardFooter className="bg-primary/5 flex justify-between gap-4 py-4">
           <Button 

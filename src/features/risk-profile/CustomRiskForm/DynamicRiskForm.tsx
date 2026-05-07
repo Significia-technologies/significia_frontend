@@ -29,7 +29,7 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { MasterDataService } from "@/core/services/master.service";
 import { RiskProfileService } from "@/core/services/risk-profile.service";
-import { CUSTOM_RISK_PROFILE_DISCLAIMER } from "../constants";
+import { CUSTOM_RISK_PROFILE_DISCLAIMER } from "../../financial-analysis/constants";
 
 interface DynamicRiskFormProps {
   
@@ -341,43 +341,43 @@ export function DynamicRiskForm({ questionnaireId, questionnaire: initialQuestio
                   </div>
               </CardHeader>
               <CardContent className="p-4 space-y-4">
-                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="md:col-span-1 flex flex-col items-center justify-center p-4 rounded-xl bg-primary/10 border border-primary/20 shadow-inner">
-                       <span className="text-[7px] font-bold uppercase tracking-[0.2em] opacity-40 mb-1">Total Score</span>
-                       <span className="text-4xl font-black text-primary">{calculateTotalScore()}</span>
+                  <div className="space-y-2 overflow-y-auto max-h-[300px] pr-2 scrollbar-thin scrollbar-thumb-primary/10">
+                     <h4 className="text-[8px] font-black uppercase tracking-[0.3em] opacity-20 mb-1 px-1">Response Audit</h4>
+                     {questionnaire.questions.map((q: any, i: number) => (
+                       <div key={q.id} className="flex items-center justify-between p-2 rounded-lg bg-white/[0.02] border border-white/5 group hover:bg-primary/5 transition-all">
+                          <div className="flex items-center gap-3 min-w-0">
+                             <span className="text-[9px] font-black text-primary/40 w-4">{i + 1}</span>
+                             <div className="min-w-0">
+                                <p className="text-[10px] font-black text-foreground/80 truncate max-w-[150px] uppercase tracking-tight">{q.text}</p>
+                                <p className="text-[8px] font-bold text-primary truncate max-w-[150px] uppercase">{responses[q.id]?.text || 'No Answer'}</p>
+                             </div>
+                          </div>
+                          <Button 
+                             variant="ghost" 
+                             size="icon" 
+                             onClick={() => setCurrentStep(i)}
+                             className="h-6 w-6 rounded-md hover:bg-primary hover:text-black transition-all opacity-0 group-hover:opacity-100 shrink-0"
+                          >
+                             <Edit2 className="w-3 h-3" />
+                          </Button>
+                       </div>
+                     ))}
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 pt-4">
+                    <div className="flex flex-col items-center justify-center p-6 rounded-2xl bg-primary/10 border border-primary/20 shadow-inner">
+                       <span className="text-[9px] font-black uppercase tracking-[0.2em] opacity-40 mb-2">Calculated Total Score</span>
+                       <span className="text-5xl font-black text-primary">{calculateTotalScore()}</span>
                        {currentCategory && (
                           <Badge 
-                            className="mt-2 px-2 h-4 uppercase font-bold tracking-tight text-[8px] border-none shadow-none"
-                            style={{ backgroundColor: currentCategory.color + '15', color: currentCategory.color }}
+                            className="mt-3 px-3 h-6 uppercase font-black tracking-tight text-[10px] border-none shadow-lg"
+                            style={{ backgroundColor: currentCategory.color, color: 'black' }}
                           >
                             {currentCategory.name}
                           </Badge>
                        )}
                     </div>
-
-                    <div className="md:col-span-2 space-y-2 overflow-y-auto max-h-[220px] pr-2 scrollbar-thin scrollbar-thumb-primary/10">
-                       <h4 className="text-[8px] font-black uppercase tracking-[0.3em] opacity-20 mb-1 px-1">Response Audit</h4>
-                       {questionnaire.questions.map((q: any, i: number) => (
-                         <div key={q.id} className="flex items-center justify-between p-2 rounded-lg bg-white/[0.02] border border-white/5 group hover:bg-primary/5 transition-all">
-                            <div className="flex items-center gap-3 min-w-0">
-                               <span className="text-[9px] font-black text-primary/40 w-4">{i + 1}</span>
-                               <div className="min-w-0">
-                                  <p className="text-[10px] font-black text-foreground/80 truncate max-w-[150px] uppercase tracking-tight">{q.text}</p>
-                                  <p className="text-[8px] font-bold text-primary truncate max-w-[150px] uppercase">{responses[q.id]?.text || 'No Answer'}</p>
-                               </div>
-                            </div>
-                            <Button 
-                               variant="ghost" 
-                               size="icon" 
-                               onClick={() => setCurrentStep(i)}
-                               className="h-6 w-6 rounded-md hover:bg-primary hover:text-black transition-all opacity-0 group-hover:opacity-100 shrink-0"
-                            >
-                               <Edit2 className="w-3 h-3" />
-                            </Button>
-                         </div>
-                       ))}
-                    </div>
-                 </div>
+                  </div>
 
                  <div className="space-y-4">
                      <div className="space-y-3">
