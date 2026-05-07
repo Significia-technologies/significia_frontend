@@ -79,8 +79,9 @@ function AllocationInput({ label, id, value, onChange, max = 100, colorClass = "
           step={0.5}
           value={value === 0 ? "" : value}
           onChange={handleChange}
+          onWheel={(e) => e.currentTarget.blur()}
           placeholder="0"
-          className="w-20 h-8 rounded-lg border border-primary/15 bg-card/50 px-2.5 text-right text-sm font-black tabular-nums focus:outline-none focus:border-primary/40 transition-colors"
+          className="w-20 h-8 rounded-lg border border-primary/15 bg-card/50 px-2.5 text-right text-sm font-black tabular-nums focus:outline-none focus:border-primary/40 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
         />
       </div>
     </div>
