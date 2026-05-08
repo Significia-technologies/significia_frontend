@@ -15,8 +15,16 @@ import {
   MessageSquare,
   PieChart as PieChartIcon,
   Edit3,
-  Mail
+  Mail,
+  ChevronDown
 } from "lucide-react";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger, 
+  DropdownMenuSeparator 
+} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -134,61 +142,69 @@ export function AnalysisDashboard({ result, clientName, onEdit }: AnalysisDashbo
           <h2 className="text-3xl font-extrabold tracking-tight text-foreground">Analysis Results</h2>
           <p className="text-muted-foreground mt-1">Comprehensive financial roadmap for {clientName}</p>
         </div>
-        <div className="flex gap-3">
-          <Button 
-            variant="outline" 
-            className="gap-2 border-primary/20 bg-background/50"
-            onClick={() => handleDownload('pdf')}
-            disabled={!!downloading}
-          >
-            {downloading === 'pdf' ? <span className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" /> : <Download className="w-4 h-4" />}
-            PDF Report
-          </Button>
-          <Button 
-            variant="outline" 
-            className="gap-2 border-primary/20 bg-background/50"
-            onClick={() => handleDownload('word')}
-            disabled={!!downloading}
-          >
-            {downloading === 'word' ? <span className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" /> : <Download className="w-4 h-4" />}
-            Word Report
-          </Button>
-          
-          <Button 
-            variant="outline" 
-            className="gap-2 border-primary/20 bg-background/50 text-secondary hover:bg-secondary/5"
-            onClick={() => onEdit?.(result)}
-          >
-            <Edit3 className="w-4 h-4" />
-            Edit as New Version
-          </Button>
+        <div className="flex gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="default" className="gap-2 shadow-lg shadow-primary/20">
+                Actions
+                <ChevronDown className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 border-primary/20">
+              <DropdownMenuItem 
+                className="gap-2" 
+                onClick={() => handleDownload('pdf')}
+                disabled={!!downloading}
+              >
+                {downloading === 'pdf' ? <span className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" /> : <Download className="w-4 h-4" />}
+                Download PDF Report
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                className="gap-2" 
+                onClick={() => handleDownload('word')}
+                disabled={!!downloading}
+              >
+                {downloading === 'word' ? <span className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" /> : <Download className="w-4 h-4" />}
+                Download Word Report
+              </DropdownMenuItem>
+              
+              <DropdownMenuSeparator />
+              
+              <DropdownMenuItem 
+                className="gap-2" 
+                onClick={() => onEdit?.(result)}
+              >
+                <Edit3 className="w-4 h-4 text-secondary" />
+                Edit as New Version
+              </DropdownMenuItem>
 
-          <Button 
-            variant="outline" 
-            className="gap-2 border-blue-500/20 bg-blue-500/5 text-blue-600 hover:bg-blue-500/10"
-            onClick={handleEmailReport}
-            disabled={delivering}
-          >
-            {delivering ? (
-              <span className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <Mail className="w-4 h-4" />
-            )}
-            Email Client
-          </Button>
+              <DropdownMenuItem 
+                className="gap-2 text-blue-600 focus:text-blue-600 focus:bg-blue-500/5" 
+                onClick={handleEmailReport}
+                disabled={delivering}
+              >
+                {delivering ? (
+                  <span className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Mail className="w-4 h-4" />
+                )}
+                Email to Client
+              </DropdownMenuItem>
 
-          <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-            <DialogTrigger asChild>
-              <Button 
-                variant="default" 
-                className="gap-2 shadow-lg shadow-primary/20"
+              <DropdownMenuSeparator />
+
+              <DropdownMenuItem 
+                className="gap-2 font-bold text-primary focus:text-primary focus:bg-primary/5" 
                 onClick={fetchCalculationDetails}
                 disabled={loadingCalc}
               >
-                {loadingCalc ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <BrainCircuit className="w-4 h-4" />}
-                View Calculation
-              </Button>
-            </DialogTrigger>
+                {loadingCalc ? <span className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" /> : <BrainCircuit className="w-4 h-4" />}
+                View Calculation Logic
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
             <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[90vh] sm:max-h-[80vh] overflow-hidden flex flex-col">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
