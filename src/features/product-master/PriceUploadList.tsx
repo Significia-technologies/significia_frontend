@@ -6,10 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PriceUploadType, AnyPriceRecord, PriceUploadService } from "@/core/services/product-master.service";
-import { PriceUploadFormModal } from "./PriceUploadFormModal";
 import { PriceExcelImportModal } from "./PriceExcelImportModal";
 import { CustomCheckbox } from "@/components/ui/CustomCheckbox";
-import { Download, Plus, Upload } from "lucide-react";
+import { Download, Upload } from "lucide-react";
 
 interface Props {
   priceType: PriceUploadType;
@@ -44,7 +43,6 @@ export function PriceUploadList({ priceType }: Props) {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
 
-  const [addOpen, setAddOpen] = useState(false);
   const [excelOpen, setExcelOpen] = useState(false);
   const [toggling, setToggling] = useState<string | null>(null);
 
@@ -102,10 +100,6 @@ export function PriceUploadList({ priceType }: Props) {
           <Upload className="h-3.5 w-3.5" />
           Excel Import
         </Button>
-        <Button size="sm" onClick={() => setAddOpen(true)} className="gap-1.5">
-          <Plus className="h-3.5 w-3.5" />
-          Add
-        </Button>
       </div>
 
       {/* Table */}
@@ -162,12 +156,6 @@ export function PriceUploadList({ priceType }: Props) {
       </div>
 
       {/* Modals */}
-      <PriceUploadFormModal
-        open={addOpen}
-        onClose={() => setAddOpen(false)}
-        priceType={priceType}
-        onSaved={fetchItems}
-      />
       <PriceExcelImportModal
         open={excelOpen}
         onClose={() => setExcelOpen(false)}
