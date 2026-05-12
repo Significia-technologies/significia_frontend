@@ -226,6 +226,20 @@ export const API_ENDPOINTS = {
       `${API_BASE}/data-rectification/current-values/${module}/${recordId}`,
   },
 
+  // ── Product Master ─────────────────────────────────────────────
+  PRODUCT_MASTER: {
+    LIST: (type: string) => `${API_BASE}/product-master/products/${type}`,
+    CREATE: (type: string) => `${API_BASE}/product-master/products/${type}`,
+    UPDATE: (type: string, id: string) => `${API_BASE}/product-master/products/${type}/${id}`,
+    TOGGLE: (type: string, id: string) => `${API_BASE}/product-master/products/${type}/${id}/toggle`,
+    REPORTS_LIST: (type: string, id: string) => `${API_BASE}/product-master/products/${type}/${id}/reports`,
+    REPORTS_UPLOAD: (type: string, id: string) => `${API_BASE}/product-master/products/${type}/${id}/reports`,
+    REPORT_DOWNLOAD: (reportId: string) => `${API_BASE}/product-master/products/reports/${reportId}/download`,
+    EXCEL_PREVIEW: (type: string) => `${API_BASE}/product-master/products/${type}/excel-preview`,
+    EXCEL_IMPORT: (type: string) => `${API_BASE}/product-master/products/${type}/excel-import`,
+    EXCEL_TEMPLATE: (type: string) => `${API_BASE}/product-master/products/${type}/excel-template`,
+  },
+
   // ── Email Management (IA Owner) ─────────────────────────────
   EMAIL: {
     SETTINGS: `${API_BASE}/email/settings`,
