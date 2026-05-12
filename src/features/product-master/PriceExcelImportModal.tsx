@@ -84,6 +84,7 @@ export function PriceExcelImportModal({ open, onClose, priceType, onImported }: 
 
   const newCount = rows.filter((r) => r.status === "new").length;
   const existingCount = rows.filter((r) => r.status === "existing").length;
+  const notInMasterCount = rows.filter((r) => r.status === "not_in_master").length;
   const dateErrorCount = rows.filter((r) => r.date_error).length;
   const columns = rows.length > 0 ? Object.keys(rows[0].data) : [];
 
@@ -129,6 +130,9 @@ export function PriceExcelImportModal({ open, onClose, priceType, onImported }: 
               <span className="text-muted-foreground">{rows.length} rows found</span>
               <Badge variant="default">{newCount} New</Badge>
               <Badge variant="secondary">{existingCount} Existing (will be skipped)</Badge>
+              {notInMasterCount > 0 && (
+                <Badge className="bg-amber-500 text-white hover:bg-amber-500">{notInMasterCount} Not in Product Master (will be skipped)</Badge>
+              )}
               {dateErrorCount > 0 && (
                 <Badge variant="destructive">{dateErrorCount} Invalid Date (fix before importing)</Badge>
               )}
@@ -149,11 +153,19 @@ export function PriceExcelImportModal({ open, onClose, priceType, onImported }: 
                 </thead>
                 <tbody>
                   {rows.map((row, rowIndex) => (
-                    <tr key={rowIndex} className={`border-t border-border ${row.status === "existing" ? "bg-muted/40" : ""}`}>
-                      <td className="px-3 py-1.5 w-24 whitespace-nowrap">
-                        <Badge variant={row.status === "new" ? "default" : "secondary"} className="text-[10px]">
-                          {row.status === "new" ? "New" : "Existing"}
-                        </Badge>
+                    <tr
+                      key={rowIndex}
+                      className={`border-t border-border ${
+                        row.status === "existing" ? "bg-muted/40" :
+                        row.status === "not_in_master" ? "bg-amber-500/10" : ""
+                      }`}
+                    >
+                      <td className="px-3 py-1.5 w-32 whitespace-nowrap">
+                        {row.status === "new" && <Badge variant="default" className="text-[10px]">New</Badge>}
+                        {row.status === "existing" && <Badge variant="secondary" className="text-[10px]">Existing</Badge>}
+                        {row.status === "not_in_master" && (
+                          <Badge className="text-[10px] bg-amber-500 text-white hover:bg-amber-500">Not in Master</Badge>
+                        )}
                       </td>
                       {columns.map((col) => {
                         const isDateCol = col === "price_date";

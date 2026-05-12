@@ -40,7 +40,7 @@ export type AnyPriceRecord = SharePriceRecord | NavUploadRecord | ETFPriceRecord
 
 export interface PriceExcelPreviewRow {
   data: Record<string, string>;
-  status: "new" | "existing";
+  status: "new" | "existing" | "not_in_master";
   date_error?: boolean;
 }
 
