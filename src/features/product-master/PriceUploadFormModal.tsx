@@ -1,7 +1,11 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -22,24 +26,106 @@ const INITIAL: Record<PriceUploadType, FormState> = {
   "etf-prices":   { isin_code: "", symbol: "", price_date: "", etf_price: "" },
 };
 
-const DATE_REGEX = /^\d{2}-\d{2}-\d{4}$/;
+// ── Date helpers ────────────────────────────────────────────────────
+
+function autoFormatDate(raw: string): string {
+  const digits = raw.replace(/\D/g, "").slice(0, 8);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return `${digits.slice(0, 2)}-${digits.slice(2)}`;
+  return `${digits.slice(0, 2)}-${digits.slice(2, 4)}-${digits.slice(4)}`;
+}
+
+function validateDate(dateStr: string): string | null {
+  if (!/^\d{2}-\d{2}-\d{4}$/.test(dateStr)) return "Enter a complete date in DD-MM-YYYY format.";
+  const [dd, mm, yyyy] = dateStr.split("-").map(Number);
+  if (mm < 1 || mm > 12) return `Month "${mm}" is invalid — must be 01 to 12.`;
+  const daysInMonth = new Date(yyyy, mm, 0).getDate();
+  if (dd < 1 || dd > daysInMonth) {
+    const monthName = new Date(yyyy, mm - 1, 1).toLocaleString("en-IN", { month: "long" });
+    return `${monthName} ${yyyy} only has ${daysInMonth} days.`;
+  }
+  return null;
+}
+
+function parseDDMMYYYY(dateStr: string): Date | undefined {
+  if (!/^\d{2}-\d{2}-\d{4}$/.test(dateStr)) return undefined;
+  const [dd, mm, yyyy] = dateStr.split("-").map(Number);
+  const d = new Date(yyyy, mm - 1, dd);
+  if (d.getDate() !== dd || d.getMonth() !== mm - 1 || d.getFullYear() !== yyyy) return undefined;
+  return d;
+}
+
+// ── DateField component — text input + calendar popover ─────────────
+
+function DateField({
+  value,
+  onChange,
+  error,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  error?: string | null;
+}) {
+  const [open, setOpen] = useState(false);
+
+  const selectedDate = useMemo(() => parseDDMMYYYY(value), [value]);
+
+  function handleTextChange(raw: string) {
+    onChange(autoFormatDate(raw));
+  }
+
+  function handleCalendarSelect(date: Date | undefined) {
+    if (date) {
+      onChange(format(date, "dd-MM-yyyy"));
+      setOpen(false);
+    }
+  }
+
+  return (
+    <div className="space-y-1">
+      <div className="flex gap-2">
+        <Input
+          value={value}
+          onChange={(e) => handleTextChange(e.target.value)}
+          placeholder="e.g. 15-01-2025"
+          className={error ? "border-destructive focus-visible:ring-destructive" : ""}
+        />
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <Button type="button" variant="outline" size="icon" className="shrink-0">
+              <CalendarIcon className="h-4 w-4" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-auto p-0">
+            <Calendar
+              mode="single"
+              selected={selectedDate}
+              onSelect={handleCalendarSelect}
+              captionLayout="dropdown"
+              fromYear={2000}
+              toYear={new Date().getFullYear() + 5}
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
+      {error && <p className="text-xs text-destructive">{error}</p>}
+    </div>
+  );
+}
+
+// ── Main modal ──────────────────────────────────────────────────────
 
 export function PriceUploadFormModal({ open, onClose, priceType, onSaved }: Props) {
   const [form, setForm] = useState<FormState>(INITIAL[priceType]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [dateError, setDateError] = useState<string | null>(null);
 
   useEffect(() => {
     setForm({ ...INITIAL[priceType] });
     setError("");
+    setDateError(null);
   }, [open, priceType]);
-
-  function formatDate(raw: string): string {
-    const digits = raw.replace(/\D/g, "").slice(0, 8);
-    if (digits.length <= 2) return digits;
-    if (digits.length <= 4) return `${digits.slice(0, 2)}-${digits.slice(2)}`;
-    return `${digits.slice(0, 2)}-${digits.slice(2, 4)}-${digits.slice(4)}`;
-  }
 
   function handleChange(field: string, raw: string) {
     let val = raw;
@@ -47,8 +133,14 @@ export function PriceUploadFormModal({ open, onClose, priceType, onSaved }: Prop
     else if (field === "symbol") val = raw.toUpperCase();
     else if (field === "scheme_code") val = raw.toUpperCase();
     else if (field === "scheme_name") val = raw.replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
-    else if (field === "price_date") val = formatDate(raw);
     setForm((prev) => ({ ...prev, [field]: val }));
+  }
+
+  function handleDateChange(val: string) {
+    setForm((prev) => ({ ...prev, price_date: val }));
+    // Show inline error only once user has typed a full date
+    if (val.length === 10) setDateError(validateDate(val));
+    else setDateError(null);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -62,8 +154,9 @@ export function PriceUploadFormModal({ open, onClose, priceType, onSaved }: Prop
       }
     }
 
-    if (!DATE_REGEX.test(form.price_date)) {
-      setError("Date must be in DD-MM-YYYY format (e.g. 15-01-2025).");
+    const dateValidation = validateDate(form.price_date);
+    if (dateValidation) {
+      setDateError(dateValidation);
       return;
     }
 
@@ -99,7 +192,7 @@ export function PriceUploadFormModal({ open, onClose, priceType, onSaved }: Prop
                 <Input value={form.symbol} onChange={(e) => handleChange("symbol", e.target.value)} placeholder="e.g. RELIANCE" />
               </Field>
               <Field label="Date" required hint="Auto-formats DD-MM-YYYY">
-                <Input value={form.price_date} onChange={(e) => handleChange("price_date", e.target.value)} placeholder="e.g. 15-01-2025" />
+                <DateField value={form.price_date} onChange={handleDateChange} error={dateError} />
               </Field>
               <Field label="Share Price" required>
                 <Input type="number" step="any" min="0" value={form.share_price} onChange={(e) => handleChange("share_price", e.target.value)} placeholder="e.g. 2850.50" />
@@ -116,7 +209,7 @@ export function PriceUploadFormModal({ open, onClose, priceType, onSaved }: Prop
                 <Input value={form.scheme_name} onChange={(e) => handleChange("scheme_name", e.target.value)} placeholder="e.g. Hdfc Mid-Cap Opportunities Fund" />
               </Field>
               <Field label="Date" required hint="Auto-formats DD-MM-YYYY">
-                <Input value={form.price_date} onChange={(e) => handleChange("price_date", e.target.value)} placeholder="e.g. 15-01-2025" />
+                <DateField value={form.price_date} onChange={handleDateChange} error={dateError} />
               </Field>
               <Field label="NAV" required>
                 <Input type="number" step="any" min="0" value={form.nav} onChange={(e) => handleChange("nav", e.target.value)} placeholder="e.g. 145.23" />
@@ -133,7 +226,7 @@ export function PriceUploadFormModal({ open, onClose, priceType, onSaved }: Prop
                 <Input value={form.symbol} onChange={(e) => handleChange("symbol", e.target.value)} placeholder="e.g. NIFTYBEES" />
               </Field>
               <Field label="Date" required hint="Auto-formats DD-MM-YYYY">
-                <Input value={form.price_date} onChange={(e) => handleChange("price_date", e.target.value)} placeholder="e.g. 15-01-2025" />
+                <DateField value={form.price_date} onChange={handleDateChange} error={dateError} />
               </Field>
               <Field label="ETF Price" required>
                 <Input type="number" step="any" min="0" value={form.etf_price} onChange={(e) => handleChange("etf_price", e.target.value)} placeholder="e.g. 248.75" />
