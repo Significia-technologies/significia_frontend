@@ -55,9 +55,15 @@ export function PriceExcelImportModal({ open, onClose, priceType, onImported }: 
 
   function handleCellEdit(rowIndex: number, field: string, value: string) {
     setRows((prev) =>
-      prev.map((row, i) =>
-        i === rowIndex ? { ...row, data: { ...row.data, [field]: value } } : row
-      )
+      prev.map((row, i) => {
+        if (i !== rowIndex) return row;
+        const updated = { ...row, data: { ...row.data, [field]: value } };
+        // Clear date_error once user has typed a valid DD-MM-YYYY date
+        if (field === "price_date" && /^\d{2}-\d{2}-\d{4}$/.test(value)) {
+          updated.date_error = false;
+        }
+        return updated;
+      })
     );
   }
 
@@ -78,6 +84,7 @@ export function PriceExcelImportModal({ open, onClose, priceType, onImported }: 
 
   const newCount = rows.filter((r) => r.status === "new").length;
   const existingCount = rows.filter((r) => r.status === "existing").length;
+  const dateErrorCount = rows.filter((r) => r.date_error).length;
   const columns = rows.length > 0 ? Object.keys(rows[0].data) : [];
 
   return (
@@ -122,6 +129,9 @@ export function PriceExcelImportModal({ open, onClose, priceType, onImported }: 
               <span className="text-muted-foreground">{rows.length} rows found</span>
               <Badge variant="default">{newCount} New</Badge>
               <Badge variant="secondary">{existingCount} Existing (will be skipped)</Badge>
+              {dateErrorCount > 0 && (
+                <Badge variant="destructive">{dateErrorCount} Invalid Date (fix before importing)</Badge>
+              )}
               <span className="text-xs text-muted-foreground italic">You can edit any cell before importing.</span>
             </div>
 
@@ -145,22 +155,38 @@ export function PriceExcelImportModal({ open, onClose, priceType, onImported }: 
                           {row.status === "new" ? "New" : "Existing"}
                         </Badge>
                       </td>
-                      {columns.map((col) => (
-                        <td key={col} className="px-1.5 py-1" style={{ minWidth: 160 }}>
-                          {row.status === "new" ? (
-                            <input
-                              type="text"
-                              value={row.data[col] ?? ""}
-                              onChange={(e) => handleCellEdit(rowIndex, col, e.target.value)}
-                              className="w-full rounded border border-transparent bg-transparent px-2 py-0.5 text-sm text-foreground outline-none transition-colors hover:border-border focus:border-primary focus:bg-background"
-                            />
-                          ) : (
-                            <span className="block px-2 py-0.5 text-muted-foreground truncate" style={{ maxWidth: 200 }}>
-                              {row.data[col] ?? ""}
-                            </span>
-                          )}
-                        </td>
-                      ))}
+                      {columns.map((col) => {
+                        const isDateCol = col === "price_date";
+                        const hasDateError = isDateCol && row.date_error;
+                        return (
+                          <td key={col} className="px-1.5 py-1" style={{ minWidth: 160 }}>
+                            {row.status === "new" ? (
+                              <div className="relative">
+                                <input
+                                  type="text"
+                                  value={row.data[col] ?? ""}
+                                  onChange={(e) => handleCellEdit(rowIndex, col, e.target.value)}
+                                  className={`w-full rounded border px-2 py-0.5 text-sm outline-none transition-colors hover:border-border focus:bg-background ${
+                                    hasDateError
+                                      ? "border-destructive bg-destructive/10 text-destructive focus:border-destructive placeholder:text-destructive/60"
+                                      : "border-transparent bg-transparent text-foreground focus:border-primary"
+                                  }`}
+                                  placeholder={hasDateError ? "Fix: DD-MM-YYYY" : undefined}
+                                />
+                                {hasDateError && (
+                                  <span className="absolute -bottom-4 left-0 text-[10px] text-destructive whitespace-nowrap">
+                                    Use DD-MM-YYYY format
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="block px-2 py-0.5 text-muted-foreground truncate" style={{ maxWidth: 200 }}>
+                                {row.data[col] ?? ""}
+                              </span>
+                            )}
+                          </td>
+                        );
+                      })}
                     </tr>
                   ))}
                 </tbody>

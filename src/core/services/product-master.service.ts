@@ -41,6 +41,7 @@ export type AnyPriceRecord = SharePriceRecord | NavUploadRecord | ETFPriceRecord
 export interface PriceExcelPreviewRow {
   data: Record<string, string>;
   status: "new" | "existing";
+  date_error?: boolean;
 }
 
 export type ProductType = "shares" | "mutual-funds" | "etfs" | "life-insurance" | "health-insurance";
