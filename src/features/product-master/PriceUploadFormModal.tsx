@@ -70,10 +70,6 @@ function DateField({
 
   const selectedDate = useMemo(() => parseDDMMYYYY(value), [value]);
 
-  function handleTextChange(raw: string) {
-    onChange(autoFormatDate(raw));
-  }
-
   function handleCalendarSelect(date: Date | undefined) {
     if (date) {
       onChange(format(date, "dd-MM-yyyy"));
@@ -83,31 +79,36 @@ function DateField({
 
   return (
     <div className="space-y-1">
-      <div className="flex gap-2">
-        <Input
-          value={value}
-          onChange={(e) => handleTextChange(e.target.value)}
-          placeholder="e.g. 15-01-2025"
-          className={error ? "border-destructive focus-visible:ring-destructive" : ""}
-        />
-        <Popover open={open} onOpenChange={setOpen}>
+      <Popover open={open} onOpenChange={setOpen}>
+        <div className="relative">
+          <Input
+            value={value}
+            onChange={(e) => onChange(autoFormatDate(e.target.value))}
+            placeholder="e.g. 15-01-2025"
+            className={error ? "border-destructive focus-visible:ring-destructive pr-10" : "pr-10"}
+          />
           <PopoverTrigger asChild>
-            <Button type="button" variant="outline" size="icon" className="shrink-0">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground hover:text-foreground"
+            >
               <CalendarIcon className="h-4 w-4" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent align="end" className="w-auto p-0">
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={handleCalendarSelect}
-              captionLayout="dropdown"
-              fromYear={2000}
-              toYear={new Date().getFullYear() + 5}
-            />
-          </PopoverContent>
-        </Popover>
-      </div>
+        </div>
+        <PopoverContent side="bottom" align="end" sideOffset={6} className="w-auto p-0 z-[200]">
+          <Calendar
+            mode="single"
+            selected={selectedDate}
+            onSelect={handleCalendarSelect}
+            captionLayout="dropdown"
+            fromYear={2000}
+            toYear={new Date().getFullYear() + 5}
+          />
+        </PopoverContent>
+      </Popover>
       {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
   );
