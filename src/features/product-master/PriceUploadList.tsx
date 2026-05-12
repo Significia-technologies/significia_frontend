@@ -1,0 +1,179 @@
+"use client";
+
+import React, { useCallback, useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { PriceUploadType, AnyPriceRecord, PriceUploadService } from "@/core/services/product-master.service";
+import { PriceUploadFormModal } from "./PriceUploadFormModal";
+import { PriceExcelImportModal } from "./PriceExcelImportModal";
+import { CustomCheckbox } from "@/components/ui/CustomCheckbox";
+import { Download, Plus, Upload } from "lucide-react";
+
+interface Props {
+  priceType: PriceUploadType;
+}
+
+type ColumnDef = { key: string; label: string };
+
+const COLUMNS: Record<PriceUploadType, ColumnDef[]> = {
+  "share-prices": [
+    { key: "isin_code",   label: "ISIN Code" },
+    { key: "symbol",      label: "Symbol" },
+    { key: "price_date",  label: "Date" },
+    { key: "share_price", label: "Share Price" },
+  ],
+  "nav-uploads": [
+    { key: "scheme_code", label: "Scheme Code" },
+    { key: "scheme_name", label: "Scheme Name" },
+    { key: "price_date",  label: "Date" },
+    { key: "nav",         label: "NAV" },
+  ],
+  "etf-prices": [
+    { key: "isin_code",  label: "ISIN Code" },
+    { key: "symbol",     label: "Symbol" },
+    { key: "price_date", label: "Date" },
+    { key: "etf_price",  label: "ETF Price" },
+  ],
+};
+
+export function PriceUploadList({ priceType }: Props) {
+  const [items, setItems] = useState<AnyPriceRecord[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const [addOpen, setAddOpen] = useState(false);
+  const [excelOpen, setExcelOpen] = useState(false);
+  const [toggling, setToggling] = useState<string | null>(null);
+
+  const fetchItems = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await PriceUploadService.list(priceType, search || undefined);
+      setItems(res.items);
+      setTotal(res.total);
+    } catch {
+      // silently fail
+    } finally {
+      setLoading(false);
+    }
+  }, [priceType, search]);
+
+  useEffect(() => {
+    fetchItems();
+  }, [fetchItems]);
+
+  async function handleToggle(item: AnyPriceRecord) {
+    const id = (item as { id: string }).id;
+    setToggling(id);
+    try {
+      await PriceUploadService.toggle(priceType, id);
+      fetchItems();
+    } finally {
+      setToggling(null);
+    }
+  }
+
+  async function handleDownloadTemplate() {
+    await PriceUploadService.downloadExcelTemplate(priceType);
+  }
+
+  const columns = COLUMNS[priceType];
+
+  return (
+    <div className="space-y-4">
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center gap-2">
+        <Input
+          placeholder="Search..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="h-8 w-56 text-sm"
+        />
+        <span className="text-xs text-muted-foreground">{total} records</span>
+        <div className="flex-1" />
+        <Button variant="outline" size="sm" onClick={handleDownloadTemplate} className="gap-1.5">
+          <Download className="h-3.5 w-3.5" />
+          Template
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => setExcelOpen(true)} className="gap-1.5">
+          <Upload className="h-3.5 w-3.5" />
+          Excel Import
+        </Button>
+        <Button size="sm" onClick={() => setAddOpen(true)} className="gap-1.5">
+          <Plus className="h-3.5 w-3.5" />
+          Add
+        </Button>
+      </div>
+
+      {/* Table */}
+      <div className="rounded-md border border-border overflow-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              {columns.map((c) => (
+                <TableHead key={c.key}>{c.label}</TableHead>
+              ))}
+              <TableHead>Status</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading && (
+              <TableRow>
+                <TableCell colSpan={columns.length + 1} className="text-center text-sm text-muted-foreground py-8">
+                  Loading...
+                </TableCell>
+              </TableRow>
+            )}
+            {!loading && items.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={columns.length + 1} className="text-center text-sm text-muted-foreground py-8">
+                  No records found.
+                </TableCell>
+              </TableRow>
+            )}
+            {items.map((item) => {
+              const p = item as unknown as Record<string, unknown>;
+              const id = p.id as string;
+              return (
+                <TableRow key={id} className={!p.is_active ? "opacity-50" : ""}>
+                  {columns.map((c) => (
+                    <TableCell key={c.key} className="text-sm">{(p[c.key] as string) ?? ""}</TableCell>
+                  ))}
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <CustomCheckbox
+                        checked={!!p.is_active}
+                        onChange={() => handleToggle(item)}
+                        disabled={toggling === id}
+                      />
+                      <Badge variant={p.is_active ? "default" : "secondary"} className="text-[10px]">
+                        {p.is_active ? "Active" : "Inactive"}
+                      </Badge>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Modals */}
+      <PriceUploadFormModal
+        open={addOpen}
+        onClose={() => setAddOpen(false)}
+        priceType={priceType}
+        onSaved={fetchItems}
+      />
+      <PriceExcelImportModal
+        open={excelOpen}
+        onClose={() => setExcelOpen(false)}
+        priceType={priceType}
+        onImported={fetchItems}
+      />
+    </div>
+  );
+}
