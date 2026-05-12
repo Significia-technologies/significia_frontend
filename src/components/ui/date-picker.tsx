@@ -21,6 +21,8 @@ interface DatePickerProps {
   className?: string
   fromYear?: number
   toYear?: number
+  side?: "top" | "bottom" | "left" | "right"
+  align?: "start" | "center" | "end"
 }
 
 export function DatePicker({
@@ -31,6 +33,8 @@ export function DatePicker({
   className,
   fromYear = 1900,
   toYear = new Date().getFullYear() + 20,
+  side = "bottom",
+  align = "start",
 }: DatePickerProps) {
   // Parse the date string safely
   const selectedDate = React.useMemo(() => {
@@ -70,7 +74,14 @@ export function DatePicker({
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0 border-primary/20 shadow-xl" align="start">
+        <PopoverContent
+          className="w-auto p-0 border-primary/20 shadow-xl"
+          side={side}
+          align={align}
+          sideOffset={4}
+          collisionPadding={16}
+          avoidCollisions
+        >
           <Calendar
             mode="single"
             selected={selectedDate}

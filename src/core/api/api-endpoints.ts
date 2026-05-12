@@ -240,6 +240,24 @@ export const API_ENDPOINTS = {
     EXCEL_TEMPLATE: (type: string) => `${API_BASE}/product-master/products/${type}/excel-template`,
   },
 
+  // ── Investor Master (Portfolio) ────────────────────────────────
+  INVESTOR_MASTER: {
+    LIST: (clientId: string) => `${API_BASE}/portfolio/investor-members/${clientId}`,
+    CREATE: (clientId: string) => `${API_BASE}/portfolio/investor-members/${clientId}`,
+    TOGGLE: (clientId: string, memberId: string) =>
+      `${API_BASE}/portfolio/investor-members/${clientId}/${memberId}/toggle`,
+  },
+
+  // ── Investor IPS Documents (Portfolio) ───────────────────────────
+  INVESTOR_IPS: {
+    UPLOAD: (clientId: string, memberId: string) =>
+      `${API_BASE}/portfolio/investor-members/${clientId}/${memberId}/ips-upload`,
+    LIST: (clientId: string, memberId: string) =>
+      `${API_BASE}/portfolio/investor-members/${clientId}/${memberId}/ips-documents`,
+    DOWNLOAD: (clientId: string, memberId: string, docId: string) =>
+      `${API_BASE}/portfolio/investor-members/${clientId}/${memberId}/ips-download/${docId}`,
+  },
+
   // ── Price Uploads ──────────────────────────────────────────────
   PRICE_UPLOAD: {
     LIST: (type: string) => `${API_BASE}/product-master/price-uploads/${type}`,
