@@ -1,5 +1,9 @@
-import { UnderConstruction } from "@/components/shared/UnderConstruction";
+import { ProductMasterPage } from "@/features/product-master/ProductMasterPage";
+
+export const metadata = {
+  title: "Product Basket — Significia",
+};
 
 export default function ProductBasketPage() {
-  return <UnderConstruction pageName="Product Basket" />;
+  return <ProductMasterPage />;
 }
