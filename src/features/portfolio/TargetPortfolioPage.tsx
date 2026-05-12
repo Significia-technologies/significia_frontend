@@ -47,6 +47,7 @@ const TABS: { key: AssetClass; label: string }[] = [
 ];
 
 const OBJECTIVES = ["Retirement", "Child Marriage", "Child Education", "General"];
+const LIFE_OBJECTIVES = ["Retirement", "Child Education", "Child Marriage", "General", "HLV"];
 const LIFE_REASONS = ["HLV", "HLV + Savings", "Retirement", "HLV + Investment"];
 
 // ── Searchable Product Combobox ─────────────────────────────────────
@@ -195,6 +196,7 @@ function AddEntryDialog({
   const [productId, setProductId] = useState("");
   const [percentage, setPercentage] = useState("");
   const [objective, setObjective] = useState("");
+  const [lifeObjective, setLifeObjective] = useState("");
   const [reason, setReason] = useState("");
   const [remarks, setRemarks] = useState("");
 
@@ -227,6 +229,8 @@ function AddEntryDialog({
 
     if (assetClass !== "life_insurance" && assetClass !== "health_insurance" && !objective)
       return toast.error("Select an investment objective.");
+    if (assetClass === "life_insurance" && !lifeObjective)
+      return toast.error("Select an investment objective.");
     if (assetClass === "life_insurance" && !reason)
       return toast.error("Select reason for investment.");
 
@@ -234,7 +238,11 @@ function AddEntryDialog({
       asset_class: assetClass,
       product_id: productId,
       percentage: pct,
-      objective: assetClass === "health_insurance" ? "Health Cover" : objective || undefined,
+      objective: assetClass === "health_insurance"
+        ? "Health Cover"
+        : assetClass === "life_insurance"
+        ? lifeObjective
+        : objective || undefined,
       reason_for_investment: reason || undefined,
       remarks: remarks.trim() || undefined,
     };
@@ -321,16 +329,27 @@ function AddEntryDialog({
             </div>
           )}
 
-          {/* Reason (Life Insurance) */}
+          {/* Objective + Reason (Life Insurance) — side by side */}
           {assetClass === "life_insurance" && (
-            <div className="space-y-1.5">
-              <Label>Reason for Investment <span className="text-destructive">*</span></Label>
-              <Select value={reason} onValueChange={setReason}>
-                <SelectTrigger><SelectValue placeholder="Select reason" /></SelectTrigger>
-                <SelectContent>
-                  {LIFE_REASONS.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Investment Objective <span className="text-destructive">*</span></Label>
+                <Select value={lifeObjective} onValueChange={setLifeObjective}>
+                  <SelectTrigger><SelectValue placeholder="Select objective" /></SelectTrigger>
+                  <SelectContent>
+                    {LIFE_OBJECTIVES.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Reason for Investment <span className="text-destructive">*</span></Label>
+                <Select value={reason} onValueChange={setReason}>
+                  <SelectTrigger><SelectValue placeholder="Select reason" /></SelectTrigger>
+                  <SelectContent>
+                    {LIFE_REASONS.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           )}
 
@@ -420,7 +439,7 @@ function AssetClassTab({
     : assetClass === "health_insurance"
     ? "% Health Covered"
     : "% Investment";
-  const objectiveColLabel = assetClass === "life_insurance" ? "Reason" : "Objective";
+  const objectiveColLabel = assetClass === "life_insurance" ? "Objective / Reason" : "Objective";
 
   return (
     <div className="space-y-3">
@@ -492,7 +511,16 @@ function AssetClassTab({
                       </span>
                     </TableCell>
                     <TableCell className="text-sm">
-                      {e.reason_for_investment || e.objective || "—"}
+                      {assetClass === "life_insurance" ? (
+                        <div>
+                          <span>{e.objective || "—"}</span>
+                          {e.reason_for_investment && (
+                            <span className="block text-xs text-muted-foreground">{e.reason_for_investment}</span>
+                          )}
+                        </div>
+                      ) : (
+                        e.objective || "—"
+                      )}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground max-w-[160px]">
                       <span className="line-clamp-2">{e.remarks || "—"}</span>
@@ -556,7 +584,16 @@ function AssetClassTab({
                   </div>
                   <div>
                     <span className="text-muted-foreground">{objectiveColLabel}</span>
-                    <p className="mt-0.5">{e.reason_for_investment || e.objective || "—"}</p>
+                    {assetClass === "life_insurance" ? (
+                      <div className="mt-0.5">
+                        <p>{e.objective || "—"}</p>
+                        {e.reason_for_investment && (
+                          <p className="text-xs text-muted-foreground">{e.reason_for_investment}</p>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="mt-0.5">{e.objective || "—"}</p>
+                    )}
                   </div>
                   {e.remarks && (
                     <div className="col-span-2 mt-1">
