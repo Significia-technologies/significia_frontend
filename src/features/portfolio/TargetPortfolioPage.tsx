@@ -24,6 +24,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -49,6 +52,27 @@ const TABS: { key: AssetClass; label: string }[] = [
 const OBJECTIVES = ["Retirement", "Child Marriage", "Child Education", "General"];
 const LIFE_OBJECTIVES = ["Retirement", "Child Education", "Child Marriage", "General", "HLV"];
 const LIFE_REASONS = ["HLV", "HLV + Savings", "Retirement", "HLV + Investment"];
+
+// ── Suitability Cell with Tooltip ──────────────────────────────────
+
+const SUITABILITY_TRUNCATE = 30;
+
+function SuitabilityCell({ value }: { value: string | null | undefined }) {
+  if (!value) return <span className="text-muted-foreground">—</span>;
+  if (value.length <= SUITABILITY_TRUNCATE) return <span>{value}</span>;
+  return (
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="cursor-default underline decoration-dotted underline-offset-2">
+            {value.slice(0, SUITABILITY_TRUNCATE).trimEnd()}…
+          </span>
+        </TooltipTrigger>
+        <TooltipContent className="max-w-xs whitespace-normal">{value}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
 
 // ── Searchable Product Combobox ─────────────────────────────────────
 
@@ -522,8 +546,8 @@ function AssetClassTab({
                         e.objective || "—"
                       )}
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground max-w-[160px]">
-                      <span className="line-clamp-2">{e.remarks || "—"}</span>
+                    <TableCell className="text-sm text-muted-foreground">
+                      <SuitabilityCell value={e.remarks} />
                     </TableCell>
                     <TableCell>
                       <Badge variant={e.is_active ? "default" : "secondary"}>
@@ -597,8 +621,10 @@ function AssetClassTab({
                   </div>
                   {e.remarks && (
                     <div className="col-span-2 mt-1">
-                      <span className="text-muted-foreground">Remarks</span>
-                      <p className="mt-0.5">{e.remarks}</p>
+                      <span className="text-muted-foreground">Suitability</span>
+                      <p className="mt-0.5 text-xs">
+                        <SuitabilityCell value={e.remarks} />
+                      </p>
                     </div>
                   )}
                 </div>
