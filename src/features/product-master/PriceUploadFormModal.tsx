@@ -34,12 +34,20 @@ export function PriceUploadFormModal({ open, onClose, priceType, onSaved }: Prop
     setError("");
   }, [open, priceType]);
 
+  function formatDate(raw: string): string {
+    const digits = raw.replace(/\D/g, "").slice(0, 8);
+    if (digits.length <= 2) return digits;
+    if (digits.length <= 4) return `${digits.slice(0, 2)}-${digits.slice(2)}`;
+    return `${digits.slice(0, 2)}-${digits.slice(2, 4)}-${digits.slice(4)}`;
+  }
+
   function handleChange(field: string, raw: string) {
     let val = raw;
     if (field === "isin_code") val = raw.replace(/\D/g, "");
     else if (field === "symbol") val = raw.toUpperCase();
     else if (field === "scheme_code") val = raw.toUpperCase();
     else if (field === "scheme_name") val = raw.replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+    else if (field === "price_date") val = formatDate(raw);
     setForm((prev) => ({ ...prev, [field]: val }));
   }
 
@@ -90,8 +98,8 @@ export function PriceUploadFormModal({ open, onClose, priceType, onSaved }: Prop
               <Field label="Symbol" required hint="Auto uppercase">
                 <Input value={form.symbol} onChange={(e) => handleChange("symbol", e.target.value)} placeholder="e.g. RELIANCE" />
               </Field>
-              <Field label="Date" required hint="DD-MM-YYYY">
-                <Input value={form.price_date} onChange={(e) => handleChange("price_date", e.target.value)} placeholder="e.g. 15-01-2025" maxLength={10} />
+              <Field label="Date" required hint="Auto-formats DD-MM-YYYY">
+                <Input value={form.price_date} onChange={(e) => handleChange("price_date", e.target.value)} placeholder="e.g. 15-01-2025" />
               </Field>
               <Field label="Share Price" required>
                 <Input type="number" step="any" min="0" value={form.share_price} onChange={(e) => handleChange("share_price", e.target.value)} placeholder="e.g. 2850.50" />
@@ -107,8 +115,8 @@ export function PriceUploadFormModal({ open, onClose, priceType, onSaved }: Prop
               <Field label="Scheme Name" required hint="Auto title case">
                 <Input value={form.scheme_name} onChange={(e) => handleChange("scheme_name", e.target.value)} placeholder="e.g. Hdfc Mid-Cap Opportunities Fund" />
               </Field>
-              <Field label="Date" required hint="DD-MM-YYYY">
-                <Input value={form.price_date} onChange={(e) => handleChange("price_date", e.target.value)} placeholder="e.g. 15-01-2025" maxLength={10} />
+              <Field label="Date" required hint="Auto-formats DD-MM-YYYY">
+                <Input value={form.price_date} onChange={(e) => handleChange("price_date", e.target.value)} placeholder="e.g. 15-01-2025" />
               </Field>
               <Field label="NAV" required>
                 <Input type="number" step="any" min="0" value={form.nav} onChange={(e) => handleChange("nav", e.target.value)} placeholder="e.g. 145.23" />
@@ -124,8 +132,8 @@ export function PriceUploadFormModal({ open, onClose, priceType, onSaved }: Prop
               <Field label="Symbol" required hint="Auto uppercase">
                 <Input value={form.symbol} onChange={(e) => handleChange("symbol", e.target.value)} placeholder="e.g. NIFTYBEES" />
               </Field>
-              <Field label="Date" required hint="DD-MM-YYYY">
-                <Input value={form.price_date} onChange={(e) => handleChange("price_date", e.target.value)} placeholder="e.g. 15-01-2025" maxLength={10} />
+              <Field label="Date" required hint="Auto-formats DD-MM-YYYY">
+                <Input value={form.price_date} onChange={(e) => handleChange("price_date", e.target.value)} placeholder="e.g. 15-01-2025" />
               </Field>
               <Field label="ETF Price" required>
                 <Input type="number" step="any" min="0" value={form.etf_price} onChange={(e) => handleChange("etf_price", e.target.value)} placeholder="e.g. 248.75" />
