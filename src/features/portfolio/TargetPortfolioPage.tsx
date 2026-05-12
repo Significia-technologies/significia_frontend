@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Plus, Loader2, MoreHorizontal, ToggleLeft, ToggleRight,
-  AlertTriangle, TrendingUp,
+  AlertTriangle, TrendingUp, Check, ChevronsUpDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,6 +48,131 @@ const TABS: { key: AssetClass; label: string }[] = [
 
 const OBJECTIVES = ["Retirement", "Child Marriage", "Child Education", "General"];
 const LIFE_REASONS = ["HLV", "HLV + Savings", "Retirement", "HLV + Investment"];
+
+// ── Searchable Product Combobox ─────────────────────────────────────
+
+function ProductCombobox({
+  products,
+  value,
+  onChange,
+  loading,
+  placeholder = "Search product…",
+  renderLabel,
+}: {
+  products: AvailableProduct[];
+  value: string;
+  onChange: (id: string) => void;
+  loading?: boolean;
+  placeholder?: string;
+  renderLabel: (p: AvailableProduct) => string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const selected = products.find((p) => p.id === value);
+
+  const filtered = query.trim()
+    ? products.filter((p) =>
+        renderLabel(p).toLowerCase().includes(query.toLowerCase()) ||
+        (p.symbol ?? "").toLowerCase().includes(query.toLowerCase()) ||
+        (p.isin_code ?? "").toLowerCase().includes(query.toLowerCase()) ||
+        (p.scheme_code ?? "").toLowerCase().includes(query.toLowerCase()) ||
+        (p.company_name ?? "").toLowerCase().includes(query.toLowerCase())
+      )
+    : products;
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+        setQuery("");
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  const handleOpen = () => {
+    setOpen(true);
+    setQuery("");
+    setTimeout(() => inputRef.current?.focus(), 0);
+  };
+
+  const handleSelect = (id: string) => {
+    onChange(id);
+    setQuery("");
+    setOpen(false);
+  };
+
+  return (
+    <div ref={containerRef} className="relative w-full">
+      {/* Trigger — becomes search input when open */}
+      <div
+        className={cn(
+          "w-full flex items-start gap-2 rounded-md border border-input bg-background px-3 py-2 min-h-10 text-sm",
+          "ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
+          "cursor-text"
+        )}
+        onClick={handleOpen}
+      >
+        {open ? (
+          <input
+            ref={inputRef}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={selected ? renderLabel(selected) : placeholder}
+            className="flex-1 bg-transparent outline-none placeholder:text-muted-foreground min-w-0 leading-5"
+          />
+        ) : (
+          <span className={cn("flex-1 break-words leading-5", !selected && "text-muted-foreground")}>
+            {loading ? "Loading…" : selected ? renderLabel(selected) : placeholder}
+          </span>
+        )}
+        <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50 mt-0.5" />
+      </div>
+
+      {/* Dropdown list */}
+      {open && (
+        <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-lg">
+          <ul className="max-h-60 overflow-y-auto py-1">
+            {loading ? (
+              <li className="px-3 py-2.5 text-sm text-muted-foreground">Loading products…</li>
+            ) : filtered.length === 0 ? (
+              <li className="px-3 py-2.5 text-sm text-muted-foreground">No products found.</li>
+            ) : (
+              filtered.map((p) => (
+                <li
+                  key={p.id}
+                  onMouseDown={(e) => e.preventDefault()} // prevent input blur before click
+                  onClick={() => handleSelect(p.id)}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground",
+                    value === p.id && "bg-accent/60"
+                  )}
+                >
+                  <Check className={cn("h-3.5 w-3.5 shrink-0", value === p.id ? "opacity-100 text-primary" : "opacity-0")} />
+                  <span className="flex-1 min-w-0">
+                    <span className="block truncate font-medium">{renderLabel(p)}</span>
+                    {(p.symbol || p.isin_code || p.scheme_code || p.company_name) && (
+                      <span className="block truncate text-xs text-muted-foreground font-mono">
+                        {p.symbol || p.scheme_code || p.company_name}
+                        {p.isin_code ? ` · ${p.isin_code}` : ""}
+                      </span>
+                    )}
+                  </span>
+                </li>
+              ))
+            )}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ── Add Entry Dialog ────────────────────────────────────────────────
 
@@ -148,23 +273,18 @@ function AddEntryDialog({
           {/* Product */}
           <div className="space-y-1.5">
             <Label>Product <span className="text-destructive">*</span></Label>
-            {loadingProducts ? (
-              <Skeleton className="h-10 w-full" />
-            ) : products.length === 0 ? (
+            {!loadingProducts && products.length === 0 ? (
               <p className="text-sm text-muted-foreground border rounded-md px-3 py-2">
                 No active products in this basket.
               </p>
             ) : (
-              <Select value={productId} onValueChange={setProductId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select product" />
-                </SelectTrigger>
-                <SelectContent className="max-h-60">
-                  {products.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>{productLabel(p)}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <ProductCombobox
+                products={products}
+                value={productId}
+                onChange={setProductId}
+                loading={loadingProducts}
+                renderLabel={productLabel}
+              />
             )}
           </div>
 
@@ -224,11 +344,17 @@ function AddEntryDialog({
 
           {/* Remarks */}
           <div className="space-y-1.5">
-            <Label>Remarks on Suitability</Label>
+            <Label className="flex items-center justify-between">
+              Remarks on Suitability
+              <span className={cn("text-xs font-normal", remarks.length > 150 ? "text-destructive" : "text-muted-foreground")}>
+                {remarks.length}/150
+              </span>
+            </Label>
             <Input
               value={remarks}
-              onChange={(e) => setRemarks(e.target.value)}
+              onChange={(e) => setRemarks(e.target.value.slice(0, 150))}
               placeholder="Optional remarks"
+              maxLength={150}
             />
           </div>
         </div>
@@ -331,7 +457,7 @@ function AssetClassTab({
                 <TableHead>Product</TableHead>
                 <TableHead>{pctColLabel}</TableHead>
                 <TableHead>{objectiveColLabel}</TableHead>
-                <TableHead>Remarks</TableHead>
+                <TableHead>Suitability</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Action</TableHead>
               </TableRow>
@@ -546,7 +672,7 @@ export function TargetPortfolioPage({
       {/* Tabs */}
       {selectedMember ? (
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as AssetClass)}>
-          <TabsList className="w-full sm:w-auto flex overflow-x-auto">
+          <TabsList className="w-full sm:w-auto flex flex-wrap h-auto gap-1 p-1">
             {TABS.map((t) => (
               <TabsTrigger key={t.key} value={t.key} className="shrink-0 text-xs sm:text-sm">
                 {t.label}
