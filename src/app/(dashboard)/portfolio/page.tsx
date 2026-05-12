@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Users } from "lucide-react";
+import { Users, Target } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
 const PORTFOLIO_MODULES = [
@@ -8,6 +8,12 @@ const PORTFOLIO_MODULES = [
     description: "Manage client investors, family members and HUF with sub-code generation.",
     href: "/portfolio/investor-master",
     icon: Users,
+  },
+  {
+    label: "Target Portfolio",
+    description: "Assign target products across Shares, MF, ETF, Life Insurance and Health Insurance per investor.",
+    href: "/portfolio/target-portfolio",
+    icon: Target,
   },
 ];
 

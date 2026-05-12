@@ -248,6 +248,18 @@ export const API_ENDPOINTS = {
       `${API_BASE}/portfolio/investor-members/${clientId}/${memberId}/toggle`,
   },
 
+  // ── Target Portfolio (Portfolio) ─────────────────────────────────
+  TARGET_PORTFOLIO: {
+    LIST: (clientId: string, memberId: string) =>
+      `${API_BASE}/portfolio/target-portfolio/${clientId}/${memberId}`,
+    PRODUCTS: (clientId: string, memberId: string) =>
+      `${API_BASE}/portfolio/target-portfolio/${clientId}/${memberId}/products`,
+    CREATE: (clientId: string, memberId: string) =>
+      `${API_BASE}/portfolio/target-portfolio/${clientId}/${memberId}`,
+    TOGGLE: (clientId: string, memberId: string, entryId: string) =>
+      `${API_BASE}/portfolio/target-portfolio/${clientId}/${memberId}/${entryId}/toggle`,
+  },
+
   // ── Investor IPS Documents (Portfolio) ───────────────────────────
   INVESTOR_IPS: {
     UPLOAD: (clientId: string, memberId: string) =>

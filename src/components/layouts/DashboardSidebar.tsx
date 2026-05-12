@@ -92,6 +92,7 @@ const NAV_ITEMS: NavItem[] = [
     icon: TrendingUp,
     children: [
       { label: "Investor Master", href: "/portfolio/investor-master" },
+      { label: "Target Portfolio", href: "/portfolio/target-portfolio" },
     ],
   },
   {
