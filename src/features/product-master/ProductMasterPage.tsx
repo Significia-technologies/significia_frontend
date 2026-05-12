@@ -37,7 +37,7 @@ export function ProductMasterPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as AnyTabType)}>
-        <TabsList className="w-full justify-start overflow-x-auto">
+        <TabsList className="w-full justify-start overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {PRODUCT_TABS.map((t) => (
             <TabsTrigger key={t.value} value={t.value} className="shrink-0">
               {t.label}
