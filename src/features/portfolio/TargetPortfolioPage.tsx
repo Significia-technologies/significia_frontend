@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Plus, Loader2, MoreHorizontal, ToggleLeft, ToggleRight,
-  AlertTriangle, TrendingUp, Check, ChevronsUpDown,
+  AlertTriangle, TrendingUp, Check, ChevronsUpDown, Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -642,6 +642,82 @@ function AssetClassTab({
   );
 }
 
+// ── Export Report Dialog ────────────────────────────────────────────
+
+const ALL_OBJECTIVES = [
+  "Retirement", "Child Education", "Child Marriage", "General", "HLV", "Health Cover",
+];
+
+function ExportReportDialog({
+  open, onClose,
+  clientId, memberId, clientName, clientCode,
+}: {
+  open: boolean;
+  onClose: () => void;
+  clientId: string;
+  memberId: string;
+  clientName: string;
+  clientCode: string;
+}) {
+  const [selectedObjective, setSelectedObjective] = useState("");
+  const [downloading, setDownloading] = useState(false);
+
+  const handleDownload = async () => {
+    if (!selectedObjective) return toast.error("Select an objective.");
+    setDownloading(true);
+    try {
+      await TargetPortfolioService.downloadReport(
+        clientId, memberId, selectedObjective, clientName, clientCode
+      );
+      onClose();
+    } catch (err: any) {
+      if (err?.response?.status === 404) {
+        toast.error(`No active entries found for objective "${selectedObjective}".`);
+      } else {
+        toast.error("Failed to generate report.");
+      }
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Download className="h-4 w-4" /> Export Portfolio Report
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-1">
+          <p className="text-sm text-muted-foreground">
+            Select an objective to generate a PDF report showing all matching active entries across all asset classes.
+          </p>
+          <div className="space-y-1.5">
+            <Label>Objective <span className="text-destructive">*</span></Label>
+            <Select value={selectedObjective} onValueChange={setSelectedObjective}>
+              <SelectTrigger><SelectValue placeholder="Select objective" /></SelectTrigger>
+              <SelectContent>
+                {ALL_OBJECTIVES.map((o) => (
+                  <SelectItem key={o} value={o}>{o}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={downloading}>Cancel</Button>
+          <Button onClick={handleDownload} disabled={downloading || !selectedObjective}>
+            {downloading
+              ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Generating…</>
+              : <><Download className="h-4 w-4 mr-2" /> Download PDF</>}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ── Main Page ───────────────────────────────────────────────────────
 
 interface TargetPortfolioPageProps {
@@ -659,6 +735,7 @@ export function TargetPortfolioPage({
     activeMembers[0]?.id ?? ""
   );
   const [activeTab, setActiveTab] = useState<AssetClass>("shares");
+  const [showExport, setShowExport] = useState(false);
 
   const selectedMember = activeMembers.find((m) => m.id === selectedMemberId) ?? null;
 
@@ -673,7 +750,23 @@ export function TargetPortfolioPage({
           </h2>
           <p className="text-sm text-muted-foreground">{clientName} &mdash; {clientCode}</p>
         </div>
+        {selectedMember && (
+          <Button variant="outline" size="sm" onClick={() => setShowExport(true)}>
+            <Download className="h-4 w-4 mr-2" /> Export Report
+          </Button>
+        )}
       </div>
+
+      {showExport && selectedMember && (
+        <ExportReportDialog
+          open={showExport}
+          onClose={() => setShowExport(false)}
+          clientId={clientId}
+          memberId={selectedMember.id}
+          clientName={clientName}
+          clientCode={clientCode}
+        />
+      )}
 
       {/* Investor Selector */}
       <Card>

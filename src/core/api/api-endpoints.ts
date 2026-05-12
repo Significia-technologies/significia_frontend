@@ -258,6 +258,8 @@ export const API_ENDPOINTS = {
       `${API_BASE}/portfolio/target-portfolio/${clientId}/${memberId}`,
     TOGGLE: (clientId: string, memberId: string, entryId: string) =>
       `${API_BASE}/portfolio/target-portfolio/${clientId}/${memberId}/${entryId}/toggle`,
+    REPORT_PDF: (clientId: string, memberId: string) =>
+      `${API_BASE}/portfolio/target-portfolio/${clientId}/${memberId}/report/pdf`,
   },
 
   // ── Investor IPS Documents (Portfolio) ───────────────────────────

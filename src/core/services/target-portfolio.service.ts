@@ -88,4 +88,28 @@ export class TargetPortfolioService {
     );
     return res.data;
   }
+
+  static async downloadReport(
+    clientId: string,
+    memberId: string,
+    objective: string,
+    clientName: string,
+    clientCode: string,
+  ): Promise<void> {
+    const res = await httpClient.get(
+      API_ENDPOINTS.TARGET_PORTFOLIO.REPORT_PDF(clientId, memberId),
+      {
+        params: { objective, client_name: clientName, client_code: clientCode },
+        responseType: "blob",
+      }
+    );
+    const url = window.URL.createObjectURL(new Blob([res.data], { type: "application/pdf" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `TargetPortfolio_${clientCode}_${objective}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => window.URL.revokeObjectURL(url), 10_000);
+  }
 }
