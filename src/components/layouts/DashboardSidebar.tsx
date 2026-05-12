@@ -67,8 +67,8 @@ const NAV_ITEMS = [
     icon: PieChart,
   },
   {
-    label: "Security Basket",
-    href: "/security",
+    label: "Product Basket",
+    href: "/product-basket",
     icon: ShieldCheck,
   },
   {
