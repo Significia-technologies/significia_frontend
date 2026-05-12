@@ -240,6 +240,16 @@ export const API_ENDPOINTS = {
     EXCEL_TEMPLATE: (type: string) => `${API_BASE}/product-master/products/${type}/excel-template`,
   },
 
+  // ── Price Uploads ──────────────────────────────────────────────
+  PRICE_UPLOAD: {
+    LIST: (type: string) => `${API_BASE}/product-master/price-uploads/${type}`,
+    CREATE: (type: string) => `${API_BASE}/product-master/price-uploads/${type}`,
+    TOGGLE: (type: string, id: string) => `${API_BASE}/product-master/price-uploads/${type}/${id}/toggle`,
+    EXCEL_PREVIEW: (type: string) => `${API_BASE}/product-master/price-uploads/${type}/excel-preview`,
+    EXCEL_IMPORT: (type: string) => `${API_BASE}/product-master/price-uploads/${type}/excel-import`,
+    EXCEL_TEMPLATE: (type: string) => `${API_BASE}/product-master/price-uploads/${type}/excel-template`,
+  },
+
   // ── Email Management (IA Owner) ─────────────────────────────
   EMAIL: {
     SETTINGS: `${API_BASE}/email/settings`,

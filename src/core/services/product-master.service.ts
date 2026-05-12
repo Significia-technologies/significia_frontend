@@ -1,6 +1,48 @@
 import httpClient from "@/core/api/http-client";
 import { API_ENDPOINTS } from "@/core/api/api-endpoints";
 
+export type PriceUploadType = "share-prices" | "nav-uploads" | "etf-prices";
+
+export interface SharePriceRecord {
+  id: string;
+  isin_code: string;
+  symbol: string;
+  price_date: string;
+  share_price: string;
+  is_active: boolean;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface NavUploadRecord {
+  id: string;
+  scheme_code: string;
+  scheme_name: string;
+  price_date: string;
+  nav: string;
+  is_active: boolean;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface ETFPriceRecord {
+  id: string;
+  isin_code: string;
+  symbol: string;
+  price_date: string;
+  etf_price: string;
+  is_active: boolean;
+  created_by: string | null;
+  created_at: string;
+}
+
+export type AnyPriceRecord = SharePriceRecord | NavUploadRecord | ETFPriceRecord;
+
+export interface PriceExcelPreviewRow {
+  data: Record<string, string>;
+  status: "new" | "existing";
+}
+
 export type ProductType = "shares" | "mutual-funds" | "etfs" | "life-insurance" | "health-insurance";
 
 export interface ProductShare {
@@ -152,6 +194,51 @@ export const ProductMasterService = {
 
   async downloadExcelTemplate(type: ProductType): Promise<void> {
     const response = await httpClient.get(API_ENDPOINTS.PRODUCT_MASTER.EXCEL_TEMPLATE(type), {
+      responseType: "blob",
+    });
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${type}_template.xlsx`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  },
+};
+
+export const PriceUploadService = {
+  async list(type: PriceUploadType, search?: string): Promise<{ items: AnyPriceRecord[]; total: number }> {
+    const params: Record<string, string | number> = { limit: 200, skip: 0 };
+    if (search) params.search = search;
+    const res = await httpClient.get(API_ENDPOINTS.PRICE_UPLOAD.LIST(type), { params });
+    return res.data;
+  },
+
+  async create(type: PriceUploadType, data: Record<string, string>): Promise<AnyPriceRecord> {
+    const res = await httpClient.post(API_ENDPOINTS.PRICE_UPLOAD.CREATE(type), data);
+    return res.data;
+  },
+
+  async toggle(type: PriceUploadType, id: string): Promise<AnyPriceRecord> {
+    const res = await httpClient.patch(API_ENDPOINTS.PRICE_UPLOAD.TOGGLE(type, id));
+    return res.data;
+  },
+
+  async excelPreview(type: PriceUploadType, file: File): Promise<{ rows: PriceExcelPreviewRow[]; total: number }> {
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await httpClient.post(API_ENDPOINTS.PRICE_UPLOAD.EXCEL_PREVIEW(type), fd, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return res.data;
+  },
+
+  async excelImport(type: PriceUploadType, rows: PriceExcelPreviewRow[]): Promise<{ created: number; skipped: number }> {
+    const res = await httpClient.post(API_ENDPOINTS.PRICE_UPLOAD.EXCEL_IMPORT(type), { rows });
+    return res.data;
+  },
+
+  async downloadExcelTemplate(type: PriceUploadType): Promise<void> {
+    const response = await httpClient.get(API_ENDPOINTS.PRICE_UPLOAD.EXCEL_TEMPLATE(type), {
       responseType: "blob",
     });
     const url = window.URL.createObjectURL(new Blob([response.data]));
