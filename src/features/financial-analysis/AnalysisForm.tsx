@@ -302,9 +302,10 @@ export function AnalysisForm({ clientId, copyFromProfileId, onSuccess, onCancel 
   };
 
   const updateChild = (index: number, field: string, value: any) => {
+    const cleanedValue = field === 'name' ? value.replace(/[^a-zA-Z\s]/g, '') : value;
     setFormData(prev => {
       const newChildren = [...(prev.children || [])];
-      newChildren[index] = { ...newChildren[index], [field]: value };
+      newChildren[index] = { ...newChildren[index], [field]: cleanedValue };
       return { ...prev, children: newChildren };
     });
   };
@@ -672,7 +673,11 @@ export function AnalysisForm({ clientId, copyFromProfileId, onSuccess, onCancel 
                     <div key={idx} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 p-4 rounded-xl bg-primary/5 border border-primary/10 relative group">
                       <div className="space-y-1">
                         <Label className="text-[10px] uppercase opacity-50">Child Name</Label>
-                        <Input value={child.name} onChange={e => updateChild(idx, 'name', e.target.value)} className="h-9" />
+                        <Input 
+                          value={child.name} 
+                          onChange={e => updateChild(idx, 'name', e.target.value.replace(/[^a-zA-Z\s]/g, ''))} 
+                          className="h-9" 
+                        />
                       </div>
                       <div className="space-y-1">
                         <Label className="text-[10px] uppercase opacity-50">DOB</Label>
