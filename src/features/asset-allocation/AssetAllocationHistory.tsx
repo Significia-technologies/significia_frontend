@@ -14,7 +14,8 @@ import {
   Send,
   PlusCircle,
   RefreshCcw,
-  PieChart
+  PieChart,
+  MoreHorizontal
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +32,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { AssetAllocationService, AssetAllocation } from "@/core/services/asset-allocation.service";
 import { RectificationService } from "@/core/services/rectification.service";
 import { toast } from "sonner";
@@ -338,58 +345,60 @@ export function AssetAllocationHistory({ onNewAllocation }: AssetAllocationHisto
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 px-2 gap-1.5 border-primary/10 hover:border-red-500/30 hover:bg-red-500/5 transition-all"
-                          onClick={() => downloadFile(a, "PDF")}
-                          disabled={!!downloading}
-                          id={`dl-pdf-${a.id}`}
-                        >
-                          <FileText className="w-3.5 h-3.5 text-red-500" />
-                          <span className="text-[9px] font-black uppercase">PDF</span>
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 px-2 gap-1.5 border-primary/10 hover:border-blue-500/30 hover:bg-blue-500/5 transition-all"
-                          onClick={() => downloadFile(a, "DOCX")}
-                          disabled={!!downloading}
-                          id={`dl-docx-${a.id}`}
-                        >
-                          <FileText className="w-3.5 h-3.5 text-blue-500" />
-                          <span className="text-[9px] font-black uppercase">Word</span>
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 px-2 gap-1.5 border-primary/10 hover:border-emerald-500/30 hover:bg-emerald-500/5 transition-all"
-                          onClick={() => handleEmail(a)}
-                          disabled={!!emailing || !!downloading}
-                          id={`email-${a.id}`}
-                        >
-                          {emailing === a.id ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-500" />
-                          ) : (
-                            <Send className="w-3.5 h-3.5 text-emerald-500" />
-                          )}
-                          <span className="text-[9px] font-black uppercase">Email</span>
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 px-2 gap-1.5 border-amber-500/10 hover:border-amber-500/30 hover:bg-amber-500/5 transition-all text-amber-500"
-                          onClick={() => handleInitiateRectification(a)}
-                          disabled={!!initiating}
-                        >
-                          {initiating === a.id ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          ) : (
-                            <RefreshCcw className="w-3.5 h-3.5" />
-                          )}
-                          <span className="text-[9px] font-black uppercase">Correct</span>
-                        </Button>
+                      <div className="flex justify-end">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 border border-primary/10 hover:bg-primary/5 text-muted-foreground">
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Open menu</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-44 border-primary/10">
+                            <DropdownMenuItem
+                              onClick={() => downloadFile(a, "PDF")}
+                              disabled={!!downloading}
+                              className="gap-2 cursor-pointer text-red-500 hover:text-red-600 focus:text-red-600 focus:bg-red-500/10"
+                            >
+                              <FileText className="w-4 h-4" />
+                              <span className="font-bold text-[10px] uppercase tracking-wider">Download PDF</span>
+                            </DropdownMenuItem>
+                            
+                            <DropdownMenuItem
+                              onClick={() => downloadFile(a, "DOCX")}
+                              disabled={!!downloading}
+                              className="gap-2 cursor-pointer text-blue-500 hover:text-blue-600 focus:text-blue-600 focus:bg-blue-500/10"
+                            >
+                              <FileText className="w-4 h-4" />
+                              <span className="font-bold text-[10px] uppercase tracking-wider">Download Word</span>
+                            </DropdownMenuItem>
+                            
+                            <DropdownMenuItem
+                              onClick={() => handleEmail(a)}
+                              disabled={!!emailing || !!downloading}
+                              className="gap-2 cursor-pointer text-emerald-500 hover:text-emerald-600 focus:text-emerald-600 focus:bg-emerald-500/10"
+                            >
+                              {emailing === a.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Send className="w-4 h-4" />
+                              )}
+                              <span className="font-bold text-[10px] uppercase tracking-wider">Email Client</span>
+                            </DropdownMenuItem>
+                            
+                            <DropdownMenuItem
+                              onClick={() => handleInitiateRectification(a)}
+                              disabled={!!initiating}
+                              className="gap-2 cursor-pointer text-amber-500 hover:text-amber-600 focus:text-amber-600 focus:bg-amber-500/10"
+                            >
+                              {initiating === a.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <RefreshCcw className="w-4 h-4" />
+                              )}
+                              <span className="font-bold text-[10px] uppercase tracking-wider">Correction</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </TableCell>
                   </TableRow>
