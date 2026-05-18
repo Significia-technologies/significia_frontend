@@ -37,11 +37,14 @@ const DEFAULT_VALUES: AllocationValues = {
   stocks: 0,
   mf_equity: 0,
   ulip_equity: 0,
+  etf_equity: 0,
   fd_bonds: 0,
   mf_debt: 0,
   ulip_debt: 0,
+  etf_debt: 0,
   gold_etf: 0,
   silver_etf: 0,
+  etf_commodity: 0,
 };
 
 export function AssetAllocationForm({
@@ -64,13 +67,13 @@ export function AssetAllocationForm({
   // Validate each sub-asset group if parent > 0
   const subValidEquity =
     values.equities === 0 ||
-    Math.abs(values.stocks + values.mf_equity + values.ulip_equity - 100) < 0.01;
+    Math.abs(values.stocks + values.mf_equity + values.ulip_equity + values.etf_equity - 100) < 0.01;
   const subValidDebt =
     values.debt === 0 ||
-    Math.abs(values.fd_bonds + values.mf_debt + values.ulip_debt - 100) < 0.01;
+    Math.abs(values.fd_bonds + values.mf_debt + values.ulip_debt + values.etf_debt - 100) < 0.01;
   const subValidCommodities =
     values.commodities === 0 ||
-    Math.abs(values.gold_etf + values.silver_etf - 100) < 0.01;
+    Math.abs(values.gold_etf + values.silver_etf + values.etf_commodity - 100) < 0.01;
 
   const isFormValid = isMainValid && subValidEquity && subValidDebt && subValidCommodities;
 
@@ -128,11 +131,14 @@ This asset allocation represents an evolution of investment strategy. Regular re
         stocks_percentage: values.stocks,
         mutual_fund_equity_percentage: values.mf_equity,
         ulip_equity_percentage: values.ulip_equity,
+        etf_equity_percentage: values.etf_equity,
         fixed_deposits_bonds_percentage: values.fd_bonds,
         mutual_fund_debt_percentage: values.mf_debt,
         ulip_debt_percentage: values.ulip_debt,
+        etf_debt_percentage: values.etf_debt,
         gold_etf_percentage: values.gold_etf,
         silver_etf_percentage: values.silver_etf,
+        etf_commodity_percentage: values.etf_commodity,
         generate_system_conclusion: generateConclusion,
         system_conclusion: conclusion || undefined,
         discussion_notes: discussionNotes || undefined,
