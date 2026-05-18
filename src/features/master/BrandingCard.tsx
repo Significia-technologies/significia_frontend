@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import {
   Palette, Check, Globe, Edit, Loader2, Save, X,
-  FileCheck, ExternalLink, FileText
+  FileCheck, ExternalLink, FileText, Sun, Moon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +26,20 @@ const COLOR_PRESETS = [
   { name: "Violet", hex: "#7C3AED" },
 ];
 
+const BG_LIGHT_PRESETS = [
+  { name: "Default", hex: "#F8FAFC" },
+  { name: "Soft Indigo", hex: "#EEF2F6" },
+  { name: "Cream Pearl", hex: "#FAF9F6" },
+  { name: "Cool Gray", hex: "#F1F5F9" },
+];
+
+const BG_DARK_PRESETS = [
+  { name: "Default", hex: "#09090B" },
+  { name: "Deep Blue", hex: "#0B0F19" },
+  { name: "Charcoal", hex: "#0F172A" },
+  { name: "Dark Emerald", hex: "#050806" },
+];
+
 interface BrandingCardProps {
   data: IAMaster;
   onRefresh: () => void;
@@ -37,12 +51,16 @@ export function BrandingCard({ data, onRefresh }: BrandingCardProps) {
   const [saving, setSaving] = useState(false);
 
   const [brandColor, setBrandColor] = useState(data.brand_color || "");
+  const [bgLight, setBgLight] = useState(data.brand_background_color_light || "");
+  const [bgDark, setBgDark] = useState(data.brand_background_color_dark || "");
   const [portalTitle, setPortalTitle] = useState(data.portal_title || "");
   const [portalDescription, setPortalDescription] = useState(data.portal_description || "");
   const [faviconFile, setFaviconFile] = useState<File | null>(null);
 
   const startEditing = () => {
     setBrandColor(data.brand_color || "");
+    setBgLight(data.brand_background_color_light || "");
+    setBgDark(data.brand_background_color_dark || "");
     setPortalTitle(data.portal_title || "");
     setPortalDescription(data.portal_description || "");
     setFaviconFile(null);
@@ -53,9 +71,11 @@ export function BrandingCard({ data, onRefresh }: BrandingCardProps) {
     setSaving(true);
     try {
       const formData = new FormData();
-      if (brandColor) formData.append("brand_color", brandColor);
-      if (portalTitle) formData.append("portal_title", portalTitle);
-      if (portalDescription) formData.append("portal_description", portalDescription);
+      formData.append("brand_color", brandColor);
+      formData.append("brand_background_color_light", bgLight);
+      formData.append("brand_background_color_dark", bgDark);
+      formData.append("portal_title", portalTitle);
+      formData.append("portal_description", portalDescription);
       if (faviconFile) formData.append("ia_favicon", faviconFile);
 
       // We need at least one field to trigger the update
@@ -143,6 +163,33 @@ export function BrandingCard({ data, onRefresh }: BrandingCardProps) {
                 )}
               </div>
             </div>
+            {/* Current Background Colors */}
+            {(data.brand_background_color_light || data.brand_background_color_dark) && (
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5"><Sun className="w-3 h-3" /> Light Background</h4>
+                  {data.brand_background_color_light ? (
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg shadow-md border border-border" style={{ backgroundColor: data.brand_background_color_light }} />
+                      <span className="font-mono text-sm text-foreground">{data.brand_background_color_light}</span>
+                    </div>
+                  ) : (
+                    <span className="text-sm text-muted-foreground italic">Default</span>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5"><Moon className="w-3 h-3" /> Dark Background</h4>
+                  {data.brand_background_color_dark ? (
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg shadow-md border border-border" style={{ backgroundColor: data.brand_background_color_dark }} />
+                      <span className="font-mono text-sm text-foreground">{data.brand_background_color_dark}</span>
+                    </div>
+                  ) : (
+                    <span className="text-sm text-muted-foreground italic">Default</span>
+                  )}
+                </div>
+              </div>
+            )}
             {data.portal_description && (
               <div className="space-y-2">
                 <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Meta Description</h4>
@@ -249,6 +296,133 @@ export function BrandingCard({ data, onRefresh }: BrandingCardProps) {
                 </div>
               </div>
             )}
+
+            {/* ── Background Colors (Light & Dark) ── */}
+            <div className="space-y-4 pt-4 border-t border-border">
+              <Label className="text-base font-semibold flex items-center gap-2">
+                <Sun className="w-4 h-4" />
+                Portal Background
+              </Label>
+              <p className="text-xs text-muted-foreground -mt-2">
+                Customize the background color for Light and Dark themes independently.
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Light Mode Background */}
+                <div className="space-y-3 p-4 rounded-xl border border-border bg-background/30">
+                  <Label className="text-sm font-medium flex items-center gap-1.5">
+                    <Sun className="w-3.5 h-3.5" />
+                    Light Mode Background
+                  </Label>
+                  <div className="flex flex-wrap gap-2">
+                    {BG_LIGHT_PRESETS.map((p) => (
+                      <button
+                        key={p.hex}
+                        type="button"
+                        onClick={() => setBgLight(p.hex)}
+                        className={`
+                          group flex flex-col items-center gap-1 p-1.5 rounded-lg border-2 transition-all duration-200
+                          ${bgLight === p.hex ? "border-foreground scale-105 shadow-md" : "border-transparent hover:border-muted-foreground/30"}
+                        `}
+                      >
+                        <div
+                          className="w-8 h-8 rounded-md shadow-sm border border-border/50 flex items-center justify-center"
+                          style={{ backgroundColor: p.hex }}
+                        >
+                          {bgLight === p.hex && <Check className="w-3.5 h-3.5 text-gray-800 drop-shadow" />}
+                        </div>
+                        <span className="text-[9px] text-muted-foreground font-medium">{p.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={bgLight || "#F8FAFC"}
+                      onChange={(e) => setBgLight(e.target.value)}
+                      className="w-8 h-8 rounded-md border border-border cursor-pointer p-0.5"
+                    />
+                    <Input
+                      id="brand_bg_light"
+                      name="brand_bg_light"
+                      autoComplete="new-password"
+                      autoCorrect="off"
+                      autoCapitalize="none"
+                      value={bgLight}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === "" || /^#[0-9A-Fa-f]{0,6}$/.test(val)) setBgLight(val);
+                      }}
+                      placeholder="#F8FAFC"
+                      className="w-28 bg-background/50 font-mono text-xs uppercase"
+                      maxLength={7}
+                    />
+                    {bgLight && (
+                      <Button type="button" variant="ghost" size="sm" onClick={() => setBgLight("")} className="text-[10px] text-muted-foreground px-2 h-7">
+                        Reset
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Dark Mode Background */}
+                <div className="space-y-3 p-4 rounded-xl border border-border bg-background/30">
+                  <Label className="text-sm font-medium flex items-center gap-1.5">
+                    <Moon className="w-3.5 h-3.5" />
+                    Dark Mode Background
+                  </Label>
+                  <div className="flex flex-wrap gap-2">
+                    {BG_DARK_PRESETS.map((p) => (
+                      <button
+                        key={p.hex}
+                        type="button"
+                        onClick={() => setBgDark(p.hex)}
+                        className={`
+                          group flex flex-col items-center gap-1 p-1.5 rounded-lg border-2 transition-all duration-200
+                          ${bgDark === p.hex ? "border-foreground scale-105 shadow-md" : "border-transparent hover:border-muted-foreground/30"}
+                        `}
+                      >
+                        <div
+                          className="w-8 h-8 rounded-md shadow-sm border border-border/50 flex items-center justify-center"
+                          style={{ backgroundColor: p.hex }}
+                        >
+                          {bgDark === p.hex && <Check className="w-3.5 h-3.5 text-white drop-shadow" />}
+                        </div>
+                        <span className="text-[9px] text-muted-foreground font-medium">{p.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={bgDark || "#09090B"}
+                      onChange={(e) => setBgDark(e.target.value)}
+                      className="w-8 h-8 rounded-md border border-border cursor-pointer p-0.5"
+                    />
+                    <Input
+                      id="brand_bg_dark"
+                      name="brand_bg_dark"
+                      autoComplete="new-password"
+                      autoCorrect="off"
+                      autoCapitalize="none"
+                      value={bgDark}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === "" || /^#[0-9A-Fa-f]{0,6}$/.test(val)) setBgDark(val);
+                      }}
+                      placeholder="#09090B"
+                      className="w-28 bg-background/50 font-mono text-xs uppercase"
+                      maxLength={7}
+                    />
+                    {bgDark && (
+                      <Button type="button" variant="ghost" size="sm" onClick={() => setBgDark("")} className="text-[10px] text-muted-foreground px-2 h-7">
+                        Reset
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
 
             {/* Portal Identity */}
             <div className="space-y-6 pt-4 border-t border-border">

@@ -80,7 +80,7 @@ const STEP_DESCRIPTONS: Record<number, string> = {
 const STEPS_CONFIG = [
   { id: 1, title: "Profile", icon: User },
   { id: 2, title: "Family", icon: Users },
-  { id: 3, title: "Goals", icon: Wallet },
+  { id: 3, title: "Financials", icon: Wallet },
   { id: 4, title: "Insurance", icon: ShieldCheck },
   { id: 5, title: "Assumptions", icon: Target },
   { id: 6, title: "Finish", icon: Flag }

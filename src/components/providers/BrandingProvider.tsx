@@ -2,6 +2,7 @@
 
 import React, { useEffect } from "react";
 import { usePathname } from "next/navigation";
+import { useTheme } from "next-themes";
 import { useAppStore } from "@/store/useAppStore";
 import { AuthService } from "@/core/services/auth.service";
 import { TenantNotFound } from "@/components/shared/TenantNotFound";
@@ -41,27 +42,6 @@ function hexToHSL(hex: string): { h: number; s: number; l: number } | null {
 }
 
 /**
- * HSL → OKLCH approximation
- * Converts HSL to an approximate OKLCH string for CSS variable injection.
- * This preserves compatibility with the existing oklch-based theme.
- */
-function hslToOklch(h: number, s: number, l: number): string {
-  // Convert percentages to 0-1 range
-  const sNorm = s / 100;
-  const lNorm = l / 100;
-  
-  // Map to OKLCH approximation
-  // L (lightness): roughly maps from HSL L
-  const oklchL = lNorm * 0.85 + 0.1; // Scale to ~0.1-0.95 range
-  // C (chroma): roughly maps from saturation
-  const oklchC = sNorm * 0.2; // Max chroma ~0.2
-  // H (hue): direct mapping
-  const oklchH = h;
-  
-  return `oklch(${oklchL.toFixed(3)} ${oklchC.toFixed(3)} ${oklchH})`;
-}
-
-/**
  * Apply Brand Color Theme
  * Injects CSS custom properties to override the default primary color.
  */
@@ -72,32 +52,97 @@ function applyBrandColor(hex: string) {
   const root = document.documentElement;
   const isDark = root.classList.contains("dark");
 
-  // Light mode: use the color as-is
-  // Dark mode: boost lightness slightly for better visibility on dark backgrounds
   const lightL = hsl.l;
   const darkL = Math.min(hsl.l + 10, 75); // Slightly brighter in dark mode
-  
   const activeLightness = isDark ? darkL : lightL;
   
-  // Generate OKLCH values
-  const primaryOklch = hslToOklch(hsl.h, hsl.s, activeLightness);
+  const primaryHsl = `hsl(${hsl.h} ${hsl.s}% ${activeLightness}%)`;
   
   // Calculate foreground: white for dark primary, dark for light primary
   const needsLightFg = activeLightness < 55;
-  const fgOklch = isDark
-    ? (needsLightFg ? "oklch(0.985 0 0)" : "oklch(0.145 0 0)")
-    : (needsLightFg ? "oklch(0.985 0 0)" : "oklch(0.145 0 0)");
+  const fgHsl = needsLightFg ? "hsl(0 0% 98%)" : "hsl(0 0% 15%)";
   
   // Ring color with transparency
-  const ringOklch = hslToOklch(hsl.h, hsl.s, activeLightness).replace(")", " / 50%)");
+  const ringHsl = `hsl(${hsl.h} ${hsl.s}% ${activeLightness}% / 50%)`;
   
   // Set CSS variables
-  root.style.setProperty("--primary", primaryOklch);
-  root.style.setProperty("--primary-foreground", fgOklch);
-  root.style.setProperty("--ring", ringOklch);
-  root.style.setProperty("--sidebar-primary", primaryOklch);
-  root.style.setProperty("--sidebar-primary-foreground", fgOklch);
-  root.style.setProperty("--sidebar-ring", ringOklch);
+  root.style.setProperty("--primary", primaryHsl);
+  root.style.setProperty("--primary-foreground", fgHsl);
+  root.style.setProperty("--ring", ringHsl);
+  root.style.setProperty("--sidebar-primary", primaryHsl);
+  root.style.setProperty("--sidebar-primary-foreground", fgHsl);
+  root.style.setProperty("--sidebar-ring", ringHsl);
+}
+
+/**
+ * Apply Brand Background Color
+ * Injects CSS custom properties to override the default background, card,
+ * muted, border, and foreground colors for the active theme.
+ */
+function applyBrandBackgroundColor(hex: string) {
+  const hsl = hexToHSL(hex);
+  if (!hsl) return;
+
+  const root = document.documentElement;
+  const { h, s, l } = hsl;
+
+  // Background
+  root.style.setProperty("--background", hex);
+  root.style.setProperty("--sidebar", hex);
+  root.style.setProperty("--sidebar-background", hex);
+
+  // Card: slight lightness offset from background for visual depth
+  const isLightBg = l >= 55;
+  const cardL = isLightBg ? Math.max(l - 3, 0) : Math.min(l + 3, 100);
+  root.style.setProperty("--card", `hsl(${h} ${s}% ${cardL}%)`);
+  root.style.setProperty("--popover", `hsl(${h} ${s}% ${cardL}%)`);
+
+  // Muted: medium offset
+  const mutedL = isLightBg ? Math.max(l - 8, 0) : Math.min(l + 8, 100);
+  const mutedS = Math.max(s - 10, 0);
+  root.style.setProperty("--muted", `hsl(${h} ${mutedS}% ${mutedL}%)`);
+  root.style.setProperty("--sidebar-accent", `hsl(${h} ${mutedS}% ${mutedL}%)`);
+
+  // Border: larger offset
+  const borderL = isLightBg ? Math.max(l - 12, 0) : Math.min(l + 10, 100);
+  root.style.setProperty("--border", `hsl(${h} ${Math.max(s - 15, 0)}% ${borderL}%)`);
+  root.style.setProperty("--sidebar-border", `hsl(${h} ${Math.max(s - 15, 0)}% ${borderL}%)`);
+
+  // Foreground: ensure WCAG contrast
+  const fgHsl = isLightBg ? "hsl(0 0% 15%)" : "hsl(0 0% 98%)";
+  root.style.setProperty("--foreground", fgHsl);
+  root.style.setProperty("--card-foreground", fgHsl);
+  root.style.setProperty("--popover-foreground", fgHsl);
+  root.style.setProperty("--sidebar-foreground", fgHsl);
+
+  // Muted foreground
+  const mutedFgL = isLightBg ? 40 : 65;
+  root.style.setProperty("--muted-foreground", `hsl(${h} ${Math.max(s - 20, 0)}% ${mutedFgL}%)`);
+  root.style.setProperty("--sidebar-accent-foreground", `hsl(${h} ${Math.max(s - 20, 0)}% ${mutedFgL}%)`);
+}
+
+/**
+ * Reset Brand Background Color
+ * Removes the custom background/card/muted/border/foreground/sidebar style property overrides
+ * to fall back safely to standard Tailwind globals.css class configurations.
+ */
+function resetBrandBackgroundColor() {
+  const root = document.documentElement;
+  root.style.removeProperty("--background");
+  root.style.removeProperty("--sidebar");
+  root.style.removeProperty("--sidebar-background");
+  root.style.removeProperty("--card");
+  root.style.removeProperty("--popover");
+  root.style.removeProperty("--muted");
+  root.style.removeProperty("--sidebar-accent");
+  root.style.removeProperty("--border");
+  root.style.removeProperty("--sidebar-border");
+  root.style.removeProperty("--foreground");
+  root.style.removeProperty("--card-foreground");
+  root.style.removeProperty("--popover-foreground");
+  root.style.removeProperty("--sidebar-foreground");
+  root.style.removeProperty("--muted-foreground");
+  root.style.removeProperty("--sidebar-accent-foreground");
 }
 
 /**
@@ -147,15 +192,11 @@ function applyMetaDescription(description: string) {
  * Hydrates the global tenant branding info on initial load.
  * This ensures that even on hard refreshes within the dashboard,
  * the correct white-labeled identity is maintained.
- *
- * White-Label Engine:
- * - Injects custom CSS variables for brand colors
- * - Swaps favicon
- * - Updates document title and meta description
  */
 export function BrandingProvider({ children }: { children: React.ReactNode }) {
   const { publicBranding, setPublicBranding, user } = useAppStore();
   const pathname = usePathname();
+  const { resolvedTheme } = useTheme();
   const [tenantNotFound, setTenantNotFound] = React.useState(false);
   const [isError, setIsError] = React.useState(false);
 
@@ -178,9 +219,9 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
           console.error("Critical: Failed to hydrate branding context", err);
           
           if (err?.response?.status === 404) {
-             setTenantNotFound(true);
+              setTenantNotFound(true);
           } else {
-             setIsError(true);
+              setIsError(true);
           }
         }
       };
@@ -189,7 +230,7 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
     }
   }, [publicBranding, setPublicBranding, tenantNotFound]);
 
-  // ── White-Label Engine: Apply branding whenever it changes ──
+  // ── White-Label Engine: Apply branding whenever it changes or theme changes ──
   useEffect(() => {
     if (!publicBranding) return;
 
@@ -198,41 +239,34 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
       applyBrandColor(publicBranding.brand_color);
     }
 
-    // 2. Favicon
+    // 2. Background Color → CSS Variables (theme-aware)
+    const isDark = resolvedTheme === "dark";
+    const activeBg = isDark
+      ? publicBranding.brand_background_color_dark
+      : publicBranding.brand_background_color_light;
+    if (activeBg) {
+      applyBrandBackgroundColor(activeBg);
+    } else {
+      resetBrandBackgroundColor();
+    }
+
+    // 3. Favicon
     if (publicBranding.favicon_url) {
       applyFavicon(publicBranding.favicon_url);
     }
 
-    // 3. Meta Description
+    // 4. Meta Description
     if (publicBranding.portal_description) {
       applyMetaDescription(publicBranding.portal_description);
     }
 
-    // 4. Document Title
+    // 5. Document Title
     if (publicBranding.portal_title) {
       document.title = publicBranding.portal_title;
     } else if (publicBranding.name) {
       document.title = `${publicBranding.name} Portal`;
     }
-  }, [publicBranding, pathname]);
-
-  // ── Re-apply brand color on theme change (light/dark toggle) ──
-  useEffect(() => {
-    if (!publicBranding?.brand_color) return;
-
-    const observer = new MutationObserver(() => {
-      if (publicBranding.brand_color) {
-        applyBrandColor(publicBranding.brand_color);
-      }
-    });
-
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-
-    return () => observer.disconnect();
-  }, [publicBranding?.brand_color]);
+  }, [publicBranding, resolvedTheme, pathname]);
 
   if (tenantNotFound) {
     return <TenantNotFound />;

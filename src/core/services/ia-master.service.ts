@@ -54,6 +54,8 @@ export interface IAMaster {
   ia_signature_path?: string;
   ia_logo_path?: string;
   brand_color?: string;
+  brand_background_color_light?: string;
+  brand_background_color_dark?: string;
   portal_title?: string;
   portal_description?: string;
   favicon_path?: string;
