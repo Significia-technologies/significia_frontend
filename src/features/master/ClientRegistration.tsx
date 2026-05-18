@@ -1248,13 +1248,14 @@ export default function ClientRegistrationForm({
                         </div>
                         <div className="space-y-2">
                           <Label className={formData.ckyc_number && !/^[SLOM][0-9A-Z]{13}$|^[0-9]{14}$/.test(formData.ckyc_number) ? "text-orange-500 font-medium" : ""}>
-                            CKYC Number
+                            CKYC Number *
                           </Label>
                           <Input 
                             name="ckyc_number" 
                             disabled={isFieldDisabled("ckyc_number")} 
                             value={formData.ckyc_number} 
                             onChange={handleChange} 
+                            required
                             placeholder="Central KYC Number (14 chars)" 
                             className={formData.ckyc_number && !/^[SLOM][0-9A-Z]{13}$|^[0-9]{14}$/.test(formData.ckyc_number) ? "border-orange-500" : ""}
                           />
