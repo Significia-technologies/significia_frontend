@@ -25,6 +25,7 @@ import {
   DropdownMenuSeparator 
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
+import { useAppStore } from "@/store/useAppStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -57,6 +58,7 @@ interface RiskProfileHistoryProps {
 
 export function RiskProfileHistory({ onNewAssessment, onNewCustomAssessment, questionnaires }: RiskProfileHistoryProps) {
   const router = useRouter();
+  const { user } = useAppStore();
   const [loading, setLoading] = useState(true);
   const [assessments, setAssessments] = useState<RiskAssessment[]>([]);
   const [search, setSearch] = useState("");
@@ -168,13 +170,15 @@ export function RiskProfileHistory({ onNewAssessment, onNewCustomAssessment, que
             />
           </div>
           
-          <Link href="/risk-profiles/manage" className="shrink-0">
-            <Button variant="outline" className="h-10 gap-2 border-primary/20">
-              <Settings className="w-4 h-4" />
-              <span className="hidden xl:inline">Forms</span>
-              <span className="xl:hidden">Forms</span>
-            </Button>
-          </Link>
+          {(user?.role === "owner" || user?.role === "partner") && (
+            <Link href="/risk-profiles/manage" className="shrink-0">
+              <Button variant="outline" className="h-10 gap-2 border-primary/20">
+                <Settings className="w-4 h-4" />
+                <span className="hidden xl:inline">Forms</span>
+                <span className="xl:hidden">Forms</span>
+              </Button>
+            </Link>
+          )}
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

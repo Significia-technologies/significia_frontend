@@ -1,12 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ShieldCheck, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { QuestionnaireManagement } from "@/features/risk-profile/RiskFormBuilder/QuestionnaireManagement";
 import { FormBuilderPage } from "@/features/risk-profile/RiskFormBuilder/FormBuilderPage";
 import { DynamicRiskForm } from "@/features/risk-profile/CustomRiskForm/DynamicRiskForm";
 import Link from "next/link";
+import { useAppStore } from "@/store/useAppStore";
+import { useRouter } from "next/navigation";
 
 type ManagementView = "LIST" | "BUILDER" | "PREVIEW";
 
@@ -17,6 +19,22 @@ type ManagementView = "LIST" | "BUILDER" | "PREVIEW";
 export default function ManageProtocolsPage() {
   const [view, setView] = useState<ManagementView>("LIST");
   const [selectedQuestionnaire, setSelectedQuestionnaire] = useState<any>(null);
+  const { user } = useAppStore();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (user && user.role !== "owner" && user.role !== "partner") {
+      router.replace("/risk-profiles");
+    }
+  }, [user, router]);
+
+  if (!user || (user.role !== "owner" && user.role !== "partner")) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Redirecting...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto py-4 px-4">
