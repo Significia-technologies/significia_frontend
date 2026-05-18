@@ -140,7 +140,7 @@ export function QuestionnaireManagement({ onEdit, onView, onAddNew, onBack }: Qu
             />
           </div>
           <Button onClick={onAddNew} className="h-9 px-4 gap-2 bg-primary/90 hover:bg-primary text-black font-black uppercase text-[10px] tracking-widest rounded-lg shadow-lg shadow-primary/10 transition-all active:scale-95">
-            <Plus className="w-4 h-4" /> New Protocol
+            <Plus className="w-4 h-4" /> New Questionnaire
           </Button>
         </div>
       </div>

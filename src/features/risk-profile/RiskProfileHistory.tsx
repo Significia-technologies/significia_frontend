@@ -171,7 +171,7 @@ export function RiskProfileHistory({ onNewAssessment, onNewCustomAssessment, que
           <Link href="/risk-profiles/manage" className="shrink-0">
             <Button variant="outline" className="h-10 gap-2 border-primary/20">
               <Settings className="w-4 h-4" />
-              <span className="hidden xl:inline">Protocols</span>
+              <span className="hidden xl:inline">Forms</span>
               <span className="xl:hidden">Forms</span>
             </Button>
           </Link>
