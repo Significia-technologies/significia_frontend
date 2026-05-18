@@ -382,7 +382,7 @@ export default function TeamManagement() {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-[200px]">Member</TableHead>
-                      <TableHead>Role & ID</TableHead>
+                      <TableHead>Role, ID & Designation</TableHead>
                       <TableHead>Department</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Joined</TableHead>
