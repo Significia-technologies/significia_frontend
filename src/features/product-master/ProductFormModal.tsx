@@ -50,7 +50,7 @@ export function ProductFormModal({ open, onClose, productType, editProduct, onSa
     if (editProduct) {
       const base = { ...INITIAL[productType] };
       Object.keys(base).forEach((k) => {
-        base[k] = (editProduct as Record<string, unknown>)[k] as string ?? "";
+        base[k] = (editProduct as any)[k] as string ?? "";
       });
       setForm(base);
     } else {

@@ -257,7 +257,7 @@ export function SidebarContent() {
                     {item.label}
                   </TooltipContent>
                 </Tooltip>
-                {item.children.map((child) => {
+                {item.children?.map((child) => {
                   const childActive = pathname.startsWith(child.href);
                   return (
                     <Tooltip key={child.href} delayDuration={0}>

@@ -52,7 +52,7 @@ const COLUMNS: Record<ProductType, ColumnDef[]> = {
 };
 
 function getProductLabel(product: AnyProduct, productType: ProductType): string {
-  const p = product as Record<string, string>;
+  const p = product as any;
   if (productType === "shares" || productType === "etfs") return p.share_name || p.etf_name || p.symbol;
   if (productType === "mutual-funds") return p.scheme_name;
   return `${p.company_name} — ${p.policy_name}`;
@@ -157,7 +157,7 @@ export function ProductList({ productType }: Props) {
               </TableRow>
             )}
             {items.map((item) => {
-              const p = item as Record<string, unknown>;
+              const p = item as any;
               const id = p.id as string;
               return (
                 <TableRow key={id} className={!p.is_active ? "opacity-50" : ""}>
