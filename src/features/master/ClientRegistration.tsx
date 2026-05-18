@@ -440,6 +440,33 @@ export default function ClientRegistrationForm({
     }
   };
 
+  const handleTabChange = (value: string) => {
+    const tabs = ["personal", "financial", "bank", "investment", "compliance", "documents"];
+    const currentIndex = tabs.indexOf(activeTab);
+    const targetIndex = tabs.indexOf(value);
+
+    // Only validate when trying to move forward
+    if (targetIndex > currentIndex) {
+      const activeTabContent = document.querySelector('[role="tabpanel"][data-state="active"]');
+      if (activeTabContent) {
+        const requiredInputs = activeTabContent.querySelectorAll('input[required], select[required], textarea[required]');
+        let isValid = true;
+        for (let i = 0; i < requiredInputs.length; i++) {
+          const input = requiredInputs[i] as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+          if (!input.checkValidity()) {
+            input.reportValidity();
+            isValid = false;
+            break;
+          }
+        }
+        if (!isValid) return;
+      }
+    }
+
+    setActiveTab(value);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.date_of_birth && currentAge < 18) {
@@ -505,7 +532,30 @@ export default function ClientRegistrationForm({
           router.push("/clients");
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.detail || `Failed to ${isEdit ? 'update' : 'register'} client`);
+      let errorMessage = error.response?.data?.detail || `Failed to ${isEdit ? 'update' : 'register'} client`;
+      const status = error.response?.status;
+      
+      if (status === 400 || status === 409 || typeof errorMessage === 'string') {
+          const detailStr = String(errorMessage).toLowerCase();
+          if (detailStr.includes("pan")) {
+              errorMessage = "Registration Failed: A client with this PAN Number already exists.";
+              setActiveTab("personal");
+          } else if (detailStr.includes("aadhar")) {
+              errorMessage = "Registration Failed: A client with this Aadhar Number already exists.";
+              setActiveTab("personal");
+          } else if (detailStr.includes("phone") || detailStr.includes("mobile")) {
+              errorMessage = "Registration Failed: A client with this Phone Number already exists.";
+              setActiveTab("personal");
+          } else if (detailStr.includes("ckyc")) {
+              errorMessage = "Registration Failed: A client with this CKYC Number already exists.";
+              setActiveTab("compliance");
+          } else if (detailStr.includes("email")) {
+              errorMessage = "Registration Failed: A client with this Email already exists.";
+              setActiveTab("personal");
+          }
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
       setShowPreview(false);
@@ -591,7 +641,7 @@ export default function ClientRegistrationForm({
                 </div>
               </div>
             )}
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
               <div className="w-full overflow-x-auto scrollbar-none bg-muted/30 border-b border-primary/10">
                 <TabsList className="min-w-max h-auto p-0 flex bg-transparent rounded-none">
                   <TabsTrigger value="personal" className="px-6 py-4 gap-2 data-[state=active]:bg-primary/5 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none text-xs sm:text-sm transition-all">
@@ -1497,8 +1547,7 @@ export default function ClientRegistrationForm({
                         const tabs = ["personal", "financial", "bank", "investment", "compliance", "documents"];
                         const nextIndex = tabs.indexOf(activeTab) + 1;
                         if (nextIndex < tabs.length) {
-                          setActiveTab(tabs[nextIndex]);
-                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                          handleTabChange(tabs[nextIndex]);
                         }
                       }}
                       className="w-full sm:px-10 h-11 sm:h-auto"
