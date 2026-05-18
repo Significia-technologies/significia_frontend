@@ -425,6 +425,13 @@ export default function ClientRegistrationForm({
         ...prev,
         [name]: cleaned,
       }));
+    } else if (["client_name", "father_name", "mother_name", "spouse_name", "nominee_name", "nominee_relationship"].includes(name)) {
+      // Restrict to alphabetical characters and spaces
+      const cleaned = value.replace(/[^a-zA-Z\s]/g, '');
+      setFormData((prev) => ({
+        ...prev,
+        [name]: cleaned,
+      }));
     } else {
       setFormData((prev) => ({
         ...prev,
