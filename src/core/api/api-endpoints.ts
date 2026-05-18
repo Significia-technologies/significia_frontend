@@ -42,6 +42,7 @@ export const API_ENDPOINTS = {
   CLIENT_AUTH: {
     LOGIN: `${API_BASE}/client-auth/bridge/login`,
     ME: `${API_BASE}/client-auth/me`,
+    LOGOUT: `${API_BASE}/client-auth/bridge/logout`,
   },
 
   // ── Master Data — Clients ──────────────────────────────────
