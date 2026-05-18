@@ -280,13 +280,13 @@ export function ClientList() {
                           <DropdownMenuItem onClick={() => router.push(`/clients/${client.id}`)} className="gap-2">
                             <Eye className="w-4 h-4" /> View Details
                           </DropdownMenuItem>
-                          <DropdownMenuItem 
+                          {/* <DropdownMenuItem 
                             onClick={() => router.push(`/clients/${client.id}/edit`)} 
                             className="gap-2"
                             disabled={!client.is_active}
                           >
                             <Pencil className="w-4 h-4" /> Edit Records
-                          </DropdownMenuItem>
+                          </DropdownMenuItem> */}
                           <DropdownMenuItem 
                             onClick={() => handleSendOnboardingEmail(client.id)} 
                             className="gap-2"

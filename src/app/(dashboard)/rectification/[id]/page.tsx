@@ -366,7 +366,7 @@ export default function RectificationDetailsPage() {
   return (
     <div className="max-w-5xl mx-auto py-8 px-4 space-y-8">
       {/* Workflow Stepper */}
-      <div className="grid grid-cols-3 gap-1 mb-4 print:hidden">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-1 mb-8 print:hidden">
         {[
           { 
             label: "Initialization", 
@@ -453,11 +453,11 @@ export default function RectificationDetailsPage() {
       </div>
 
       {/* Navigation Header */}
-      <div className="flex items-center justify-between print:hidden">
-        <Button variant="ghost" className="gap-2 font-black uppercase text-[10px] tracking-widest" onClick={() => router.push('/rectification')}>
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 print:hidden">
+        <Button variant="ghost" className="gap-2 font-black uppercase text-[10px] tracking-widest w-full md:w-auto justify-start" onClick={() => router.push('/rectification')}>
           <ArrowLeft className="w-4 h-4" /> Back to Dashboard
         </Button>
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row w-full md:w-auto gap-3">
           {(rectification.status === "DRAFT" || rectification.status === "UPDATED") && (
             <Button 
                 variant="outline" 
@@ -527,7 +527,7 @@ export default function RectificationDetailsPage() {
               <div className="w-8 h-8 rounded bg-black text-white flex items-center justify-center font-bold">1</div>
               <h2 className="text-sm font-black uppercase tracking-widest">Basic Identification</h2>
             </div>
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-8 px-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-2 sm:px-4">
               <div className="space-y-1">
                 <Label className="text-[9px] font-black uppercase opacity-40">Client Name</Label>
                 <div className="font-bold border-b border-black/10 pb-1">{client?.client_name || "N/A"}</div>
@@ -569,7 +569,7 @@ export default function RectificationDetailsPage() {
               <div className="w-8 h-8 rounded bg-black text-white flex items-center justify-center font-bold">2</div>
               <h2 className="text-sm font-black uppercase tracking-widest">Request Details</h2>
             </div>
-            <div className="grid grid-cols-2 gap-8 px-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 px-2 sm:px-4">
                <div className="space-y-1">
                 <Label className="text-[9px] font-black uppercase opacity-40">Requested By</Label>
                 <div className="font-bold border-b border-black/10 pb-1 flex items-center gap-2">
@@ -1338,7 +1338,7 @@ export default function RectificationDetailsPage() {
                     </p>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-12 pt-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 pt-8">
                      <div className="space-y-1">
                         <Label className="text-[9px] font-black uppercase opacity-40">Authorized By (Digital)</Label>
                         <div className="font-black text-lg underline decoration-double flex items-center gap-2">
