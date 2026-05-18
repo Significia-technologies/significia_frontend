@@ -205,6 +205,20 @@ export class MasterDataService {
     link.remove();
   }
 
+  static async downloadLetterhead(): Promise<void> {
+    const response = await httpClient.get(API_ENDPOINTS.MASTER.IA_MASTER.LETTERHEAD, {
+      responseType: "blob",
+    });
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "Advisor_Letterhead.pdf");
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  }
+
   static async uploadDocument(
     clientId: string,
     file: File,

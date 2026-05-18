@@ -81,6 +81,16 @@ export default function ToolsPage() {
     }
   };
 
+  const handleDownloadLetterhead = async () => {
+    try {
+      toast.info("Generating letterhead...");
+      await MasterDataService.downloadLetterhead();
+      toast.success("Letterhead downloaded successfully.");
+    } catch {
+      toast.error("Failed to download letterhead.");
+    }
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       {/* Header */}
@@ -121,6 +131,7 @@ export default function ToolsPage() {
                   { label: "Client Registration Form", desc: "Complete blank KYC & registration form", handler: handleDownloadClientForm },
                   { label: "Financial Analysis Form", desc: "Blank printable PDF data entry form", handler: handleDownloadForm },
                   { label: "Asset Allocation Form", desc: "Strategic portfolio distribution template", handler: handleDownloadAssetAllocationForm },
+                  { label: "Blank Letterhead Form", desc: "Advisor letterhead format with logo & credentials", handler: handleDownloadLetterhead },
                 ].map((item) => (
                   <div key={item.label} className="flex items-center justify-between p-3 rounded-xl border bg-card hover:bg-accent/50 transition-all group cursor-default">
                     <div className="flex items-center gap-3">

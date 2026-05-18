@@ -78,6 +78,7 @@ export const API_ENDPOINTS = {
         `${API_BASE}/ia-master/validate/${iaNumber}`,
       PDF: (iaId: string) => `${API_BASE}/ia-master/${iaId}/pdf`,
       EMPLOYEES: `${API_BASE}/ia-master/employees`,
+      LETTERHEAD: `${API_BASE}/ia-master/letterhead`,
     },
     DEPARTMENTS: {
       LIST: `${API_BASE}/departments`,
