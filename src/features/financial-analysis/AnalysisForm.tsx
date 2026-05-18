@@ -618,20 +618,33 @@ export function AnalysisForm({ clientId, copyFromProfileId, onSuccess, onCancel 
                 <SectionHeader title="2. Spouse Information" icon={User} number="2" />
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="space-y-2">
-                    <Label>Spouse Name</Label>
-                    <Input value={formData.spouse_name} onChange={e => handleTopLevelChange('spouse_name', e.target.value)} />
+                    <Label>Spouse Name {clientFound && "(Auto-populated)"}</Label>
+                    <Input 
+                      value={formData.spouse_name} 
+                      onChange={e => handleTopLevelChange('spouse_name', e.target.value)} 
+                      readOnly={clientFound}
+                      className={clientFound ? "font-bold uppercase text-primary/80 cursor-default" : ""}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label className={formData.spouse_dob && !isEighteenPlus(formData.spouse_dob) ? "text-destructive" : ""}>
-                      Date of Birth {formData.spouse_dob && !isEighteenPlus(formData.spouse_dob) && "(Must be 18+)"}
+                      Date of Birth {clientFound && "(Auto-populated)"} {formData.spouse_dob && !isEighteenPlus(formData.spouse_dob) && "(Must be 18+)"}
                     </Label>
-                    <DatePicker 
-                      date={formData.spouse_dob} 
-                      onChange={val => handleTopLevelChange('spouse_dob', val)}
-                      placeholder="Select Spouse DOB"
-                      fromYear={1930}
-                      className={formData.spouse_dob && !isEighteenPlus(formData.spouse_dob) ? "border-destructive focus-visible:ring-destructive" : ""}
-                    />
+                    {clientFound ? (
+                      <Input 
+                        value={formData.spouse_dob} 
+                        readOnly 
+                        className="font-bold text-primary/80 cursor-default"
+                      />
+                    ) : (
+                      <DatePicker 
+                        date={formData.spouse_dob} 
+                        onChange={val => handleTopLevelChange('spouse_dob', val)}
+                        placeholder="Select Spouse DOB"
+                        fromYear={1930}
+                        className={formData.spouse_dob && !isEighteenPlus(formData.spouse_dob) ? "border-destructive focus-visible:ring-destructive" : ""}
+                      />
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label>Occupation/Status</Label>
