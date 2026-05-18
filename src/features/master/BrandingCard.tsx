@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { IAMasterService, IAMaster } from "@/core/services/ia-master.service";
 import { toast } from "sonner";
 import { getAssetUrl } from "@/core/api/api-utils";
@@ -101,19 +101,11 @@ export function BrandingCard({ data, onRefresh }: BrandingCardProps) {
               </CardDescription>
             </div>
           </div>
-          {!isEditing ? (
+          {!isEditing && (
             <Button size="sm" variant="outline" className="gap-2 border-primary/20" onClick={startEditing}>
               <Edit className="w-4 h-4" />
               Customize
             </Button>
-          ) : (
-            <div className="flex gap-2">
-              <Button size="sm" variant="ghost" onClick={() => setIsEditing(false)} disabled={saving}>Cancel</Button>
-              <Button size="sm" className="gap-2" onClick={handleSave} disabled={saving}>
-                {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-                Save Changes
-              </Button>
-            </div>
           )}
         </div>
       </CardHeader>
@@ -318,6 +310,17 @@ export function BrandingCard({ data, onRefresh }: BrandingCardProps) {
           </div>
         )}
       </CardContent>
+      {isEditing && (
+        <CardFooter className="border-t border-primary/10 bg-muted/20 px-6 py-4 flex justify-end gap-2">
+          <Button size="sm" variant="ghost" onClick={() => setIsEditing(false)} disabled={saving}>
+            Cancel
+          </Button>
+          <Button size="sm" className="gap-2" onClick={handleSave} disabled={saving}>
+            {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+            Save Changes
+          </Button>
+        </CardFooter>
+      )}
     </Card>
   );
 }
