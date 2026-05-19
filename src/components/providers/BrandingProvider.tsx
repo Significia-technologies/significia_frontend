@@ -200,6 +200,24 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
   const [tenantNotFound, setTenantNotFound] = React.useState(false);
   const [isError, setIsError] = React.useState(false);
 
+  // Synchronously restore cached branding from localStorage on mount (prevents FOUC/style flash)
+  useEffect(() => {
+    if (typeof window !== "undefined" && !publicBranding) {
+      const activeSlug = localStorage.getItem("simulatedTenantSlug") || "";
+      const cached = localStorage.getItem("cachedPublicBranding");
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          if (parsed && parsed.slug === activeSlug) {
+            setPublicBranding(parsed.branding);
+          }
+        } catch (e) {
+          console.warn("Failed to parse cached branding", e);
+        }
+      }
+    }
+  }, []);
+
   useEffect(() => {
     // Only fetch if not already present to avoid redundant calls
     if (!publicBranding && !tenantNotFound) {
@@ -208,6 +226,15 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
           const storedSlug = localStorage.getItem("simulatedTenantSlug") || undefined;
           const branding = await AuthService.getPublicBranding(storedSlug);
           setPublicBranding(branding);
+          
+          // Cache the branding locally along with the simulated tenant slug context
+          if (typeof window !== "undefined") {
+            const activeSlug = localStorage.getItem("simulatedTenantSlug") || "";
+            localStorage.setItem("cachedPublicBranding", JSON.stringify({
+              slug: activeSlug,
+              branding: branding
+            }));
+          }
           
           // Update page title dynamically for SEO/White-labeling
           if (branding.portal_title) {

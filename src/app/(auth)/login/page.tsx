@@ -22,7 +22,7 @@ import { toast } from "sonner";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { setUser, publicBranding } = useAppStore();
+  const { setUser, setPublicBranding, publicBranding } = useAppStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -87,6 +87,7 @@ export default function LoginPage() {
         }
 
         setUser(result.user!);
+        setPublicBranding(null); // Force refetch of branding
         router.push("/admin");
       } else {
         // --- SUBDOMAIN LOGIN (IA Staff / Owner) ---
@@ -104,6 +105,7 @@ export default function LoginPage() {
         // Fetch the real user profile from the backend so is_profile_completed reflects actual state
         const authUser = await AuthService.getCurrentUser();
         setUser(authUser);
+        setPublicBranding(null); // Force refetch of branding
 
         router.push("/");
       }
