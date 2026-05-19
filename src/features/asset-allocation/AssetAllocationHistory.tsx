@@ -10,6 +10,7 @@ import {
   Landmark,
   Gem,
   ChevronRight,
+  ChevronDown,
   Loader2,
   Send,
   PlusCircle,
@@ -58,6 +59,15 @@ export function AssetAllocationHistory({ onNewAllocation }: AssetAllocationHisto
   const [downloading, setDownloading] = useState<string | null>(null);
   const [emailing, setEmailing] = useState<string | null>(null);
   const [initiating, setInitiating] = useState<string | null>(null);
+  const [expandedClient, setExpandedClient] = useState<string | null>(null);
+
+  const toggleRow = (clientKey: string) => {
+    if (expandedClient === clientKey) {
+      setExpandedClient(null);
+    } else {
+      setExpandedClient(clientKey);
+    }
+  };
 
   const handleInitiateRectification = async (item: AssetAllocation) => {
     setInitiating(item.id);
@@ -100,7 +110,22 @@ export function AssetAllocationHistory({ onNewAllocation }: AssetAllocationHisto
     setLoading(true);
     try {
       const data = await AssetAllocationService.getAll();
-      setAllocations(data);
+      const sorted = [...data].sort((a, b) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+      
+      const latestSeen = new Set<string>();
+      const allocationsWithLatest = sorted.map(item => {
+        const clientKey = item.client_code || item.client_id;
+        let isLatest = false;
+        if (clientKey && !latestSeen.has(clientKey)) {
+          latestSeen.add(clientKey);
+          isLatest = true;
+        }
+        return { ...item, isLatest };
+      });
+
+      setAllocations(allocationsWithLatest);
     } catch {
       toast.error("Failed to load allocation history");
     } finally {
@@ -144,9 +169,10 @@ export function AssetAllocationHistory({ onNewAllocation }: AssetAllocationHisto
 
   const filtered = allocations.filter(
     (a) =>
-      a.client_code?.toLowerCase().includes(search.toLowerCase()) ||
+      (a.client_code?.toLowerCase().includes(search.toLowerCase()) ||
       a.client_name?.toLowerCase().includes(search.toLowerCase()) ||
-      a.assigned_risk_tier?.toLowerCase().includes(search.toLowerCase())
+      a.assigned_risk_tier?.toLowerCase().includes(search.toLowerCase())) &&
+      (a as any).isLatest
   );
 
   const getTierStyles = (tier: string) => {
@@ -299,110 +325,245 @@ export function AssetAllocationHistory({ onNewAllocation }: AssetAllocationHisto
                   </TableCell>
                 </TableRow>
               ) : (
-                filtered.map((a) => (
-                  <TableRow key={a.id} className="group hover:bg-primary/5 border-primary/5 transition-colors">
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span className="font-bold text-sm text-foreground group-hover:text-primary transition-colors">
-                          {a.client_name || "Unknown Client"}
-                        </span>
-                        <span className="text-[10px] font-mono tracking-widest opacity-50 uppercase">
-                          {a.client_code || "N/A"}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {(() => {
-                        const styles = getTierStyles(a.assigned_risk_tier);
-                        return (
-                          <>
-                            <Badge
-                              variant="outline"
-                              className={cn(
-                                "gap-1.5 py-0.5 px-2.5 border uppercase font-black text-[8px] tracking-widest rounded-full shadow-sm transition-all group-hover:shadow-md",
-                                styles.bg,
-                                styles.text,
-                                styles.border
-                              )}
+                filtered.map((a) => {
+                  const clientKey = a.client_code || a.client_id;
+                  const isExpanded = expandedClient === clientKey;
+                  return (
+                    <React.Fragment key={a.id}>
+                      <TableRow className={`group hover:bg-primary/5 border-primary/5 transition-colors ${isExpanded ? "bg-primary/[0.02]" : ""}`}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-6 w-6 p-0 hover:bg-primary/10 transition-colors shrink-0 text-muted-foreground hover:text-primary"
+                              onClick={() => toggleRow(clientKey)}
                             >
-                              <span className={cn("w-1 h-1 rounded-full animate-pulse", styles.dot)} />
-                              {a.assigned_risk_tier || "N/A"}
-                            </Badge>
-                            {a.form_name && (
-                              <span className="text-[8px] text-muted-foreground opacity-40 font-bold ml-1 uppercase whitespace-nowrap">
-                                via {a.form_name}
-                              </span>
-                            )}
-                          </>
-                        );
-                      })()}
-                    </TableCell>
-                    <TableCell>{getAllocBar(a)}</TableCell>
-                    <TableCell className="text-xs font-medium text-muted-foreground">
-                      <div className="flex items-center gap-1.5">
-                        <Calendar className="w-3 h-3 opacity-40" />
-                        {format(new Date(a.created_at), "MMM dd, yyyy")}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 border border-primary/10 hover:bg-primary/5 text-muted-foreground">
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Open menu</span>
+                              {isExpanded ? (
+                                <ChevronDown className="w-4 h-4" />
+                              ) : (
+                                <ChevronRight className="w-4 h-4" />
+                              )}
                             </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-44 border-primary/10">
-                            <DropdownMenuItem
-                              onClick={() => downloadFile(a, "PDF")}
-                              disabled={!!downloading}
-                              className="gap-2 cursor-pointer text-red-500 hover:text-red-600 focus:text-red-600 focus:bg-red-500/10"
-                            >
-                              <FileText className="w-4 h-4" />
-                              <span className="font-bold text-[10px] uppercase tracking-wider">Download PDF</span>
-                            </DropdownMenuItem>
-                            
-                            <DropdownMenuItem
-                              onClick={() => downloadFile(a, "DOCX")}
-                              disabled={!!downloading}
-                              className="gap-2 cursor-pointer text-blue-500 hover:text-blue-600 focus:text-blue-600 focus:bg-blue-500/10"
-                            >
-                              <FileText className="w-4 h-4" />
-                              <span className="font-bold text-[10px] uppercase tracking-wider">Download Word</span>
-                            </DropdownMenuItem>
-                            
-                            <DropdownMenuItem
-                              onClick={() => handleEmail(a)}
-                              disabled={!!emailing || !!downloading}
-                              className="gap-2 cursor-pointer text-emerald-500 hover:text-emerald-600 focus:text-emerald-600 focus:bg-emerald-500/10"
-                            >
-                              {emailing === a.id ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                              ) : (
-                                <Send className="w-4 h-4" />
-                              )}
-                              <span className="font-bold text-[10px] uppercase tracking-wider">Email Client</span>
-                            </DropdownMenuItem>
-                            
-                            <DropdownMenuItem
-                              onClick={() => handleInitiateRectification(a)}
-                              disabled={!!initiating}
-                              className="gap-2 cursor-pointer text-amber-500 hover:text-amber-600 focus:text-amber-600 focus:bg-amber-500/10"
-                            >
-                              {initiating === a.id ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                              ) : (
-                                <RefreshCcw className="w-4 h-4" />
-                              )}
-                              <span className="font-bold text-[10px] uppercase tracking-wider">Correction</span>
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
+                            <div className="flex flex-col">
+                              <div className="flex items-center gap-2">
+                                <span 
+                                  className="font-bold text-sm text-foreground group-hover:text-primary transition-colors cursor-pointer"
+                                  onClick={() => toggleRow(clientKey)}
+                                >
+                                  {a.client_name || "Unknown Client"}
+                                </span>
+                                {(a as any).isLatest && (
+                                  <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 text-[9px] uppercase font-black px-1.5 py-0 h-4 tracking-widest leading-none shrink-0">
+                                    Active
+                                  </Badge>
+                                )}
+                              </div>
+                              <span className="text-[10px] font-mono tracking-widest opacity-50 uppercase">
+                                {a.client_code || "N/A"}
+                              </span>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {(() => {
+                            const styles = getTierStyles(a.assigned_risk_tier);
+                            return (
+                              <>
+                                <Badge
+                                  variant="outline"
+                                  className={cn(
+                                    "gap-1.5 py-0.5 px-2.5 border uppercase font-black text-[8px] tracking-widest rounded-full shadow-sm transition-all group-hover:shadow-md",
+                                    styles.bg,
+                                    styles.text,
+                                    styles.border
+                                  )}
+                                >
+                                  <span className={cn("w-1 h-1 rounded-full animate-pulse", styles.dot)} />
+                                  {a.assigned_risk_tier || "N/A"}
+                                </Badge>
+                                {a.form_name && (
+                                  <span className="text-[8px] text-muted-foreground opacity-40 font-bold ml-1 uppercase whitespace-nowrap">
+                                    via {a.form_name}
+                                  </span>
+                                )}
+                              </>
+                            );
+                          })()}
+                        </TableCell>
+                        <TableCell>{getAllocBar(a)}</TableCell>
+                        <TableCell className="text-xs font-medium text-muted-foreground">
+                          <div className="flex items-center gap-1.5">
+                            <Calendar className="w-3 h-3 opacity-40" />
+                            {format(new Date(a.created_at), "MMM dd, yyyy")}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 border border-primary/10 hover:bg-primary/5 text-muted-foreground">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                  <span className="sr-only">Open menu</span>
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-44 border-primary/10">
+                                <DropdownMenuItem
+                                  onClick={() => downloadFile(a, "PDF")}
+                                  disabled={!!downloading}
+                                  className="gap-2 cursor-pointer text-red-500 hover:text-red-600 focus:text-red-600 focus:bg-red-500/10"
+                                >
+                                  <FileText className="w-4 h-4" />
+                                  <span className="font-bold text-[10px] uppercase tracking-wider">Download PDF</span>
+                                </DropdownMenuItem>
+                                
+                                <DropdownMenuItem
+                                  onClick={() => downloadFile(a, "DOCX")}
+                                  disabled={!!downloading}
+                                  className="gap-2 cursor-pointer text-blue-500 hover:text-blue-600 focus:text-blue-600 focus:bg-blue-500/10"
+                                >
+                                  <FileText className="w-4 h-4" />
+                                  <span className="font-bold text-[10px] uppercase tracking-wider">Download Word</span>
+                                </DropdownMenuItem>
+                                
+                                <DropdownMenuItem
+                                  onClick={() => handleEmail(a)}
+                                  disabled={!!emailing || !!downloading}
+                                  className="gap-2 cursor-pointer text-emerald-500 hover:text-emerald-600 focus:text-emerald-600 focus:bg-emerald-500/10"
+                                >
+                                  {emailing === a.id ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                  ) : (
+                                    <Send className="w-4 h-4" />
+                                  )}
+                                  <span className="font-bold text-[10px] uppercase tracking-wider">Email Client</span>
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+
+                      {isExpanded && (
+                        <TableRow className="bg-primary/[0.01] hover:bg-transparent border-primary/5">
+                          <TableCell colSpan={5} className="p-6 bg-card/5 backdrop-blur-md border-t border-b border-primary/5">
+                            <div className="animate-in slide-in-from-top-2 duration-300 space-y-3">
+                              <div className="flex items-center justify-between border-b border-primary/5 pb-2 mb-3">
+                                <h4 className="text-[10px] font-black uppercase tracking-widest text-primary/80">
+                                  Asset Allocation History Log — {a.client_name || "Client"} ({allocations.filter(item => (item.client_code && item.client_code === a.client_code) || (item.client_id && item.client_id === a.client_id)).length} Records)
+                                </h4>
+                                <span className="text-[9px] uppercase font-bold text-muted-foreground">Click actions on any row to manage past allocations</span>
+                              </div>
+                              <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                                {allocations
+                                  .filter(item => (item.client_code && item.client_code === a.client_code) || (item.client_id && item.client_id === a.client_id))
+                                  .map((historyItem, idx) => {
+                                    const styles = getTierStyles(historyItem.assigned_risk_tier);
+                                    return (
+                                      <div 
+                                        key={historyItem.id} 
+                                        className={`flex items-center justify-between p-3 rounded-lg border text-xs transition-colors ${
+                                          historyItem.id === a.id 
+                                            ? "bg-primary/10 border-primary/20 shadow-sm" 
+                                            : "bg-card/20 border-primary/5 hover:bg-card/40"
+                                        }`}
+                                      >
+                                        <div className="flex items-center gap-3">
+                                          <div className={`w-6 h-6 rounded-full flex items-center justify-center font-black text-[9px] ${
+                                            historyItem.id === a.id 
+                                              ? "bg-primary text-primary-foreground" 
+                                              : "bg-muted text-muted-foreground"
+                                          }`}>
+                                            {idx + 1}
+                                          </div>
+                                          <div>
+                                            <div className="flex items-center gap-2">
+                                              <span className="font-bold">{format(new Date(historyItem.created_at), "MMMM dd, yyyy • HH:mm")}</span>
+                                              <span className="text-[10px] opacity-40">•</span>
+                                              {historyItem.form_name && (
+                                                <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">via {historyItem.form_name}</span>
+                                              )}
+                                              {historyItem.id === a.id && (
+                                                <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 text-[8px] uppercase font-black px-1.5 py-0 h-4 leading-none tracking-widest shrink-0">
+                                                  Active
+                                                </Badge>
+                                              )}
+                                            </div>
+                                            <div className="flex items-center gap-3 mt-1.5">
+                                              <Badge
+                                                variant="outline"
+                                                className={cn(
+                                                  "gap-1.5 py-0.5 px-2.5 border uppercase font-black text-[8px] tracking-tight rounded-full",
+                                                  styles.bg,
+                                                  styles.text,
+                                                  styles.border
+                                                )}
+                                              >
+                                                <span className={cn("w-1 h-1 rounded-full", styles.dot)} />
+                                                {historyItem.assigned_risk_tier || "N/A"}
+                                              </Badge>
+                                              {getAllocBar(historyItem)}
+                                            </div>
+                                          </div>
+                                        </div>
+                                        
+                                        {/* Action buttons inside timeline */}
+                                        <div className="flex items-center gap-1.5">
+                                          <Button 
+                                            variant="ghost" 
+                                            size="sm" 
+                                            className="h-8 px-2 gap-1 border border-primary/5 hover:bg-red-500/10 text-red-500 hover:border-red-500/20 rounded-md transition-all"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              downloadFile(historyItem, 'PDF');
+                                            }}
+                                            disabled={!!downloading}
+                                          >
+                                            <FileText className="w-3.5 h-3.5" />
+                                            <span className="text-[9px] font-black uppercase tracking-tight">PDF</span>
+                                          </Button>
+                                          <Button 
+                                            variant="ghost" 
+                                            size="sm" 
+                                            className="h-8 px-2 gap-1 border border-primary/5 hover:bg-blue-500/10 text-blue-500 hover:border-blue-500/20 rounded-md transition-all"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              downloadFile(historyItem, 'DOCX');
+                                            }}
+                                            disabled={!!downloading}
+                                          >
+                                            <FileText className="w-3.5 h-3.5" />
+                                            <span className="text-[9px] font-black uppercase tracking-tight">Word</span>
+                                          </Button>
+                                          <Button 
+                                            variant="ghost" 
+                                            size="sm" 
+                                            className="h-8 px-2 gap-1 border border-primary/5 hover:bg-emerald-500/10 text-emerald-500 hover:border-emerald-500/20 rounded-md transition-all"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleEmail(historyItem);
+                                            }}
+                                            disabled={!!emailing || !!downloading}
+                                          >
+                                            {emailing === historyItem.id ? (
+                                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                            ) : (
+                                              <Send className="w-3.5 h-3.5" />
+                                            )}
+                                            <span className="text-[9px] font-black uppercase tracking-tight">Email</span>
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                              </div>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </React.Fragment>
+                  );
+                })
               )}
             </TableBody>
           </Table>
