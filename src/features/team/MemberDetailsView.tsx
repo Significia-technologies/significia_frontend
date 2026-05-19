@@ -14,7 +14,8 @@ import {
   CheckCircle2,
   XCircle,
   Loader2,
-  Building2
+  Building2,
+  FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -231,6 +232,48 @@ export default function MemberDetailsView() {
                     </div>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {(member.certificate_path || member.signature_path) && (
+              <div className="pt-4 border-t space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Compliance Documents</p>
+                
+                {member.certificate_path && (
+                  <div className="flex items-center justify-between p-3 border rounded-lg bg-emerald-50/20 border-emerald-100 dark:border-emerald-950">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <FileText className="h-5 w-5 text-emerald-600 shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold truncate">Regulatory Certificate</p>
+                        <p className="text-[10px] text-muted-foreground">Verified PDF copy</p>
+                      </div>
+                    </div>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={() => window.open(member.certificate_path, "_blank")}
+                      className="text-xs h-7 border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-900 dark:text-emerald-400"
+                    >
+                      View
+                    </Button>
+                  </div>
+                )}
+
+                {member.signature_path && (
+                  <div className="flex flex-col p-3 border rounded-lg bg-primary/5 border-primary/10">
+                    <p className="text-[10px] font-bold text-primary mb-2 uppercase tracking-wider">Verified Signature Copy</p>
+                    <div className="h-16 w-full flex items-center justify-center bg-white rounded-lg border border-primary/10 p-2 shadow-inner">
+                      <img 
+                        src={member.signature_path} 
+                        alt={`${member.full_name}'s signature`} 
+                        className="h-full object-contain max-w-full"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>

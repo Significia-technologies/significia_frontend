@@ -65,7 +65,8 @@ export default function MemberOnboardingForm() {
     ia_registration_number: "",
     certificate_issue_date: "",
     date_of_registration_expiry: "",
-    certificate: null as File | null
+    certificate: null as File | null,
+    signature: null as File | null
   });
 
   const passwordCriteria = {
@@ -133,6 +134,9 @@ export default function MemberOnboardingForm() {
       formData.append("date_of_registration_expiry", newMember.date_of_registration_expiry);
       if (newMember.certificate) {
           formData.append("certificate", newMember.certificate);
+      }
+      if (newMember.signature) {
+          formData.append("signature", newMember.signature);
       }
 
       await TeamService.onboardTeamMember(formData);
@@ -410,6 +414,37 @@ export default function MemberOnboardingForm() {
                   <p className="text-[10px] text-muted-foreground italic mt-1">
                       Professional certification is mandatory for all roles.
                   </p>
+              </div>
+
+              <div className="grid gap-2 pt-2">
+                  <Label htmlFor="signature" className={newMember.employee_type === "advisory" && !newMember.signature ? "text-orange-500 font-medium" : ""}>
+                      Upload Signature (PNG/JPG) {newMember.employee_type === "advisory" ? "*" : ""}
+                  </Label>
+                  <div className={`flex flex-col gap-2 p-3 border-2 border-dashed rounded-md bg-background/50 transition-colors hover:border-primary/30 overflow-hidden ${newMember.employee_type === "advisory" && !newMember.signature ? "border-orange-500" : ""}`}>
+                    <div className="flex items-center gap-2 min-w-0">
+                        <FileText className="h-5 w-5 text-muted-foreground shrink-0" />
+                        <span className="text-xs text-muted-foreground truncate font-medium">
+                            {newMember.signature ? newMember.signature.name : "Select signature image"}
+                        </span>
+                    </div>
+                    <Input 
+                        id="signature" 
+                        type="file"
+                        accept="image/png, image/jpeg, image/jpg"
+                        className="text-[10px] h-8 p-1 cursor-pointer file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-[10px] file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+                        required={newMember.employee_type === "advisory"}
+                        onChange={(e) => setNewMember({...newMember, signature: e.target.files?.[0] || null})}
+                    />
+                  </div>
+                  {newMember.employee_type === "advisory" && !newMember.signature ? (
+                      <p className="text-[10px] text-orange-500 font-medium mt-1 animate-in fade-in duration-300">
+                          Signature copy is required for advisory personnel.
+                      </p>
+                  ) : (
+                      <p className="text-[10px] text-muted-foreground italic mt-1">
+                          Upload a clear PNG/JPG copy of signature.
+                      </p>
+                  )}
               </div>
             </CardContent>
           </Card>

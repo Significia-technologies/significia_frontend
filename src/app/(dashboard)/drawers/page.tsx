@@ -45,9 +45,9 @@ export default function DrawersPage() {
 
       if (iaMasterData) {
         const iaDocs = [
-          { id: "1", document_type: "IA Certificate", file_path: iaMasterData.ia_certificate_path, uploaded_at: iaMasterData.created_at },
-          { id: "2", document_type: "IA Signature", file_path: iaMasterData.ia_signature_path, uploaded_at: iaMasterData.created_at },
-          { id: "3", document_type: "IA Logo", file_path: iaMasterData.ia_logo_path, uploaded_at: iaMasterData.created_at },
+          { id: "1", document_type: "IA Certificate", file_path: iaMasterData.ia_certificate_path, uploaded_at: iaMasterData.created_at || new Date().toISOString() },
+          { id: "2", document_type: "IA Signature", file_path: iaMasterData.ia_signature_path, uploaded_at: iaMasterData.created_at || new Date().toISOString() },
+          { id: "3", document_type: "IA Logo", file_path: iaMasterData.ia_logo_path, uploaded_at: iaMasterData.created_at || new Date().toISOString() },
         ].filter((f) => f.file_path);
 
         systemFolders.push({
@@ -61,18 +61,30 @@ export default function DrawersPage() {
         });
 
         if (iaMasterData.employees && iaMasterData.employees.length > 0) {
-          const partnerDocs = iaMasterData.employees
-            .map((emp, i) => ({
-              id: emp.id || String(i),
-              document_type: `Certificate - ${emp.name_of_employee}`,
-              file_path: emp.certificate_path,
-              uploaded_at: emp.created_at || iaMasterData.created_at,
-            }))
-            .filter((f) => f.file_path);
+          const partnerDocs: any[] = [];
+          
+          iaMasterData.employees.forEach((emp: any, i: number) => {
+            if (emp.certificate_path) {
+              partnerDocs.push({
+                id: `${emp.id || String(i)}-cert`,
+                document_type: `Certificate - ${emp.name_of_employee || emp.name}`,
+                file_path: emp.certificate_path,
+                uploaded_at: emp.created_at || iaMasterData.created_at || new Date().toISOString(),
+              });
+            }
+            if (emp.signature_path) {
+              partnerDocs.push({
+                id: `${emp.id || String(i)}-sig`,
+                document_type: `Signature - ${emp.name_of_employee || emp.name}`,
+                file_path: emp.signature_path,
+                uploaded_at: emp.created_at || iaMasterData.created_at || new Date().toISOString(),
+              });
+            }
+          });
 
           systemFolders.push({
             id: "partners-global",
-            name: "Partner Certificates",
+            name: "Partner Certificates & Signatures",
             code: `${iaMasterData.employees.length} Partners`,
             type: "PARTNERS",
             documents: partnerDocs,

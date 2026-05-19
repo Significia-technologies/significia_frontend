@@ -292,6 +292,69 @@ export default function MemberEditForm() {
                   />
                 </div>
               </div>
+
+              <div className="pt-6 border-t border-dashed space-y-4">
+                <h3 className="font-semibold text-sm flex items-center gap-2 text-foreground">
+                  <Shield className="w-4 h-4 text-primary" /> Advisory Signature & Consent Verification
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                  <div className="grid gap-2">
+                    <Label htmlFor="edit-signature" className={formData.employee_type === "advisory" && !member?.signature_path ? "text-orange-500 font-medium" : ""}>
+                      Upload Signature Copy (PNG/JPG) {formData.employee_type === "advisory" ? "*" : ""}
+                    </Label>
+                    <Input 
+                      id="edit-signature" 
+                      type="file"
+                      accept="image/png, image/jpeg, image/jpg"
+                      className="cursor-pointer bg-background file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-[10px] file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          try {
+                            setIsSaving(true);
+                            const res = await TeamService.uploadMemberSignature(member!.id, file);
+                            toast.success("Signature copy uploaded successfully!");
+                            setMember(prev => prev ? { ...prev, signature_path: res.signature_path } : null);
+                          } catch (err) {
+                            toast.error("Failed to upload signature copy");
+                          } finally {
+                            setIsSaving(false);
+                          }
+                        }
+                      }}
+                    />
+                    {formData.employee_type === "advisory" && !member?.signature_path ? (
+                      <p className="text-[10px] text-orange-500 font-medium animate-in fade-in duration-300">
+                        Advisory personnel are required to have a verified signature.
+                      </p>
+                    ) : (
+                      <p className="text-[10px] text-muted-foreground italic">
+                        Upload a clear scan or snapshot of signature for formal advice generation.
+                      </p>
+                    )}
+                  </div>
+                  
+                  {member?.signature_path ? (
+                    <div className="flex flex-col items-center justify-center p-4 border rounded-xl bg-primary/5 border-primary/10 animate-in fade-in duration-300">
+                      <p className="text-[10px] font-bold text-primary mb-2 uppercase tracking-wider">Active Signature Copy</p>
+                      <div className="h-16 w-full flex items-center justify-center bg-white rounded-lg border border-primary/10 p-2 shadow-inner">
+                        <img 
+                          src={member.signature_path} 
+                          alt="Signature preview" 
+                          className="h-full object-contain max-w-full"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center p-6 border border-dashed rounded-xl bg-muted/10 text-xs text-muted-foreground text-center">
+                      No signature copy uploaded yet
+                    </div>
+                  )}
+                </div>
+              </div>
             </CardContent>
             <CardFooter className="border-t pt-6 bg-muted/50 rounded-b-lg flex justify-between">
               <Button variant="ghost" type="button" onClick={() => router.back()}>Cancel</Button>

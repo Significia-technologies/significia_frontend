@@ -19,6 +19,8 @@ export interface TeamMember {
   date_of_registration?: string;
   date_of_registration_expiry?: string;
   certificate_issue_date?: string;
+  certificate_path?: string;
+  signature_path?: string;
   version_number?: number;
 }
 
@@ -80,6 +82,18 @@ export const TeamService = {
    */
   async updateTeamMember(id: string, data: Partial<CreateTeamMember>): Promise<TeamMember> {
     const response = await httpClient.put(`/team/${id}`, data);
+    return response.data;
+  },
+
+  /**
+   * Upload signature copy for an organizational team member.
+   */
+  async uploadMemberSignature(id: string, file: File): Promise<any> {
+    const formData = new FormData();
+    formData.append("signature", file);
+    const response = await httpClient.post(`/team/${id}/signature`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
     return response.data;
   },
 
