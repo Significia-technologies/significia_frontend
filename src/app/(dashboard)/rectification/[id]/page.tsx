@@ -239,7 +239,62 @@ export default function RectificationDetailsPage() {
 
   const updateField = (index: number, key: keyof ProposedChange, value: any) => {
     const next = [...proposedChanges];
-    next[index][key] = value;
+    let finalValue = value;
+
+    if (key === 'proposed') {
+      const fieldName = next[index].field || "";
+      const config = FIELD_CONFIG[fieldName];
+      const isDate = fieldName.toLowerCase().includes("dob") || fieldName.toLowerCase().includes("date");
+      
+      if (isDate && config?.type !== 'date' && typeof value === 'string') {
+        const digits = value.replace(/\D/g, "").slice(0, 8);
+        
+        let dayStr = digits.substring(0, 2);
+        let monthStr = digits.substring(2, 4);
+        let yearStr = digits.substring(4, 8);
+
+        if (monthStr.length === 2) {
+          const mVal = parseInt(monthStr, 10);
+          if (mVal > 12) {
+            monthStr = "12";
+          }
+        }
+
+        if (dayStr.length === 2) {
+          const dVal = parseInt(dayStr, 10);
+          let maxDays = 31;
+          
+          if (monthStr.length === 2) {
+            const mVal = parseInt(monthStr, 10);
+            if (mVal === 2) {
+              maxDays = 29;
+              if (yearStr.length === 4) {
+                const yVal = parseInt(yearStr, 10);
+                const isLeap = (yVal % 4 === 0 && yVal % 100 !== 0) || (yVal % 400 === 0);
+                maxDays = isLeap ? 29 : 28;
+              }
+            } else if ([4, 6, 9, 11].includes(mVal)) {
+              maxDays = 30;
+            }
+          }
+          
+          if (dVal > maxDays) {
+            dayStr = String(maxDays).padStart(2, '0');
+          }
+        }
+
+        let formatted = dayStr;
+        if (digits.length > 2) {
+          formatted += "-" + monthStr;
+        }
+        if (digits.length > 4) {
+          formatted += "-" + yearStr;
+        }
+        finalValue = formatted;
+      }
+    }
+
+    next[index][key] = finalValue;
     
     if (key === 'field' && currentModuleValues[value] !== undefined) {
       next[index]['current'] = currentModuleValues[value];
@@ -338,6 +393,68 @@ export default function RectificationDetailsPage() {
     if (proposedChanges.length > 0 && missingReasons.length > 0) {
       toast.error("Validation Error: Please provide a reason for every changed field.");
       return;
+    }
+
+    // Validation: Check for invalid or incomplete date formats in proposed changes
+    for (const cp of proposedChanges) {
+      const fieldName = cp.field || "";
+      const isDate = fieldName.toLowerCase().includes("dob") || fieldName.toLowerCase().includes("date");
+      const config = FIELD_CONFIG[fieldName];
+      
+      if (isDate && config?.type !== 'date' && typeof cp.proposed === 'string' && cp.proposed.length > 0) {
+        // Expected format is DD-MM-YYYY (exactly 10 characters)
+        const dateRegex = /^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[0-2])-[0-9]{4}$/;
+        if (!dateRegex.test(cp.proposed)) {
+          toast.error(`Validation Error: Please enter a valid date in DD-MM-YYYY format for ${fieldName.toUpperCase()}.`);
+          return;
+        }
+
+        const parts = cp.proposed.split('-');
+        const day = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10);
+        const year = parseInt(parts[2], 10);
+
+        // Verify month max days calendar rules
+        let maxDays = 31;
+        if (month === 2) {
+          const isLeap = (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+          maxDays = isLeap ? 29 : 28;
+        } else if ([4, 6, 9, 11].includes(month)) {
+          maxDays = 30;
+        }
+
+        const monthNames = [
+          "", "January", "February", "March", "April", "May", "June",
+          "July", "August", "September", "October", "November", "December"
+        ];
+
+        if (day > maxDays) {
+          toast.error(`Validation Error: ${fieldName.toUpperCase()} is invalid. ${monthNames[month]} has only ${maxDays} days for year ${year}.`);
+          return;
+        }
+
+        // Spouse Age Validation: Must be 18+
+        if (fieldName.toLowerCase() === 'spouse_dob') {
+          const parts = cp.proposed.split('-');
+          const day = parseInt(parts[0], 10);
+          const month = parseInt(parts[1], 10) - 1; // 0-indexed in JS Date
+          const year = parseInt(parts[2], 10);
+          
+          const birthDate = new Date(year, month, day);
+          const today = new Date();
+          
+          let age = today.getFullYear() - birthDate.getFullYear();
+          const m = today.getMonth() - birthDate.getMonth();
+          if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+          }
+          
+          if (age < 18) {
+            toast.error("Validation Error: Spouse must be 18 years or older.");
+            return;
+          }
+        }
+      }
     }
 
     setSaving(true);
@@ -826,13 +943,45 @@ export default function RectificationDetailsPage() {
                                                     );
                                                 }
 
+                                                const isDateText = (item.field || "").toLowerCase().includes("dob") || (item.field || "").toLowerCase().includes("date");
+                                                
+                                                // Calculate if spouse age is < 18 for inline error feedback
+                                                let isSpouseUnderage = false;
+                                                if ((item.field || "").toLowerCase() === 'spouse_dob' && typeof val === 'string' && val.length === 10) {
+                                                    const dateRegex = /^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[0-2])-[0-9]{4}$/;
+                                                    if (dateRegex.test(val)) {
+                                                        const parts = val.split('-');
+                                                        const day = parseInt(parts[0], 10);
+                                                        const month = parseInt(parts[1], 10) - 1;
+                                                        const year = parseInt(parts[2], 10);
+                                                        const birthDate = new Date(year, month, day);
+                                                        const today = new Date();
+                                                        let age = today.getFullYear() - birthDate.getFullYear();
+                                                        const m = today.getMonth() - birthDate.getMonth();
+                                                        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                                                            age--;
+                                                        }
+                                                        if (age < 18) {
+                                                            isSpouseUnderage = true;
+                                                        }
+                                                    }
+                                                }
+
                                                 return (
-                                                    <Input 
-                                                        type={config?.type || 'text'}
-                                                        className="h-8 border-black/20 font-bold text-[10px]" 
-                                                        value={val} 
-                                                        onChange={(e) => updateField(idx, 'proposed', e.target.value)}
-                                                    />
+                                                    <div className="space-y-1">
+                                                        <Input 
+                                                            type={config?.type || 'text'}
+                                                            className={`h-8 font-bold text-[10px] ${isSpouseUnderage ? 'border-red-500 bg-red-50/10 text-red-500 focus-visible:ring-red-500' : 'border-black/20'}`} 
+                                                            value={val} 
+                                                            placeholder={isDateText && config?.type !== 'date' ? "DD-MM-YYYY" : undefined}
+                                                            onChange={(e) => updateField(idx, 'proposed', e.target.value)}
+                                                        />
+                                                        {isSpouseUnderage && (
+                                                            <p className="text-[8px] font-bold text-red-500 uppercase tracking-tighter">
+                                                                Spouse must be 18+ years old
+                                                            </p>
+                                                        )}
+                                                    </div>
                                                 );
                                             })()
                                         ) : (
