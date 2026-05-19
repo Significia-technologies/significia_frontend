@@ -95,7 +95,19 @@ export default function DrawersPage() {
       }
 
       const clients = Array.isArray(clientsData) ? clientsData : (clientsData?.clients || []);
-      const clientFolders: DrawerFolder[] = clients.map((client) => ({
+      
+      const fullClients = await Promise.all(
+        clients.map(async (client: any) => {
+          try {
+            return await MasterDataService.getClient(client.id);
+          } catch (e) {
+            console.error("Failed to load client details for", client.id, e);
+            return client;
+          }
+        })
+      );
+
+      const clientFolders: DrawerFolder[] = fullClients.map((client) => ({
         id: client.id,
         name: client.client_name,
         code: client.client_code,
@@ -109,6 +121,18 @@ export default function DrawersPage() {
       console.error("Failed to fetch drawers data", e);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadFolderDocuments = async (folder: DrawerFolder) => {
+    if (folder.type !== "CLIENT") return;
+    try {
+      const updatedClient = await MasterDataService.getClient(folder.id);
+      const newDocState = updatedClient.documents || [];
+      setActiveFolder(prev => prev && prev.id === folder.id ? { ...prev, documents: newDocState } : prev);
+      setFolders((prev) => prev.map((f) => (f.id === folder.id ? { ...f, documents: newDocState } : f)));
+    } catch (e) {
+      console.error("Failed to load folder documents", e);
     }
   };
 
@@ -203,7 +227,12 @@ export default function DrawersPage() {
                         <Card
                           key={folder.id}
                           className={`group cursor-pointer transition-all hover:shadow-lg bg-card/80 backdrop-blur-sm relative overflow-hidden ${isSystem ? "border-amber-500/30 hover:border-amber-500/60" : "border-primary/20 hover:border-primary/50"}`}
-                          onClick={() => setActiveFolder(folder)}
+                          onClick={() => {
+                            setActiveFolder(folder);
+                            if (folder.type === "CLIENT") {
+                              loadFolderDocuments(folder);
+                            }
+                          }}
                         >
                           {folder.badge && (
                             <div className="absolute top-0 right-0 bg-amber-500/20 text-amber-700 dark:text-amber-400 text-[10px] font-bold px-2 py-1 rounded-bl-lg">
