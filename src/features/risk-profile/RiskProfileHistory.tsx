@@ -9,13 +9,15 @@ import {
   User,
   ExternalLink,
   ChevronRight,
+  ChevronDown,
   Filter,
   ArrowUpDown,
   Send,
   Loader2,
   RefreshCcw,
   PlusCircle,
-  Settings
+  Settings,
+  MoreHorizontal
 } from "lucide-react";
 import { 
   DropdownMenu, 
@@ -64,10 +66,19 @@ export function RiskProfileHistory({ onNewAssessment, onNewCustomAssessment, que
   const [search, setSearch] = useState("");
   const [downloading, setDownloading] = useState<string | null>(null);
   const [emailing, setEmailing] = useState<string | null>(null);
+  const [expandedClient, setExpandedClient] = useState<string | null>(null);
 
   useEffect(() => {
     loadAssessments();
   }, []);
+
+  const toggleRow = (clientKey: string) => {
+    if (expandedClient === clientKey) {
+      setExpandedClient(null);
+    } else {
+      setExpandedClient(clientKey);
+    }
+  };
 
 
   const loadAssessments = async () => {
@@ -87,6 +98,7 @@ export function RiskProfileHistory({ onNewAssessment, onNewCustomAssessment, que
         form_name: a.portfolio_name,
         assessment_timestamp: a.submitted_at,
         created_at: a.submitted_at,
+        discussion_notes: a.discussion_notes,
         is_custom: true
       }));
 
@@ -94,7 +106,22 @@ export function RiskProfileHistory({ onNewAssessment, onNewCustomAssessment, que
         new Date(b.assessment_timestamp).getTime() - new Date(a.assessment_timestamp).getTime()
       );
       
-      setAssessments(all as any);
+      // Determine the latest assessment for each client dynamically (since it is sorted by newest first)
+      const latestSeen = new Set<string>();
+      const allWithLatest = all.map(item => {
+        const clientKey = item.client_code || item.client_id;
+        let isLatest = false;
+        if (clientKey && !latestSeen.has(clientKey)) {
+          latestSeen.add(clientKey);
+          isLatest = true;
+        }
+        return {
+          ...item,
+          isLatest
+        };
+      });
+      
+      setAssessments(allWithLatest as any);
     } catch (error) {
       toast.error("Failed to load risk assessment history");
     } finally {
@@ -138,11 +165,15 @@ export function RiskProfileHistory({ onNewAssessment, onNewCustomAssessment, que
     }
   };
 
-  const filtered = assessments.filter(a => 
-    a.client_code?.toLowerCase().includes(search.toLowerCase()) ||
-    a.client_name?.toLowerCase().includes(search.toLowerCase()) ||
-    a.assigned_risk_tier?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = assessments.filter(a => {
+    const matchesSearch = 
+      a.client_code?.toLowerCase().includes(search.toLowerCase()) ||
+      a.client_name?.toLowerCase().includes(search.toLowerCase()) ||
+      a.assigned_risk_tier?.toLowerCase().includes(search.toLowerCase());
+      
+    // Always show only the active (latest) assessment for each client on the main table
+    return matchesSearch && (a as any).isLatest;
+  });
 
   const getTierColor = (tier: string) => {
     const t = tier?.toLowerCase() || "";
@@ -234,73 +265,218 @@ export function RiskProfileHistory({ onNewAssessment, onNewCustomAssessment, que
                   </TableCell>
                 </TableRow>
               ) : (
-                filtered.map((a) => (
-                  <TableRow key={a.id} className="group hover:bg-primary/5 border-primary/5 transition-colors">
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span className="font-bold text-sm text-foreground group-hover:text-primary transition-colors">
-                            {a.client_name || "Unknown Client"}
-                        </span>
-                        <span className="text-[10px] font-mono tracking-widest opacity-50 uppercase">
-                            {a.client_code || "N/A"}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={`uppercase font-black text-[9px] tracking-tighter ${getTierColor(a.assigned_risk_tier)}`}>
-                        {a.assigned_risk_tier}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-center font-black text-primary/80">
-                      {a.calculated_score}
-                    </TableCell>
-                    <TableCell className="font-bold text-[10px] text-primary/70 uppercase tracking-tight">
-                      {a.form_name}
-                    </TableCell>
-                    <TableCell className="text-xs font-medium text-muted-foreground">
-                      {format(new Date(a.assessment_timestamp), "MMM dd, yyyy • HH:mm")}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="h-8 px-2 gap-1.5 border-primary/10 hover:border-red-500/30 hover:bg-red-500/5 transition-all"
-                          onClick={() => downloadFile(a, 'PDF')}
-                          disabled={!!downloading}
-                        >
-                          <FileText className="w-3.5 h-3.5 text-red-500" />
-                          <span className="text-[9px] font-black uppercase">PDF</span>
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="h-8 px-2 gap-1.5 border-primary/10 hover:border-blue-500/30 hover:bg-blue-500/5 transition-all"
-                          onClick={() => downloadFile(a, 'DOCX')}
-                          disabled={!!downloading}
-                        >
-                          <FileText className="w-3.5 h-3.5 text-blue-500" />
-                          <span className="text-[9px] font-black uppercase">Word</span>
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="h-8 px-2 gap-1.5 border-primary/10 hover:border-emerald-500/30 hover:bg-emerald-500/5 transition-all"
-                          onClick={() => handleEmail(a)}
-                          disabled={!!emailing || !!downloading}
-                        >
-                          {emailing === a.id ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-500" />
-                          ) : (
-                            <Send className="w-3.5 h-3.5 text-emerald-500" />
-                          )}
-                          <span className="text-[9px] font-black uppercase">Email</span>
-                        </Button>
-
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
+                filtered.map((a) => {
+                  const clientKey = a.client_code || a.client_id;
+                  const isExpanded = expandedClient === clientKey;
+                  return (
+                    <React.Fragment key={a.id}>
+                      <TableRow className={`group hover:bg-primary/5 border-primary/5 transition-colors ${isExpanded ? "bg-primary/[0.02]" : ""}`}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-6 w-6 p-0 hover:bg-primary/10 transition-colors shrink-0 text-muted-foreground hover:text-primary"
+                              onClick={() => toggleRow(clientKey)}
+                            >
+                              {isExpanded ? (
+                                <ChevronDown className="w-4 h-4" />
+                              ) : (
+                                <ChevronRight className="w-4 h-4" />
+                              )}
+                            </Button>
+                            <div className="flex flex-col">
+                              <div className="flex items-center gap-2">
+                                <span 
+                                  className="font-bold text-sm text-foreground group-hover:text-primary transition-colors cursor-pointer"
+                                  onClick={() => toggleRow(clientKey)}
+                                >
+                                    {a.client_name || "Unknown Client"}
+                                </span>
+                                {(a as any).isLatest && (
+                                  <Badge className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/15 border-emerald-500/20 text-[9px] uppercase font-black px-1.5 py-0 h-4 tracking-widest leading-none shrink-0">
+                                    Active
+                                  </Badge>
+                                )}
+                              </div>
+                              <span className="text-[10px] font-mono tracking-widest opacity-50 uppercase">
+                                  {a.client_code || "N/A"}
+                              </span>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={`uppercase font-black text-[9px] tracking-tighter ${getTierColor(a.assigned_risk_tier)}`}>
+                            {a.assigned_risk_tier}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-center font-black text-primary/80">
+                          {a.calculated_score}
+                        </TableCell>
+                        <TableCell className="font-bold text-[10px] text-primary/70 uppercase tracking-tight">
+                          {a.form_name}
+                        </TableCell>
+                        <TableCell className="text-xs font-medium text-muted-foreground">
+                          {format(new Date(a.assessment_timestamp), "MMM dd, yyyy • HH:mm")}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-8 w-8 p-0 border border-primary/10 hover:bg-primary/5 transition-all text-muted-foreground hover:text-primary"
+                              >
+                                <MoreHorizontal className="w-4 h-4" />
+                                <span className="sr-only">Open menu</span>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48 bg-card/95 backdrop-blur-md border-primary/20">
+                              <DropdownMenuItem 
+                                onClick={() => downloadFile(a, 'PDF')}
+                                disabled={!!downloading}
+                                className="cursor-pointer font-bold uppercase text-[10px] tracking-widest py-2.5 flex items-center gap-2 hover:text-red-500 transition-colors"
+                              >
+                                <FileText className="w-4 h-4 text-red-500 shrink-0" />
+                                <span>Download PDF</span>
+                              </DropdownMenuItem>
+                              
+                              <DropdownMenuItem 
+                                onClick={() => downloadFile(a, 'DOCX')}
+                                disabled={!!downloading}
+                                className="cursor-pointer font-bold uppercase text-[10px] tracking-widest py-2.5 flex items-center gap-2 hover:text-blue-500 transition-colors"
+                              >
+                                <FileText className="w-4 h-4 text-blue-500 shrink-0" />
+                                <span>Download Word</span>
+                              </DropdownMenuItem>
+                              
+                              <DropdownMenuSeparator className="bg-primary/10" />
+                              
+                              <DropdownMenuItem 
+                                onClick={() => handleEmail(a)}
+                                disabled={!!emailing || !!downloading}
+                                className="cursor-pointer font-bold uppercase text-[10px] tracking-widest py-2.5 flex items-center gap-2 hover:text-emerald-500 transition-colors"
+                              >
+                                {emailing === a.id ? (
+                                  <Loader2 className="w-4 h-4 animate-spin text-emerald-500 shrink-0" />
+                                ) : (
+                                  <Send className="w-4 h-4 text-emerald-500 shrink-0" />
+                                )}
+                                <span>Email to Client</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                      
+                      {isExpanded && (
+                        <TableRow className="bg-primary/[0.01] hover:bg-transparent border-primary/5">
+                          <TableCell colSpan={6} className="p-6 bg-card/5 backdrop-blur-md border-t border-b border-primary/5">
+                            <div className="animate-in slide-in-from-top-2 duration-300 space-y-3">
+                              <div className="flex items-center justify-between border-b border-primary/5 pb-2 mb-3">
+                                <h4 className="text-[10px] font-black uppercase tracking-widest text-primary/80">
+                                  Assessment History Log — {a.client_name || "Client"} ({assessments.filter(item => (item.client_code && item.client_code === a.client_code) || (item.client_id && item.client_id === a.client_id)).length} Records)
+                                </h4>
+                                <span className="text-[9px] uppercase font-bold text-muted-foreground">Click actions on any row to download past assessments</span>
+                              </div>
+                              <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                                {assessments
+                                  .filter(item => (item.client_code && item.client_code === a.client_code) || (item.client_id && item.client_id === a.client_id))
+                                  .map((historyItem, idx) => (
+                                    <div 
+                                      key={historyItem.id} 
+                                      className={`flex items-center justify-between p-3 rounded-lg border text-xs transition-colors ${
+                                        historyItem.id === a.id 
+                                          ? "bg-primary/10 border-primary/20 shadow-sm" 
+                                          : "bg-card/20 border-primary/5 hover:bg-card/40"
+                                      }`}
+                                    >
+                                      <div className="flex items-center gap-3">
+                                        <div className={`w-6 h-6 rounded-full flex items-center justify-center font-black text-[9px] ${
+                                          historyItem.id === a.id 
+                                            ? "bg-primary text-primary-foreground" 
+                                            : "bg-muted text-muted-foreground"
+                                        }`}>
+                                          {idx + 1}
+                                        </div>
+                                        <div>
+                                          <div className="flex items-center gap-2">
+                                            <span className="font-bold">{format(new Date(historyItem.assessment_timestamp), "MMMM dd, yyyy • HH:mm")}</span>
+                                            <span className="text-[10px] opacity-40">•</span>
+                                            <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">{historyItem.form_name}</span>
+                                            {historyItem.id === a.id && (
+                                              <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 text-[8px] uppercase font-black px-1.5 py-0 h-4 leading-none tracking-widest shrink-0">
+                                                Active
+                                              </Badge>
+                                            )}
+                                          </div>
+                                          <div className="flex items-center gap-2 mt-0.5">
+                                            <Badge variant="outline" className={`uppercase font-black text-[8px] px-1 py-0 h-3.5 tracking-tight ${getTierColor(historyItem.assigned_risk_tier)}`}>
+                                              {historyItem.assigned_risk_tier}
+                                            </Badge>
+                                            <span className="text-[10px] text-muted-foreground font-semibold">
+                                              Score: <span className="text-primary font-black">{historyItem.calculated_score}</span>
+                                            </span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      
+                                      {/* Action buttons inside timeline */}
+                                      <div className="flex items-center gap-1.5">
+                                        <Button 
+                                          variant="ghost" 
+                                          size="sm" 
+                                          className="h-8 px-2 gap-1 border border-primary/5 hover:bg-red-500/10 text-red-500 hover:border-red-500/20 rounded-md transition-all"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            downloadFile(historyItem, 'PDF');
+                                          }}
+                                          disabled={!!downloading}
+                                        >
+                                          <FileText className="w-3.5 h-3.5" />
+                                          <span className="text-[9px] font-black uppercase tracking-tight">PDF</span>
+                                        </Button>
+                                        <Button 
+                                          variant="ghost" 
+                                          size="sm" 
+                                          className="h-8 px-2 gap-1 border border-primary/5 hover:bg-blue-500/10 text-blue-500 hover:border-blue-500/20 rounded-md transition-all"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            downloadFile(historyItem, 'DOCX');
+                                          }}
+                                          disabled={!!downloading}
+                                        >
+                                          <FileText className="w-3.5 h-3.5" />
+                                          <span className="text-[9px] font-black uppercase tracking-tight">Word</span>
+                                        </Button>
+                                        <Button 
+                                          variant="ghost" 
+                                          size="sm" 
+                                          className="h-8 px-2 gap-1 border border-primary/5 hover:bg-emerald-500/10 text-emerald-500 hover:border-emerald-500/20 rounded-md transition-all"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleEmail(historyItem);
+                                          }}
+                                          disabled={!!emailing || !!downloading}
+                                        >
+                                          {emailing === historyItem.id ? (
+                                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                          ) : (
+                                            <Send className="w-3.5 h-3.5" />
+                                          )}
+                                          <span className="text-[9px] font-black uppercase tracking-tight">Email</span>
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  ))}
+                              </div>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </React.Fragment>
+                  );
+                })
               )}
             </TableBody>
           </Table>
