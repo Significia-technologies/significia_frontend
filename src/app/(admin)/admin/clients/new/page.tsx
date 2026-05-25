@@ -380,15 +380,15 @@ export default function NewClientProvisioningPage() {
 
                     <div className="space-y-1.5">
                       <Label htmlFor="subdomain" className="text-xs font-bold text-neutral-800 dark:text-neutral-300">Assigned Subdomain</Label>
-                      <div className="flex items-center">
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-0 sm:gap-0">
                         <Input
                           id="subdomain"
                           placeholder="acme"
-                          className="rounded-r-none bg-background/50 h-10 text-sm"
+                          className="rounded-b-none sm:rounded-r-none sm:rounded-b-md bg-background/50 h-10 text-sm"
                           value={formData.subdomain}
                           onChange={(e) => setFormData((prev) => ({ ...prev, subdomain: e.target.value.toLowerCase().replace(/[^a-z0-9]/g, "") }))}
                         />
-                        <div className="bg-muted px-3 h-10 flex items-center border border-l-0 rounded-r-md text-xs text-muted-foreground font-bold">
+                        <div className="bg-muted px-3 h-10 flex items-center border border-t-0 sm:border-t sm:border-l-0 rounded-b-md sm:rounded-b-none sm:rounded-r-md text-xs text-muted-foreground font-bold">
                           .significia.com
                         </div>
                       </div>
@@ -714,24 +714,24 @@ export default function NewClientProvisioningPage() {
             )}
 
             {/* Stepper Navigation Buttons */}
-            <div className="flex justify-between items-center pt-6 pb-12">
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-between items-center gap-4 pt-6 pb-12">
               <Button
                 type="button"
                 variant="ghost"
                 onClick={handleBack}
                 disabled={currentStep === 1 || isLoading}
-                className="h-12 px-8 font-bold gap-2 hover:bg-primary/5 flex-shrink-0"
+                className="h-12 w-full sm:w-auto px-8 font-bold gap-2 hover:bg-primary/5 flex-shrink-0"
               >
                 <ArrowLeft className="w-4 h-4" /> Back
               </Button>
               
-              <div className="flex gap-4">
+              <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
                  <Button
                     type="button"
                     variant="outline"
                     onClick={() => router.back()}
                     disabled={isLoading}
-                    className="h-12 px-6 font-semibold"
+                    className="h-12 w-full sm:w-auto px-6 font-semibold order-2 sm:order-1"
                   >
                     Cancel
                   </Button>
@@ -739,14 +739,14 @@ export default function NewClientProvisioningPage() {
                   <Button 
                     type="submit" 
                     disabled={isLoading || (currentStep === 3 && !formData.relationship_manager_id)} 
-                    className={`h-12 px-10 font-bold shadow-xl transition-all duration-300 ${currentStep === 3 ? "bg-primary shadow-primary/30" : "bg-neutral-800"}`}
+                    className={`h-12 w-full sm:w-auto px-10 font-bold shadow-xl transition-all duration-300 order-1 sm:order-2 ${currentStep === 3 ? "bg-primary shadow-primary/30" : "bg-neutral-800"}`}
                   >
                     {isLoading ? (
                       <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Processing...</>
                     ) : currentStep === steps.length ? (
                       <><PlusCircle className="mr-2 h-5 w-5" /> Provision New IA</>
                     ) : (
-                      "Continue to Next Step"
+                      "Continue"
                     )}
                   </Button>
               </div>

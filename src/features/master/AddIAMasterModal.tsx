@@ -17,6 +17,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { IAMasterService } from "@/core/services/ia-master.service";
 import { toast } from "sonner";
+import { DatePicker } from "@/components/ui/date-picker";
 
 interface AddIAMasterModalProps {
   isOpen: boolean;
@@ -225,11 +226,17 @@ export function AddIAMasterModal({ isOpen, onClose, onSuccess }: AddIAMasterModa
                 </div>
                 <div className="space-y-2">
                   <Label>Reg Date *</Label>
-                  <Input type="date" name="date_of_registration" value={formData.date_of_registration} onChange={handleChange} required />
+                  <DatePicker 
+                    date={formData.date_of_registration} 
+                    onChange={(val) => setFormData(prev => ({ ...prev, date_of_registration: val }))}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Expiry Date *</Label>
-                  <Input type="date" name="date_of_registration_expiry" value={formData.date_of_registration_expiry} onChange={handleChange} required />
+                  <DatePicker 
+                    date={formData.date_of_registration_expiry} 
+                    onChange={(val) => setFormData(prev => ({ ...prev, date_of_registration_expiry: val }))}
+                  />
                 </div>
               </div>
 
@@ -344,11 +351,17 @@ export function AddIAMasterModal({ isOpen, onClose, onSuccess }: AddIAMasterModa
                         <div className="grid grid-cols-2 gap-2">
                           <div className="space-y-2">
                             <Label className="text-[10px] uppercase">Reg Date</Label>
-                            <Input type="date" value={emp.date_of_registration} onChange={(e) => handleEmployeeChange(index, "date_of_registration", e.target.value)} required />
+                            <DatePicker 
+                              date={emp.date_of_registration} 
+                              onChange={(val) => handleEmployeeChange(index, "date_of_registration", val)}
+                            />
                           </div>
                           <div className="space-y-2">
                             <Label className="text-[10px] uppercase">Expiry Date</Label>
-                            <Input type="date" value={emp.date_of_registration_expiry} onChange={(e) => handleEmployeeChange(index, "date_of_registration_expiry", e.target.value)} required />
+                            <DatePicker 
+                              date={emp.date_of_registration_expiry} 
+                              onChange={(val) => handleEmployeeChange(index, "date_of_registration_expiry", val)}
+                            />
                           </div>
                         </div>
                       </div>

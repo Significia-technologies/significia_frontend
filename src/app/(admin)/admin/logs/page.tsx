@@ -72,18 +72,18 @@ export default function AdminLogsPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">System Audit logs</h1>
-          <p className="text-muted-foreground mt-1">Real-time trail of all administrative actions performed across the master backend.</p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">System Audit logs</h1>
+          <p className="text-muted-foreground mt-1 text-sm md:text-base">Real-time trail of all administrative actions performed across the master backend.</p>
         </div>
-        <Button variant="outline" onClick={fetchLogs} disabled={isLoading} className="gap-2 border-primary/20">
+        <Button variant="outline" onClick={fetchLogs} disabled={isLoading} className="gap-2 border-primary/20 w-full md:w-auto">
           <RefreshCcw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} /> Refresh
         </Button>
       </div>
 
-      <div className="flex items-center gap-4 bg-muted/40 p-4 rounded-xl border">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col sm:flex-row items-center gap-4 bg-muted/40 p-4 rounded-xl border">
+        <div className="relative w-full sm:max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input 
             className="pl-9 bg-background" 
@@ -95,7 +95,8 @@ export default function AdminLogsPage() {
       </div>
 
       <div className="rounded-xl border bg-card/40 backdrop-blur-md overflow-hidden">
-        <Table>
+        <div className="overflow-x-auto">
+          <Table>
           <TableHeader className="bg-muted/50">
             <TableRow>
               <TableHead className="w-[180px]">Timestamp</TableHead>
@@ -147,6 +148,7 @@ export default function AdminLogsPage() {
             )}
           </TableBody>
         </Table>
+        </div>
       </div>
     </div>
   );

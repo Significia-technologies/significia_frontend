@@ -83,18 +83,18 @@ export default function AdminUsersPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Staff Directory</h1>
-          <p className="text-muted-foreground mt-1">Comprehensive list of Significia Core administrative and relationship personnel.</p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Staff Directory</h1>
+          <p className="text-muted-foreground mt-1 text-sm md:text-base">Comprehensive list of Significia administrative personnel.</p>
         </div>
-        <Button onClick={() => { setSelectedUser(null); setIsModalOpen(true); }} className="gap-2 shadow-lg shadow-primary/20">
+        <Button onClick={() => { setSelectedUser(null); setIsModalOpen(true); }} className="gap-2 shadow-lg shadow-primary/20 w-full md:w-auto">
           <UserPlus className="h-4 w-4" /> Add Team Member
         </Button>
       </div>
 
-      <div className="flex items-center gap-4 bg-muted/40 p-4 rounded-xl border">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col sm:flex-row items-center gap-4 bg-muted/40 p-4 rounded-xl border">
+        <div className="relative w-full sm:max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input 
             className="pl-9 bg-background focus:ring-1 focus:ring-primary/20" 
@@ -106,8 +106,9 @@ export default function AdminUsersPage() {
       </div>
 
       <div className="rounded-xl border bg-card/40 backdrop-blur-md overflow-hidden">
-        <Table>
-          <TableHeader className="bg-muted/50">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader className="bg-muted/50">
             <TableRow>
               <TableHead className="w-[280px]">Staff Profile</TableHead>
               <TableHead>System Role</TableHead>
@@ -213,6 +214,7 @@ export default function AdminUsersPage() {
             )}
           </TableBody>
         </Table>
+        </div>
       </div>
 
       <UserFormModal 

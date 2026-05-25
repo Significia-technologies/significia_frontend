@@ -5,6 +5,7 @@ import httpClient from "../api/http-client";
 
 export interface Client {
   id: string;
+  user_id?: string;
   client_name: string;
   client_code: string;
   email: string;
@@ -15,6 +16,7 @@ export interface Client {
   created_at: string;
   updated_at: string;
   assigned_employee_id?: string;
+  assigned_employee_name?: string;
   kyc_verified: boolean;
   ckyc_number?: string;
   ipv_done_by_id?: string;
@@ -27,6 +29,7 @@ export interface ClientDocumentResponse {
   id: string;
   document_type: string;
   file_path: string;
+  category?: string; // e.g., KYC, Rectification, Reports
   uploaded_at: string;
 }
 
@@ -94,18 +97,30 @@ export interface ClientCreate {
   ipv_done_by_id?: string;
   ipv_date?: string;
   documents?: ClientDocumentResponse[];
+  rectification_serial_no?: string;
 }
 
 // ── Master Data Service (Bridge Architecture) ─────────────────────────────
 // No  required — backend resolves tenant from JWT + X-Tenant-Slug
 
 export class MasterDataService {
-  static async listClients(): Promise<Client[]> {
+  static async listClients(params: { page?: number; limit?: number; search?: string } = {}): Promise<{ clients: Client[]; total: number }> {
+    const { page = 1, limit = 10, search } = params;
+    
     const response = await httpClient.get<{ clients: Client[]; total: number }>(
-      API_ENDPOINTS.MASTER.CLIENTS.LIST
+      API_ENDPOINTS.MASTER.CLIENTS.LIST,
+      {
+        params: {
+          skip: (page - 1) * limit,
+          limit,
+          search: search || undefined
+        }
+      }
     );
-    // Bridge Architecture returns { clients: [], total: 0 }
-    return response.data.clients || [];
+    return {
+      clients: response.data.clients || [],
+      total: response.data.total || 0
+    };
   }
 
   static async getClient(clientId: string): Promise<ClientCreate> {
@@ -190,6 +205,20 @@ export class MasterDataService {
     link.remove();
   }
 
+  static async downloadLetterhead(): Promise<void> {
+    const response = await httpClient.get(API_ENDPOINTS.MASTER.IA_MASTER.LETTERHEAD, {
+      responseType: "blob",
+    });
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "Advisor_Letterhead.pdf");
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  }
+
   static async uploadDocument(
     clientId: string,
     file: File,
@@ -212,4 +241,86 @@ export class MasterDataService {
       params: { staff_id: staffId }
     });
   }
+
+  static async sendOnboardingEmail(clientId: string): Promise<void> {
+    await httpClient.post(API_ENDPOINTS.EMAIL.SEND_ONBOARDING, { client_id: clientId });
+  }
+
+  // ── Client Versioning (SEBI Temporal Audit) ──────────────────────
+
+  static async listClientVersions(clientId: string): Promise<ClientVersionListResponse> {
+    const response = await httpClient.get<ClientVersionListResponse>(
+      API_ENDPOINTS.MASTER.CLIENTS.VERSIONS(clientId)
+    );
+    return response.data;
+  }
+
+  static async getClientVersion(clientId: string, versionId: string): Promise<ClientVersionDetail> {
+    const response = await httpClient.get<ClientVersionDetail>(
+      API_ENDPOINTS.MASTER.CLIENTS.VERSION_DETAIL(clientId, versionId)
+    );
+    return response.data;
+  }
+
+  static async getClientVersionAtDate(clientId: string, targetDate: string): Promise<ClientVersionDetail> {
+    const response = await httpClient.get<ClientVersionDetail>(
+      API_ENDPOINTS.MASTER.CLIENTS.VERSION_AT_DATE(clientId),
+      { params: { target_date: targetDate } }
+    );
+    return response.data;
+  }
+
+  static async downloadClientVersionPDF(
+    clientId: string,
+    versionId: string,
+    clientName: string,
+    versionNumber: number
+  ): Promise<void> {
+    const response = await httpClient.get(
+      API_ENDPOINTS.MASTER.CLIENTS.VERSION_PDF(clientId, versionId),
+      { responseType: "blob" }
+    );
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute(
+      "download",
+      `Report_${clientName.replace(/\s+/g, "_")}_V${versionNumber}.pdf`
+    );
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  }
+}
+
+// ── Client Versioning Types ──────────────────────────────────
+
+export interface ClientVersionSummary {
+  id: string;
+  version_number: number;
+  valid_from: string | null;
+  valid_to: string | null;
+  is_current: boolean;
+  change_reason: string | null;
+  changed_by: string | null;
+  created_at: string | null;
+}
+
+export interface ClientVersionListResponse {
+  client_id: string;
+  versions: ClientVersionSummary[];
+  total: number;
+}
+
+export interface ClientVersionDetail {
+  id: string;
+  version_number: number;
+  snapshot: Record<string, any>;
+  valid_from: string | null;
+  valid_to: string | null;
+  is_current: boolean;
+  change_reason: string | null;
+  created_at: string | null;
+  queried_date?: string;
 }

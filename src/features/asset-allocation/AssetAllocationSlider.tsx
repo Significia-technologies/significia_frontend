@@ -22,13 +22,16 @@ export interface AllocationValues {
   stocks: number;
   mf_equity: number;
   ulip_equity: number;
+  etf_equity: number;
   // Debt sub
   fd_bonds: number;
   mf_debt: number;
   ulip_debt: number;
+  etf_debt: number;
   // Commodities sub
   gold_etf: number;
   silver_etf: number;
+  etf_commodity: number;
 }
 
 interface AllocationInputProps {
@@ -79,8 +82,9 @@ function AllocationInput({ label, id, value, onChange, max = 100, colorClass = "
           step={0.5}
           value={value === 0 ? "" : value}
           onChange={handleChange}
+          onWheel={(e) => e.currentTarget.blur()}
           placeholder="0"
-          className="w-20 h-8 rounded-lg border border-primary/15 bg-card/50 px-2.5 text-right text-sm font-black tabular-nums focus:outline-none focus:border-primary/40 transition-colors"
+          className="w-20 h-8 rounded-lg border border-primary/15 bg-card/50 px-2.5 text-right text-sm font-black tabular-nums focus:outline-none focus:border-primary/40 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
         />
       </div>
     </div>
@@ -197,9 +201,9 @@ export function AssetAllocationSlider({ values, onChange }: AssetAllocationSlide
   };
 
   // Sub-asset validation status for "double validation" labeling
-  const isEquitySubValid = values.equities === 0 || Math.abs(values.stocks + values.mf_equity + values.ulip_equity - 100) < 0.01;
-  const isDebtSubValid = values.debt === 0 || Math.abs(values.fd_bonds + values.mf_debt + values.ulip_debt - 100) < 0.01;
-  const isCommoditySubValid = values.commodities === 0 || Math.abs(values.gold_etf + values.silver_etf - 100) < 0.01;
+  const isEquitySubValid = values.equities === 0 || Math.abs(values.stocks + values.mf_equity + values.ulip_equity + values.etf_equity - 100) < 0.01;
+  const isDebtSubValid = values.debt === 0 || Math.abs(values.fd_bonds + values.mf_debt + values.ulip_debt + values.etf_debt - 100) < 0.01;
+  const isCommoditySubValid = values.commodities === 0 || Math.abs(values.gold_etf + values.silver_etf + values.etf_commodity - 100) < 0.01;
 
   return (
     <div className="space-y-6">
@@ -266,6 +270,7 @@ export function AssetAllocationSlider({ values, onChange }: AssetAllocationSlide
           fields={[
             { label: "Stocks", id: "stocks-pct", key: "stocks" },
             { label: "Mutual Funds (Equity)", id: "mf-equity-pct", key: "mf_equity" },
+            { label: "ETF (Equity)", id: "etf-equity-pct", key: "etf_equity" },
             { label: "ULIP (Equity)", id: "ulip-equity-pct", key: "ulip_equity" },
           ]}
           values={values}
@@ -281,6 +286,7 @@ export function AssetAllocationSlider({ values, onChange }: AssetAllocationSlide
           fields={[
             { label: "Fixed Deposits & Bonds", id: "fd-bonds-pct", key: "fd_bonds" },
             { label: "Mutual Funds (Debt)", id: "mf-debt-pct", key: "mf_debt" },
+            { label: "ETF (Debt)", id: "etf-debt-pct", key: "etf_debt" },
             { label: "ULIP (Debt)", id: "ulip-debt-pct", key: "ulip_debt" },
           ]}
           values={values}
@@ -296,6 +302,7 @@ export function AssetAllocationSlider({ values, onChange }: AssetAllocationSlide
           fields={[
             { label: "Gold ETF", id: "gold-etf-pct", key: "gold_etf" },
             { label: "Silver ETF", id: "silver-etf-pct", key: "silver_etf" },
+            { label: "ETF", id: "etf-commodity-pct", key: "etf_commodity" },
           ]}
           values={values}
           onChange={handleSubChange}

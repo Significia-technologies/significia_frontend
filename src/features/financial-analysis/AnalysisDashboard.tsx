@@ -13,8 +13,18 @@ import {
   Download,
   BrainCircuit,
   MessageSquare,
-  PieChart as PieChartIcon
+  PieChart as PieChartIcon,
+  Edit3,
+  Mail,
+  ChevronDown
 } from "lucide-react";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger, 
+  DropdownMenuSeparator 
+} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -44,16 +54,18 @@ import {
   CalculationDetails, 
   FinancialAnalysisService 
 } from "@/core/services/financial-analysis.service";
+import { SEBIService } from "@/core/services/sebi.service";
 import { toast } from "sonner";
 
 interface AnalysisDashboardProps {
-  
   result: FinancialAnalysisResult;
   clientName: string;
+  onEdit?: (result: FinancialAnalysisResult) => void;
 }
 
-export function AnalysisDashboard({ result, clientName }: AnalysisDashboardProps) {
+export function AnalysisDashboard({ result, clientName, onEdit }: AnalysisDashboardProps) {
   const [downloading, setDownloading] = React.useState<string | null>(null);
+  const [delivering, setDelivering] = React.useState(false);
   const [calcDetails, setCalcDetails] = React.useState<CalculationDetails | null>(null);
   const [loadingCalc, setLoadingCalc] = React.useState(false);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
@@ -79,6 +91,21 @@ export function AnalysisDashboard({ result, clientName }: AnalysisDashboardProps
       toast.error(`Failed to download report`);
     } finally {
       setDownloading(null);
+    }
+  };
+
+  const handleEmailReport = async () => {
+    if (!result) return;
+    
+    setDelivering(true);
+    try {
+      await SEBIService.emailAnalysisReport(result.id);
+      toast.success("Financial Analysis report has been sent to client via email.");
+    } catch (err: any) {
+      console.error("Email error:", err);
+      toast.error(err.response?.data?.detail || "Failed to send email. Please check SMTP settings.");
+    } finally {
+      setDelivering(false);
     }
   };
 
@@ -115,38 +142,69 @@ export function AnalysisDashboard({ result, clientName }: AnalysisDashboardProps
           <h2 className="text-3xl font-extrabold tracking-tight text-foreground">Analysis Results</h2>
           <p className="text-muted-foreground mt-1">Comprehensive financial roadmap for {clientName}</p>
         </div>
-        <div className="flex gap-3">
-          <Button 
-            variant="outline" 
-            className="gap-2 border-primary/20 bg-background/50"
-            onClick={() => handleDownload('pdf')}
-            disabled={!!downloading}
-          >
-            {downloading === 'pdf' ? <span className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" /> : <Download className="w-4 h-4" />}
-            PDF Report
-          </Button>
-          <Button 
-            variant="outline" 
-            className="gap-2 border-primary/20 bg-background/50"
-            onClick={() => handleDownload('word')}
-            disabled={!!downloading}
-          >
-            {downloading === 'word' ? <span className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" /> : <Download className="w-4 h-4" />}
-            Word Report
-          </Button>
-          
-          <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-            <DialogTrigger asChild>
-              <Button 
-                variant="default" 
-                className="gap-2 shadow-lg shadow-primary/20"
+        <div className="flex gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="default" className="gap-2 shadow-lg shadow-primary/20">
+                Actions
+                <ChevronDown className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 border-primary/20">
+              <DropdownMenuItem 
+                className="gap-2" 
+                onClick={() => handleDownload('pdf')}
+                disabled={!!downloading}
+              >
+                {downloading === 'pdf' ? <span className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" /> : <Download className="w-4 h-4" />}
+                Download PDF Report
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                className="gap-2" 
+                onClick={() => handleDownload('word')}
+                disabled={!!downloading}
+              >
+                {downloading === 'word' ? <span className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" /> : <Download className="w-4 h-4" />}
+                Download Word Report
+              </DropdownMenuItem>
+              
+              <DropdownMenuSeparator />
+              
+              <DropdownMenuItem 
+                className="gap-2" 
+                onClick={() => onEdit?.(result)}
+              >
+                <Edit3 className="w-4 h-4 text-secondary" />
+                Edit as New Version
+              </DropdownMenuItem>
+
+              <DropdownMenuItem 
+                className="gap-2 text-blue-600 focus:text-blue-600 focus:bg-blue-500/5" 
+                onClick={handleEmailReport}
+                disabled={delivering}
+              >
+                {delivering ? (
+                  <span className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Mail className="w-4 h-4" />
+                )}
+                Email to Client
+              </DropdownMenuItem>
+
+              <DropdownMenuSeparator />
+
+              <DropdownMenuItem 
+                className="gap-2 font-bold text-primary focus:text-primary focus:bg-primary/5" 
                 onClick={fetchCalculationDetails}
                 disabled={loadingCalc}
               >
-                {loadingCalc ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <BrainCircuit className="w-4 h-4" />}
-                View Calculation
-              </Button>
-            </DialogTrigger>
+                {loadingCalc ? <span className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" /> : <BrainCircuit className="w-4 h-4" />}
+                View Calculation Logic
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
             <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[90vh] sm:max-h-[80vh] overflow-hidden flex flex-col">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">

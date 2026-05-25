@@ -1,4 +1,4 @@
-﻿import { API_ENDPOINTS } from "../api/api-endpoints";
+import { API_ENDPOINTS } from "../api/api-endpoints";
 import httpClient from "../api/http-client";
 
 export interface AssetAllocationCreate {
@@ -12,11 +12,14 @@ export interface AssetAllocationCreate {
   stocks_percentage: number;
   mutual_fund_equity_percentage: number;
   ulip_equity_percentage: number;
+  etf_equity_percentage: number;
   fixed_deposits_bonds_percentage: number;
   mutual_fund_debt_percentage: number;
   ulip_debt_percentage: number;
+  etf_debt_percentage: number;
   gold_etf_percentage: number;
   silver_etf_percentage: number;
+  etf_commodity_percentage: number;
   generate_system_conclusion: boolean;
   system_conclusion?: string;
   discussion_notes?: string;
@@ -37,16 +40,20 @@ export interface AssetAllocation {
   stocks_percentage: number;
   mutual_fund_equity_percentage: number;
   ulip_equity_percentage: number;
+  etf_equity_percentage: number;
   fixed_deposits_bonds_percentage: number;
   mutual_fund_debt_percentage: number;
   ulip_debt_percentage: number;
+  etf_debt_percentage: number;
   gold_etf_percentage: number;
   silver_etf_percentage: number;
+  etf_commodity_percentage: number;
   system_conclusion?: string;
   generate_system_conclusion: boolean;
   discussion_notes?: string;
   disclaimer_text?: string;
   total_allocation: number;
+  form_name?: string;
   created_at: string;
   updated_at: string;
 }
@@ -56,6 +63,7 @@ export interface ClientValidateResponse {
   client_name?: string;
   registration_number?: string;
   category_name?: string;
+  form_name?: string;
   error?: string;
 }
 
@@ -134,5 +142,9 @@ export class AssetAllocationService {
     document.body.appendChild(link);
     link.click();
     link.remove();
+  }
+
+  static async emailAllocation(allocationId: string): Promise<any> {
+    return await httpClient.post(API_ENDPOINTS.ASSET_ALLOCATION.EMAIL(allocationId));
   }
 }

@@ -12,7 +12,12 @@ import {
   Loader2,
   CheckCircle2,
   FolderOpen,
-  UploadCloud
+  UploadCloud,
+  Eye,
+  EyeOff,
+  Check,
+  X,
+  RotateCcw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,11 +32,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { DatePicker } from "@/components/ui/date-picker";
 import { MasterDataService, ClientCreate } from "@/core/services/master.service";
 import { IAMasterService, Employee } from "@/core/services/ia-master.service";
 import { toast } from "sonner";
 import { RegistrationPreviewModal } from "./components/RegistrationPreviewModal";
 import { useRouter } from "next/navigation";
+import { RectificationService, RectificationResponse } from "@/core/services/rectification.service";
+import { History } from "lucide-react";
 
 interface ClientRegistrationFormProps {
   
@@ -52,6 +60,62 @@ const REQUIRED_DOCUMENTS = [
   "Signature"
 ];
 
+const STORAGE_KEY = "client_registration_draft";
+
+const DEFAULT_FORM_DATA: ClientCreate = {
+  email: "",
+  password: "",
+  client_code: "",
+  client_name: "",
+  date_of_birth: "",
+  pan_number: "",
+  phone_number: "",
+  address: "",
+  occupation: "",
+  gender: "",
+  marital_status: "",
+  nationality: "Indian",
+  residential_status: "Resident Individual",
+  tax_residency: "India",
+  pep_status: "Not a PEP",
+  father_name: "",
+  mother_name: "",
+  spouse_name: "",
+  aadhar_number: "",
+  passport_number: "",
+  annual_income: "" as any,
+  net_worth: "" as any,
+  income_source: "",
+  fatca_compliance: "FATCA Compliant",
+  existing_portfolio_value: "" as any,
+  existing_portfolio_composition: "",
+  bank_account_number: "",
+  bank_name: "",
+  bank_branch: "",
+  ifsc_code: "",
+  demat_account_number: "",
+  trading_account_number: "",
+  risk_profile: "Moderate",
+  investment_experience: "Beginner",
+  investment_objectives: "",
+  investment_horizon: "Medium Term",
+  liquidity_needs: "Medium",
+  advisor_name: "",
+  advisor_registration_number: "",
+  client_date: new Date().toISOString().split('T')[0],
+  nominee_name: "",
+  nominee_relationship: "",
+  previous_advisor_name: "",
+  referral_source: "",
+  declaration_signed: true,
+  agreement_date: new Date().toISOString().split('T')[0],
+  assigned_employee_id: "",
+  kyc_verified: false,
+  ckyc_number: "",
+  ipv_done_by_id: "",
+  ipv_date: "",
+};
+
 export default function ClientRegistrationForm({ 
   
   initialData, 
@@ -63,64 +127,67 @@ export default function ClientRegistrationForm({
   const [showPreview, setShowPreview] = useState(false);
   const [activeTab, setActiveTab] = useState("personal");
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [ipvSearchTerm, setIpvSearchTerm] = useState("");
-  const [showIpvResults, setShowIpvResults] = useState(false);
+  const [ipvSearchTerm, setIpvSearchTerm] = React.useState("");
+  const [showIpvResults, setShowIpvResults] = React.useState(false);
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [passwordBlurred, setPasswordBlurred] = React.useState(false);
   const [assignedSearchTerm, setAssignedSearchTerm] = useState("");
   const [showAssignedResults, setShowAssignedResults] = useState(false);
   const [pendingDocuments, setPendingDocuments] = useState<Record<string, File>>({});
+  const [availableRectifications, setAvailableRectifications] = useState<RectificationResponse[]>([]);
+  const [authorizedFields, setAuthorizedFields] = useState<string[]>([]);
 
-  const [formData, setFormData] = useState<ClientCreate>(initialData || {
-    email: "",
-    password: "",
-    client_code: "",
-    client_name: "",
-    date_of_birth: "",
-    pan_number: "",
-    phone_number: "",
-    address: "",
-    occupation: "",
-    gender: "",
-    marital_status: "",
-    nationality: "Indian",
-    residential_status: "Resident Individual",
-    tax_residency: "India",
-    pep_status: "Not a PEP",
-    father_name: "",
-    mother_name: "",
-    spouse_name: "",
-    aadhar_number: "",
-    passport_number: "",
-    annual_income: "" as any,
-    net_worth: "" as any,
-    income_source: "",
-    fatca_compliance: "FATCA Compliant",
-    existing_portfolio_value: "" as any,
-    existing_portfolio_composition: "",
-    bank_account_number: "",
-    bank_name: "",
-    bank_branch: "",
-    ifsc_code: "",
-    demat_account_number: "",
-    trading_account_number: "",
-    risk_profile: "Moderate",
-    investment_experience: "Beginner",
-    investment_objectives: "",
-    investment_horizon: "Medium Term",
-    liquidity_needs: "Medium",
-    advisor_name: "",
-    advisor_registration_number: "",
-    client_date: new Date().toISOString().split('T')[0],
-    nominee_name: "",
-    nominee_relationship: "",
-    previous_advisor_name: "",
-    referral_source: "",
-    declaration_signed: true,
-    agreement_date: new Date().toISOString().split('T')[0],
-    assigned_employee_id: "",
-    kyc_verified: false,
-    ckyc_number: "",
-    ipv_done_by_id: "",
-    ipv_date: "",
+  const isFieldDisabled = (fieldName: string) => {
+    if (!isEdit) return false;
+    // Permanent read-only fields — never editable via data rectification
+    const IMMUTABLE_FIELDS = new Set([
+      // Core Identity
+      "client_name", "name", "client_code", "date_of_birth", "pan_number", "aadhar_number", "passport_number",
+      // KYC / Compliance
+      "kyc_verified", "ckyc_number",
+      // IPV
+      "ipv_done_by_id", "ipv_date",
+      // Advisor / IA (system-assigned)
+      "advisor_name", "advisor_registration_number",
+      // System dates
+      "client_date", "agreement_date",
+      // System status & document paths
+      "status", "is_active",
+      "documents", "certificate_path", "financial_analysis_path",
+      "other_document_path", "agreement_copy_path",
+      "client_signature_path", "advisor_signature_path",
+      // Audit trail
+      "rectification_serial_no",
+      // Assessment outcomes — managed via Risk Profile / Financial Analysis modules
+      "risk_profile", "investment_experience", "investment_horizon", "liquidity_needs", "investment_objectives",
+    ]);
+    if (IMMUTABLE_FIELDS.has(fieldName)) return true;
+    return !authorizedFields.includes(fieldName);
+  };
+
+  const [formData, setFormData] = useState<ClientCreate>(() => {
+    if (initialData) return initialData;
+    // Restore draft from localStorage for new registrations
+    if (!isEdit) {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          // Refresh system dates to today and never restore password
+          return {
+            ...DEFAULT_FORM_DATA,
+            ...parsed,
+            password: "",
+            client_date: new Date().toISOString().split('T')[0],
+            agreement_date: new Date().toISOString().split('T')[0],
+          };
+        }
+      } catch (e) {
+        console.warn("Failed to restore draft from localStorage", e);
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    }
+    return { ...DEFAULT_FORM_DATA };
   });
 
   React.useEffect(() => {
@@ -170,10 +237,10 @@ export default function ClientRegistrationForm({
     fetchEmployees();
   }, []);
   
-  // Fetch Client Data if in Edit mode and no initialData
+  // Fetch Client Data and Rectifications if in Edit mode and no initialData
   React.useEffect(() => {
     if (clientId && !initialData) {
-      const fetchClient = async () => {
+      const fetchClientAndRectifications = async () => {
         try {
           const client = await MasterDataService.getClient(clientId);
           if (client) {
@@ -189,14 +256,21 @@ export default function ClientRegistrationForm({
               agreement_date: client.agreement_date?.split('T')[0] || "",
             }));
           }
+
+            if (isEdit) {
+                const response = await RectificationService.list({ client_id: clientId });
+                const relevant = response.records.filter(r => r.module === "CLIENT");
+                setAvailableRectifications(relevant);
+            }
+
         } catch (error) {
           console.error("Failed to fetch client for edit", error);
           toast.error("Failed to load client data");
         }
       };
-      fetchClient();
+      fetchClientAndRectifications();
     }
-  }, [clientId, initialData]);
+  }, [clientId, initialData, isEdit]);
 
   // Sync formData with initialData when it changes (Edit Mode prop)
   React.useEffect(() => {
@@ -213,6 +287,39 @@ export default function ClientRegistrationForm({
       }));
     }
   }, [initialData, isEdit]);
+
+  // Fetch relevant Rectifications (DRAFT, UPDATED, or APPROVED) for tracing and unlocking
+  React.useEffect(() => {
+    if (isEdit && clientId) {
+        RectificationService.list({ client_id: clientId }).then(response => {
+            const relevant = response.records.filter(r => r.module === "CLIENT");
+            setAvailableRectifications(relevant);
+        }).catch(err => {
+            console.error("Failed to load rectifications", err);
+        });
+    }
+  }, [isEdit, clientId]);
+
+  // Synchronize authorized fields based on the entered serial number
+  React.useEffect(() => {
+    if (isEdit && formData.rectification_serial_no && availableRectifications.length > 0) {
+      const val = formData.rectification_serial_no.toUpperCase().trim();
+      const rect = availableRectifications.find(r => r.serial_no === val);
+      if (rect && rect.proposed_changes) {
+        try {
+          const changes = typeof rect.proposed_changes === 'string' ? JSON.parse(rect.proposed_changes) : rect.proposed_changes;
+          const fields = changes.map((c: any) => c.field);
+          setAuthorizedFields(fields);
+        } catch (e) {
+          console.error("Parse error in rectification sync", e);
+        }
+      } else {
+        setAuthorizedFields([]);
+      }
+    } else if (isEdit && !formData.rectification_serial_no) {
+      setAuthorizedFields([]);
+    }
+  }, [formData.rectification_serial_no, availableRectifications, isEdit]);
 
   // Robustly sync Search Terms for Edit Mode when either employees or formData changes
   React.useEffect(() => {
@@ -232,6 +339,21 @@ export default function ClientRegistrationForm({
     }
   }, [employees, formData.ipv_done_by_id, formData.assigned_employee_id]);
 
+  // Auto-save form data to localStorage (only in create mode, debounced)
+  React.useEffect(() => {
+    if (isEdit) return;
+    const timer = setTimeout(() => {
+      try {
+        // Exclude password from persisted draft for security
+        const { password, ...draftData } = formData;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(draftData));
+      } catch (e) {
+        console.warn("Failed to save draft to localStorage", e);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [formData, isEdit]);
+
   const calculateAge = (dob: string) => {
     if (!dob) return 0;
     const birthDate = new Date(dob);
@@ -247,6 +369,26 @@ export default function ClientRegistrationForm({
   const currentAge = calculateAge(formData.date_of_birth);
   const isUnderage = formData.date_of_birth !== "" && currentAge < 18;
 
+  const passwordCriteria = {
+    length: formData.password.length >= 8,
+    upper: /[A-Z]/.test(formData.password),
+    lower: /[a-z]/.test(formData.password),
+    number: /[0-9]/.test(formData.password),
+    special: /[^A-Za-z0-9]/.test(formData.password)
+  };
+
+  const getMissingPasswordRequirements = () => {
+    const missing = [];
+    if (!passwordCriteria.length) missing.push("8+ characters");
+    if (!passwordCriteria.upper) missing.push("one Uppercase letter");
+    if (!passwordCriteria.lower) missing.push("one Lowercase letter");
+    if (!passwordCriteria.number) missing.push("one Number (0-9)");
+    if (!passwordCriteria.special) missing.push("one Special character");
+    return missing;
+  };
+
+  const missingReqs = getMissingPasswordRequirements();
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     
@@ -254,6 +396,41 @@ export default function ClientRegistrationForm({
       setFormData((prev) => ({
         ...prev,
         [name]: value === "" ? "" : parseFloat(value),
+      }));
+    } else if (name === "ckyc_number") {
+      // Restrict to Alphanumeric and Max 14 characters, auto-uppercase
+      const cleaned = value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 14);
+      setFormData((prev) => ({
+        ...prev,
+        [name]: cleaned,
+      }));
+    } else if (name === "ifsc_code") {
+      // Restrict to Alphanumeric and Max 11 characters, auto-uppercase
+      const cleaned = value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 11);
+      setFormData((prev) => ({
+        ...prev,
+        [name]: cleaned,
+      }));
+    } else if (name === "pan_number") {
+      // Restrict to Alphanumeric and Max 10 characters, auto-uppercase
+      const cleaned = value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 10);
+      setFormData((prev) => ({
+        ...prev,
+        [name]: cleaned,
+      }));
+    } else if (name === "phone_number") {
+      // Restrict to Digits and Max 10 characters
+      const cleaned = value.replace(/\D/g, '').slice(0, 10);
+      setFormData((prev) => ({
+        ...prev,
+        [name]: cleaned,
+      }));
+    } else if (["client_name", "father_name", "mother_name", "spouse_name", "nominee_name", "nominee_relationship"].includes(name)) {
+      // Restrict to alphabetical characters and spaces
+      const cleaned = value.replace(/[^a-zA-Z\s]/g, '');
+      setFormData((prev) => ({
+        ...prev,
+        [name]: cleaned,
       }));
     } else {
       setFormData((prev) => ({
@@ -263,13 +440,40 @@ export default function ClientRegistrationForm({
     }
   };
 
+  const handleTabChange = (value: string) => {
+    const tabs = ["personal", "financial", "bank", "investment", "compliance", "documents"];
+    const currentIndex = tabs.indexOf(activeTab);
+    const targetIndex = tabs.indexOf(value);
+
+    // Only validate when trying to move forward
+    if (targetIndex > currentIndex) {
+      const activeTabContent = document.querySelector('[role="tabpanel"][data-state="active"]');
+      if (activeTabContent) {
+        const requiredInputs = activeTabContent.querySelectorAll('input[required], select[required], textarea[required]');
+        let isValid = true;
+        for (let i = 0; i < requiredInputs.length; i++) {
+          const input = requiredInputs[i] as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+          if (!input.checkValidity()) {
+            input.reportValidity();
+            isValid = false;
+            break;
+          }
+        }
+        if (!isValid) return;
+      }
+    }
+
+    setActiveTab(value);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.date_of_birth && currentAge < 18) {
       toast.error("Client must be at least 18 years old.");
       return;
     }
-    if (!isEdit) {
+    if (!isEdit && activeTab === "documents") {
         const missingDocs = REQUIRED_DOCUMENTS.filter(doc => !pendingDocuments[doc]);
         if (missingDocs.length > 0) {
             toast.error(`Missing mandatory documents: ${missingDocs.join(', ')}`);
@@ -277,6 +481,18 @@ export default function ClientRegistrationForm({
             return;
         }
     }
+
+    // If submitted from a non-document tab (e.g. via Enter key), proceed to next step instead of preview
+    if (activeTab !== "documents") {
+        const tabs = ["personal", "financial", "bank", "investment", "compliance", "documents"];
+        const nextIndex = tabs.indexOf(activeTab) + 1;
+        if (nextIndex < tabs.length) {
+          setActiveTab(tabs[nextIndex]);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        return;
+    }
+
     setShowPreview(true);
   };
 
@@ -298,21 +514,48 @@ export default function ClientRegistrationForm({
           router.push(`/clients/${clientId}`);
       } else {
           const client = await MasterDataService.createClient(submissionData);
-          if (client.id && Object.keys(pendingDocuments).length > 0) {
+          const newClientId = client.user_id || client.id;
+          
+          if (newClientId && Object.keys(pendingDocuments).length > 0) {
               toast.info("Registration saving. Uploading secure documents...", { duration: 5000 });
               for (const [docType, file] of Object.entries(pendingDocuments)) {
                   try {
-                      await MasterDataService.uploadDocument(client.id, file, docType);
+                      await MasterDataService.uploadDocument(newClientId, file, docType);
                   } catch (e) {
                       console.error(`Failed to upload ${docType}`, e);
                   }
               }
           }
+          // Clear the localStorage draft on successful registration
+          localStorage.removeItem(STORAGE_KEY);
           toast.success("Client registered and documents secured!");
           router.push("/clients");
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.detail || `Failed to ${isEdit ? 'update' : 'register'} client`);
+      let errorMessage = error.response?.data?.detail || `Failed to ${isEdit ? 'update' : 'register'} client`;
+      const status = error.response?.status;
+      
+      if (status === 400 || status === 409 || typeof errorMessage === 'string') {
+          const detailStr = String(errorMessage).toLowerCase();
+          if (detailStr.includes("pan")) {
+              errorMessage = "Registration Failed: A client with this PAN Number already exists.";
+              setActiveTab("personal");
+          } else if (detailStr.includes("aadhar")) {
+              errorMessage = "Registration Failed: A client with this Aadhar Number already exists.";
+              setActiveTab("personal");
+          } else if (detailStr.includes("phone") || detailStr.includes("mobile")) {
+              errorMessage = "Registration Failed: A client with this Phone Number already exists.";
+              setActiveTab("personal");
+          } else if (detailStr.includes("ckyc")) {
+              errorMessage = "Registration Failed: A client with this CKYC Number already exists.";
+              setActiveTab("compliance");
+          } else if (detailStr.includes("email")) {
+              errorMessage = "Registration Failed: A client with this Email already exists.";
+              setActiveTab("personal");
+          }
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
       setShowPreview(false);
@@ -343,7 +586,62 @@ export default function ClientRegistrationForm({
       <Card className="border-primary/20 bg-card/50 backdrop-blur-sm overflow-hidden shadow-xl">
         <CardContent className="p-0">
           <form onSubmit={handleSubmit}>
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            {isEdit && (
+              <div className="p-4 sm:p-6 bg-primary/5 border-b border-primary/20 flex flex-col md:flex-row gap-4 justify-between md:items-center">
+                <div>
+                    <h3 className="text-sm font-bold flex items-center gap-2">
+                        <History className="w-4 h-4 text-primary" />
+                        Regulatory-Compliant Data Rectification
+                    </h3>
+                    <p className="text-[10px] text-muted-foreground mt-1">If this edit is part of a formalized authorization, attach the approved serial number for the audit trail.</p>
+                </div>
+                <div className="flex flex-col gap-2 w-full md:w-64">
+                    {formData.rectification_serial_no && authorizedFields.length > 0 && (
+                        <Button 
+                            type="button"
+                            variant="outline" 
+                            size="sm" 
+                            className={`w-full ${
+                                availableRectifications.find(r => r.serial_no === formData.rectification_serial_no)?.status === 'APPROVED' 
+                                ? 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 border-emerald-500/30' 
+                                : 'bg-orange-500/10 text-orange-600 hover:bg-orange-500/20 border-orange-500/30'
+                            }`}
+                            onClick={() => {
+                                const rect = availableRectifications.find(r => r.serial_no === formData.rectification_serial_no);
+                                if (!rect) return;
+                                const changes = typeof rect.proposed_changes === 'string' ? JSON.parse(rect.proposed_changes) : rect.proposed_changes;
+                                const updates: any = {};
+                                changes.forEach((c: any) => { updates[c.field] = c.proposed; });
+                                setFormData(prev => ({ ...prev, ...updates }));
+                                toast.success(rect.status === 'APPROVED' ? "Auto-applied authorized values" : "Applied proposed values (Pending Approval)");
+                            }}
+                        >
+                            {availableRectifications.find(r => r.serial_no === formData.rectification_serial_no)?.status === 'APPROVED' 
+                                ? 'Apply Approved Values' 
+                                : 'Apply Proposed (Draft)'}
+                        </Button>
+                    )}
+                    <div className="flex gap-2">
+                        <Input
+                          placeholder="Paste or type E-Serial..."
+                          value={formData.rectification_serial_no}
+                          onChange={(e) => {
+                            const val = e.target.value.toUpperCase().trim();
+                            setFormData(prev => ({ ...prev, rectification_serial_no: val }));
+                            // authorizedFields is now synced via useEffect
+                          }}
+                          className={`bg-background border-primary/20 text-xs h-9 ${
+                            formData.rectification_serial_no && authorizedFields.length === 0 ? "border-red-500" : ""
+                          }`}
+                        />
+                    </div>
+                    {formData.rectification_serial_no && authorizedFields.length > 0 && availableRectifications.find(r => r.serial_no === formData.rectification_serial_no)?.status !== 'APPROVED' && (
+                        <p className="text-[9px] text-orange-600 font-medium">Note: This rectification is not yet approved by IA.</p>
+                    )}
+                </div>
+              </div>
+            )}
+            <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
               <div className="w-full overflow-x-auto scrollbar-none bg-muted/30 border-b border-primary/10">
                 <TabsList className="min-w-max h-auto p-0 flex bg-transparent rounded-none">
                   <TabsTrigger value="personal" className="px-6 py-4 gap-2 data-[state=active]:bg-primary/5 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none text-xs sm:text-sm transition-all">
@@ -372,16 +670,16 @@ export default function ClientRegistrationForm({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label>Client Name *</Label>
-                      <Input name="client_name" value={formData.client_name} onChange={handleChange} required placeholder="Full name as per PAN" />
+                      <Input name="client_name" disabled={isFieldDisabled("client_name")} value={formData.client_name} onChange={handleChange} required placeholder="Full name as per PAN" />
                     </div>
                     <div className="space-y-2">
                       <Label className={isUnderage ? "text-red-500" : ""}>Date of Birth *</Label>
-                      <Input 
-                        type="date" 
-                        name="date_of_birth" 
-                        value={formData.date_of_birth} 
-                        onChange={handleChange} 
-                        required 
+                      <DatePicker 
+                        date={formData.date_of_birth} 
+                        onChange={(val) => setFormData(prev => ({ ...prev, date_of_birth: val }))}
+                        disabled={isFieldDisabled("date_of_birth")}
+                        placeholder="Select Date of Birth"
+                        fromYear={1930}
                         className={isUnderage ? "border-red-500 ring-offset-red-500 focus-visible:ring-red-500" : ""}
                       />
                       <p className={`text-[10px] italic ${isUnderage ? "text-red-500 font-bold" : "text-muted-foreground"}`}>
@@ -393,12 +691,40 @@ export default function ClientRegistrationForm({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                         <Label>Email (Login Username) *</Label>
-                        <Input type="email" name="email" value={formData.email} onChange={handleChange} required placeholder="client@example.com" disabled={isEdit} />
+                        <Input type="email" name="email" value={formData.email} onChange={handleChange} required placeholder="client@example.com" disabled={isFieldDisabled("email")} />
                     </div>
                     {!isEdit && (
                       <div className="space-y-2">
-                          <Label>Password for Client Login *</Label>
-                          <Input type="password" name="password" value={formData.password} onChange={handleChange} required placeholder="Temporary password" />
+                          <Label className={passwordBlurred && missingReqs.length > 0 ? "text-red-500 font-medium" : ""}>
+                            Password for Client Login *
+                          </Label>
+                          <div className="relative">
+                            <Input 
+                              type={showPassword ? "text" : "password"} 
+                              name="password" 
+                              disabled={isFieldDisabled("password")} 
+                              value={formData.password} 
+                              onChange={handleChange} 
+                              onBlur={() => setPasswordBlurred(true)}
+                              onFocus={() => setPasswordBlurred(false)}
+                              required 
+                              placeholder="Temporary password" 
+                              className={`pr-10 ${passwordBlurred && missingReqs.length > 0 ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowPassword(!showPassword)}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
+                          </div>
+                          
+                          {passwordBlurred && missingReqs.length > 0 && (
+                            <p className="text-[10px] text-red-500 font-medium animate-in fade-in slide-in-from-top-1 duration-200">
+                              Missing: {missingReqs.join(", ")}.
+                            </p>
+                          )}
                       </div>
                     )}
                   </div>
@@ -407,7 +733,7 @@ export default function ClientRegistrationForm({
                     <div className="space-y-2">
                         <Label>Residential Status *</Label>
                         <Select 
-                          name="residential_status" 
+                          name="residential_status" disabled={isFieldDisabled("residential_status")} 
                           value={formData.residential_status} 
                           onValueChange={(val) => setFormData(prev => ({ ...prev, residential_status: val }))}
                           required
@@ -427,7 +753,7 @@ export default function ClientRegistrationForm({
                       <div className="space-y-2">
                           <Label>Aadhar Number *</Label>
                           <Input 
-                            name="aadhar_number" 
+                            name="aadhar_number" disabled={isFieldDisabled("aadhar_number")} 
                             value={formData.aadhar_number} 
                             onChange={(e) => {
                               const val = e.target.value.replace(/\D/g, '').slice(0, 12);
@@ -444,28 +770,55 @@ export default function ClientRegistrationForm({
                     ) : (
                       <div className="space-y-2">
                           <Label>Passport Number *</Label>
-                          <Input name="passport_number" value={formData.passport_number} onChange={handleChange} required placeholder="Passport number" />
+                          <Input name="passport_number" disabled={isFieldDisabled("passport_number")} value={formData.passport_number} onChange={handleChange} required placeholder="Passport number" />
                       </div>
                     )}
                     <div className="space-y-2">
                         <Label>Nationality *</Label>
-                        <Input name="nationality" value={formData.nationality} onChange={handleChange} required />
+                        <Input name="nationality" disabled={isFieldDisabled("nationality")} value={formData.nationality} onChange={handleChange} required />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <div className="space-y-2">
-                       <Label>PAN Number *</Label>
-                       <Input name="pan_number" value={formData.pan_number.toUpperCase()} onChange={handleChange} required placeholder="ABCDE1234F" />
+                       <Label className={formData.pan_number && !/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(formData.pan_number) ? "text-orange-500 font-medium" : ""}>
+                         PAN Number *
+                       </Label>
+                       <Input 
+                         name="pan_number" 
+                         disabled={isFieldDisabled("pan_number")} 
+                         value={formData.pan_number} 
+                         onChange={handleChange} 
+                         required 
+                         placeholder="ABCDE1234F" 
+                         className={formData.pan_number && !/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(formData.pan_number) ? "border-orange-500" : ""}
+                       />
+                       {formData.pan_number && !/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(formData.pan_number) && (
+                         <p className="text-[10px] text-orange-500">Invalid PAN format (e.g. ABCDE1234F).</p>
+                       )}
                     </div>
                     <div className="space-y-2">
-                      <Label>Phone Number *</Label>
-                      <Input type="tel" name="phone_number" value={formData.phone_number} onChange={handleChange} required placeholder="+91 98765 43210" />
+                      <Label className={formData.phone_number && !/^[6-9][0-9]{9}$/.test(formData.phone_number) ? "text-orange-500 font-medium" : ""}>
+                        Phone Number *
+                      </Label>
+                      <Input 
+                        type="tel" 
+                        name="phone_number" 
+                        disabled={isFieldDisabled("phone_number")} 
+                        value={formData.phone_number} 
+                        onChange={handleChange} 
+                        required 
+                        placeholder="9876543210" 
+                        className={formData.phone_number && !/^[6-9][0-9]{9}$/.test(formData.phone_number) ? "border-orange-500" : ""}
+                      />
+                      {formData.phone_number && !/^[6-9][0-9]{9}$/.test(formData.phone_number) && (
+                        <p className="text-[10px] text-orange-500">Invalid 10-digit mobile number.</p>
+                      )}
                     </div>
                     <div className="space-y-2">
                         <Label>Gender *</Label>
                         <Select 
-                          name="gender" 
+                          name="gender" disabled={isFieldDisabled("gender")} 
                           value={formData.gender} 
                           onValueChange={(val) => setFormData(prev => ({ ...prev, gender: val }))}
                           required
@@ -483,7 +836,7 @@ export default function ClientRegistrationForm({
                     <div className="space-y-2">
                         <Label>Marital Status *</Label>
                         <Select 
-                          name="marital_status" 
+                          name="marital_status" disabled={isFieldDisabled("marital_status")} 
                           value={formData.marital_status} 
                           onValueChange={(val) => setFormData(prev => ({ ...prev, marital_status: val }))}
                           required
@@ -503,33 +856,33 @@ export default function ClientRegistrationForm({
 
                   <div className="space-y-2">
                     <Label>Permanent Address *</Label>
-                    <Textarea name="address" value={formData.address} onChange={handleChange} required placeholder="Complete address with City, State, ZIP..." className="min-h-[100px]" />
+                    <Textarea name="address" disabled={isFieldDisabled("address")} value={formData.address} onChange={handleChange} required placeholder="Complete address with City, State, ZIP..." className="min-h-[100px]" />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
                     <div className="space-y-2">
                       <Label>Father's Name *</Label>
-                      <Input name="father_name" value={formData.father_name} onChange={handleChange} required />
+                      <Input name="father_name" disabled={isFieldDisabled("father_name")} value={formData.father_name} onChange={handleChange} required />
                     </div>
                     <div className="space-y-2">
                       <Label>Mother's Name *</Label>
-                      <Input name="mother_name" value={formData.mother_name} onChange={handleChange} required />
+                      <Input name="mother_name" disabled={isFieldDisabled("mother_name")} value={formData.mother_name} onChange={handleChange} required />
                     </div>
                     <div className="space-y-2">
                       <Label>Spouse Name (Optional)</Label>
-                      <Input name="spouse_name" value={formData.spouse_name} onChange={handleChange} />
+                      <Input name="spouse_name" disabled={isFieldDisabled("spouse_name")} value={formData.spouse_name} onChange={handleChange} />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
                     <div className="space-y-2">
                         <Label>Tax Residency *</Label>
-                        <Input name="tax_residency" value={formData.tax_residency} onChange={handleChange} required />
+                        <Input name="tax_residency" disabled={isFieldDisabled("tax_residency")} value={formData.tax_residency} onChange={handleChange} required />
                     </div>
                     <div className="space-y-2">
                       <Label>PEP Status *</Label>
                       <Select 
-                        name="pep_status" 
+                        name="pep_status" disabled={isFieldDisabled("pep_status")} 
                         value={formData.pep_status} 
                         onValueChange={(val) => setFormData(prev => ({ ...prev, pep_status: val }))}
                         required
@@ -548,7 +901,7 @@ export default function ClientRegistrationForm({
                     <div className="space-y-2">
                       <Label>FATCA Compliance *</Label>
                       <Select 
-                        name="fatca_compliance" 
+                        name="fatca_compliance" disabled={isFieldDisabled("fatca_compliance")} 
                         value={formData.fatca_compliance} 
                         onValueChange={(val) => setFormData(prev => ({ ...prev, fatca_compliance: val }))}
                         required
@@ -570,11 +923,11 @@ export default function ClientRegistrationForm({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label>Nominee Name</Label>
-                      <Input name="nominee_name" value={formData.nominee_name} onChange={handleChange} placeholder="Optional" />
+                      <Input name="nominee_name" disabled={isFieldDisabled("nominee_name")} value={formData.nominee_name} onChange={handleChange} placeholder="Optional" />
                     </div>
                     <div className="space-y-2">
                       <Label>Relationship with Nominee</Label>
-                      <Input name="nominee_relationship" value={formData.nominee_relationship} onChange={handleChange} placeholder="e.g. Spouse, Son, Mother" />
+                      <Input name="nominee_relationship" disabled={isFieldDisabled("nominee_relationship")} value={formData.nominee_relationship} onChange={handleChange} placeholder="e.g. Spouse, Son, Mother" />
                     </div>
                   </div>
 
@@ -663,18 +1016,18 @@ export default function ClientRegistrationForm({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label>Annual Income (INR) *</Label>
-                      <Input type="number" name="annual_income" value={formData.annual_income} onChange={handleChange} placeholder="e.g. 500000" required />
+                      <Input type="number" name="annual_income" disabled={isFieldDisabled("annual_income")} value={formData.annual_income} onChange={handleChange} placeholder="e.g. 500000" required />
                     </div>
                     <div className="space-y-2">
                       <Label>Estimated Net Worth (INR) *</Label>
-                      <Input type="number" name="net_worth" value={formData.net_worth} onChange={handleChange} placeholder="e.g. 500000" required />
+                      <Input type="number" name="net_worth" disabled={isFieldDisabled("net_worth")} value={formData.net_worth} onChange={handleChange} placeholder="e.g. 500000" required />
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label>Source of Income *</Label>
                       <Select 
-                        name="income_source" 
+                        name="income_source" disabled={isFieldDisabled("income_source")} 
                         value={formData.income_source} 
                         onValueChange={(val) => setFormData(prev => ({ ...prev, income_source: val }))}
                         required
@@ -694,18 +1047,18 @@ export default function ClientRegistrationForm({
                     </div>
                     <div className="space-y-2">
                       <Label>Occupation *</Label>
-                      <Input name="occupation" value={formData.occupation} onChange={handleChange} required placeholder="Software Engineer, Doctor, etc." />
+                      <Input name="occupation" disabled={isFieldDisabled("occupation")} value={formData.occupation} onChange={handleChange} required placeholder="Software Engineer, Doctor, etc." />
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
                     <div className="space-y-2">
                       <Label>Existing Portfolio Value (₹) *</Label>
-                      <Input type="number" name="existing_portfolio_value" value={formData.existing_portfolio_value} onChange={handleChange} placeholder="e.g. 500000" required />
+                      <Input type="number" name="existing_portfolio_value" disabled={isFieldDisabled("existing_portfolio_value")} value={formData.existing_portfolio_value} onChange={handleChange} placeholder="e.g. 500000" required />
                     </div>
                   </div>
                   <div className="space-y-2 pt-4">
                     <Label>Existing Portfolio Composition</Label>
-                    <Textarea name="existing_portfolio_composition" value={formData.existing_portfolio_composition} onChange={handleChange} placeholder="Details of existing Equity, Mutual Funds, FDRs..." />
+                    <Textarea name="existing_portfolio_composition" disabled={isFieldDisabled("existing_portfolio_composition")} value={formData.existing_portfolio_composition} onChange={handleChange} placeholder="Details of existing Equity, Mutual Funds, FDRs..." />
                   </div>
                 </TabsContent>
 
@@ -713,31 +1066,44 @@ export default function ClientRegistrationForm({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label>Bank Account Number *</Label>
-                      <Input name="bank_account_number" value={formData.bank_account_number} onChange={handleChange} placeholder="e.g. 1234567890" required />
+                      <Input name="bank_account_number" disabled={isFieldDisabled("bank_account_number")} value={formData.bank_account_number} onChange={handleChange} placeholder="e.g. 1234567890" required />
                     </div>
                     <div className="space-y-2">
                       <Label>Bank Name *</Label>
-                      <Input name="bank_name" value={formData.bank_name} onChange={handleChange} placeholder="e.g. HDFC Bank, ICICI Bank" required />
+                      <Input name="bank_name" disabled={isFieldDisabled("bank_name")} value={formData.bank_name} onChange={handleChange} placeholder="e.g. HDFC Bank, ICICI Bank" required />
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label>Bank Branch *</Label>
-                      <Input name="bank_branch" value={formData.bank_branch} onChange={handleChange} required />
+                      <Input name="bank_branch" disabled={isFieldDisabled("bank_branch")} value={formData.bank_branch} onChange={handleChange} required />
                     </div>
                     <div className="space-y-2">
-                      <Label>IFSC Code *</Label>
-                      <Input name="ifsc_code" value={formData.ifsc_code} onChange={handleChange} required placeholder="HDFC0001234" />
+                      <Label className={formData.ifsc_code && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(formData.ifsc_code) ? "text-orange-500 font-medium" : ""}>
+                        IFSC Code *
+                      </Label>
+                      <Input 
+                        name="ifsc_code" 
+                        disabled={isFieldDisabled("ifsc_code")} 
+                        value={formData.ifsc_code} 
+                        onChange={handleChange} 
+                        required 
+                        placeholder="e.g. HDFC0001234" 
+                        className={formData.ifsc_code && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(formData.ifsc_code) ? "border-orange-500" : ""}
+                      />
+                      {formData.ifsc_code && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(formData.ifsc_code) && (
+                        <p className="text-[10px] text-orange-500">Invalid format (e.g. ABCD0123456). 5th char must be 0.</p>
+                      )}
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
                     <div className="space-y-2">
                       <Label>Demat Account (Optional)</Label>
-                      <Input name="demat_account_number" value={formData.demat_account_number} onChange={handleChange} />
+                      <Input name="demat_account_number" disabled={isFieldDisabled("demat_account_number")} value={formData.demat_account_number} onChange={handleChange} />
                     </div>
                     <div className="space-y-2">
                       <Label>Trading Account (Optional)</Label>
-                      <Input name="trading_account_number" value={formData.trading_account_number} onChange={handleChange} />
+                      <Input name="trading_account_number" disabled={isFieldDisabled("trading_account_number")} value={formData.trading_account_number} onChange={handleChange} />
                     </div>
                   </div>
                 </TabsContent>
@@ -747,7 +1113,7 @@ export default function ClientRegistrationForm({
                     <div className="space-y-2">
                       <Label>Risk Profile *</Label>
                       <Select 
-                        name="risk_profile" 
+                        name="risk_profile" disabled={isFieldDisabled("risk_profile")} 
                         value={formData.risk_profile} 
                         onValueChange={(val) => setFormData(prev => ({ ...prev, risk_profile: val }))}
                         required
@@ -767,7 +1133,7 @@ export default function ClientRegistrationForm({
                     <div className="space-y-2">
                       <Label>Investment Horizon *</Label>
                       <Select 
-                        name="investment_horizon" 
+                        name="investment_horizon" disabled={isFieldDisabled("investment_horizon")} 
                         value={formData.investment_horizon} 
                         onValueChange={(val) => setFormData(prev => ({ ...prev, investment_horizon: val }))}
                         required
@@ -785,13 +1151,13 @@ export default function ClientRegistrationForm({
                   </div>
                   <div className="space-y-2">
                     <Label>Investment Objectives *</Label>
-                    <Textarea name="investment_objectives" value={formData.investment_objectives} onChange={handleChange} required placeholder="e.g. Wealth Creation, Pension Planning, Children Education..." />
+                    <Textarea name="investment_objectives" disabled={isFieldDisabled("investment_objectives")} value={formData.investment_objectives} onChange={handleChange} required placeholder="e.g. Wealth Creation, Pension Planning, Children Education..." />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label>Investment Experience *</Label>
                       <Select 
-                        name="investment_experience" 
+                        name="investment_experience" disabled={isFieldDisabled("investment_experience")} 
                         value={formData.investment_experience} 
                         onValueChange={(val) => setFormData(prev => ({ ...prev, investment_experience: val }))}
                         required
@@ -810,7 +1176,7 @@ export default function ClientRegistrationForm({
                     <div className="space-y-2">
                       <Label>Liquidity Needs *</Label>
                       <Select 
-                        name="liquidity_needs" 
+                        name="liquidity_needs" disabled={isFieldDisabled("liquidity_needs")} 
                         value={formData.liquidity_needs} 
                         onValueChange={(val) => setFormData(prev => ({ ...prev, liquidity_needs: val }))}
                         required
@@ -842,23 +1208,23 @@ export default function ClientRegistrationForm({
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
                           <Label className="text-muted-foreground">Advisor Name</Label>
-                          <Input name="advisor_name" value={formData.advisor_name} onChange={handleChange} required readOnly className="bg-muted font-medium" />
+                          <Input name="advisor_name" disabled={isFieldDisabled("advisor_name")} value={formData.advisor_name} onChange={handleChange} required readOnly className="bg-muted font-medium" />
                         </div>
                         <div className="space-y-2">
                           <Label className="text-muted-foreground">Advisor Registration Number</Label>
-                          <Input name="advisor_registration_number" value={formData.advisor_registration_number} onChange={handleChange} required readOnly className="bg-muted font-medium" />
+                          <Input name="advisor_registration_number" disabled={isFieldDisabled("advisor_registration_number")} value={formData.advisor_registration_number} onChange={handleChange} required readOnly className="bg-muted font-medium" />
                         </div>
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
                           <Label>Previous Advisor Name (if any)</Label>
-                          <Input name="previous_advisor_name" value={formData.previous_advisor_name} onChange={handleChange} placeholder="e.g. Previous Firm Name" />
+                          <Input name="previous_advisor_name" disabled={isFieldDisabled("previous_advisor_name")} value={formData.previous_advisor_name} onChange={handleChange} placeholder="e.g. Previous Firm Name" />
                         </div>
                         <div className="space-y-2">
                           <Label>Referral Source</Label>
                           <Select 
-                            name="referral_source" 
+                            name="referral_source" disabled={isFieldDisabled("referral_source")} 
                             value={formData.referral_source} 
                             onValueChange={(val) => setFormData(prev => ({ ...prev, referral_source: val }))}
                           >
@@ -890,7 +1256,7 @@ export default function ClientRegistrationForm({
                         <div className="space-y-2">
                           <Label>KYC Verified Status *</Label>
                           <Select 
-                            name="kyc_verified" 
+                            name="kyc_verified" disabled={isFieldDisabled("kyc_verified")} 
                             value={formData.kyc_verified ? "yes" : "no"} 
                             onValueChange={(val) => {
                               const isVerified = val === "yes";
@@ -931,13 +1297,23 @@ export default function ClientRegistrationForm({
                           )}
                         </div>
                         <div className="space-y-2">
-                          <Label>CKYC Number</Label>
+                          <Label className={formData.ckyc_number && !/^[SLOM][0-9A-Z]{13}$|^[0-9]{14}$/.test(formData.ckyc_number) ? "text-orange-500 font-medium" : ""}>
+                            CKYC Number *
+                          </Label>
                           <Input 
                             name="ckyc_number" 
+                            disabled={isFieldDisabled("ckyc_number")} 
                             value={formData.ckyc_number} 
                             onChange={handleChange} 
-                            placeholder="Central KYC Number" 
+                            required
+                            placeholder="Central KYC Number (14 chars)" 
+                            className={formData.ckyc_number && !/^[SLOM][0-9A-Z]{13}$|^[0-9]{14}$/.test(formData.ckyc_number) ? "border-orange-500" : ""}
                           />
+                          {formData.ckyc_number && !/^[SLOM][0-9A-Z]{13}$|^[0-9]{14}$/.test(formData.ckyc_number) && (
+                            <p className="text-[10px] text-orange-500">
+                              Must be 14 digits or start with S, L, O, M followed by 13 chars.
+                            </p>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -954,11 +1330,19 @@ export default function ClientRegistrationForm({
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
                           <Label>Client Onboarding Date *</Label>
-                          <Input type="date" name="client_date" value={formData.client_date} onChange={handleChange} required />
+                          <DatePicker 
+                            date={formData.client_date} 
+                            onChange={(val) => setFormData(prev => ({ ...prev, client_date: val }))}
+                            disabled={isFieldDisabled("client_date")}
+                          />
                         </div>
                         <div className="space-y-2">
                           <Label>Agreement Date *</Label>
-                          <Input type="date" name="agreement_date" value={formData.agreement_date} onChange={handleChange} required />
+                          <DatePicker 
+                            date={formData.agreement_date} 
+                            onChange={(val) => setFormData(prev => ({ ...prev, agreement_date: val }))}
+                            disabled={isFieldDisabled("agreement_date")}
+                          />
                         </div>
                       </div>
 
@@ -982,6 +1366,7 @@ export default function ClientRegistrationForm({
                             />
                             {ipvSearchTerm && (
                               <button 
+                                type="button"
                                 onClick={() => {
                                   setIpvSearchTerm("");
                                   setFormData(prev => ({ ...prev, ipv_done_by_id: "" }));
@@ -1042,12 +1427,11 @@ export default function ClientRegistrationForm({
                         </div>
                         <div className="space-y-2">
                           <Label>IPV Date *</Label>
-                          <Input 
-                            type="date" 
-                            name="ipv_date" 
-                            value={formData.ipv_date} 
-                            onChange={handleChange} 
-                            required 
+                          <DatePicker 
+                            date={formData.ipv_date} 
+                            onChange={(val) => setFormData(prev => ({ ...prev, ipv_date: val }))}
+                            disabled={isFieldDisabled("ipv_date")}
+                            placeholder="Select IPV Date"
                           />
                         </div>
                       </div>
@@ -1059,9 +1443,9 @@ export default function ClientRegistrationForm({
                         <div className="flex items-start gap-4">
                             <CheckCircle2 className="w-6 h-6 text-primary mt-1" />
                             <div className="space-y-2">
-                                <h3 className="font-bold">SEBI Compliance Declaration</h3>
+                                <h3 className="font-bold">Compliance Declaration</h3>
                                 <p className="text-sm text-muted-foreground">
-                                    I hereby confirm that all details provided are accurate to the best of my knowledge and comply with SEBI Investment Advisor guidelines. The client's identity has been verified via KYC documents.
+                                    I hereby confirm that all details provided are accurate to the best of my knowledge and comply with Regulatory Investment Advisor guidelines. The client's identity has been verified via KYC documents.
                                 </p>
                             </div>
                         </div>
@@ -1127,26 +1511,56 @@ export default function ClientRegistrationForm({
               </div>
 
               <div className="p-6 sm:p-8 border-t border-primary/10 bg-muted/20 flex flex-col-reverse sm:flex-row items-center justify-between gap-4">
-                <Button type="button" variant="outline" onClick={() => router.back()} disabled={loading} className="w-full sm:w-auto px-8 border-primary/20 h-11 sm:h-auto">
-                  Cancel
-                </Button>
+                <div className="flex gap-3 w-full sm:w-auto">
+                  <Button type="button" variant="outline" onClick={() => router.back()} disabled={loading} className="w-full sm:w-auto px-8 border-primary/20 h-11 sm:h-auto">
+                    Cancel
+                  </Button>
+                  {!isEdit && (
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      disabled={loading}
+                      className="w-full sm:w-auto px-6 border-red-500/20 text-red-500 hover:bg-red-500/10 hover:text-red-600 hover:border-red-500/30 h-11 sm:h-auto gap-2 transition-all"
+                      onClick={() => {
+                        localStorage.removeItem(STORAGE_KEY);
+                        setFormData({ ...DEFAULT_FORM_DATA });
+                        setPendingDocuments({});
+                        setIpvSearchTerm("");
+                        setAssignedSearchTerm("");
+                        setActiveTab("personal");
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        toast.success("Form cleared. Starting fresh.", { icon: "🗑️" });
+                      }}
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                      Reset Form
+                    </Button>
+                  )}
+                </div>
                 
                 <div className="flex gap-4 w-full sm:w-auto">
                   {activeTab !== "documents" ? (
                     <Button 
+                      key="btn-next"
                       type="button" 
                       onClick={() => {
                         const tabs = ["personal", "financial", "bank", "investment", "compliance", "documents"];
                         const nextIndex = tabs.indexOf(activeTab) + 1;
-                        setActiveTab(tabs[nextIndex]);
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        if (nextIndex < tabs.length) {
+                          handleTabChange(tabs[nextIndex]);
+                        }
                       }}
                       className="w-full sm:px-10 h-11 sm:h-auto"
                     >
                       Next Step
                     </Button>
                   ) : (
-                    <Button type="submit" disabled={loading || !formData.kyc_verified} className="w-full sm:px-12 gap-2 h-12 text-lg font-bold shadow-lg shadow-primary/20 transition-all active:scale-95 disabled:opacity-50 disabled:grayscale">
+                    <Button 
+                      key="btn-submit"
+                      type="submit" 
+                      disabled={loading || !formData.kyc_verified} 
+                      className="w-full sm:px-12 gap-2 h-12 text-lg font-bold shadow-lg shadow-primary/20 transition-all active:scale-95 disabled:opacity-50 disabled:grayscale"
+                    >
                       {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (isEdit ? <CheckCircle2 className="w-5 h-5" /> : <UserPlus className="w-5 h-5" />)}
                       {loading ? (isEdit ? "Updating..." : "Registering...") : (isEdit ? "Update Client" : "Finalize Registration")}
                     </Button>

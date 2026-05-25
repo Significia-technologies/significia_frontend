@@ -6,6 +6,7 @@ import { API_ENDPOINTS } from "@/core/api/api-endpoints";
 export interface LoginPayload {
   email: string;
   password: string;
+  force?: boolean;
 }
 
 export interface RegisterPayload {
@@ -30,19 +31,29 @@ export interface User {
 }
 
 export interface AuthResponse {
-  user: User;
-  accessToken: string;
-  refreshToken: string;
+  user?: User;
+  accessToken?: string;
+  refreshToken?: string;
   subdomain?: string | null;
+  status?: string;
+  device_info?: {
+    ip: string;
+    last_active: string;
+  };
 }
 
 export interface IAStaffLoginResponse {
-  access_token: string;
-  refresh_token: string;
-  token_type: string;
-  user_name: string;
-  user_role: string;
-  tenant_name: string;
+  access_token?: string;
+  refresh_token?: string;
+  token_type?: string;
+  user_name?: string;
+  user_role?: string;
+  tenant_name?: string;
+  status?: string;
+  device_info?: {
+    ip: string;
+    last_active: string;
+  };
 }
 
 // ── Auth Service ─────────────────────────────────────────────────────────
@@ -54,6 +65,10 @@ export const AuthService = {
    */
   async login(payload: LoginPayload): Promise<AuthResponse> {
     const { data } = await httpClient.post(API_ENDPOINTS.AUTH.LOGIN, payload);
+
+    if (data.status === "active_session_exists") {
+      return data;
+    }
 
     const accessToken = data.access_token;
     const refreshToken = data.refresh_token;
@@ -77,10 +92,14 @@ export const AuthService = {
       payload
     );
 
-    localStorage.setItem("accessToken", data.access_token);
-    localStorage.setItem("refreshToken", data.refresh_token);
-    localStorage.setItem("userRole", data.user_role);
-    localStorage.setItem("tenantName", data.tenant_name);
+    if (data.status === "active_session_exists") {
+      return data;
+    }
+
+    localStorage.setItem("accessToken", data.access_token!);
+    localStorage.setItem("refreshToken", data.refresh_token!);
+    localStorage.setItem("userRole", data.user_role!);
+    localStorage.setItem("tenantName", data.tenant_name!);
 
     return data;
   },
@@ -104,6 +123,11 @@ export const AuthService = {
    */
   async clientLogin(payload: LoginPayload): Promise<AuthResponse> {
     const { data } = await httpClient.post(API_ENDPOINTS.CLIENT_AUTH.LOGIN, payload);
+    
+    if (data.status === "active_session_exists") {
+      return data;
+    }
+    
     const accessToken = data.access_token;
     localStorage.setItem("accessToken", accessToken);
     const user = await this.getCurrentClient();
@@ -136,6 +160,12 @@ export const AuthService = {
     is_master: boolean;
     logo_type: "significia" | "shield" | "custom";
     logo_url?: string | null;
+    brand_color?: string | null;
+    brand_background_color_light?: string | null;
+    brand_background_color_dark?: string | null;
+    portal_title?: string | null;
+    portal_description?: string | null;
+    favicon_url?: string | null;
   }> {
     const headers: Record<string, string> = {};
     if (slug) {
@@ -159,9 +189,21 @@ export const AuthService = {
   },
 
   /**
-   * Logout — clears all stored tokens
+   * Logout — clears all stored tokens and notifies the backend to clear DB state
    */
   async logout(): Promise<void> {
+    try {
+      const role = localStorage.getItem("userRole");
+      if (role && role !== "super_admin") {
+        // Clear Bridge Silo session
+        await httpClient.post(API_ENDPOINTS.CLIENT_AUTH.LOGOUT);
+      } else {
+        // Clear Master Gateway session
+        await httpClient.post(API_ENDPOINTS.AUTH.LOGOUT);
+      }
+    } catch (e) {
+      console.warn("Backend logout failed or not supported:", e);
+    }
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("userRole");

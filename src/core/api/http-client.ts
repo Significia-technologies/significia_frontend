@@ -126,11 +126,17 @@ httpClient.interceptors.response.use(
         return httpClient(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError as AxiosError, null);
+        
+        const redirectPath = "/login?error=session_invalidated";
+
         // Clear tokens and redirect to login
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
+        localStorage.removeItem("userRole");
+        localStorage.removeItem("tenantName");
+        
         if (typeof window !== "undefined") {
-          window.location.href = "/login";
+          window.location.href = redirectPath;
         }
         return Promise.reject(refreshError);
       } finally {
@@ -140,11 +146,16 @@ httpClient.interceptors.response.use(
 
     // If 403 Forbidden, the user might have been deactivated or lost access
     if (error.response?.status === 403) {
+      const redirectPath = "/login?error=account_disabled";
+
       // Clear tokens and redirect to login
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
+      localStorage.removeItem("userRole");
+      localStorage.removeItem("tenantName");
+      
       if (typeof window !== "undefined") {
-        window.location.href = "/login?error=account_disabled";
+        window.location.href = redirectPath;
       }
       return Promise.reject(error);
     }

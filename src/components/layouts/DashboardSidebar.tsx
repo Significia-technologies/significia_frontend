@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -8,17 +8,20 @@ import {
   Database,
   BarChart3,
   ShieldCheck,
-  TrendingUp,
-  Activity,
+  PieChart,
+  FileCheck2,
+  Mail,
+  ClipboardCheck,
   Users,
+  TrendingUp,
   Archive,
   Wrench,
+  Terminal,
   UserCog,
   Settings,
   ChevronLeft,
   ChevronRight,
-  Terminal,
-  PieChart,
+  ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -31,8 +34,22 @@ import {
 import { useAppStore } from "@/store/useAppStore";
 import { TenantLogo } from "@/components/shared/TenantLogo";
 
+// ── Types ────────────────────────────────────────────
+interface NavChild {
+  label: string;
+  href: string;
+}
+
+interface NavItem {
+  label: string;
+  href: string;
+  icon: React.ElementType;
+  minRole?: string;
+  children?: NavChild[];
+}
+
 // ── Navigation Items ────────────────────────────────
-const NAV_ITEMS = [
+const NAV_ITEMS: NavItem[] = [
   {
     label: "Overview",
     href: "/",
@@ -42,7 +59,7 @@ const NAV_ITEMS = [
     label: "Master",
     href: "/master",
     icon: Database,
-    minRole: "super_admin", // Only for Significia staff
+    minRole: "super_admin",
   },
   {
     label: "Client Master",
@@ -65,25 +82,36 @@ const NAV_ITEMS = [
     icon: PieChart,
   },
   {
-    label: "Security Basket",
-    href: "/security",
+    label: "Product Basket",
+    href: "/product-basket",
     icon: ShieldCheck,
   },
   {
     label: "Portfolio",
     href: "/portfolio",
     icon: TrendingUp,
+    children: [
+      { label: "Investor Master", href: "/portfolio/investor-master" },
+      { label: "Target Portfolio", href: "/portfolio/target-portfolio" },
+    ],
   },
   {
-    label: "Operations",
-    href: "/operations",
-    icon: Activity,
+    label: "Data Rectification",
+    href: "/rectification",
+    icon: ClipboardCheck,
+    minRole: "admin",
   },
   {
     label: "Team",
     href: "/team",
     icon: Users,
-    minRole: "admin", // IA Owners and Partners
+    minRole: "admin",
+  },
+  {
+    label: "Audit Log",
+    href: "/master/compliance",
+    icon: FileCheck2,
+    minRole: "admin",
   },
   {
     label: "Drawers",
@@ -111,6 +139,12 @@ const NAV_ITEMS = [
 
 const BOTTOM_NAV_ITEMS = [
   {
+    label: "Email",
+    href: "/settings/email",
+    icon: Mail,
+    minRole: "admin",
+  },
+  {
     label: "Settings",
     href: "/settings",
     icon: Settings,
@@ -122,44 +156,61 @@ export function SidebarContent() {
   const pathname = usePathname();
   const { sidebarCollapsed, publicBranding, user } = useAppStore();
 
-  // Determine display name: Use public branding if available, or user session info
-  const displayName = publicBranding?.name || user?.company_name || user?.name || "Financial Portal";
-  
-  // ── Role/Context Detection ──────────────────────────
+  // Track which parent items are open (keyed by href)
+  const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
+
+  // Auto-open a parent menu if any of its children match the current path
+  useEffect(() => {
+    const auto: Record<string, boolean> = {};
+    for (const item of NAV_ITEMS) {
+      if (item.children?.some((c) => pathname.startsWith(c.href))) {
+        auto[item.href] = true;
+      }
+    }
+    setOpenMenus((prev) => ({ ...prev, ...auto }));
+  }, [pathname]);
+
+  const toggleMenu = (href: string) => {
+    setOpenMenus((prev) => ({ ...prev, [href]: !prev[href] }));
+  };
+
+  const displayName =
+    publicBranding?.name || user?.company_name || user?.name || "Financial Portal";
+
   const isIAOwner = user?.role === "owner";
   const isIAPartner = user?.role === "partner";
   const isSuperAdmin = user?.role === "super_admin";
-  const isMasterSubdomain = publicBranding?.is_master ?? (user?.subdomain === "master");
-  
-  // A "Master Context" is when we are on the global master domain OR are an IA Master of our own instance.
+  const isMasterSubdomain = publicBranding?.is_master ?? user?.subdomain === "master";
   const isMasterContext = isMasterSubdomain || isIAOwner;
 
-  // Filter items based on role
   const filteredNavItems = NAV_ITEMS.filter((item) => {
-    // 1. "Master" and other admin headers require a Master Context
     if (item.minRole === "super_admin" && !isMasterContext) return false;
-    
-    // 2. "Team" is for Owners and Partners
     if (item.minRole === "admin" && !(isIAOwner || isIAPartner || isSuperAdmin)) return false;
-
-    // 3. "Developer" is for Significia Super Admins OR IA Owners
     if (item.href.includes("/master/developer") && !(isSuperAdmin || isIAOwner)) return false;
-
-    // 4. Global "Admin" is for Super Admins ONLY
     if (item.href === "/admin" && !isSuperAdmin) return false;
-
-    // 5. If profile is NOT completed, IA Masters can ONLY see the Master page and Overview
-    if (isIAOwner && !user.is_profile_completed && !["/", "/master"].includes(item.href)) {
+    if (isIAOwner && !user.is_profile_completed && !["/", "/master"].includes(item.href))
       return false;
-    }
-
     return true;
   });
+
+  const isItemActive = (item: NavItem) => {
+    if (item.href === "/") return pathname === "/";
+    if (item.href === "/master")
+      return (
+        pathname === "/master" ||
+        (pathname.startsWith("/master") &&
+          !pathname.startsWith("/master/developer") &&
+          !pathname.startsWith("/master/compliance"))
+      );
+    // For items with children, parent is "active" only on exact match
+    if (item.children) return pathname === item.href;
+    return pathname.startsWith(item.href);
+  };
 
   return (
     <>
       {/* ── Logo ── */}
-      <div className="flex h-16 items-center gap-3 px-4">
+      <div className="flex h-14 items-center gap-3 px-4">
         <TenantLogo
           logoType={publicBranding?.logo_type || (isMasterContext ? "significia" : "shield")}
           logoUrl={publicBranding?.logo_url}
@@ -177,33 +228,77 @@ export function SidebarContent() {
       {/* ── Main Nav ── */}
       <nav className="flex-1 space-y-0.5 overflow-y-auto overflow-x-hidden px-2 py-4 [&::-webkit-scrollbar]:hidden scrollbar-none">
         {filteredNavItems.map((item) => {
-          let isActive = false;
-          
-          if (item.href === "/") {
-            isActive = pathname === "/";
-          } else if (item.href === "/master") {
-            isActive = pathname === "/master" || (pathname.startsWith("/master") && !pathname.startsWith("/master/developer"));
-          } else {
-            isActive = pathname.startsWith(item.href);
+          const active = isItemActive(item);
+          const hasChildren = !!item.children?.length;
+          const isOpen = openMenus[item.href] ?? false;
+          // Parent row is highlighted if it has no children and is active,
+          // OR if it has children and the current path is exactly the parent.
+          const parentHighlighted = active;
+
+          // ── Collapsed mode with children: show tooltip for parent + each child ──
+          if (sidebarCollapsed && hasChildren) {
+            return (
+              <div key={item.href}>
+                <Tooltip delayDuration={0}>
+                  <TooltipTrigger asChild>
+                    <Link
+                      href={item.href}
+                      className={cn(
+                        "flex items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium transition-colors",
+                        pathname.startsWith(item.href)
+                          ? "bg-primary text-primary-foreground"
+                          : "text-foreground hover:bg-accent hover:text-accent-foreground"
+                      )}
+                    >
+                      <item.icon className="h-4 w-4 shrink-0" />
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="font-medium">
+                    {item.label}
+                  </TooltipContent>
+                </Tooltip>
+                {item.children?.map((child) => {
+                  const childActive = pathname.startsWith(child.href);
+                  return (
+                    <Tooltip key={child.href} delayDuration={0}>
+                      <TooltipTrigger asChild>
+                        <Link
+                          href={child.href}
+                          className={cn(
+                            "flex items-center justify-center rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors mt-0.5",
+                            childActive
+                              ? "bg-primary text-primary-foreground"
+                              : "text-foreground hover:bg-accent hover:text-accent-foreground"
+                          )}
+                        >
+                          <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                        </Link>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="font-medium">
+                        {child.label}
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                })}
+              </div>
+            );
           }
 
-          const linkContent = (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium transition-colors",
-                isActive
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-              )}
-            >
-              <item.icon className="h-4 w-4 shrink-0" />
-              {!sidebarCollapsed && <span>{item.label}</span>}
-            </Link>
-          );
-
+          // ── Collapsed mode, no children ──
           if (sidebarCollapsed) {
+            const linkContent = (
+              <Link
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium transition-colors",
+                  active
+                    ? "bg-primary text-primary-foreground"
+                    : "text-foreground hover:bg-accent hover:text-accent-foreground"
+                )}
+              >
+                <item.icon className="h-4 w-4 shrink-0" />
+              </Link>
+            );
             return (
               <Tooltip key={item.href} delayDuration={0}>
                 <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
@@ -214,14 +309,83 @@ export function SidebarContent() {
             );
           }
 
-          return linkContent;
+          // ── Expanded mode with children ──
+          if (hasChildren) {
+            return (
+              <div key={item.href}>
+                {/* Parent row — clicking toggles submenu */}
+                <button
+                  onClick={() => toggleMenu(item.href)}
+                  className={cn(
+                    "w-full flex items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium transition-colors",
+                    pathname.startsWith(item.href)
+                      ? "text-primary"
+                      : "text-foreground hover:bg-accent hover:text-accent-foreground"
+                  )}
+                >
+                  <item.icon className="h-4 w-4 shrink-0" />
+                  <span className="flex-1 text-left">{item.label}</span>
+                  <ChevronDown
+                    className={cn(
+                      "h-3.5 w-3.5 shrink-0 transition-transform duration-200",
+                      isOpen && "rotate-180"
+                    )}
+                  />
+                </button>
+
+                {/* Children */}
+                {isOpen && (
+                  <div className="mt-0.5 ml-4 pl-3 border-l border-border space-y-0.5">
+                    {item.children!.map((child) => {
+                      const childActive = pathname.startsWith(child.href);
+                      return (
+                        <Link
+                          key={child.href}
+                          href={child.href}
+                          className={cn(
+                            "flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors",
+                            childActive
+                              ? "bg-primary text-primary-foreground"
+                              : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                          )}
+                        >
+                          {child.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          }
+
+          // ── Expanded mode, no children ──
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "flex items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium transition-colors",
+                active
+                  ? "bg-primary text-primary-foreground"
+                  : "text-foreground hover:bg-accent hover:text-accent-foreground"
+              )}
+            >
+              <item.icon className="h-4 w-4 shrink-0" />
+              <span>{item.label}</span>
+            </Link>
+          );
         })}
       </nav>
 
       {/* ── Bottom Nav ── */}
       <div className="border-t border-border px-2 py-3">
-        {BOTTOM_NAV_ITEMS.map((item) => {
-          const isActive = pathname === item.href;
+        {BOTTOM_NAV_ITEMS.filter((item) => {
+          if ((item as any).minRole === "admin" && !(isIAOwner || isIAPartner || isSuperAdmin))
+            return false;
+          return true;
+        }).map((item) => {
+          const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
 
           const linkContent = (
             <Link
@@ -231,7 +395,7 @@ export function SidebarContent() {
                 "flex items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium transition-colors",
                 isActive
                   ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  : "text-foreground hover:bg-accent hover:text-accent-foreground"
               )}
             >
               <item.icon className="h-4 w-4 shrink-0" />
@@ -267,7 +431,6 @@ export function DashboardSidebar() {
         sidebarCollapsed ? "w-[68px]" : "w-60"
       )}
     >
-      {/* ── Collapse Toggle on Border ── */}
       <Button
         variant="outline"
         size="icon"

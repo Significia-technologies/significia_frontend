@@ -42,6 +42,7 @@ export const API_ENDPOINTS = {
   CLIENT_AUTH: {
     LOGIN: `${API_BASE}/client-auth/bridge/login`,
     ME: `${API_BASE}/client-auth/me`,
+    LOGOUT: `${API_BASE}/client-auth/bridge/logout`,
   },
 
   // ── Master Data — Clients ──────────────────────────────────
@@ -60,6 +61,13 @@ export const API_ENDPOINTS = {
       BLANK_FORM: `${API_BASE}/master/blank-form`,
       UPLOAD_DOCUMENT: (id: string) =>
         `${API_BASE}/master/clients/${id}/upload-document`,
+      VERSIONS: (id: string) => `${API_BASE}/master/clients/${id}/versions`,
+      VERSION_DETAIL: (id: string, versionId: string) =>
+        `${API_BASE}/master/clients/${id}/versions/${versionId}`,
+      VERSION_PDF: (id: string, versionId: string) =>
+        `${API_BASE}/master/clients/${id}/versions/${versionId}/pdf`,
+      VERSION_AT_DATE: (id: string) =>
+        `${API_BASE}/master/clients/${id}/version-at`,
     },
     IA_MASTER: {
       LATEST: `${API_BASE}/ia-master/latest`,
@@ -71,6 +79,13 @@ export const API_ENDPOINTS = {
         `${API_BASE}/ia-master/validate/${iaNumber}`,
       PDF: (iaId: string) => `${API_BASE}/ia-master/${iaId}/pdf`,
       EMPLOYEES: `${API_BASE}/ia-master/employees`,
+      LETTERHEAD: `${API_BASE}/ia-master/letterhead`,
+    },
+    DEPARTMENTS: {
+      LIST: `${API_BASE}/departments`,
+      CREATE: `${API_BASE}/departments`,
+      UPDATE: (id: string) => `${API_BASE}/departments/${id}`,
+      DELETE: (id: string) => `${API_BASE}/departments/${id}`,
     },
   },
 
@@ -84,6 +99,8 @@ export const API_ENDPOINTS = {
       `${API_BASE}/financial-analysis/bridge/analysis/${resultId}/pdf`,
     WORD: (resultId: string) =>
       `${API_BASE}/financial-analysis/bridge/analysis/${resultId}/word`,
+    EMAIL: (resultId: string) =>
+      `${API_BASE}/financial-analysis/bridge/analysis/${resultId}/email`,
     FORM: `${API_BASE}/financial-analysis/bridge/form`,
     BY_CLIENT: (clientId: string) =>
       `${API_BASE}/financial-analysis/bridge/analysis/client/${clientId}`,
@@ -112,6 +129,10 @@ export const API_ENDPOINTS = {
       `${API_BASE}/risk-profile/bridge/custom-assessment/${assessmentId}/docx`,
     BLANK_PDF: (questionnaireId: string) =>
       `${API_BASE}/risk-profile/bridge/questionnaires/${questionnaireId}/pdf`,
+    EMAIL: (id: string) =>
+      `${API_BASE}/risk-profile/bridge/assessment/${id}/email`,
+    CUSTOM_EMAIL: (id: string) =>
+      `${API_BASE}/risk-profile/bridge/custom-assessment/${id}/email`,
   },
 
   // ── Asset Allocation ───────────────────────────────────────
@@ -126,6 +147,8 @@ export const API_ENDPOINTS = {
     DOCX: (id: string) =>
       `${API_BASE}/asset-allocation/bridge/allocation/${id}/docx`,
     BLANK_PDF: `${API_BASE}/asset-allocation/bridge/blank-form/pdf`,
+    EMAIL: (id: string) =>
+      `${API_BASE}/asset-allocation/bridge/allocation/${id}/email`,
   },
 
   // ── Bridge Management (Super Admin only) ───────────────────
@@ -138,6 +161,8 @@ export const API_ENDPOINTS = {
       `${API_BASE}/bridge/tenants/${tenantId}/revoke`,
     INITIALIZE: (tenantId: string) =>
       `${API_BASE}/bridge/tenants/${tenantId}/initialize`,
+    REGENERATE_TOKEN: (tenantId: string) =>
+      `${API_BASE}/bridge/tenants/${tenantId}/regenerate-token`,
     PING: (tenantId: string) =>
       `${API_BASE}/bridge/tenants/${tenantId}/ping`,
   },
@@ -174,5 +199,102 @@ export const API_ENDPOINTS = {
     REVENUE: `${API_BASE}/analytics/bridge/revenue`,
     CASHFLOW: `${API_BASE}/analytics/bridge/cashflow`,
     CLIENT: (clientId: string) => `${API_BASE}/analytics/bridge/client/${clientId}`,
+  },
+
+  // ── SEBI Compliance (Bridge-powered) ──────────────────────
+  SEBI: {
+    AUDIT_TRAIL: `${API_BASE}/ia-master/sebi/audit-trail`,
+    AUDIT_TRAIL_EXPORT: `${API_BASE}/ia-master/sebi/audit-trail/export`,
+    IA_VERSIONS: `${API_BASE}/ia-master/sebi/ia-master/versions`,
+    IA_VERSION: (version: number) => `${API_BASE}/ia-master/sebi/ia-master/versions/${version}`,
+    IA_LOCK: `${API_BASE}/ia-master/sebi/ia-master/lock`,
+    IA_UNLOCK: `${API_BASE}/ia-master/sebi/ia-master/unlock`,
+    REPORT_HISTORY: `${API_BASE}/ia-master/sebi/report-history`,
+    REPORT_HISTORY_EXPORT: `${API_BASE}/ia-master/sebi/report-history/export`,
+    REPORT_LOOKUP: `${API_BASE}/ia-master/sebi/report-history/lookup`,
+    REPORT_DELIVER: (id: string) => `${API_BASE}/ia-master/sebi/report-history/${id}/deliver`,
+    CHANGE_SUMMARY: `${API_BASE}/ia-master/sebi/ia-master/change-summary`,
+  },
+
+  // ── Data Rectification (E-Serial No Workflow) ────────────────
+  RECTIFICATION: {
+    INITIATE: `${API_BASE}/data-rectification/initiate`,
+    LIST: `${API_BASE}/data-rectification/list`,
+    DETAIL: (id: string) => `${API_BASE}/data-rectification/${id}`,
+    UPLOAD: (id: string) => `${API_BASE}/data-rectification/${id}/upload`,
+    DOCUMENT: (id: string) => `${API_BASE}/data-rectification/${id}/document`,
+    APPROVE: (id: string) => `${API_BASE}/data-rectification/${id}/approve`,
+    CURRENT_VALUES: (module: string, recordId: string) => 
+      `${API_BASE}/data-rectification/current-values/${module}/${recordId}`,
+  },
+
+  // ── Product Master ─────────────────────────────────────────────
+  PRODUCT_MASTER: {
+    LIST: (type: string) => `${API_BASE}/product-master/products/${type}`,
+    CREATE: (type: string) => `${API_BASE}/product-master/products/${type}`,
+    UPDATE: (type: string, id: string) => `${API_BASE}/product-master/products/${type}/${id}`,
+    TOGGLE: (type: string, id: string) => `${API_BASE}/product-master/products/${type}/${id}/toggle`,
+    REPORTS_LIST: (type: string, id: string) => `${API_BASE}/product-master/products/${type}/${id}/reports`,
+    REPORTS_UPLOAD: (type: string, id: string) => `${API_BASE}/product-master/products/${type}/${id}/reports`,
+    REPORT_DOWNLOAD: (reportId: string) => `${API_BASE}/product-master/products/reports/${reportId}/download`,
+    EXCEL_PREVIEW: (type: string) => `${API_BASE}/product-master/products/${type}/excel-preview`,
+    EXCEL_IMPORT: (type: string) => `${API_BASE}/product-master/products/${type}/excel-import`,
+    EXCEL_TEMPLATE: (type: string) => `${API_BASE}/product-master/products/${type}/excel-template`,
+  },
+
+  // ── Investor Master (Portfolio) ────────────────────────────────
+  INVESTOR_MASTER: {
+    LIST: (clientId: string) => `${API_BASE}/portfolio/investor-members/${clientId}`,
+    CREATE: (clientId: string) => `${API_BASE}/portfolio/investor-members/${clientId}`,
+    TOGGLE: (clientId: string, memberId: string) =>
+      `${API_BASE}/portfolio/investor-members/${clientId}/${memberId}/toggle`,
+  },
+
+  // ── Target Portfolio (Portfolio) ─────────────────────────────────
+  TARGET_PORTFOLIO: {
+    LIST: (clientId: string, memberId: string) =>
+      `${API_BASE}/portfolio/target-portfolio/${clientId}/${memberId}`,
+    PRODUCTS: (clientId: string, memberId: string) =>
+      `${API_BASE}/portfolio/target-portfolio/${clientId}/${memberId}/products`,
+    CREATE: (clientId: string, memberId: string) =>
+      `${API_BASE}/portfolio/target-portfolio/${clientId}/${memberId}`,
+    TOGGLE: (clientId: string, memberId: string, entryId: string) =>
+      `${API_BASE}/portfolio/target-portfolio/${clientId}/${memberId}/${entryId}/toggle`,
+    REPORT_PDF: (clientId: string, memberId: string) =>
+      `${API_BASE}/portfolio/target-portfolio/${clientId}/${memberId}/report/pdf`,
+  },
+
+  // ── Investor IPS Documents (Portfolio) ───────────────────────────
+  INVESTOR_IPS: {
+    UPLOAD: (clientId: string, memberId: string) =>
+      `${API_BASE}/portfolio/investor-members/${clientId}/${memberId}/ips-upload`,
+    LIST: (clientId: string, memberId: string) =>
+      `${API_BASE}/portfolio/investor-members/${clientId}/${memberId}/ips-documents`,
+    DOWNLOAD: (clientId: string, memberId: string, docId: string) =>
+      `${API_BASE}/portfolio/investor-members/${clientId}/${memberId}/ips-download/${docId}`,
+  },
+
+  // ── Price Uploads ──────────────────────────────────────────────
+  PRICE_UPLOAD: {
+    LIST: (type: string) => `${API_BASE}/product-master/price-uploads/${type}`,
+    CREATE: (type: string) => `${API_BASE}/product-master/price-uploads/${type}`,
+    TOGGLE: (type: string, id: string) => `${API_BASE}/product-master/price-uploads/${type}/${id}/toggle`,
+    EXCEL_PREVIEW: (type: string) => `${API_BASE}/product-master/price-uploads/${type}/excel-preview`,
+    EXCEL_IMPORT: (type: string) => `${API_BASE}/product-master/price-uploads/${type}/excel-import`,
+    EXCEL_TEMPLATE: (type: string) => `${API_BASE}/product-master/price-uploads/${type}/excel-template`,
+  },
+
+  // ── Email Management (IA Owner) ─────────────────────────────
+  EMAIL: {
+    SETTINGS: `${API_BASE}/email/settings`,
+    SETTINGS_TEST: `${API_BASE}/email/settings/test`,
+    TEMPLATES: `${API_BASE}/email/templates`,
+    TEMPLATE: (id: string) => `${API_BASE}/email/templates/${id}`,
+    DEFAULT_TEMPLATE: `${API_BASE}/email/templates/default`,
+    PLACEHOLDERS: `${API_BASE}/email/placeholders`,
+    SEND: `${API_BASE}/email/send`,
+    SEND_ONBOARDING: `${API_BASE}/email/onboarding/send`,
+    SEND_REPORT: `${API_BASE}/email/send/report`,
+    LOGS: `${API_BASE}/email/logs`,
   },
 };

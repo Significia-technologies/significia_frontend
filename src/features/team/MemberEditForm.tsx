@@ -19,6 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { DatePicker } from "@/components/ui/date-picker";
 
 export default function MemberEditForm() {
   const { identifier } = useParams() as { identifier: string };
@@ -39,19 +40,28 @@ export default function MemberEditForm() {
     phone_number: "",
     role: "ia_staff",
     designation: "",
+    staff_code: "",
+    date_of_joining: "",
+    date_of_leaving: "",
+    employee_type: "non-advisory",
+    department_id: "",
     ia_registration_number: "",
     date_of_registration: "",
+    certificate_issue_date: "",
     date_of_registration_expiry: "",
   });
+
+  const [departments, setDepartments] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
       if (!id) return;
       try {
         setIsLoading(true);
-        const [allMembers, profile] = await Promise.all([
+        const [allMembers, profile, depts] = await Promise.all([
           TeamService.getTeamMembers(),
-          IAMasterService.getLatest()
+          IAMasterService.getLatest(),
+          IAMasterService.listDepartments()
         ]);
         
         const found = allMembers.find(m => m.id === id);
@@ -63,6 +73,7 @@ export default function MemberEditForm() {
         
         setMember(found);
         setIaProfile(profile);
+        setDepartments(depts);
         
         setFormData({
           full_name: found.full_name,
@@ -70,8 +81,14 @@ export default function MemberEditForm() {
           phone_number: found.phone_number || "",
           role: found.role,
           designation: found.designation || "",
+          staff_code: found.staff_code || "",
+          date_of_joining: found.date_of_joining || "",
+          date_of_leaving: found.date_of_leaving || "",
+          employee_type: (found.employee_type as any) || "non-advisory",
+          department_id: found.department_id || "",
           ia_registration_number: found.ia_registration_number || "",
           date_of_registration: found.date_of_registration || "",
+          certificate_issue_date: found.certificate_issue_date || "",
           date_of_registration_expiry: found.date_of_registration_expiry || "",
         });
       } catch (error) {
@@ -95,11 +112,17 @@ export default function MemberEditForm() {
         phone_number: formData.phone_number,
         role: formData.role,
         designation: formData.designation,
+        staff_code: formData.staff_code,
+        date_of_joining: formData.date_of_joining,
+        date_of_leaving: formData.date_of_leaving || null,
+        employee_type: formData.employee_type,
+        department_id: formData.department_id || null,
       };
 
       if (showExtraFields) {
         updateData.ia_registration_number = formData.ia_registration_number;
         updateData.date_of_registration = formData.date_of_registration;
+        updateData.certificate_issue_date = formData.certificate_issue_date;
         updateData.date_of_registration_expiry = formData.date_of_registration_expiry;
       }
 
@@ -194,15 +217,142 @@ export default function MemberEditForm() {
                       value={formData.role}
                       onValueChange={(val) => setFormData({...formData, role: val})}
                   >
-                    <SelectTrigger id="role">
+                    <SelectTrigger id="role" className="bg-background/50">
                       <SelectValue placeholder="Select role" />
                     </SelectTrigger>
                     <SelectContent>
                       {!isBodyCorporate && <SelectItem value="partner">Partner</SelectItem>}
                       <SelectItem value="ia_staff">Staff</SelectItem>
-                      <SelectItem value="analyst">Analyst</SelectItem>
+                      <SelectItem value="research_analyst">Research Analyst</SelectItem>
+                      <SelectItem value="investment_advisor">Investment Advisor</SelectItem>
+                      <SelectItem value="management">Management</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="type">Employee Type</Label>
+                  <Select 
+                      value={formData.employee_type}
+                      onValueChange={(val: any) => setFormData({...formData, employee_type: val})}
+                  >
+                    <SelectTrigger id="type" className="bg-background/50">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="advisory">Advisory</SelectItem>
+                      <SelectItem value="non-advisory">Non-Advisory</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="staff_code">Staff Code / ID</Label>
+                  <Input 
+                    id="staff_code" 
+                    value={formData.staff_code}
+                    onChange={(e) => setFormData({...formData, staff_code: e.target.value})}
+                    placeholder="SIG-001"
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="department">Department</Label>
+                  <Select 
+                      value={formData.department_id}
+                      onValueChange={(val) => setFormData({...formData, department_id: val})}
+                  >
+                    <SelectTrigger id="department" className="bg-background/50">
+                      <SelectValue placeholder="Not Assigned" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {departments.map(dept => (
+                        <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-dashed">
+                <div className="grid gap-2">
+                  <Label>Date of Joining</Label>
+                  <DatePicker 
+                    date={formData.date_of_joining}
+                    onChange={(val) => setFormData({...formData, date_of_joining: val})}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label className="text-destructive font-bold">Date of Leaving (if any)</Label>
+                  <DatePicker 
+                    date={formData.date_of_leaving}
+                    onChange={(val) => setFormData({...formData, date_of_leaving: val})}
+                    className="border-destructive/30"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-6 border-t border-dashed space-y-4">
+                <h3 className="font-semibold text-sm flex items-center gap-2 text-foreground">
+                  <Shield className="w-4 h-4 text-primary" /> Advisory Signature & Consent Verification
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                  <div className="grid gap-2">
+                    <Label htmlFor="edit-signature" className={formData.employee_type === "advisory" && !member?.signature_path ? "text-orange-500 font-medium" : ""}>
+                      Upload Signature Copy (PNG/JPG) {formData.employee_type === "advisory" ? "*" : ""}
+                    </Label>
+                    <Input 
+                      id="edit-signature" 
+                      type="file"
+                      accept="image/png, image/jpeg, image/jpg"
+                      className="cursor-pointer bg-background file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-[10px] file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          try {
+                            setIsSaving(true);
+                            const res = await TeamService.uploadMemberSignature(member!.id, file);
+                            toast.success("Signature copy uploaded successfully!");
+                            setMember(prev => prev ? { ...prev, signature_path: res.signature_path } : null);
+                          } catch (err) {
+                            toast.error("Failed to upload signature copy");
+                          } finally {
+                            setIsSaving(false);
+                          }
+                        }
+                      }}
+                    />
+                    {formData.employee_type === "advisory" && !member?.signature_path ? (
+                      <p className="text-[10px] text-orange-500 font-medium animate-in fade-in duration-300">
+                        Advisory personnel are required to have a verified signature.
+                      </p>
+                    ) : (
+                      <p className="text-[10px] text-muted-foreground italic">
+                        Upload a clear scan or snapshot of signature for formal advice generation.
+                      </p>
+                    )}
+                  </div>
+                  
+                  {member?.signature_path ? (
+                    <div className="flex flex-col items-center justify-center p-4 border rounded-xl bg-primary/5 border-primary/10 animate-in fade-in duration-300">
+                      <p className="text-[10px] font-bold text-primary mb-2 uppercase tracking-wider">Active Signature Copy</p>
+                      <div className="h-16 w-full flex items-center justify-center bg-white rounded-lg border border-primary/10 p-2 shadow-inner">
+                        <img 
+                          src={member.signature_path} 
+                          alt="Signature preview" 
+                          className="h-full object-contain max-w-full"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center p-6 border border-dashed rounded-xl bg-muted/10 text-xs text-muted-foreground text-center">
+                      No signature copy uploaded yet
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -236,32 +386,18 @@ export default function MemberEditForm() {
 
                 <div className="grid gap-2">
                     <Label htmlFor="reg_date">Registration Date</Label>
-                    <div className="relative">
-                        <Calendar className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input 
-                            id="reg_date" 
-                            type="date"
-                            className="pl-9"
-                            value={formData.date_of_registration}
-                            onChange={(e) => setFormData({...formData, date_of_registration: e.target.value})}
-                            required={showExtraFields}
-                        />
-                    </div>
+                    <DatePicker 
+                        date={formData.date_of_registration}
+                        onChange={(val) => setFormData({...formData, date_of_registration: val})}
+                    />
                 </div>
 
                 <div className="grid gap-2">
                     <Label htmlFor="exp_date">Expiry Date</Label>
-                    <div className="relative">
-                        <Calendar className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input 
-                            id="exp_date" 
-                            type="date"
-                            className="pl-9"
-                            value={formData.date_of_registration_expiry}
-                            onChange={(e) => setFormData({...formData, date_of_registration_expiry: e.target.value})}
-                            required={showExtraFields}
-                        />
-                    </div>
+                    <DatePicker 
+                        date={formData.date_of_registration_expiry}
+                        onChange={(val) => setFormData({...formData, date_of_registration_expiry: val})}
+                    />
                 </div>
               </CardContent>
             </Card>

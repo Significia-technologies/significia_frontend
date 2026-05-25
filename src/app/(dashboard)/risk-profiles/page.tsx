@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { ShieldCheck, PlusCircle, History, Settings, Plus, LayoutGrid } from "lucide-react";
+import { ShieldCheck, PlusCircle, History, Settings, Plus, LayoutGrid, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { RiskProfileHistory } from "@/features/financial-analysis/RiskProfileHistory";
+import { RiskProfileHistory } from "@/features/risk-profile/RiskProfileHistory";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { RiskProfileForm } from "@/features/financial-analysis/RiskProfileForm";
-import { DynamicRiskForm } from "@/features/financial-analysis/CustomRiskForm/DynamicRiskForm";
+import { RiskProfileForm } from "@/features/risk-profile/RiskProfileForm";
+import { DynamicRiskForm } from "@/features/risk-profile/CustomRiskForm/DynamicRiskForm";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -56,78 +56,30 @@ export default function RiskProfilesPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto py-2 px-4 space-y-4">
-      <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-primary/10 pb-6 gap-6 animate-in fade-in duration-500">
-        <div className="flex items-center gap-4">
-          <div className="p-2 rounded-xl bg-primary/10">
-            <ShieldCheck className="w-8 h-8 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-black tracking-tight text-foreground uppercase">
-              {view === "HISTORY" ? "RISK PROFILE MANAGEMENT" : "RISK ASSESSMENT"}
-            </h1>
-            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-40">
-              {view === "HISTORY" ? "Historical assessment archival" : "Strategic financial alignment protocol"}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          {view === "HISTORY" && (
-            <Link href="/risk-profiles/manage">
-              <Button variant="outline" className="h-10 px-5 gap-2 border-primary/10 hover:bg-primary/5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all">
-                <Settings className="w-4 h-4" /> Manage Protocols
-              </Button>
-            </Link>
-          )}
-
-          {(view === "FORM" || view === "CUSTOM_FORM") && (
-            <Button
-              variant="ghost"
-              onClick={() => setView("HISTORY")}
-              className="h-10 px-5 gap-2 hover:bg-primary/5 text-muted-foreground font-black uppercase text-[10px] tracking-widest rounded-xl transition-all"
-            >
-              Return to History
-            </Button>
-          )}
-
-          {view === "HISTORY" && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button className="gap-2 shadow-lg shadow-primary/20">
-                  <PlusCircle className="w-4 h-4" />
-                  New Assessment
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 bg-card/95 backdrop-blur-md border-primary/20">
-                <DropdownMenuItem onClick={() => setView("FORM")} className="cursor-pointer font-bold uppercase text-[10px] tracking-widest py-3">
-                  System &quot;Sample&quot; Form
-                </DropdownMenuItem>
-                {questionnaires.length > 0 && <DropdownMenuSeparator className="bg-primary/10" />}
-                {questionnaires.map((q) => (
-                  <DropdownMenuItem
-                    key={q.id}
-                    onClick={() => {
-                      setSelectedQuestionnaireId(q.id);
-                      setView("CUSTOM_FORM");
-                    }}
-                    className="cursor-pointer font-bold uppercase text-[10px] tracking-widest py-3"
-                  >
-                    {q.portfolio_name}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-        </div>
-      </div>
-
+    <div className="max-w-7xl mx-auto py-4 px-4">
       {view === "HISTORY" ? (
-        <RiskProfileHistory />
+        <RiskProfileHistory 
+          onNewAssessment={() => setView("FORM")}
+          onNewCustomAssessment={(id) => {
+            setSelectedQuestionnaireId(id);
+            setView("CUSTOM_FORM");
+          }}
+          questionnaires={questionnaires}
+        />
       ) : view === "CUSTOM_FORM" && selectedQuestionnaireId ? (
-        <DynamicRiskForm questionnaireId={selectedQuestionnaireId} onClose={() => setView("HISTORY")} />
+        <div className="space-y-4">
+          <Button variant="ghost" onClick={() => setView("HISTORY")} className="gap-2 text-xs uppercase font-bold tracking-widest">
+            <ArrowLeft className="w-4 h-4" /> Back to History
+          </Button>
+          <DynamicRiskForm questionnaireId={selectedQuestionnaireId} onClose={() => setView("HISTORY")} />
+        </div>
       ) : (
-        <RiskProfileForm />
+        <div className="space-y-4">
+          <Button variant="ghost" onClick={() => setView("HISTORY")} className="gap-2 text-xs uppercase font-bold tracking-widest">
+            <ArrowLeft className="w-4 h-4" /> Back to History
+          </Button>
+          <RiskProfileForm />
+        </div>
       )}
     </div>
   );

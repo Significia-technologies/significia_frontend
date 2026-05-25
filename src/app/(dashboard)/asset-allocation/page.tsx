@@ -50,51 +50,34 @@ export default function AssetAllocationPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto py-2 px-4 space-y-6">
-      {/* ── Page Header ── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-primary/10 pb-6 gap-6 animate-in fade-in duration-500">
-        <div className="flex items-center gap-4">
-          <div className="p-2 rounded-xl bg-primary/10">
-            <PieChart className="w-8 h-8 text-primary" />
+    <div className="max-w-7xl mx-auto py-4 px-4 space-y-6">
+      {/* ── New Allocation View Header ── */}
+      {view === "NEW_ALLOCATION" && (
+        <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-primary/10 pb-6 gap-4 animate-in fade-in duration-500">
+           <div className="flex items-center gap-4">
+            <div className="p-2 rounded-xl bg-primary/10">
+              <PieChart className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-xl font-black tracking-tight text-foreground uppercase">
+                {step === "VALIDATE" ? "New Allocation" : "Allocation Setup"}
+              </h1>
+              <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40">
+                {step === "VALIDATE" ? "Step 1 — Identify & validate client profile" : "Step 2 — Configure asset distribution"}
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-3xl font-black tracking-tight text-foreground uppercase">
-              {view === "HISTORY" ? "Asset Allocation" : step === "VALIDATE" ? "New Allocation" : "Allocation Setup"}
-            </h1>
-            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-40">
-              {view === "HISTORY"
-                ? "Client portfolio distribution management"
-                : step === "VALIDATE"
-                ? "Step 1 — Identify & validate client profile"
-                : "Step 2 — Configure asset distribution"}
-            </p>
-          </div>
+          <Button
+            variant="ghost"
+            onClick={handleCancel}
+            className="h-10 px-5 gap-2 hover:bg-primary/5 text-muted-foreground font-black uppercase text-[10px] tracking-widest rounded-xl transition-all border border-primary/5"
+          >
+            ← {step === "FORM" ? "Change Client" : "Back to History"}
+          </Button>
         </div>
+      )}
 
-        <div className="flex items-center gap-3">
-          {view === "NEW_ALLOCATION" && (
-            <Button
-              variant="ghost"
-              onClick={handleCancel}
-              className="h-10 px-5 gap-2 hover:bg-primary/5 text-muted-foreground font-black uppercase text-[10px] tracking-widest rounded-xl transition-all"
-            >
-              ← {step === "FORM" ? "Change Client" : "Back to History"}
-            </Button>
-          )}
-          {view === "HISTORY" && (
-            <Button
-              id="new-allocation-btn"
-              onClick={handleStartNew}
-              className="gap-2 shadow-lg shadow-primary/20 font-black uppercase text-[10px] tracking-widest"
-            >
-              <PlusCircle className="w-4 h-4" />
-              New Allocation
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {/* ── Stepper ── */}
+      {/* ── Stepper (Only for New Allocation) ── */}
       {view === "NEW_ALLOCATION" && (
         <div className="flex items-center gap-2 animate-in fade-in duration-300">
           {[
@@ -123,7 +106,7 @@ export default function AssetAllocationPage() {
       {/* ── Content ── */}
       <div className="animate-in fade-in duration-400">
         {view === "HISTORY" ? (
-          <AssetAllocationHistory />
+          <AssetAllocationHistory onNewAllocation={handleStartNew} />
         ) : step === "VALIDATE" ? (
           <div className="max-w-2xl mx-auto rounded-xl border border-primary/10 bg-card/30 backdrop-blur-sm p-6">
             <ClientValidator onValidated={handleClientValidated} />

@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/select";
 import { AuthService } from "@/core/services/auth.service";
 import { useAppStore } from "@/store/useAppStore";
+import { DatePicker } from "@/components/ui/date-picker";
 
 
 interface IAMasterFormProps {
@@ -58,6 +59,7 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
     date_of_birth: "",
     nature_of_entity: "",
     name_of_entity: "",
+    basl_membership_id: "",
     ia_registration_number: "",
     date_of_registration: "",
     date_of_registration_expiry: "",
@@ -70,6 +72,8 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
     bank_name: "",
     bank_branch: "",
     ifsc_code: "",
+    change_reason_type: "data_correction",
+    change_reason_text: "",
   });
 
   const [files, setFiles] = useState<{
@@ -90,6 +94,7 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
         date_of_birth: initialData.date_of_birth || "",
         nature_of_entity: initialData.nature_of_entity || "",
         name_of_entity: initialData.name_of_entity || "",
+        basl_membership_id: initialData.basl_membership_id || "",
         ia_registration_number: initialData.ia_registration_number || "",
         date_of_registration: initialData.date_of_registration || "",
         date_of_registration_expiry: initialData.date_of_registration_expiry || "",
@@ -102,12 +107,13 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
         bank_name: initialData.bank_name || "",
         bank_branch: initialData.bank_branch || "",
         ifsc_code: initialData.ifsc_code || "",
+        change_reason_type: "data_correction",
+        change_reason_text: "",
       });
     } else if (user && !formData.registered_email_id) {
-      // First-time setup: pre-populate from user session if not already filled
+      // First-time setup: pre-populate contact fields only — name_of_ia is the registered IA entity name, not the portal owner's name
       setFormData(prev => ({
         ...prev,
-        name_of_ia: prev.name_of_ia || user.company_name || "",
         registered_email_id: prev.registered_email_id || user.email || "",
         registered_contact_number: prev.registered_contact_number || user.phone_number || ""
       }));
@@ -115,10 +121,42 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
   }, [initialData, user]);
 
   const isSinglePersonEntity = formData.nature_of_entity === "individual" || formData.nature_of_entity === "proprietorship";
+  const isIndividual = formData.nature_of_entity === "individual";
+  const isProprietorship = formData.nature_of_entity === "proprietorship";
+  const isNonPersonEntity = ["llp", "body", "partnership"].includes(formData.nature_of_entity);
+  const showDOB = isSinglePersonEntity;
+  const showDateOfFormation = isNonPersonEntity;
+
+  // Real-time validation: formation date must be before registration date
+  const isFormationDateInvalid = showDateOfFormation && formData.date_of_birth && formData.date_of_registration
+    ? new Date(formData.date_of_birth) > new Date(formData.date_of_registration)
+    : false;
+  const isFormationDateFuture = showDateOfFormation && formData.date_of_birth
+    ? new Date(formData.date_of_birth) > new Date()
+    : false;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => {
+      const updated = { ...prev, [name]: value };
+      // Auto-sync entity name for LLP/Body Corporate/Partnership
+      if (name === "name_of_ia" && ["llp", "body", "partnership"].includes(prev.nature_of_entity)) {
+        updated.name_of_entity = value;
+      }
+      return updated;
+    });
+  };
+
+  const handleEntityTypeChange = (value: string) => {
+    setFormData((prev) => {
+      const updated = { ...prev, nature_of_entity: value, date_of_birth: "" };
+      if (["llp", "body", "partnership"].includes(value)) {
+        updated.name_of_entity = prev.name_of_ia;
+      } else if (value === "individual") {
+        updated.name_of_entity = "";
+      }
+      return updated;
+    });
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -158,6 +196,30 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
     e.preventDefault();
     if (iaNumberExists) {
       toast.error("Please use a unique IA Registration Number");
+      return;
+    }
+
+    // Validate formation date for non-person entities
+    if (showDateOfFormation && formData.date_of_birth) {
+      const formationDate = new Date(formData.date_of_birth);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (formationDate > today) {
+        toast.error("Date of Formation/Incorporation cannot be in the future.");
+        return;
+      }
+      if (formData.date_of_registration) {
+        const regDate = new Date(formData.date_of_registration);
+        if (formationDate > regDate) {
+          toast.error("Date of Formation/Incorporation must be before the Date of Registration.");
+          return;
+        }
+      }
+    }
+
+    const isRealUpdate = initialData && initialData.ia_registration_number && initialData.registered_address && initialData.bank_account_number;
+    if (isRealUpdate && (!formData.change_reason_text || formData.change_reason_text.length < 5)) {
+      toast.error("Please provide a valid reason for this update (min 5 characters)");
       return;
     }
 
@@ -213,58 +275,62 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
         <CardContent className="p-0">
           <form onSubmit={handleSubmit}>
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <div className="px-4 sm:px-6 pt-4 bg-muted/30 border-b border-primary/10">
-                <TabsList className="bg-transparent h-auto p-0 gap-6 sm:gap-8 flex justify-start border-none overflow-x-auto scrollbar-none flex-nowrap pb-1">
-                  <TabsTrigger 
-                    value="basic" 
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent pb-3 px-1 text-sm font-semibold whitespace-nowrap"
-                  >
-                    Basic Info
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="bank" 
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent pb-3 px-1 text-sm font-semibold whitespace-nowrap"
-                  >
-                    Bank Details
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="docs" 
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent pb-3 px-1 text-sm font-semibold whitespace-nowrap"
-                  >
-                    Documents
-                  </TabsTrigger>
+              <div className="px-4 sm:px-6 pt-5 pb-0 bg-muted/30 border-b border-primary/10">
+                <TabsList className="bg-transparent h-auto p-0 gap-1 sm:gap-2 flex justify-start border-none overflow-x-auto scrollbar-none flex-nowrap">
+                  {[
+                    { value: "basic", label: "Basic Info", step: 1 },
+                    { value: "bank", label: "Bank Details", step: 2 },
+                    { value: "docs", label: "Documents", step: 3 },
+                  ].map((tab) => {
+                    const isActive = activeTab === tab.value;
+                    const tabs = ["basic", "bank", "docs"];
+                    const isPast = tabs.indexOf(activeTab) > tabs.indexOf(tab.value);
+                    return (
+                      <TabsTrigger
+                        key={tab.value}
+                        value={tab.value}
+                        className={`
+                          relative rounded-t-lg border-b-2 px-5 py-3 text-sm font-medium whitespace-nowrap transition-all duration-200
+                          ${isActive
+                            ? "border-primary bg-background/80 text-primary shadow-sm"
+                            : isPast
+                              ? "border-transparent text-primary/70 hover:text-primary hover:bg-background/40"
+                              : "border-transparent text-muted-foreground hover:text-foreground hover:bg-background/40"
+                          }
+                        `}
+                      >
+                        <span className={`
+                          inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold mr-2
+                          ${isActive
+                            ? "bg-primary text-primary-foreground"
+                            : isPast
+                              ? "bg-primary/20 text-primary"
+                              : "bg-muted text-muted-foreground"
+                          }
+                        `}>
+                          {isPast ? "✓" : tab.step}
+                        </span>
+                        {tab.label}
+                      </TabsTrigger>
+                    );
+                  })}
                 </TabsList>
               </div>
 
               <div className="p-4 sm:p-6">
                 <TabsContent value="basic" className="space-y-6 mt-0">
+                  {/* Row 1: IA Name + Nature of Entity */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label>Name of Investment Advisor *</Label>
                       <Input name="name_of_ia" value={formData.name_of_ia} onChange={handleChange} required className="bg-background/50" />
                     </div>
                     <div className="space-y-2">
-                      <Label className={calculateAge(formData.date_of_birth) < 18 && formData.date_of_birth ? "text-destructive font-bold" : ""}>
-                        Date of Birth * {calculateAge(formData.date_of_birth) < 18 && formData.date_of_birth && `(Age: ${calculateAge(formData.date_of_birth)})`}
-                      </Label>
-                      <Input 
-                        type="date" 
-                        name="date_of_birth" 
-                        value={formData.date_of_birth} 
-                        onChange={handleChange} 
-                        required 
-                        className={`bg-background/50 ${calculateAge(formData.date_of_birth) < 18 && formData.date_of_birth ? "border-destructive ring-destructive focus-visible:ring-destructive" : ""}`} 
-                      />
-                      {calculateAge(formData.date_of_birth) < 18 && formData.date_of_birth && (
-                        <p className="text-[10px] text-destructive font-bold animate-pulse italic">Minimum age requirement is 18 years.</p>
-                      )}
-                    </div>
-                    <div className="space-y-2">
                       <Label>Nature of Entity *</Label>
                       <Select 
                         name="nature_of_entity" 
                         value={formData.nature_of_entity} 
-                        onValueChange={(value) => setFormData((prev) => ({ ...prev, nature_of_entity: value }))}
+                        onValueChange={handleEntityTypeChange}
                         required
                       >
                         <SelectTrigger className="w-full bg-background/50 border-primary/10">
@@ -272,8 +338,8 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="individual">Individual</SelectItem>
-                          <SelectItem value="proprietorship">Proprietorship</SelectItem>
-                          <SelectItem value="partnership">Partnership</SelectItem>
+                          <SelectItem value="proprietorship">Sole Proprietorship</SelectItem>
+                          <SelectItem value="partnership">Partnership Firm</SelectItem>
                           <SelectItem value="llp">LLP</SelectItem>
                           <SelectItem value="body">Body Corporate</SelectItem>
                         </SelectContent>
@@ -281,12 +347,86 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label>Name of Entity</Label>
-                    <Input name="name_of_entity" value={formData.name_of_entity} onChange={handleChange} placeholder="e.g. Acme Financial LLC" className="bg-background/50" />
+                  {/* Row 2: Conditional Entity Name + Date */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Entity Name: hidden for Individual, read-only for LLP/Body/Partnership, editable for Proprietorship */}
+                    {!isIndividual && formData.nature_of_entity && (
+                      <div className="space-y-2">
+                        <Label>Name of Entity {isNonPersonEntity ? "" : "*"}</Label>
+                        <Input 
+                          name="name_of_entity" 
+                          value={formData.name_of_entity} 
+                          onChange={handleChange} 
+                          placeholder="Your Entity Name" 
+                          className={`bg-background/50 ${isNonPersonEntity ? "opacity-60" : ""}`}
+                          disabled={isNonPersonEntity}
+                          required={isProprietorship}
+                        />
+                        {isNonPersonEntity && (
+                          <p className="text-[10px] text-muted-foreground italic">Auto-filled from IA Name for this entity type.</p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Date: DOB for Individual/Proprietorship, Date of Formation for others */}
+                    {formData.nature_of_entity && (
+                      <div className="space-y-2">
+                        {showDOB ? (
+                          <>
+                            <Label className={calculateAge(formData.date_of_birth) < 18 && formData.date_of_birth ? "text-destructive font-bold" : ""}>
+                              Date of Birth * {calculateAge(formData.date_of_birth) < 18 && formData.date_of_birth && `(Age: ${calculateAge(formData.date_of_birth)})`}
+                            </Label>
+                            <DatePicker 
+                              date={formData.date_of_birth} 
+                              onChange={(val) => setFormData(prev => ({ ...prev, date_of_birth: val }))}
+                              placeholder="Select Date"
+                              fromYear={1930}
+                              className={calculateAge(formData.date_of_birth) < 18 && formData.date_of_birth ? "border-destructive ring-destructive focus-visible:ring-destructive" : ""} 
+                            />
+                            {calculateAge(formData.date_of_birth) < 18 && formData.date_of_birth && (
+                              <p className="text-[10px] text-destructive font-bold animate-pulse italic">Minimum age requirement is 18 years.</p>
+                            )}
+                          </>
+                        ) : showDateOfFormation ? (
+                          <>
+                            <Label className={isFormationDateInvalid || isFormationDateFuture ? "text-destructive font-bold" : ""}>
+                              Date of Formation / Incorporation *
+                            </Label>
+                            <DatePicker 
+                              date={formData.date_of_birth} 
+                              onChange={(val) => setFormData(prev => ({ ...prev, date_of_birth: val }))}
+                              placeholder="Select Formation Date"
+                              fromYear={1930}
+                              toYear={new Date().getFullYear()}
+                              className={isFormationDateInvalid || isFormationDateFuture ? "border-destructive ring-1 ring-destructive focus-visible:ring-destructive" : ""} 
+                            />
+                            {isFormationDateFuture ? (
+                              <p className="text-[10px] text-destructive font-bold animate-pulse italic">Date of Formation cannot be in the future.</p>
+                            ) : isFormationDateInvalid ? (
+                              <p className="text-[10px] text-destructive font-bold animate-pulse italic">
+                                Formation date ({formData.date_of_birth}) must be before the Registration date ({formData.date_of_registration}).
+                              </p>
+                            ) : (
+                              <p className="text-[10px] text-muted-foreground italic">Must be on or before today and the date of registration.</p>
+                            )}
+                          </>
+                        ) : null}
+                      </div>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                      <Label>BASL Membership ID *</Label>
+                      <Input 
+                        name="basl_membership_id" 
+                        value={formData.basl_membership_id} 
+                        onChange={handleChange} 
+                        required 
+                        placeholder="e.g. BASL-1234"
+                        className="bg-background/50"
+                      />
+                    </div>
                     <div className="space-y-2">
                       <Label>IA Reg Number *</Label>
                       <Input 
@@ -300,11 +440,17 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
                     </div>
                     <div className="space-y-2">
                       <Label>Reg Date *</Label>
-                      <Input type="date" name="date_of_registration" value={formData.date_of_registration} onChange={handleChange} required className="bg-background/50" />
+                      <DatePicker 
+                        date={formData.date_of_registration} 
+                        onChange={(val) => setFormData(prev => ({ ...prev, date_of_registration: val }))}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label>Expiry Date *</Label>
-                      <Input type="date" name="date_of_registration_expiry" value={formData.date_of_registration_expiry} onChange={handleChange} required className="bg-background/50" />
+                      <DatePicker 
+                        date={formData.date_of_registration_expiry} 
+                        onChange={(val) => setFormData(prev => ({ ...prev, date_of_registration_expiry: val }))}
+                      />
                     </div>
                   </div>
 
@@ -323,6 +469,49 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
                       <Input type="email" name="registered_email_id" value={formData.registered_email_id} onChange={handleChange} required className="bg-background/50" />
                     </div>
                   </div>
+
+                  {/* ── Change Rationale (Required for Updates, not first-time setup) ── */}
+                  {initialData && initialData.ia_registration_number && initialData.registered_address && initialData.bank_account_number && (
+                    <div className="mt-8 p-6 rounded-xl border border-amber-200 bg-amber-50/30 dark:bg-amber-950/10 space-y-4 animate-in fade-in slide-in-from-top-2 duration-500">
+                      <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+                        <ShieldCheck className="w-5 h-5" />
+                        <h3 className="font-bold text-sm uppercase tracking-wider">Change Rationale (Required for Regulatory Compliance)</h3>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <Label className="text-amber-700 dark:text-amber-300">Reason Category *</Label>
+                          <Select 
+                            name="change_reason_type" 
+                            value={formData.change_reason_type} 
+                            onValueChange={(value) => setFormData((prev) => ({ ...prev, change_reason_type: value }))}
+                          >
+                            <SelectTrigger className="w-full bg-background/50 border-amber-200/50">
+                              <SelectValue placeholder="Select Reason Type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="data_correction">Data Correction</SelectItem>
+                              <SelectItem value="client_update">Client Update</SelectItem>
+                              <SelectItem value="assumption_change">Assumption Change / Review Adjustment</SelectItem>
+                              <SelectItem value="regulatory_compliance">Regulatory Compliance</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-amber-700 dark:text-amber-300">Detailed Explanation *</Label>
+                          <Input 
+                            name="change_reason_text" 
+                            value={formData.change_reason_text} 
+                            onChange={handleChange} 
+                            placeholder="e.g. Updated IA logo and BASL ID"
+                            className="bg-background/50 border-amber-200/50"
+                          />
+                        </div>
+                      </div>
+                      <p className="text-[10px] text-amber-600/70 italic">
+                        This reason will be permanently stored in the Regulatory-Safe audit trail and version history.
+                      </p>
+                    </div>
+                  )}
                 </TabsContent>
 
                 <TabsContent value="bank" className="space-y-6 mt-0">

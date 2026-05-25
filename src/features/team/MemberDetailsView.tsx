@@ -13,7 +13,9 @@ import {
   Briefcase,
   CheckCircle2,
   XCircle,
-  Loader2
+  Loader2,
+  Building2,
+  FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -155,9 +157,51 @@ export default function MemberDetailsView() {
               <div className="p-2 bg-primary/10 rounded-full">
                 <Calendar className="h-4 w-4 text-primary" />
               </div>
-              <div>
-                <p className="text-xs text-muted-foreground uppercase font-bold">Joined On</p>
-                <p className="font-medium">{new Date(member.created_at).toLocaleDateString()}</p>
+              <div className="grid grid-cols-2 gap-4 w-full">
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase font-bold text-[10px]">Date of Joining</p>
+                  <p className="font-medium text-sm">{member.date_of_joining ? new Date(member.date_of_joining).toLocaleDateString() : '---'}</p>
+                </div>
+                {member.date_of_leaving && (
+                  <div>
+                    <p className="text-xs text-destructive uppercase font-bold text-[10px]">Date of Leaving</p>
+                    <p className="font-medium text-destructive text-sm font-bold">{new Date(member.date_of_leaving).toLocaleDateString()}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="pt-4 border-t space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-indigo-500/10 rounded-full">
+                  <Shield className="h-4 w-4 text-indigo-500" />
+                </div>
+                <div className="grid grid-cols-2 gap-4 w-full">
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase font-bold text-[10px]">Staff Code</p>
+                    <p className="font-mono font-bold text-indigo-600">{member.staff_code || '---'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase font-bold text-[10px]">Current Version</p>
+                    <Badge variant="outline" className="text-[10px] font-mono font-black border-indigo-200 text-indigo-700 bg-indigo-50">
+                      v{member.version_number || 1}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-indigo-500/10 rounded-full">
+                  <Building2 className="h-4 w-4 text-indigo-500" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase font-bold text-[10px]">Department & Category</p>
+                  <p className="font-medium text-sm">
+                    {member.department_name || 'No Department'}
+                    <span className="text-muted-foreground mx-2">|</span>
+                    <span className="capitalize">{member.employee_type || 'General'}</span>
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -188,6 +232,48 @@ export default function MemberDetailsView() {
                     </div>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {(member.certificate_path || member.signature_path) && (
+              <div className="pt-4 border-t space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Compliance Documents</p>
+                
+                {member.certificate_path && (
+                  <div className="flex items-center justify-between p-3 border rounded-lg bg-emerald-50/20 border-emerald-100 dark:border-emerald-950">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <FileText className="h-5 w-5 text-emerald-600 shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold truncate">Regulatory Certificate</p>
+                        <p className="text-[10px] text-muted-foreground">Verified PDF copy</p>
+                      </div>
+                    </div>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={() => window.open(member.certificate_path, "_blank")}
+                      className="text-xs h-7 border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-900 dark:text-emerald-400"
+                    >
+                      View
+                    </Button>
+                  </div>
+                )}
+
+                {member.signature_path && (
+                  <div className="flex flex-col p-3 border rounded-lg bg-primary/5 border-primary/10">
+                    <p className="text-[10px] font-bold text-primary mb-2 uppercase tracking-wider">Verified Signature Copy</p>
+                    <div className="h-16 w-full flex items-center justify-center bg-white rounded-lg border border-primary/10 p-2 shadow-inner">
+                      <img 
+                        src={member.signature_path} 
+                        alt={`${member.full_name}'s signature`} 
+                        className="h-full object-contain max-w-full"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>

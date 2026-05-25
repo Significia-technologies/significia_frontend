@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect } from "react";
 import { 
@@ -13,7 +13,9 @@ import {
   User, 
   Calendar,
   ChevronRight,
-  Database
+  Database,
+  Mail,
+  RefreshCcw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,23 +38,62 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { FinancialAnalysisService, FinancialAnalysisResult } from "@/core/services/financial-analysis.service";
 import { MasterDataService, Client } from "@/core/services/master.service";
+import { RectificationService } from "@/core/services/rectification.service";
+import { SEBIService } from "@/core/services/sebi.service";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
+import { useRouter } from "next/navigation";
 
 interface AnalysisListProps {
-  
   clientId?: string;
   onSelectAnalysis: (resultId: string) => void;
   onCreateNew: () => void;
+  onDownloadBlank?: () => void;
 }
 
-export function AnalysisList({ clientId, onSelectAnalysis, onCreateNew }: AnalysisListProps) {
+export function AnalysisList({ clientId, onSelectAnalysis, onCreateNew, onDownloadBlank }: AnalysisListProps) {
+  const router = useRouter();
   const [analyses, setAnalyses] = useState<FinancialAnalysisResult[]>([]);
   const [clients, setClients] = useState<Record<string, Client>>({});
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [downloading, setDownloading] = useState<string | null>(null);
+  const [delivering, setDelivering] = useState<string | null>(null);
+  const [initiating, setInitiating] = useState<string | null>(null);
+
+  const handleInitiateRectification = async (item: FinancialAnalysisResult) => {
+    setInitiating(item.id);
+    try {
+      const draft = await RectificationService.initiate({
+        client_id: item.client_id,
+        module: "FINANCIAL",
+        record_id: item.id,
+        current_version: item.version_number || 1,
+        proposed_changes: [],
+        justification_details: { q1: "", q2: "", q3: "" },
+        impact_declaration: { 
+          financial: true, 
+          risk: false,
+          asset_allocation: false,
+          portfolio: false,
+          product_basket: false,
+          target_portfolio: false,
+          other: false
+        },
+        confirmation_mode: "Data Correction",
+        is_investor_requested: false,
+        initiation_reason: "Internal rectification initiated from Financial Analysis vault"
+      });
+
+      toast.success("Rectification Draft Created (E-Serial No Assigned)");
+      router.push(`/rectification/${draft.id}`);
+    } catch (error) {
+      toast.error("Failed to initiate rectification protocol");
+    } finally {
+      setInitiating(null);
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -65,7 +106,8 @@ export function AnalysisList({ clientId, onSelectAnalysis, onCreateNew }: Analys
 
         // Map clients for quick lookup
         const clientMap: Record<string, Client> = {};
-        clientData.forEach(c => {
+        const clientsArray = Array.isArray(clientData) ? clientData : (clientData?.clients || []);
+        clientsArray.forEach(c => {
           clientMap[c.id] = c;
         });
         setClients(clientMap);
@@ -103,6 +145,19 @@ export function AnalysisList({ clientId, onSelectAnalysis, onCreateNew }: Analys
     }
   };
 
+  const handleEmailReport = async (analysisId: string) => {
+    try {
+      setDelivering(analysisId);
+      await SEBIService.emailAnalysisReport(analysisId);
+      toast.success("Financial Analysis report has been sent to client via email.");
+    } catch (err: any) {
+      console.error("Email error:", err);
+      toast.error(err.response?.data?.detail || "Failed to send email. Please check SMTP settings.");
+    } finally {
+      setDelivering(null);
+    }
+  };
+
   const filteredAnalyses = analyses.filter(analysis => {
     const client = clients[analysis.client_id];
     if (!client) return false;
@@ -112,24 +167,34 @@ export function AnalysisList({ clientId, onSelectAnalysis, onCreateNew }: Analys
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-        <div className="relative w-full md:w-96">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input 
-            placeholder="Search by client name or code..." 
-            className="pl-10 bg-background/50 border-primary/20"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+        <div className="min-w-0">
+          <h2 className="text-2xl font-black tracking-tight text-primary uppercase truncate">Financial Analysis Vault</h2>
+          <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest opacity-60 truncate">Analyze client portfolios and generate professional reports</p>
         </div>
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-          <Button variant="outline" className="gap-2 border-primary/20 flex-1 md:flex-none">
-            <Filter className="w-4 h-4" />
-            Filters
-          </Button>
-          <Button className="gap-2 bg-primary hover:bg-primary/90 flex-1 md:flex-none whitespace-nowrap" onClick={onCreateNew}>
+        <div className="flex flex-row items-center gap-2 w-full lg:w-auto shrink-0">
+          <div className="relative flex-1 md:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground opacity-50" />
+            <Input 
+              placeholder="Search Client..." 
+              className="pl-10 h-10 bg-card/50 border-primary/10 font-medium w-full"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          
+          {onDownloadBlank && (
+            <Button variant="outline" onClick={onDownloadBlank} className="h-10 gap-2 border-primary/20 shrink-0">
+              <FileText className="w-4 h-4" />
+              <span className="hidden xl:inline">Download Form</span>
+              <span className="xl:hidden">Form</span>
+            </Button>
+          )}
+
+          <Button className="h-10 gap-2 bg-primary hover:bg-primary/90 shrink-0" onClick={onCreateNew}>
             <PlusCircle className="w-4 h-4" />
-            New Analysis
+            <span className="hidden xl:inline">New Analysis</span>
+            <span className="xl:hidden">New</span>
           </Button>
         </div>
       </div>
@@ -142,6 +207,7 @@ export function AnalysisList({ clientId, onSelectAnalysis, onCreateNew }: Analys
                 <TableRow>
                   <TableHead className="font-semibold text-primary whitespace-nowrap">Client</TableHead>
                   <TableHead className="font-semibold text-primary whitespace-nowrap">Analysis Date</TableHead>
+                  <TableHead className="font-semibold text-primary whitespace-nowrap">Version</TableHead>
                   <TableHead className="font-semibold text-primary whitespace-nowrap">Net Worth (Calc)</TableHead>
                   <TableHead className="font-semibold text-primary whitespace-nowrap">HLV Gap (Income)</TableHead>
                   <TableHead className="text-right font-semibold text-primary whitespace-nowrap">Actions</TableHead>
@@ -155,12 +221,13 @@ export function AnalysisList({ clientId, onSelectAnalysis, onCreateNew }: Analys
                       <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                       <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                       <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                      <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                       <TableCell><Skeleton className="h-5 w-20 float-right" /></TableCell>
                     </TableRow>
                   ))
                 ) : filteredAnalyses.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-64 text-center">
+                    <TableCell colSpan={6} className="h-64 text-center">
                       <div className="flex flex-col items-center justify-center text-muted-foreground">
                         <div className="p-4 rounded-full bg-muted/50 mb-4">
                           <TrendingUp className="w-8 h-8 opacity-20" />
@@ -186,6 +253,11 @@ export function AnalysisList({ clientId, onSelectAnalysis, onCreateNew }: Analys
                             <Calendar className="w-4 h-4" />
                             {format(new Date(analysis.created_at), "dd MMM yyyy")}
                           </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20 border-primary/20">
+                            v{analysis.version_number || 1}
+                          </Badge>
                         </TableCell>
                         <TableCell>
                           <span className="font-mono text-sm whitespace-nowrap">
@@ -230,6 +302,31 @@ export function AnalysisList({ clientId, onSelectAnalysis, onCreateNew }: Analys
                                     <FileText className="w-4 h-4" />
                                   )}
                                   Download Word
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem 
+                                  className="gap-2 text-blue-600 focus:text-blue-600 focus:bg-blue-50" 
+                                  onClick={() => handleEmailReport(analysis.id)}
+                                >
+                                  {delivering === analysis.id ? (
+                                    <span className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                                  ) : (
+                                    <Mail className="w-4 h-4" />
+                                  )}
+                                  Send via Email
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem 
+                                  className="gap-2 text-amber-600 focus:text-amber-600 focus:bg-amber-50" 
+                                  onClick={() => handleInitiateRectification(analysis)}
+                                  disabled={!!initiating}
+                                >
+                                  {initiating === analysis.id ? (
+                                    <span className="w-4 h-4 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" />
+                                  ) : (
+                                    <RefreshCcw className="w-4 h-4" />
+                                  )}
+                                  Initiate Data Rectification
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>

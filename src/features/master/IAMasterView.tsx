@@ -41,6 +41,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { getAssetUrl } from "@/core/api/api-utils";
+import { BrandingCard } from "./BrandingCard";
 
 export function IAMasterView() {
   const router = useRouter();
@@ -196,11 +197,19 @@ export function IAMasterView() {
                   {data.nature_of_entity}
                 </Badge>
               </div>
-              <CardDescription className="text-base sm:text-lg mt-2 flex items-center gap-2">
-                <Database className="w-4 h-4 text-primary/60 shrink-0" />
-                <span className="flex flex-wrap items-center gap-1.5 justify-center sm:justify-start">
-                  Reg No: <span className="font-mono text-primary font-bold">{data.ia_registration_number}</span>
-                </span>
+              <CardDescription className="text-base sm:text-lg mt-2 flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Database className="w-4 h-4 text-primary/60 shrink-0" />
+                  <span className="flex items-center gap-1.5 whitespace-nowrap">
+                    BASL ID: <span className="font-mono text-primary font-bold">{data.basl_membership_id}</span>
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 border-l border-primary/20 pl-4">
+                  <ShieldCheck className="w-4 h-4 text-primary/60 shrink-0" />
+                  <span className="flex items-center gap-1.5 whitespace-nowrap">
+                    Reg No: <span className="font-mono text-primary font-bold">{data.ia_registration_number}</span>
+                  </span>
+                </div>
               </CardDescription>
             </div>
           </div>
@@ -405,7 +414,7 @@ export function IAMasterView() {
               <div className="space-y-1">
                 <h5 className="text-sm font-bold">White-labeling Active</h5>
                 <p className="text-xs text-muted-foreground italic">
-                  SEBI Regulation Note: Your portal is now correctly isolated on your own domain. All client PII data stays in your Bridge.
+                  Regulation Note: Your portal is now correctly isolated on your own domain. All client PII data stays in your Bridge.
                 </p>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {tenant?.subdomain && (
@@ -424,6 +433,9 @@ export function IAMasterView() {
           )}
         </CardContent>
       </Card>
+
+      {/* ── Brand Customization ────────────────────────── */}
+      <BrandingCard data={data} onRefresh={fetchData} />
 
     </div>
   );

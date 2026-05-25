@@ -1,4 +1,4 @@
-﻿import { API_ENDPOINTS } from "../api/api-endpoints";
+import { API_ENDPOINTS } from "../api/api-endpoints";
 import httpClient from "../api/http-client";
 
 export interface RiskAssessmentCalculateRequest {
@@ -203,5 +203,12 @@ export class RiskProfileService {
     document.body.appendChild(link);
     link.click();
     link.remove();
+  }
+  
+  static async emailAssessment(assessmentId: string, isCustom = false): Promise<any> {
+    const endpoint = isCustom 
+      ? API_ENDPOINTS.RISK_PROFILE.CUSTOM_EMAIL(assessmentId) 
+      : API_ENDPOINTS.RISK_PROFILE.EMAIL(assessmentId);
+    return await httpClient.post(endpoint);
   }
 }

@@ -120,7 +120,7 @@ export default function MemberPermissionsView() {
         <AlertTitle className="text-primary font-bold">Role-Based Access</AlertTitle>
         <AlertDescription>
           This user has the <strong className="capitalize">{member.role.replace('_', ' ')}</strong> role. 
-          {member.role === 'analyst' && " Analysts can only see data for clients assigned to them."}
+          {member.role === 'research_analyst' && " Analysts can only see data for clients assigned to them."}
           {member.role === 'owner' && " Owners have full access to all modules automatically."}
         </AlertDescription>
       </Alert>

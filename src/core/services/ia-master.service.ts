@@ -1,6 +1,13 @@
 import { API_ENDPOINTS } from "../api/api-endpoints";
 import httpClient from "../api/http-client";
 
+export interface Department {
+  id: string;
+  name: string;
+  created_at: string;
+  employee_count?: number;
+}
+
 export interface Employee {
   id?: string;
   name_of_employee?: string;
@@ -8,10 +15,19 @@ export interface Employee {
   name?: string;
   date_of_birth?: string;
   designation?: string;
+  phone_number?: string;
+  staff_code?: string;
+  date_of_joining?: string;
+  date_of_leaving?: string;
+  employee_type?: 'advisory' | 'non-advisory';
+  department_id?: string;
+  department_name?: string;
   ia_registration_number?: string;
   date_of_registration?: string;
   date_of_registration_expiry?: string;
+  certificate_issue_date?: string;
   certificate_path?: string;
+  version_number?: number;
   created_at?: string;
 }
 
@@ -21,6 +37,7 @@ export interface IAMaster {
   date_of_birth: string;
   nature_of_entity: string;
   name_of_entity?: string;
+  basl_membership_id: string;
   ia_registration_number: string;
   date_of_registration?: string;
   date_of_registration_expiry?: string;
@@ -36,6 +53,12 @@ export interface IAMaster {
   ia_certificate_path?: string;
   ia_signature_path?: string;
   ia_logo_path?: string;
+  brand_color?: string;
+  brand_background_color_light?: string;
+  brand_background_color_dark?: string;
+  portal_title?: string;
+  portal_description?: string;
+  favicon_path?: string;
   max_client_permit: number;
   current_client_count: number;
   created_at: string;
@@ -44,7 +67,7 @@ export interface IAMaster {
 }
 
 // ── IA Master Service (Bridge Architecture) ───────────────────────────────
-// No  required — backend resolves tenant from JWT + X-Tenant-Slug
+// No required — backend resolves tenant from JWT + X-Tenant-Slug
 
 export class IAMasterService {
   static async validateIANumber(iaNumber: string): Promise<boolean> {
@@ -105,5 +128,34 @@ export class IAMasterService {
       API_ENDPOINTS.MASTER.IA_MASTER.EMPLOYEES
     );
     return response.data;
+  }
+
+  // ── Department Management ──
+
+  static async listDepartments(): Promise<Department[]> {
+    const response = await httpClient.get<Department[]>(
+      API_ENDPOINTS.MASTER.DEPARTMENTS.LIST
+    );
+    return response.data;
+  }
+
+  static async createDepartment(name: string): Promise<Department> {
+    const response = await httpClient.post<Department>(
+      API_ENDPOINTS.MASTER.DEPARTMENTS.CREATE,
+      { name }
+    );
+    return response.data;
+  }
+
+  static async updateDepartment(id: string, name: string): Promise<Department> {
+    const response = await httpClient.put<Department>(
+      API_ENDPOINTS.MASTER.DEPARTMENTS.UPDATE(id),
+      { name }
+    );
+    return response.data;
+  }
+
+  static async deleteDepartment(id: string): Promise<void> {
+    await httpClient.delete(API_ENDPOINTS.MASTER.DEPARTMENTS.DELETE(id));
   }
 }

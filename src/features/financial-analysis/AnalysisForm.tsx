@@ -37,12 +37,24 @@ import {
   FinancialAnalysisService, 
   FinancialAnalysisCreate 
 } from "@/core/services/financial-analysis.service";
+import { DatePicker } from "@/components/ui/date-picker";
 import { MasterDataService, ClientCreate } from "@/core/services/master.service";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { FINANCIAL_GOAL_ANALYSIS_DISCLAIMER, RECORD_VERSION_CONTROL_STATEMENT } from "./constants";
 
 interface AnalysisFormProps {
-  
   clientId?: string;
+  copyFromProfileId?: string;
   onSuccess: (resultId: string) => void;
   onCancel: () => void;
 }
@@ -68,24 +80,19 @@ const STEP_DESCRIPTONS: Record<number, string> = {
 const STEPS_CONFIG = [
   { id: 1, title: "Profile", icon: User },
   { id: 2, title: "Family", icon: Users },
-  { id: 3, title: "Snapshot", icon: Wallet },
-  { id: 4, title: "Security", icon: ShieldCheck },
-  { id: 5, title: "Goals", icon: Target },
+  { id: 3, title: "Financials", icon: Wallet },
+  { id: 4, title: "Insurance", icon: ShieldCheck },
+  { id: 5, title: "Assumptions", icon: Target },
   { id: 6, title: "Finish", icon: Flag }
 ];
 
-const BASE_DISCLAIMER = `This financial goal analysis report is generated based on data and assumptions provided by the Investment Adviser (RIA)/ Financial Advisor. This report provides computational and illustrative financial analysis based on inputs and assumptions provided by the Investment Adviser and/or client. It does not constitute investment advice, recommendation, or opinion on any investment products, strategies, or asset allocation. Any advisory services, interpretation, or recommendations are provided separately by the Investment Adviser. This report should be read in conjunction with advisory services provided separately by the Investment Adviser.
-This report is for information and illustrative purposes only and does not constitute investment advice, insurance recommendation, or financial planning advice.
-All projections and calculations are based on assumptions and are not guaranteed. Actual results may vary due to market conditions and other factors beyond the scope of this analysis.
-The Investment Adviser is responsible for reviewing, interpreting, and validating the data, assumptions, and outputs of this report.
-This document does not constitute legal or tax advice.`;
-
-export function AnalysisForm({ clientId, onSuccess, onCancel }: AnalysisFormProps) {
+export function AnalysisForm({ clientId, copyFromProfileId, onSuccess, onCancel }: AnalysisFormProps) {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
   const [clientFound, setClientFound] = useState(false);
 
+  const [showConfirmAlert, setShowConfirmAlert] = useState(false);
   const [formData, setFormData] = useState<FinancialAnalysisCreate>({
     client_id: clientId || "",
     pan: "",
@@ -103,7 +110,7 @@ export function AnalysisForm({ clientId, onSuccess, onCancel }: AnalysisFormProp
       maid: 0, edu: 0, ent: 0, emi: 0, savings: 0, misc: 0
     },
     assets: {
-      land: 0, inv: 0, cash: 0, retirement: 0
+      land: 0, inv: 0, cash: 0, retirement: 0, others: []
     },
     liabilities: {
       personal: 0, cc: 0, hb: 0, others: []
@@ -135,7 +142,8 @@ export function AnalysisForm({ clientId, onSuccess, onCancel }: AnalysisFormProp
     },
     exclude_ai: false,
     disclaimer_text: "",
-    discussion_notes: ""
+    discussion_notes: "",
+    record_version_control_statement: RECORD_VERSION_CONTROL_STATEMENT
   });
 
   const [displayInfo, setDisplayInfo] = useState({
@@ -145,28 +153,90 @@ export function AnalysisForm({ clientId, onSuccess, onCancel }: AnalysisFormProp
     iaReg: ""
   });
 
-  // Load existing client if ID provided
+  // Load initial data with correct precedence: Client Master -> Historical Profile
   useEffect(() => {
-    if (clientId) {
-      MasterDataService.getClient(clientId).then(client => {
-        populateClientData(client);
-      });
-    }
-  }, [clientId]);
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        let clientData = null;
 
-  const populateClientData = (client: ClientCreate) => {
-    setFormData(prev => ({
-      ...prev,
-      client_id: client.id || prev.client_id,
-      pan: client.pan_number,
-      occupation: client.occupation,
-      dob: formatToInputDate(client.date_of_birth),
-      annual_income: client.annual_income,
-      spouse_name: client.spouse_name || "",
-      spouse_dob: formatToInputDate(client.spouse_dob || ""),
-      contact: client.phone_number,
-      email: client.email
-    }));
+        // 1. If we have a clientId, load master data first
+        if (clientId) {
+          clientData = await MasterDataService.getClient(clientId);
+          populateClientData(clientData);
+        }
+
+        // 2. If we are copying/editing a profile, load that snapshot
+        if (copyFromProfileId) {
+          const profile = await FinancialAnalysisService.getProfile(copyFromProfileId);
+
+          // If clientId wasn't provided but profile has one, load client display info
+          if (!clientData && profile.client_id) {
+            clientData = await MasterDataService.getClient(profile.client_id);
+            // Pass skipFormFields=true so we only get display info and don't overwrite form inputs
+            populateClientData(clientData, true);
+          }
+
+          // Apply profile snapshot OVER the form
+          setFormData(prev => ({ 
+            ...prev, 
+            occupation: profile.occupation,
+            dob: formatToInputDate(profile.dob),
+            annual_income: profile.annual_income,
+            spouse_name: profile.spouse_name || "",
+            spouse_dob: formatToInputDate(profile.spouse_dob || ""),
+            spouse_occupation: profile.spouse_occupation || "",
+            children: profile.children || [],
+            expenses: profile.expenses || prev.expenses,
+            assets: profile.assets || prev.assets,
+            liabilities: profile.liabilities || prev.liabilities,
+            insurance: profile.insurance || prev.insurance,
+            medical_bonus_years: profile.medical_bonus_years || 0,
+            medical_bonus_percentage: profile.medical_bonus_percentage || 0,
+            education_investment_pct: profile.education_investment_pct || 0,
+            marriage_investment_pct: profile.marriage_investment_pct || 0,
+            assumptions: profile.assumptions || prev.assumptions,
+            exclude_ai: !!profile.exclude_ai,
+            disclaimer_text: (profile.disclaimer_text || "").replace(FINANCIAL_GOAL_ANALYSIS_DISCLAIMER, "").trim(),
+            discussion_notes: profile.discussion_notes || "",
+            record_version_control_statement: profile.record_version_control_statement || prev.record_version_control_statement,
+            pan: profile.pan || "",
+            contact: profile.contact || "",
+            email: profile.email || "",
+            client_id: profile.client_id,
+            previous_profile_id: copyFromProfileId,
+          }));
+          
+          setClientFound(true);
+          toast.success("Historical snapshot loaded successfully.");
+        }
+      } catch (error) {
+        console.error("Error loading data:", error);
+        toast.error("Failed to load full data snapshot.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [clientId, copyFromProfileId]);
+
+  const populateClientData = (client: ClientCreate, skipFormFields = false) => {
+    if (!skipFormFields) {
+      setFormData(prev => ({
+        ...prev,
+        client_id: client.id || prev.client_id,
+        pan: client.pan_number,
+        occupation: client.occupation,
+        dob: formatToInputDate(client.date_of_birth),
+        annual_income: client.annual_income,
+        spouse_name: client.spouse_name || "",
+        spouse_dob: formatToInputDate(client.spouse_dob || ""),
+        contact: client.phone_number,
+        email: client.email
+      }));
+    }
+    
     setDisplayInfo({
       clientName: client.client_name,
       clientCode: client.client_code,
@@ -232,9 +302,10 @@ export function AnalysisForm({ clientId, onSuccess, onCancel }: AnalysisFormProp
   };
 
   const updateChild = (index: number, field: string, value: any) => {
+    const cleanedValue = field === 'name' ? value.replace(/[^a-zA-Z\s]/g, '') : value;
     setFormData(prev => {
       const newChildren = [...(prev.children || [])];
-      newChildren[index] = { ...newChildren[index], [field]: value };
+      newChildren[index] = { ...newChildren[index], [field]: cleanedValue };
       return { ...prev, children: newChildren };
     });
   };
@@ -273,6 +344,40 @@ export function AnalysisForm({ clientId, onSuccess, onCancel }: AnalysisFormProp
     });
   };
 
+  const addOtherAsset = () => {
+    setFormData(prev => ({
+      ...prev,
+      assets: {
+        ...prev.assets,
+        others: [...(prev.assets.others || []), { label: "", amount: 0 }]
+      }
+    }));
+  };
+
+  const removeOtherAsset = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      assets: {
+        ...prev.assets,
+        others: prev.assets.others?.filter((_, i) => i !== index)
+      }
+    }));
+  };
+
+  const updateOtherAsset = (index: number, field: string, value: any) => {
+    setFormData(prev => {
+      const newOthers = [...(prev.assets.others || [])];
+      newOthers[index] = { ...newOthers[index], [field]: value };
+      return {
+        ...prev,
+        assets: {
+          ...prev.assets,
+          others: newOthers
+        }
+      };
+    });
+  };
+
   const handleSubmit = async () => {
     if (!formData.client_id) {
       toast.error("Please validate a PAN or select a client first.");
@@ -283,7 +388,7 @@ export function AnalysisForm({ clientId, onSuccess, onCancel }: AnalysisFormProp
     try {
       const submissionData = {
         ...formData,
-        disclaimer_text: `${BASE_DISCLAIMER}\n\n${formData.disclaimer_text}`.trim()
+        disclaimer_text: `${FINANCIAL_GOAL_ANALYSIS_DISCLAIMER}\n\n${formData.disclaimer_text}`.trim()
       };
       const result = await FinancialAnalysisService.create(submissionData);
       toast.success("Analysis saved and calculated successfully!");
@@ -297,14 +402,39 @@ export function AnalysisForm({ clientId, onSuccess, onCancel }: AnalysisFormProp
   };
 
   const nextStep = () => {
-    // Basic validation for spouse age
-    if (step === 1 && formData.spouse_dob && !isEighteenPlus(formData.spouse_dob)) {
-      toast.error("Spouse must be at least 18 years old.");
-      return;
+    // Validation for Step 1
+    if (step === 1) {
+      if (!formData.client_id) {
+        toast.error("Please validate Client Code first.");
+        return;
+      }
+      if (!formData.occupation) {
+        toast.error("Occupation is required.");
+        return;
+      }
+      if (!formData.dob) {
+        toast.error("Date of Birth is required.");
+        return;
+      }
+      if (formData.annual_income <= 0) {
+        toast.error("Annual Income must be greater than 0.");
+        return;
+      }
+      
+      /* Mandatory Spouse info removed - making it optional */
+      if (formData.spouse_dob && !isEighteenPlus(formData.spouse_dob)) {
+        toast.error("Spouse must be at least 18 years old.");
+        return;
+      }
     }
+    
     setStep(s => Math.min(s + 1, 6));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-  const prevStep = () => setStep(s => Math.max(s - 1, 1));
+  const prevStep = () => {
+    setStep(s => Math.max(s - 1, 1));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const formatToInputDate = (dateStr: string | undefined): string => {
     if (!dateStr) return "";
@@ -445,27 +575,39 @@ export function AnalysisForm({ clientId, onSuccess, onCancel }: AnalysisFormProp
                       value={formData.occupation} 
                       onChange={e => handleTopLevelChange('occupation', e.target.value)}
                       placeholder="e.g. Professional / Salaried"
+                      readOnly={clientFound}
+                      className={clientFound ? "font-bold uppercase text-primary/80 cursor-default" : ""}
                     />
                   </div>
                   <div className="space-y-2">
                     <Label>Date of Birth *</Label>
-                    <Input 
-                      type="date"
-                      value={formData.dob} 
-                      onChange={e => handleTopLevelChange('dob', e.target.value)}
-                    />
+                    {clientFound ? (
+                      <Input 
+                        value={formData.dob} 
+                        readOnly 
+                        className="font-bold text-primary/80 cursor-default"
+                      />
+                    ) : (
+                      <DatePicker 
+                        date={formData.dob} 
+                        onChange={val => handleTopLevelChange('dob', val)}
+                        placeholder="Select DOB"
+                        fromYear={1930}
+                      />
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label>Annual Income (₹) *</Label>
                     <div className="relative">
                       <span className="absolute left-3 top-2.5 text-xs opacity-50">₹</span>
                       <Input 
-                        type="number"
+                        type={clientFound ? "text" : "number"}
                         min={0}
-                        value={formData.annual_income === 0 ? "" : formData.annual_income} 
+                        value={clientFound ? formData.annual_income.toLocaleString() : (formData.annual_income === 0 ? "" : formData.annual_income)} 
                         onChange={e => handleTopLevelChange('annual_income', e.target.value === "" ? 0 : parseFloat(e.target.value))}
                         placeholder="0"
-                        className="pl-7 font-bold text-primary"
+                        readOnly={clientFound}
+                        className={`pl-7 font-bold text-primary ${clientFound ? 'cursor-default' : ''}`}
                       />
                     </div>
                   </div>
@@ -477,19 +619,33 @@ export function AnalysisForm({ clientId, onSuccess, onCancel }: AnalysisFormProp
                 <SectionHeader title="2. Spouse Information" icon={User} number="2" />
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="space-y-2">
-                    <Label>Spouse Name</Label>
-                    <Input value={formData.spouse_name} onChange={e => handleTopLevelChange('spouse_name', e.target.value)} />
+                    <Label>Spouse Name {clientFound && "(Auto-populated)"}</Label>
+                    <Input 
+                      value={formData.spouse_name} 
+                      onChange={e => handleTopLevelChange('spouse_name', e.target.value)} 
+                      readOnly={clientFound}
+                      className={clientFound ? "font-bold uppercase text-primary/80 cursor-default" : ""}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label className={formData.spouse_dob && !isEighteenPlus(formData.spouse_dob) ? "text-destructive" : ""}>
-                      Date of Birth {formData.spouse_dob && !isEighteenPlus(formData.spouse_dob) && "(Must be 18+)"}
+                      Date of Birth {clientFound && "(Auto-populated)"} {formData.spouse_dob && !isEighteenPlus(formData.spouse_dob) && "(Must be 18+)"}
                     </Label>
-                    <Input 
-                      type="date"
-                      value={formData.spouse_dob} 
-                      onChange={e => handleTopLevelChange('spouse_dob', e.target.value)} 
-                      className={formData.spouse_dob && !isEighteenPlus(formData.spouse_dob) ? "border-destructive focus-visible:ring-destructive" : ""}
-                    />
+                    {clientFound ? (
+                      <Input 
+                        value={formData.spouse_dob} 
+                        readOnly 
+                        className="font-bold text-primary/80 cursor-default"
+                      />
+                    ) : (
+                      <DatePicker 
+                        date={formData.spouse_dob} 
+                        onChange={val => handleTopLevelChange('spouse_dob', val)}
+                        placeholder="Select Spouse DOB"
+                        fromYear={1930}
+                        className={formData.spouse_dob && !isEighteenPlus(formData.spouse_dob) ? "border-destructive focus-visible:ring-destructive" : ""}
+                      />
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label>Occupation/Status</Label>
@@ -517,11 +673,21 @@ export function AnalysisForm({ clientId, onSuccess, onCancel }: AnalysisFormProp
                     <div key={idx} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 p-4 rounded-xl bg-primary/5 border border-primary/10 relative group">
                       <div className="space-y-1">
                         <Label className="text-[10px] uppercase opacity-50">Child Name</Label>
-                        <Input value={child.name} onChange={e => updateChild(idx, 'name', e.target.value)} className="h-9" />
+                        <Input 
+                          value={child.name} 
+                          onChange={e => updateChild(idx, 'name', e.target.value.replace(/[^a-zA-Z\s]/g, ''))} 
+                          className="h-9" 
+                        />
                       </div>
                       <div className="space-y-1">
                         <Label className="text-[10px] uppercase opacity-50">DOB</Label>
-                        <Input type="date" value={child.dob} onChange={e => updateChild(idx, 'dob', e.target.value)} className="h-9" />
+                        <DatePicker 
+                          date={child.dob} 
+                          onChange={val => updateChild(idx, 'dob', val)}
+                          className="h-9"
+                          placeholder="Child DOB"
+                          fromYear={1990}
+                        />
                       </div>
                       <div className="space-y-1">
                         <Label className="text-[10px] uppercase opacity-50">Occupation / Status</Label>
@@ -619,6 +785,51 @@ export function AnalysisForm({ clientId, onSuccess, onCancel }: AnalysisFormProp
                         />
                       </div>
                     ))}
+
+                    {/* Other Assets List */}
+                    {formData.assets.others?.map((other, idx) => (
+                      <div key={idx} className="p-3 border border-dashed border-primary/20 rounded-lg space-y-3 relative group">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="absolute -right-2 -top-2 h-6 w-6 rounded-full bg-background border shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => removeOtherAsset(idx)}
+                        >
+                          <Trash2 className="h-3 w-3 text-destructive" />
+                        </Button>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <Label className="text-[10px] uppercase opacity-50">Label</Label>
+                            <Input 
+                              placeholder="e.g. Fixed Deposits" 
+                              value={other.label} 
+                              onChange={e => updateOtherAsset(idx, 'label', e.target.value)}
+                              className="h-8 text-xs"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-[10px] uppercase opacity-50">Amount (₹)</Label>
+                            <Input 
+                              type="number" 
+                              min={0}
+                              placeholder="0"
+                              value={other.amount === 0 ? "" : other.amount} 
+                              onChange={e => updateOtherAsset(idx, 'amount', e.target.value === "" ? 0 : parseFloat(e.target.value))}
+                              className="h-8 text-xs"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={addOtherAsset}
+                      className="w-full border-dashed border-primary/30 text-primary/60 hover:text-primary hover:border-primary/50 text-xs h-8"
+                    >
+                      <Plus className="w-3 h-3 mr-2" /> Add Other Asset
+                    </Button>
                   </div>
                 </div>
                 <div>
@@ -881,7 +1092,7 @@ export function AnalysisForm({ clientId, onSuccess, onCancel }: AnalysisFormProp
               <div className="space-y-4">
                 <SectionHeader title="13. Disclaimer to Analysis" icon={FileText} number="13" />
                 <div className="p-5 rounded-2xl bg-muted/30 border border-muted/50 text-xs text-muted-foreground leading-relaxed font-serif whitespace-pre-wrap italic shadow-inner">
-                  {BASE_DISCLAIMER}
+                  {FINANCIAL_GOAL_ANALYSIS_DISCLAIMER}
                 </div>
                 
                 <div className="space-y-3 pt-4">
@@ -897,14 +1108,22 @@ export function AnalysisForm({ clientId, onSuccess, onCancel }: AnalysisFormProp
                 </div>
               </div>
 
-              {/* Section 14: Discussion Notes */}
+              {/* Section 14: Record & Version Control Statement */}
+              <div className="space-y-4">
+                <SectionHeader title="14. Record & Version Control Statement" icon={ShieldCheck} number="14" />
+                <div className="p-5 rounded-2xl bg-muted/30 border border-muted/50 text-xs text-muted-foreground leading-relaxed font-serif whitespace-pre-wrap italic shadow-inner">
+                  {RECORD_VERSION_CONTROL_STATEMENT}
+                </div>
+              </div>
+
+              {/* Section 15: Discussion Notes */}
               <div>
-                <SectionHeader title="14. Discussion Notes" icon={MessageSquare} number="14" />
+                <SectionHeader title="15. Discussion Notes" icon={MessageSquare} number="15" />
                 <Textarea 
                   value={formData.discussion_notes} 
                   onChange={e => handleTopLevelChange('discussion_notes', e.target.value)}
-                  placeholder="Enter specific notes from client meeting..."
-                  className="min-h-[120px]"
+                  placeholder="Record key discussion points between RIA/Advisor and client"
+                  className="min-h-[200px] text-sm leading-relaxed border-primary/10 focus-visible:ring-primary/20"
                 />
               </div>
             </div>
@@ -925,11 +1144,11 @@ export function AnalysisForm({ clientId, onSuccess, onCancel }: AnalysisFormProp
             
             {step < 6 ? (
               <Button className="gap-2 bg-primary px-10 font-black shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all w-full sm:w-auto" onClick={nextStep}>
-                PROCEED TO {STEP_TITLES[step + 1].toUpperCase()} <ChevronRight className="w-4 h-4" />
+                NEXT STEP <ChevronRight className="w-4 h-4" />
               </Button>
             ) : (
               <Button 
-                onClick={handleSubmit} 
+                onClick={() => setShowConfirmAlert(true)} 
                 className="gap-2 bg-green-600 hover:bg-green-700 px-12 font-black shadow-xl shadow-green-500/30 hover:scale-105 active:scale-95 transition-all w-full sm:w-auto"
                 disabled={loading}
               >
@@ -940,6 +1159,31 @@ export function AnalysisForm({ clientId, onSuccess, onCancel }: AnalysisFormProp
           </div>
         </CardFooter>
       </Card>
+
+      <AlertDialog open={showConfirmAlert} onOpenChange={setShowConfirmAlert}>
+        <AlertDialogContent className="bg-card border-primary/20 backdrop-blur-3xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-xl font-black text-primary flex items-center gap-2">
+              <AlertCircle className="w-6 h-6 text-orange-500" />
+              Verification Required
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-md font-bold text-foreground/80 py-4">
+              Check Accuracy before report generation
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-4">
+            <AlertDialogCancel className="font-bold border-primary/10">
+              NO, LET ME REVIEW
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleSubmit}
+              className="bg-green-600 hover:bg-green-700 font-black px-10"
+            >
+              YES, PROCEED
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

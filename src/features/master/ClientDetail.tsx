@@ -15,13 +15,17 @@ import {
   MapPin,
   Fingerprint,
   Info,
-  FolderOpen
+  FolderOpen,
+  History,
+  Terminal,
+  ExternalLink
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ClientCreate, MasterDataService } from "@/core/services/master.service";
+import { RectificationService } from "@/core/services/rectification.service";
 import { IAMasterService, Employee } from "@/core/services/ia-master.service";
 import { 
   AlertDialog,
@@ -41,6 +45,7 @@ import { AnalysisForm } from "@/features/financial-analysis/AnalysisForm";
 import { AnalysisDashboard } from "@/features/financial-analysis/AnalysisDashboard";
 import { FinancialAnalysisResult, FinancialAnalysisService } from "@/core/services/financial-analysis.service";
 import { DocumentVault } from "./components/DocumentVault";
+import { ClientVersionHistory } from "./components/ClientVersionHistory";
 
 interface ClientDetailProps {
   client: ClientCreate;
@@ -59,24 +64,60 @@ export default function ClientDetail({ client }: ClientDetailProps) {
     setCurrentClient(client);
   }, [client]);
 
-  const handleToggleActive = async () => {
-    if (!currentClient.id) return;
-    
-    const action = currentClient.is_active === false ? "activate" : "deactivate";
+  const [deactivationReason, setDeactivationReason] = React.useState("");
+  const [showDeactivationDialog, setShowDeactivationDialog] = React.useState(false);
+  const [isDeactivating, setIsDeactivating] = React.useState(false);
 
-    setIsUpdating(true);
+  const initiateDeactivationFlow = async () => {
+    if (!currentClient.id || !deactivationReason.trim()) {
+        toast.error("Please provide a reason for deactivation.");
+        return;
+    }
+
+    setIsDeactivating(true);
     try {
-      const updatedClient = await MasterDataService.updateClient(currentClient.id, {
-        is_active: !currentClient.is_active
-      });
-      // The updateClient returns a Client, but we need to update our ClientCreate state
-      setCurrentClient(prev => ({ ...prev, is_active: !prev.is_active }));
-      toast.success(`Client ${action}d successfully`);
+        // 1. Create a formal Rectification record of type DEACTIVATION
+        const rectification = await RectificationService.initiate({
+            client_id: currentClient.id,
+            module: "DEACTIVATION" as any,
+            record_id: currentClient.id,
+            current_version: (currentClient as any).version_number || 1,
+            initiation_reason: deactivationReason,
+            proposed_changes: [
+                {
+                    field: "is_active",
+                    current: true,
+                    proposed: false,
+                    reason: deactivationReason
+                }
+            ],
+            justification_details: {
+                q1: "Client relationship termination requested",
+                q2: deactivationReason,
+                q3: "IA Request"
+            },
+            impact_declaration: {
+                financial: true,
+                risk: true,
+                asset_allocation: true,
+                portfolio: true,
+                product_basket: true,
+                target_portfolio: true,
+                other: false
+            },
+            confirmation_mode: "PHYSICAL",
+            is_investor_requested: false
+        });
+
+        toast.success("Deactivation flow initiated successfully. Please complete the compliance documentation.");
+        setShowDeactivationDialog(false);
+        // Redirect to the rectification management page for this record
+        router.push(`/rectification/${rectification.id}`);
     } catch (error) {
-      console.error(`Failed to ${action} client`, error);
-      toast.error(`Failed to ${action} client`);
+        console.error("Failed to initiate deactivation flow", error);
+        toast.error("Failed to initiate deactivation flow.");
     } finally {
-      setIsUpdating(false);
+        setIsDeactivating(false);
     }
   };
 
@@ -146,8 +187,11 @@ export default function ClientDetail({ client }: ClientDetailProps) {
               <span className="flex items-center gap-1.5 text-xs sm:text-sm">
                 <Phone className="w-3.5 h-3.5" /> {currentClient.phone_number}
               </span>
-              <Badge variant={currentClient.is_active === false ? "secondary" : "default"} className={`text-[10px] sm:text-xs ${currentClient.is_active === false ? "bg-muted" : "bg-green-500/10 text-green-600 border-green-500/20"}`}>
-                {currentClient.is_active === false ? "Deactivated" : "Active"}
+               <Badge 
+                variant={currentClient.is_active === false ? "destructive" : "default"} 
+                className={`text-[10px] sm:text-xs px-2 py-0.5 uppercase tracking-tighter ${currentClient.is_active === false ? "bg-red-600 text-white border-none shadow-sm" : "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"}`}
+              >
+                {currentClient.is_active === false ? "Permanently Deactivated" : "Account Active"}
               </Badge>
             </div>
           </div>
@@ -199,6 +243,9 @@ export default function ClientDetail({ client }: ClientDetailProps) {
                   </TabsTrigger>
                   <TabsTrigger value="vault" className="px-6 py-4 gap-2 data-[state=active]:bg-primary/5 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none text-xs sm:text-sm transition-all">
                     <FolderOpen className="w-4 h-4 text-blue-500" /> Document Vault
+                  </TabsTrigger>
+                  <TabsTrigger value="versions" className="px-6 py-4 gap-2 data-[state=active]:bg-primary/5 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none text-xs sm:text-sm transition-all">
+                    <History className="w-4 h-4 text-purple-500" /> Version History
                   </TabsTrigger>
               </TabsList>
             </div>
@@ -261,6 +308,40 @@ export default function ClientDetail({ client }: ClientDetailProps) {
                             <DetailItem label="Nominee Name" value={currentClient.nominee_name} />
                             <DetailItem label="Nominee Relationship" value={currentClient.nominee_relationship} />
                             <DetailItem label="Residential Status" value={currentClient.residential_status} />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="space-y-4 pt-4">
+                    <SectionHeader icon={ShieldCheck} title="IPV Verification & Relationship" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-primary/5 p-6 rounded-xl border border-primary/10">
+                        <div className="space-y-4">
+                            <DetailItem label="Assigned Professional" value={
+                              currentClient.assigned_employee_id 
+                                ? (() => {
+                                    if (loadingEmployees) return "Loading...";
+                                    const emp = employees.find(e => (e.id || (e as any)._id) === currentClient.assigned_employee_id);
+                                    return emp 
+                                      ? (emp.full_name || emp.name || emp.name_of_employee || "Staff Member") 
+                                      : "Professional Not Found";
+                                  })()
+                                : "Unassigned"
+                            } />
+                            <DetailItem label="IPV Performer (Assigned Staff)" value={
+                              currentClient.ipv_done_by_id 
+                                ? (() => {
+                                    if (loadingEmployees) return "Loading...";
+                                    const emp = employees.find(e => (e.id || (e as any)._id) === currentClient.ipv_done_by_id);
+                                    return emp 
+                                      ? (emp.full_name || emp.name || emp.name_of_employee || "Staff Member") 
+                                      : "I-PV Performer Not Found";
+                                  })()
+                                : "In-Person Verification Pending"
+                            } />
+                        </div>
+                        <div className="space-y-4">
+                            <DetailItem label="IPV Verification Date" value={currentClient.ipv_date || "Pending"} />
+                            <DetailItem label="Onboarding Approval" value={currentClient.is_active !== false ? <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">Approved & Active</Badge> : <Badge variant="secondary">Pending / Inactive</Badge>} />
                         </div>
                     </div>
                 </div>
@@ -385,44 +466,79 @@ export default function ClientDetail({ client }: ClientDetailProps) {
                     }}
                  />
               </TabsContent>
+
+              <TabsContent value="versions" className="mt-0 space-y-8">
+                 <ClientVersionHistory 
+                    clientId={client.id!} 
+                    clientName={client.client_name}
+                 />
+              </TabsContent>
             </div>
           </Tabs>
         </CardContent>
       </Card>
       
       <div className="mt-8 flex flex-col sm:flex-row justify-end gap-3 sm:gap-4">
-        <Button variant="outline" className="w-full sm:w-auto px-8 border-primary/20 h-11" onClick={() => router.push(`/clients/${currentClient.id}/edit`)}>
-            Edit Profile
-        </Button>
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button 
-              variant={currentClient.is_active === false ? "default" : "destructive"} 
-              className="w-full sm:w-auto px-8 h-11" 
-              disabled={isUpdating}
-            >
-                {isUpdating ? "Updating..." : currentClient.is_active === false ? "Activate Client" : "Deactivate Client"}
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This will {currentClient.is_active === false ? "reactivate" : "deactivate"} the client <strong>{currentClient.client_name}</strong>. 
-                {currentClient.is_active !== false && " Deactivated clients may have restricted access to certain features."}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction 
-                onClick={handleToggleActive}
-                className={currentClient.is_active === false ? "bg-primary" : "bg-destructive text-destructive-foreground hover:bg-destructive/90"}
+        {currentClient.is_active === false ? (
+          <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-xl text-red-800 text-sm font-semibold shadow-sm animate-in slide-in-from-bottom-2 duration-300">
+             <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+               <Terminal className="w-4 h-4 text-red-600" />
+             </div>
+             <div>
+               <p>Deactivation Protocol Complete</p>
+               <p className="text-[10px] opacity-70 font-normal">This relationship is terminated. No further updates or rectifications are permitted per SEBI compliance.</p>
+             </div>
+          </div>
+        ) : (
+          <AlertDialog open={showDeactivationDialog} onOpenChange={setShowDeactivationDialog}>
+            <AlertDialogTrigger asChild>
+              <Button 
+                variant="destructive" 
+                className="w-full sm:w-auto px-8 h-11 shadow-lg shadow-red-500/10" 
+                disabled={isDeactivating}
               >
-                Continue
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+                  {isDeactivating ? "Processing..." : "Initiate Deactivation Flow"}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent className="max-w-md">
+              <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2 text-red-600">
+                   <Terminal className="w-5 h-5" /> Initiate Permanent Deactivation
+                </AlertDialogTitle>
+                <AlertDialogDescription className="space-y-4 pt-2">
+                  <div>
+                    This will start a formal compliance workflow to permanently deactivate <strong>{currentClient.client_name}</strong>.
+                  </div>
+                  <div className="p-3 bg-amber-50 border border-amber-100 rounded text-amber-800 text-xs italic">
+                    Note: This is irreversible. You will need to print, sign, and upload a deactivation authorization form (E-Serial Process).
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-foreground">Reason for Termination</label>
+                    <textarea 
+                        className="w-full h-24 p-2 text-sm border rounded-md bg-background focus:ring-2 focus:ring-red-500 outline-none transition-all"
+                        placeholder="e.g. Client requested account closure, SEBI regulatory requirement, etc."
+                        value={deactivationReason}
+                        onChange={(e) => setDeactivationReason(e.target.value)}
+                    />
+                  </div>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setDeactivationReason("")}>Cancel</AlertDialogCancel>
+                <AlertDialogAction 
+                  onClick={(e) => {
+                    e.preventDefault(); // Prevent closing until we check validation
+                    initiateDeactivationFlow();
+                  }}
+                  disabled={!deactivationReason.trim() || isDeactivating}
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                >
+                  {isDeactivating ? "Initiating..." : "Start Compliance Flow"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </div>
     </div>
   );
