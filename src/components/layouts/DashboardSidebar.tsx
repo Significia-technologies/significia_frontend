@@ -185,7 +185,16 @@ export function SidebarContent() {
 
   const filteredNavItems = NAV_ITEMS.filter((item) => {
     if (item.minRole === "super_admin" && !isMasterContext) return false;
-    if (item.minRole === "admin" && !(isIAOwner || isIAPartner || isSuperAdmin)) return false;
+    if (item.minRole === "admin") {
+      if (isIAOwner || isIAPartner || isSuperAdmin) {
+        // Allowed
+      } else if (item.href === "/rectification") {
+        const clientsPerm = user?.permissions?.find((p: any) => p.module === "Clients");
+        if (!clientsPerm?.can_update) return false;
+      } else {
+        return false;
+      }
+    }
     if (item.href.includes("/master/developer") && !(isSuperAdmin || isIAOwner)) return false;
     if (item.href === "/admin" && !isSuperAdmin) return false;
     if (isIAOwner && !user.is_profile_completed && !["/", "/master"].includes(item.href))

@@ -28,6 +28,13 @@ export interface User {
   plan_expiry_date?: string | null;
   custom_domain?: string | null;
   subdomain?: string | null;
+  permissions?: {
+    module: string;
+    can_read: boolean;
+    can_create: boolean;
+    can_update: boolean;
+    can_delete: boolean;
+  }[];
 }
 
 export interface AuthResponse {
