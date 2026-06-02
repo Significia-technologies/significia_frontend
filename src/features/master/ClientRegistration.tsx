@@ -546,6 +546,9 @@ export default function ClientRegistrationForm({
           } else if (detailStr.includes("phone") || detailStr.includes("mobile")) {
               errorMessage = "Registration Failed: A client with this Phone Number already exists.";
               setActiveTab("personal");
+          } else if (detailStr.includes("bank account") || detailStr.includes("bank_account")) {
+              errorMessage = "Registration Failed: A client with this Bank Account Number already exists.";
+              setActiveTab("bank");
           } else if (detailStr.includes("ckyc")) {
               errorMessage = "Registration Failed: A client with this CKYC Number already exists.";
               setActiveTab("compliance");
