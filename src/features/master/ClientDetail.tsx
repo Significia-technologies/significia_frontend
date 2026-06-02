@@ -363,6 +363,8 @@ export default function ClientDetail({ client }: ClientDetailProps) {
                         ) : (
                           <DetailItem label="Passport Number" value={currentClient.passport_number} />
                         )}
+                        <DetailItem label="PAN Number" value={<span className="font-mono">{currentClient.pan_number}</span>} />
+                        <DetailItem label="CKYC Number" value={<span className="font-mono">{currentClient.ckyc_number}</span>} />
                     </div>
                 </div>
 
