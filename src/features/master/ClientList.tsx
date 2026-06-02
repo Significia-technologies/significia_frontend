@@ -243,9 +243,13 @@ export function ClientList() {
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell className="min-w-[200px]">
-                      <span className="flex items-center gap-1.5 text-sm text-muted-foreground italic">
-                        <MapPin className="w-3 h-3 shrink-0" /> {client.address || 'No address provided'}
+                    <TableCell className="max-w-[300px] min-w-[200px]">
+                      <span 
+                        className="flex items-center gap-1.5 text-sm text-muted-foreground italic"
+                        title={client.address || 'No address provided'}
+                      >
+                        <MapPin className="w-3 h-3 shrink-0" />
+                        <span className="truncate">{client.address || 'No address provided'}</span>
                       </span>
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
