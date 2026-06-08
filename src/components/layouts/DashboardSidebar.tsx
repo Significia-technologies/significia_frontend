@@ -183,7 +183,25 @@ export function SidebarContent() {
   const isMasterSubdomain = publicBranding?.is_master ?? user?.subdomain === "master";
   const isMasterContext = isMasterSubdomain || isIAOwner;
 
-  const filteredNavItems = NAV_ITEMS.filter((item) => {
+  const filteredNavItems = NAV_ITEMS.map((item) => {
+    if (item.children) {
+      const filteredChildren = item.children.filter((child) => {
+        if (!(isIAOwner || isIAPartner || isSuperAdmin)) {
+          if (child.href === "/portfolio/investor-master") {
+            const hasPerm = user?.permissions?.find((p: any) => p.module === "Investor Master")?.can_read;
+            if (!hasPerm) return false;
+          }
+          if (child.href === "/portfolio/target-portfolio") {
+            const hasPerm = user?.permissions?.find((p: any) => p.module === "Target Portfolio")?.can_read;
+            if (!hasPerm) return false;
+          }
+        }
+        return true;
+      });
+      return { ...item, children: filteredChildren };
+    }
+    return item;
+  }).filter((item) => {
     if (item.minRole === "super_admin" && !isMasterContext) return false;
     if (item.minRole === "admin") {
       if (isIAOwner || isIAPartner || isSuperAdmin) {
@@ -199,6 +217,17 @@ export function SidebarContent() {
     if (item.href === "/admin" && !isSuperAdmin) return false;
     if (isIAOwner && !user.is_profile_completed && !["/", "/master"].includes(item.href))
       return false;
+
+    // Enforce permission checks for standard users
+    if (!(isIAOwner || isIAPartner || isSuperAdmin)) {
+      if (item.href === "/product-basket") {
+        const hasPerm = user?.permissions?.find((p: any) => p.module === "Product Basket")?.can_read;
+        if (!hasPerm) return false;
+      }
+      if (item.children && item.children.length === 0) {
+        return false;
+      }
+    }
     return true;
   });
 

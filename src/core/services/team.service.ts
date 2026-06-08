@@ -53,7 +53,10 @@ export const APP_MODULES = [
   "Security Basket",
   "Operations",
   "Drawers",
-  "Tools"
+  "Tools",
+  "Product Basket",
+  "Target Portfolio",
+  "Investor Master"
 ];
 
 export const TeamService = {
