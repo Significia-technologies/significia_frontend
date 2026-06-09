@@ -43,6 +43,7 @@ import { IAMasterService, Employee } from "@/core/services/ia-master.service";
 import { ProductMasterService, AnyProduct } from "@/core/services/product-master.service";
 import { FinancialAnalysisService } from "@/core/services/financial-analysis.service";
 import { InvestmentAdviceService, InvestmentAdviceRecommendation } from "@/core/services/investment-advice.service";
+import { AssetAllocationService } from "@/core/services/asset-allocation.service";
 import { toast } from "sonner";
 
 interface AdviceNoteFormProps {
@@ -86,6 +87,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
   const [recEquity, setRecEquity] = useState<string>("60");
   const [recDebt, setRecDebt] = useState<string>("30");
   const [recCommodities, setRecCommodities] = useState<string>("10");
+  const [subAssets, setSubAssets] = useState<any>(null);
 
   const [currentAssetAllocation, setCurrentAssetAllocation] = useState<string>("");
   const [rebalancingRationale, setRebalancingRationale] = useState<string>("");
@@ -171,8 +173,49 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
       }
     };
 
+    // 3. Fetch latest asset allocation
+    const fetchLatestAllocation = async () => {
+      try {
+        const allocations = await AssetAllocationService.getAll(client.id);
+        if (allocations && allocations.length > 0) {
+          // Sort to get the latest
+          const latest = allocations.sort((a, b) => 
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          )[0];
+          
+          setRecEquity(String(latest.equities_percentage ?? 60));
+          setRecDebt(String(latest.debt_securities_percentage ?? 30));
+          setRecCommodities(String(latest.commodities_percentage ?? 10));
+          
+          if (latest.created_at) {
+            setDateOfAllocation(latest.created_at.split('T')[0]);
+          }
+
+          // Capture sub-asset percentages
+          setSubAssets({
+            fixed_deposits_bonds_percentage: latest.fixed_deposits_bonds_percentage ?? 0,
+            mutual_fund_debt_percentage: latest.mutual_fund_debt_percentage ?? 0,
+            ulip_debt_percentage: latest.ulip_debt_percentage ?? 0,
+            etf_debt_percentage: latest.etf_debt_percentage ?? 0,
+            
+            stocks_percentage: latest.stocks_percentage ?? 0,
+            mutual_fund_equity_percentage: latest.mutual_fund_equity_percentage ?? 0,
+            ulip_equity_percentage: latest.ulip_equity_percentage ?? 0,
+            etf_equity_percentage: latest.etf_equity_percentage ?? 0,
+
+            gold_etf_percentage: latest.gold_etf_percentage ?? 0,
+            silver_etf_percentage: latest.silver_etf_percentage ?? 0,
+            etf_commodity_percentage: latest.etf_commodity_percentage ?? 0,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to fetch client latest asset allocation", error);
+      }
+    };
+
     fetchEmployees();
     fetchAnalysisGoal();
+    fetchLatestAllocation();
   }, [client]);
 
   // Handle product searches
@@ -275,7 +318,8 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
       const recAlloc = {
         "Equity": parseInt(recEquity) || 0,
         "Debt": parseInt(recDebt) || 0,
-        "Commodities": parseInt(recCommodities) || 0
+        "Commodities": parseInt(recCommodities) || 0,
+        "sub_assets": subAssets || {}
       };
 
       const payload = {

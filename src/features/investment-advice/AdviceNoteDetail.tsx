@@ -155,10 +155,54 @@ export function AdviceNoteDetail({ noteId, onBack }: AdviceNoteDetailProps) {
     const alloc = note.recommended_asset_allocation;
     if (alloc && typeof alloc === 'object') {
       return Object.entries(alloc)
+        .filter(([k]) => k !== 'sub_assets')
         .map(([k, v]) => `${k}: ${v}%`)
         .join("  |  ");
     }
     return "N/A";
+  };
+
+  const renderSubAllocations = () => {
+    const alloc = note.recommended_asset_allocation;
+    if (!alloc || typeof alloc !== 'object' || !alloc.sub_assets) return null;
+    const sub = alloc.sub_assets;
+    
+    const hasSubAllocations = Object.values(sub).some(val => Number(val) > 0);
+    if (!hasSubAllocations) return null;
+
+    const labelMap: Record<string, string> = {
+      fixed_deposits_bonds_percentage: "Fixed Deposits / Bonds",
+      mutual_fund_debt_percentage: "Debt Mutual Funds",
+      ulip_debt_percentage: "Debt ULIPs",
+      etf_debt_percentage: "Debt ETFs",
+      
+      stocks_percentage: "Direct Equity (Stocks)",
+      mutual_fund_equity_percentage: "Equity Mutual Funds",
+      ulip_equity_percentage: "Equity ULIPs",
+      etf_equity_percentage: "Equity ETFs",
+      
+      gold_etf_percentage: "Gold ETFs",
+      silver_etf_percentage: "Silver ETFs",
+      etf_commodity_percentage: "Commodity ETFs"
+    };
+
+    return (
+      <div className="col-span-1 md:col-span-2 mt-2 p-4 bg-muted/30 border border-primary/5 rounded-xl space-y-3">
+        <h5 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Sub-Asset Allocation Breakdown</h5>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1.5 text-xs">
+          {Object.entries(sub).map(([key, val]) => {
+            const numVal = Number(val);
+            if (numVal <= 0) return null;
+            return (
+              <div key={key} className="flex justify-between border-b border-primary/5 pb-1">
+                <span className="text-muted-foreground font-medium">{labelMap[key] || key}</span>
+                <span className="font-bold text-foreground">{numVal}%</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -269,13 +313,22 @@ export function AdviceNoteDetail({ noteId, onBack }: AdviceNoteDetailProps) {
                 <GridRow label="Client Name" value={client.client_name} />
                 <GridRow label="Client Code" value={client.client_code} />
                 <GridRow label="PAN Number" value={client.pan_number} />
-                <GridRow label="Risk Profile Category" value={client.risk_profile} />
+                <GridRow label="Client DOB" value={client.date_of_birth} />
+                <GridRow label="Address" value={client.address} />
+                <GridRow label="Email" value={client.email} />
+                <GridRow label="Mobile" value={client.phone_number} />
+                <GridRow label="Risk Profile" value={client.risk_profile_score && client.risk_profile_score !== "N/A" ? `${client.risk_profile} (Score: ${client.risk_profile_score}/100)` : client.risk_profile} />
+                <GridRow label="Risk Profile Date" value={client.risk_profile_date} />
+                <GridRow label="Investment Horizon" value={client.investment_horizon} />
                 <GridRow label="Annual Income Band" value={note.annual_income_band} />
+                <GridRow label="Existing Liabilities" value={client.existing_liabilities !== undefined ? `₹${new Intl.NumberFormat('en-IN').format(client.existing_liabilities)}` : "N/A"} />
                 <GridRow label="Assets Under Advice (AUA)" value={`₹${new Intl.NumberFormat('en-IN').format(note.assets_under_advice)}`} />
                 <GridRow label="Primary Goal" value={note.primary_financial_goal} />
                 <GridRow label="Fee Mode" value={note.fee_mode === 'FIXED_FEE' ? 'Fixed Fee & GST' : 'Percentage of Assets Under Advice'} />
                 <GridRow label="Fee Amount" value={note.fee_mode === 'FIXED_FEE' ? `₹${new Intl.NumberFormat('en-IN').format(note.fee_amount)}` : `${note.fee_amount}%`} />
                 <GridRow label="Recommended Asset Allocation" value={renderRecommendedAllocText()} />
+                {note.date_of_allocation && <GridRow label="Date of Allocation" value={format(new Date(note.date_of_allocation), "dd MMMM yyyy")} />}
+                {renderSubAllocations()}
               </div>
             </div>
 

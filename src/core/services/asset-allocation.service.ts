@@ -93,8 +93,10 @@ export class AssetAllocationService {
     return response.data;
   }
 
-  static async getAll(): Promise<AssetAllocation[]> {
-    const response = await httpClient.get<AssetAllocation[]>(API_ENDPOINTS.ASSET_ALLOCATION.LIST);
+  static async getAll(clientId?: string): Promise<AssetAllocation[]> {
+    const response = await httpClient.get<AssetAllocation[]>(API_ENDPOINTS.ASSET_ALLOCATION.LIST, {
+      params: clientId ? { client_id: clientId } : undefined
+    });
     return response.data;
   }
 
