@@ -87,16 +87,54 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
   const [recEquity, setRecEquity] = useState<string>("60");
   const [recDebt, setRecDebt] = useState<string>("30");
   const [recCommodities, setRecCommodities] = useState<string>("10");
-  const [subAssets, setSubAssets] = useState<any>(null);
+
+  // Sub-Asset Allocation States
+  const [subStocks, setSubStocks] = useState<string>("0");
+  const [subMfEquity, setSubMfEquity] = useState<string>("0");
+  const [subUlipEquity, setSubUlipEquity] = useState<string>("0");
+  const [subEtfEquity, setSubEtfEquity] = useState<string>("0");
+
+  const [subFdBonds, setSubFdBonds] = useState<string>("0");
+  const [subMfDebt, setSubMfDebt] = useState<string>("0");
+  const [subUlipDebt, setSubUlipDebt] = useState<string>("0");
+  const [subEtfDebt, setSubEtfDebt] = useState<string>("0");
+
+  const [subGoldEtf, setSubGoldEtf] = useState<string>("0");
+  const [subSilverEtf, setSubSilverEtf] = useState<string>("0");
+  const [subEtfCommodity, setSubEtfCommodity] = useState<string>("0");
+
+  // Auto-sync Equity total
+  useEffect(() => {
+    const sum = (parseFloat(subStocks) || 0) + 
+                (parseFloat(subMfEquity) || 0) + 
+                (parseFloat(subUlipEquity) || 0) + 
+                (parseFloat(subEtfEquity) || 0);
+    setRecEquity(String(sum));
+  }, [subStocks, subMfEquity, subUlipEquity, subEtfEquity]);
+
+  // Auto-sync Debt total
+  useEffect(() => {
+    const sum = (parseFloat(subFdBonds) || 0) + 
+                (parseFloat(subMfDebt) || 0) + 
+                (parseFloat(subUlipDebt) || 0) + 
+                (parseFloat(subEtfDebt) || 0);
+    setRecDebt(String(sum));
+  }, [subFdBonds, subMfDebt, subUlipDebt, subEtfDebt]);
+
+  // Auto-sync Commodities total
+  useEffect(() => {
+    const sum = (parseFloat(subGoldEtf) || 0) + 
+                (parseFloat(subSilverEtf) || 0) + 
+                (parseFloat(subEtfCommodity) || 0);
+    setRecCommodities(String(sum));
+  }, [subGoldEtf, subSilverEtf, subEtfCommodity]);
 
   const [currentAssetAllocation, setCurrentAssetAllocation] = useState<string>("");
   const [rebalancingRationale, setRebalancingRationale] = useState<string>("");
   
-  const [suitabilityAssessment, setSuitabilityAssessment] = useState<string>(
-    "YES — Advice is suitable to the client's risk profile, financial goals and overall financial situation"
-  );
+  const [suitabilityChoice, setSuitabilityChoice] = useState<string>("YES");
   const [suitabilityBasis, setSuitabilityBasis] = useState<string>(
-    "Risk profile, income, liabilities, existing portfolio and investment horizon reviewed"
+    "Financial Goals, Risk profile, income, liabilities, Asset Allocation, Target Portfolio, existing portfolio and investment horizon reviewed"
   );
 
   // Recommendations
@@ -192,21 +230,19 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
           }
 
           // Capture sub-asset percentages
-          setSubAssets({
-            fixed_deposits_bonds_percentage: latest.fixed_deposits_bonds_percentage ?? 0,
-            mutual_fund_debt_percentage: latest.mutual_fund_debt_percentage ?? 0,
-            ulip_debt_percentage: latest.ulip_debt_percentage ?? 0,
-            etf_debt_percentage: latest.etf_debt_percentage ?? 0,
-            
-            stocks_percentage: latest.stocks_percentage ?? 0,
-            mutual_fund_equity_percentage: latest.mutual_fund_equity_percentage ?? 0,
-            ulip_equity_percentage: latest.ulip_equity_percentage ?? 0,
-            etf_equity_percentage: latest.etf_equity_percentage ?? 0,
+          setSubStocks(String(latest.stocks_percentage ?? 0));
+          setSubMfEquity(String(latest.mutual_fund_equity_percentage ?? 0));
+          setSubUlipEquity(String(latest.ulip_equity_percentage ?? 0));
+          setSubEtfEquity(String(latest.etf_equity_percentage ?? 0));
 
-            gold_etf_percentage: latest.gold_etf_percentage ?? 0,
-            silver_etf_percentage: latest.silver_etf_percentage ?? 0,
-            etf_commodity_percentage: latest.etf_commodity_percentage ?? 0,
-          });
+          setSubFdBonds(String(latest.fixed_deposits_bonds_percentage ?? 0));
+          setSubMfDebt(String(latest.mutual_fund_debt_percentage ?? 0));
+          setSubUlipDebt(String(latest.ulip_debt_percentage ?? 0));
+          setSubEtfDebt(String(latest.etf_debt_percentage ?? 0));
+
+          setSubGoldEtf(String(latest.gold_etf_percentage ?? 0));
+          setSubSilverEtf(String(latest.silver_etf_percentage ?? 0));
+          setSubEtfCommodity(String(latest.etf_commodity_percentage ?? 0));
         }
       } catch (error) {
         console.error("Failed to fetch client latest asset allocation", error);
@@ -319,7 +355,21 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
         "Equity": parseInt(recEquity) || 0,
         "Debt": parseInt(recDebt) || 0,
         "Commodities": parseInt(recCommodities) || 0,
-        "sub_assets": subAssets || {}
+        "sub_assets": {
+          fixed_deposits_bonds_percentage: parseInt(subFdBonds) || 0,
+          mutual_fund_debt_percentage: parseInt(subMfDebt) || 0,
+          ulip_debt_percentage: parseInt(subUlipDebt) || 0,
+          etf_debt_percentage: parseInt(subEtfDebt) || 0,
+          
+          stocks_percentage: parseInt(subStocks) || 0,
+          mutual_fund_equity_percentage: parseInt(subMfEquity) || 0,
+          ulip_equity_percentage: parseInt(subUlipEquity) || 0,
+          etf_equity_percentage: parseInt(subEtfEquity) || 0,
+
+          gold_etf_percentage: parseInt(subGoldEtf) || 0,
+          silver_etf_percentage: parseInt(subSilverEtf) || 0,
+          etf_commodity_percentage: parseInt(subEtfCommodity) || 0,
+        }
       };
 
       const payload = {
@@ -339,7 +389,9 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
         date_of_allocation: dateOfAllocation,
         current_asset_allocation: currentAssetAllocation,
         rebalancing_rationale: rebalancingRationale,
-        suitability_assessment: suitabilityAssessment,
+        suitability_assessment: suitabilityChoice === "YES" 
+          ? "YES — Advice is suitable to the client's risk profile, financial goals and overall financial situation"
+          : "NO",
         suitability_basis: suitabilityBasis,
         conflict_of_interest_text: conflictText,
         no_execution_text: noExecutionText,
@@ -567,11 +619,21 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="suitability">Advice Suitability Verdict</Label>
-                  <Input 
-                    id="suitability"
-                    value={suitabilityAssessment}
-                    onChange={(e) => setSuitabilityAssessment(e.target.value)}
-                  />
+                  <Select value={suitabilityChoice} onValueChange={setSuitabilityChoice}>
+                    <SelectTrigger id="suitability">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="YES">Yes</SelectItem>
+                      <SelectItem value="NO">No</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[10px] text-muted-foreground italic">
+                    {suitabilityChoice === "YES" 
+                      ? "Resolves to: YES — Advice is suitable to the client's risk profile, financial goals and overall financial situation" 
+                      : "Resolves to: NO"
+                    }
+                  </p>
                 </div>
 
                 <div className="space-y-2 md:col-span-2">
@@ -586,35 +648,172 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
 
                 <div className="border-t border-primary/5 pt-4 md:col-span-2">
                   <h4 className="font-bold text-sm text-foreground/90 mb-4">Recommended Asset Allocation Breakdown (%)</h4>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-3 gap-4 mb-4">
                     <div className="space-y-2">
-                      <Label htmlFor="rec_eq">Equity (%)</Label>
+                      <Label className="text-emerald-500 font-bold" htmlFor="rec_eq">Equity Total (%)</Label>
                       <Input 
                         id="rec_eq"
                         type="number"
+                        disabled
                         value={recEquity}
-                        onChange={(e) => setRecEquity(e.target.value)}
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="rec_dt">Debt (%)</Label>
+                      <Label className="text-blue-500 font-bold" htmlFor="rec_dt">Debt Total (%)</Label>
                       <Input 
                         id="rec_dt"
                         type="number"
+                        disabled
                         value={recDebt}
-                        onChange={(e) => setRecDebt(e.target.value)}
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="rec_cm">Commodities (%)</Label>
+                      <Label className="text-amber-500 font-bold" htmlFor="rec_cm">Commodities Total (%)</Label>
                       <Input 
                         id="rec_cm"
                         type="number"
+                        disabled
                         value={recCommodities}
-                        onChange={(e) => setRecCommodities(e.target.value)}
                       />
                     </div>
                   </div>
+
+                  {/* Sub-Asset Sections */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-4 bg-muted/20 border border-primary/5 rounded-xl">
+                    
+                    {/* Equity Sub Assets */}
+                    <div className="space-y-3">
+                      <h5 className="text-xs font-black text-emerald-500 uppercase tracking-wider">Equity Sub-Assets</h5>
+                      <div className="space-y-2">
+                        <div className="space-y-1">
+                          <Label className="text-[11px]" htmlFor="sub_stocks">Direct Equity / Stocks (%)</Label>
+                          <Input 
+                            id="sub_stocks" 
+                            type="number" 
+                            className="h-8 text-xs"
+                            value={subStocks} 
+                            onChange={(e) => setSubStocks(e.target.value)} 
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-[11px]" htmlFor="sub_mfeq">Equity Mutual Funds (%)</Label>
+                          <Input 
+                            id="sub_mfeq" 
+                            type="number" 
+                            className="h-8 text-xs"
+                            value={subMfEquity} 
+                            onChange={(e) => setSubMfEquity(e.target.value)} 
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-[11px]" htmlFor="sub_ulipeq">Equity ULIPs (%)</Label>
+                          <Input 
+                            id="sub_ulipeq" 
+                            type="number" 
+                            className="h-8 text-xs"
+                            value={subUlipEquity} 
+                            onChange={(e) => setSubUlipEquity(e.target.value)} 
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-[11px]" htmlFor="sub_etfeq">Equity ETFs (%)</Label>
+                          <Input 
+                            id="sub_etfeq" 
+                            type="number" 
+                            className="h-8 text-xs"
+                            value={subEtfEquity} 
+                            onChange={(e) => setSubEtfEquity(e.target.value)} 
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Debt Sub Assets */}
+                    <div className="space-y-3">
+                      <h5 className="text-xs font-black text-blue-500 uppercase tracking-wider">Debt Sub-Assets</h5>
+                      <div className="space-y-2">
+                        <div className="space-y-1">
+                          <Label className="text-[11px]" htmlFor="sub_fd">Fixed Deposits / Bonds (%)</Label>
+                          <Input 
+                            id="sub_fd" 
+                            type="number" 
+                            className="h-8 text-xs"
+                            value={subFdBonds} 
+                            onChange={(e) => setSubFdBonds(e.target.value)} 
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-[11px]" htmlFor="sub_mfdebt">Debt Mutual Funds (%)</Label>
+                          <Input 
+                            id="sub_mfdebt" 
+                            type="number" 
+                            className="h-8 text-xs"
+                            value={subMfDebt} 
+                            onChange={(e) => setSubMfDebt(e.target.value)} 
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-[11px]" htmlFor="sub_ulipdebt">Debt ULIPs (%)</Label>
+                          <Input 
+                            id="sub_ulipdebt" 
+                            type="number" 
+                            className="h-8 text-xs"
+                            value={subUlipDebt} 
+                            onChange={(e) => setSubUlipDebt(e.target.value)} 
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-[11px]" htmlFor="sub_etfdebt">Debt ETFs (%)</Label>
+                          <Input 
+                            id="sub_etfdebt" 
+                            type="number" 
+                            className="h-8 text-xs"
+                            value={subEtfDebt} 
+                            onChange={(e) => setSubEtfDebt(e.target.value)} 
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Commodities Sub Assets */}
+                    <div className="space-y-3">
+                      <h5 className="text-xs font-black text-amber-500 uppercase tracking-wider">Commodities Sub-Assets</h5>
+                      <div className="space-y-2">
+                        <div className="space-y-1">
+                          <Label className="text-[11px]" htmlFor="sub_gold">Gold ETFs (%)</Label>
+                          <Input 
+                            id="sub_gold" 
+                            type="number" 
+                            className="h-8 text-xs"
+                            value={subGoldEtf} 
+                            onChange={(e) => setSubGoldEtf(e.target.value)} 
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-[11px]" htmlFor="sub_silver">Silver ETFs (%)</Label>
+                          <Input 
+                            id="sub_silver" 
+                            type="number" 
+                            className="h-8 text-xs"
+                            value={subSilverEtf} 
+                            onChange={(e) => setSubSilverEtf(e.target.value)} 
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-[11px]" htmlFor="sub_etfcomm">Commodity ETFs (%)</Label>
+                          <Input 
+                            id="sub_etfcomm" 
+                            type="number" 
+                            className="h-8 text-xs"
+                            value={subEtfCommodity} 
+                            onChange={(e) => setSubEtfCommodity(e.target.value)} 
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+
                   <div className="flex justify-between items-center mt-3 text-xs text-muted-foreground px-1">
                     <span>Sum: {parseInt(recEquity || "0") + parseInt(recDebt || "0") + parseInt(recCommodities || "0")}%</span>
                     {(parseInt(recEquity || "0") + parseInt(recDebt || "0") + parseInt(recCommodities || "0")) !== 100 && (
