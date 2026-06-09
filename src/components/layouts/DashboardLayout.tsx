@@ -102,8 +102,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       return;
     }
 
-    // 2. IA Owner Profile Gate
-    if (user.role === "owner" && !user.is_profile_completed) {
+    // 2. Tenant Profile Gate
+    if (user.role !== "super_admin" && !user.is_profile_completed) {
       if (!pathname.startsWith("/master") && pathname !== "/") {
         router.push("/master");
       }

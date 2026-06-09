@@ -155,7 +155,7 @@ export function IAMasterView() {
     );
   }
 
-  if (!data) {
+  if (!data || Object.keys(data).length === 0 || !data.ia_registration_number) {
     return (
       <Card className="border-primary/10 bg-card/50 backdrop-blur-sm">
         <CardContent className="flex flex-col items-center justify-center py-16 text-center">

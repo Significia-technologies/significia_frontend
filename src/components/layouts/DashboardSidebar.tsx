@@ -215,7 +215,8 @@ export function SidebarContent() {
     }
     if (item.href.includes("/master/developer") && !(isSuperAdmin || isIAOwner)) return false;
     if (item.href === "/admin" && !isSuperAdmin) return false;
-    if (isIAOwner && !user.is_profile_completed && !["/", "/master"].includes(item.href))
+    const isTenantUser = user && user.role !== "super_admin";
+    if (isTenantUser && !user.is_profile_completed && !["/", "/master"].includes(item.href))
       return false;
 
     // Enforce permission checks for standard users
