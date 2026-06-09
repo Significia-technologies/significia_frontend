@@ -350,6 +350,15 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
 
     setRecProductName(name);
     setRecIsin(code);
+
+    // Auto-fill price / NAV if available
+    const latestPrice = (product as any).latest_price;
+    if (latestPrice !== undefined && latestPrice !== null) {
+      setRecPriceNav(String(latestPrice));
+    } else {
+      setRecPriceNav("");
+    }
+
     setRecSearchQuery("");
     setSearchResults([]);
   };

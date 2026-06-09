@@ -56,6 +56,8 @@ export interface ProductShare {
   updated_by: string | null;
   created_at: string;
   updated_at: string;
+  latest_price?: number | null;
+  latest_price_date?: string | null;
 }
 
 export interface ProductMutualFund {
@@ -69,6 +71,8 @@ export interface ProductMutualFund {
   updated_by: string | null;
   created_at: string;
   updated_at: string;
+  latest_price?: number | null;
+  latest_price_date?: string | null;
 }
 
 export interface ProductETF {
@@ -81,6 +85,8 @@ export interface ProductETF {
   updated_by: string | null;
   created_at: string;
   updated_at: string;
+  latest_price?: number | null;
+  latest_price_date?: string | null;
 }
 
 export interface ProductLifeInsurance {
