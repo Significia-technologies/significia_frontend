@@ -43,6 +43,7 @@ import { InvestmentAdviceService, InvestmentAdviceNote } from "@/core/services/i
 import { IAMasterService, IAMaster } from "@/core/services/ia-master.service";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { formatAmountUnits } from "./AdviceNoteForm";
 
 interface AdviceNoteDetailProps {
   noteId: string;
@@ -393,7 +394,7 @@ export function AdviceNoteDetail({ noteId, onBack }: AdviceNoteDetailProps) {
                             {rec.action}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-xs">{rec.amount_units}</TableCell>
+                        <TableCell className="text-xs">{formatAmountUnits(rec, rec.product_type)}</TableCell>
                         <TableCell className="text-xs font-mono">₹{rec.indicative_price_nav || "N/A"}</TableCell>
                       </TableRow>
                     ))

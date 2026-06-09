@@ -63,6 +63,54 @@ const mapIncomeToBand = (income: number): string => {
   return "Above Rs. 5 crore";
 };
 
+export const formatIndianNumber = (val: number | string | null | undefined): string => {
+  if (val === null || val === undefined || val === '') return '';
+  const numVal = typeof val === 'number' ? val : parseFloat(val);
+  if (isNaN(numVal)) return String(val);
+
+  return numVal.toLocaleString('en-IN', {
+    maximumFractionDigits: 2,
+    minimumFractionDigits: numVal % 1 === 0 ? 0 : 2
+  });
+};
+
+export const formatAmountUnits = (rec: Partial<InvestmentAdviceRecommendation>, productType?: string): string => {
+  const ttype = rec.transaction_type;
+  if (!ttype) return rec.amount_units || '';
+
+  if (ttype === 'HOLDING') {
+    return 'Existing holding';
+  }
+  if (ttype === 'TEXT_ONLY') {
+    return rec.custom_instruction || '';
+  }
+
+  const formattedAmount = formatIndianNumber(rec.amount);
+  
+  if (ttype === 'LUMP_SUM') {
+    return `Rs. ${formattedAmount} lump sum`;
+  }
+
+  const isLifeInsurance = productType?.toLowerCase() === 'life-insurance';
+  const freq = rec.frequency;
+  
+  let freqLabel = '';
+  if (freq === 'MONTHLY') freqLabel = 'month';
+  else if (freq === 'QUARTERLY') freqLabel = 'quarter';
+  else if (freq === 'HALF_YEARLY') freqLabel = 'half-year';
+  else if (freq === 'YEARLY') freqLabel = 'year';
+
+  if (isLifeInsurance && freq === 'YEARLY') {
+    return `Annual prem. Rs. ${formattedAmount}`;
+  }
+
+  if (ttype === 'SIP' || ttype === 'STP' || ttype === 'SWP') {
+    return `Rs. ${formattedAmount}/${freqLabel} ${ttype}`;
+  }
+
+  return rec.amount_units || '';
+};
+
 export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormProps) {
   const [step, setStep] = useState(1);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -150,7 +198,10 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
   const [recProductName, setRecProductName] = useState<string>("");
   const [recIsin, setRecIsin] = useState<string>("");
   const [recAction, setRecAction] = useState<"BUY" | "HOLD" | "SELL" | "REVIEW">("BUY");
-  const [recAmountUnits, setRecAmountUnits] = useState<string>("");
+  const [recTransactionType, setRecTransactionType] = useState<'SIP' | 'STP' | 'SWP' | 'LUMP_SUM' | 'HOLDING' | 'TEXT_ONLY'>("SIP");
+  const [recFrequency, setRecFrequency] = useState<'MONTHLY' | 'QUARTERLY' | 'HALF_YEARLY' | 'YEARLY'>("MONTHLY");
+  const [recAmount, setRecAmount] = useState<string>("");
+  const [recCustomInstruction, setRecCustomInstruction] = useState<string>("");
   const [recPriceNav, setRecPriceNav] = useState<string>("");
   const [recRationale, setRecRationale] = useState<string>("");
 
@@ -309,13 +360,29 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
       return;
     }
 
+    const ttype = recTransactionType;
+    const freq = ['SIP', 'STP', 'SWP'].includes(ttype) ? recFrequency : null;
+    const amountVal = ['SIP', 'STP', 'SWP', 'LUMP_SUM'].includes(ttype) ? (recAmount ? parseFloat(recAmount) : null) : null;
+    const customInst = ttype === 'TEXT_ONLY' ? recCustomInstruction : null;
+
+    const tempRec: Partial<InvestmentAdviceRecommendation> = {
+      transaction_type: ttype,
+      frequency: freq,
+      amount: amountVal,
+      custom_instruction: customInst
+    };
+
     const newRec: InvestmentAdviceRecommendation = {
       product_type: recProductType,
       product_id: selectedProduct?.id,
       product_name: recProductName,
       isin_code_scheme_code_uin: recIsin,
       action: recAction,
-      amount_units: recAmountUnits || "Review coverage",
+      transaction_type: ttype,
+      frequency: freq,
+      amount: amountVal,
+      custom_instruction: customInst,
+      amount_units: formatAmountUnits(tempRec, recProductType),
       indicative_price_nav: recPriceNav ? parseFloat(recPriceNav) : null,
       rationale: recRationale || "Recommended as suitable according to client's risk profile."
     };
@@ -327,7 +394,10 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
     setRecProductName("");
     setRecIsin("");
     setRecAction("BUY");
-    setRecAmountUnits("");
+    setRecTransactionType("SIP");
+    setRecFrequency("MONTHLY");
+    setRecAmount("");
+    setRecCustomInstruction("");
     setRecPriceNav("");
     setRecRationale("");
     setRecSearchQuery("");
@@ -992,16 +1062,94 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-                  <div className="md:col-span-4 space-y-1.5">
-                    <Label>Amount / Units / SIP Description</Label>
-                    <Input 
-                      value={recAmountUnits}
-                      onChange={(e) => setRecAmountUnits(e.target.value)}
-                      placeholder="e.g. Rs. 1,00,000 lump sum"
-                    />
+                  {/* Action Type Select */}
+                  <div className="md:col-span-3 space-y-1.5">
+                    <Label>Action Type</Label>
+                    <Select 
+                      value={recTransactionType} 
+                      onValueChange={(val: any) => {
+                        setRecTransactionType(val);
+                        if (val === 'HOLDING') {
+                          setRecAmount("");
+                          setRecCustomInstruction("");
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="SIP">SIP</SelectItem>
+                        <SelectItem value="STP">STP</SelectItem>
+                        <SelectItem value="SWP">SWP</SelectItem>
+                        <SelectItem value="LUMP_SUM">Lump Sum</SelectItem>
+                        <SelectItem value="HOLDING">Hold</SelectItem>
+                        <SelectItem value="TEXT_ONLY">Custom Note</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
-                  <div className="md:col-span-8 space-y-1.5">
+                  {/* Conditional Frequency Select */}
+                  {['SIP', 'STP', 'SWP'].includes(recTransactionType) && (
+                    <div className="md:col-span-3 space-y-1.5 animate-in fade-in duration-200">
+                      <Label>Frequency</Label>
+                      <Select 
+                        value={recFrequency} 
+                        onValueChange={(val: any) => setRecFrequency(val)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="MONTHLY">Monthly</SelectItem>
+                          <SelectItem value="QUARTERLY">Quarterly</SelectItem>
+                          <SelectItem value="HALF_YEARLY">Half-Yearly</SelectItem>
+                          <SelectItem value="YEARLY">Yearly</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {/* Conditional Amount/Instruction Input */}
+                  <div className={`${['SIP', 'STP', 'SWP'].includes(recTransactionType) ? 'md:col-span-6' : 'md:col-span-9'} space-y-1.5`}>
+                    <Label>
+                      {recTransactionType === 'HOLDING' ? 'Amount / Description' : recTransactionType === 'TEXT_ONLY' ? 'Custom Note Text' : 'Amount'}
+                    </Label>
+                    
+                    {['SIP', 'STP', 'SWP', 'LUMP_SUM'].includes(recTransactionType) && (
+                      <div className="relative animate-in fade-in duration-200">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground">Rs.</span>
+                        <Input 
+                          type="number"
+                          className="pl-9"
+                          value={recAmount}
+                          onChange={(e) => setRecAmount(e.target.value)}
+                          placeholder="e.g. 10000"
+                        />
+                      </div>
+                    )}
+
+                    {recTransactionType === 'TEXT_ONLY' && (
+                      <Input 
+                        className="animate-in fade-in duration-200"
+                        value={recCustomInstruction}
+                        onChange={(e) => setRecCustomInstruction(e.target.value)}
+                        placeholder="e.g. Review coverage"
+                      />
+                    )}
+
+                    {recTransactionType === 'HOLDING' && (
+                      <Input 
+                        disabled
+                        className="bg-muted/50 cursor-not-allowed border-dashed animate-in fade-in duration-200"
+                        value="Existing holding (Hold)"
+                      />
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="space-y-1.5">
                     <Label>Adviser Rationale (Section E)</Label>
                     <Input 
                       value={recRationale}
