@@ -300,9 +300,25 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
       }
     };
 
+    // 4. Fetch IA Master details for dynamic entity name
+    const fetchIAMaster = async () => {
+      try {
+        const iaMaster = await IAMasterService.getLatest();
+        if (iaMaster) {
+          const name = iaMaster.name_of_entity || iaMaster.name_of_ia || "";
+          setConflictText(
+            `${name} is a fee-only SEBI Registered Investment Adviser. We receive no commissions, brokerage or trail fees from any product manufacturer, distributor or intermediary. There is no material conflict of interest in this advice note.`
+          );
+        }
+      } catch (error) {
+        console.error("Failed to fetch IA Master details", error);
+      }
+    };
+
     fetchEmployees();
     fetchAnalysisGoal();
     fetchLatestAllocation();
+    fetchIAMaster();
   }, [client]);
 
   // Handle product searches
