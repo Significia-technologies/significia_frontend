@@ -151,32 +151,6 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
   const [subSilverEtf, setSubSilverEtf] = useState<string>("0");
   const [subEtfCommodity, setSubEtfCommodity] = useState<string>("0");
 
-  // Auto-sync Equity total
-  useEffect(() => {
-    const sum = (parseFloat(subStocks) || 0) + 
-                (parseFloat(subMfEquity) || 0) + 
-                (parseFloat(subUlipEquity) || 0) + 
-                (parseFloat(subEtfEquity) || 0);
-    setRecEquity(String(sum));
-  }, [subStocks, subMfEquity, subUlipEquity, subEtfEquity]);
-
-  // Auto-sync Debt total
-  useEffect(() => {
-    const sum = (parseFloat(subFdBonds) || 0) + 
-                (parseFloat(subMfDebt) || 0) + 
-                (parseFloat(subUlipDebt) || 0) + 
-                (parseFloat(subEtfDebt) || 0);
-    setRecDebt(String(sum));
-  }, [subFdBonds, subMfDebt, subUlipDebt, subEtfDebt]);
-
-  // Auto-sync Commodities total
-  useEffect(() => {
-    const sum = (parseFloat(subGoldEtf) || 0) + 
-                (parseFloat(subSilverEtf) || 0) + 
-                (parseFloat(subEtfCommodity) || 0);
-    setRecCommodities(String(sum));
-  }, [subGoldEtf, subSilverEtf, subEtfCommodity]);
-
   const [currentAssetAllocation, setCurrentAssetAllocation] = useState<string>("");
   const [rebalancingRationale, setRebalancingRationale] = useState<string>("");
   
@@ -184,6 +158,20 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
   const [suitabilityBasis, setSuitabilityBasis] = useState<string>(
     "Financial Goals, Risk profile, income, liabilities, Asset Allocation, Target Portfolio, existing portfolio and investment horizon reviewed"
   );
+
+  const equitySubSum = (parseFloat(subStocks) || 0) + 
+                       (parseFloat(subMfEquity) || 0) + 
+                       (parseFloat(subUlipEquity) || 0) + 
+                       (parseFloat(subEtfEquity) || 0);
+
+  const debtSubSum = (parseFloat(subFdBonds) || 0) + 
+                     (parseFloat(subMfDebt) || 0) + 
+                     (parseFloat(subUlipDebt) || 0) + 
+                     (parseFloat(subEtfDebt) || 0);
+
+  const commoditiesSubSum = (parseFloat(subGoldEtf) || 0) + 
+                            (parseFloat(subSilverEtf) || 0) + 
+                            (parseFloat(subEtfCommodity) || 0);
 
   // Recommendations
   const [recommendations, setRecommendations] = useState<InvestmentAdviceRecommendation[]>([]);
@@ -434,6 +422,32 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
   };
 
   const handleSubmit = async () => {
+    // Validate Asset Allocation
+    const eqAlloc = parseInt(recEquity) || 0;
+    const dtAlloc = parseInt(recDebt) || 0;
+    const cmAlloc = parseInt(recCommodities) || 0;
+    const parentSum = eqAlloc + dtAlloc + cmAlloc;
+
+    if (parentSum !== 100) {
+      toast.error(`Recommended Asset Allocation Totals (Equity + Debt + Commodities) must sum to 100%. Current sum: ${parentSum}%`);
+      return;
+    }
+
+    if (eqAlloc > 0 && equitySubSum !== 100) {
+      toast.error(`Equity sub-assets must sum to 100% (currently ${equitySubSum}%).`);
+      return;
+    }
+
+    if (dtAlloc > 0 && debtSubSum !== 100) {
+      toast.error(`Debt sub-assets must sum to 100% (currently ${debtSubSum}%).`);
+      return;
+    }
+
+    if (cmAlloc > 0 && commoditiesSubSum !== 100) {
+      toast.error(`Commodities sub-assets must sum to 100% (currently ${commoditiesSubSum}%).`);
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       // 1. Resolve Principal Officer name and registration no
@@ -749,8 +763,8 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                       <Input 
                         id="rec_eq"
                         type="number"
-                        disabled
                         value={recEquity}
+                        onChange={(e) => setRecEquity(e.target.value)}
                       />
                     </div>
                     <div className="space-y-2">
@@ -758,8 +772,8 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                       <Input 
                         id="rec_dt"
                         type="number"
-                        disabled
                         value={recDebt}
+                        onChange={(e) => setRecDebt(e.target.value)}
                       />
                     </div>
                     <div className="space-y-2">
@@ -767,8 +781,8 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                       <Input 
                         id="rec_cm"
                         type="number"
-                        disabled
                         value={recCommodities}
+                        onChange={(e) => setRecCommodities(e.target.value)}
                       />
                     </div>
                   </div>
@@ -778,7 +792,10 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                     
                     {/* Equity Sub Assets */}
                     <div className="space-y-3">
-                      <h5 className="text-xs font-black text-emerald-500 uppercase tracking-wider">Equity Sub-Assets</h5>
+                      <div className="flex justify-between items-center">
+                        <h5 className="text-xs font-black text-emerald-500 uppercase tracking-wider">Equity Sub-Assets</h5>
+                        <span className="text-xs font-mono font-bold text-emerald-500">{equitySubSum}%</span>
+                      </div>
                       <div className="space-y-2">
                         <div className="space-y-1">
                           <Label className="text-[11px]" htmlFor="sub_stocks">Direct Equity / Stocks (%)</Label>
@@ -821,11 +838,19 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                           />
                         </div>
                       </div>
+                      {parseInt(recEquity || "0") > 0 && equitySubSum !== 100 && (
+                        <p className="text-[10px] text-amber-600 mt-2 flex items-center gap-1">
+                          <AlertTriangle className="w-3.5 h-3.5" /> Sub-assets must sum to 100%
+                        </p>
+                      )}
                     </div>
 
                     {/* Debt Sub Assets */}
                     <div className="space-y-3">
-                      <h5 className="text-xs font-black text-blue-500 uppercase tracking-wider">Debt Sub-Assets</h5>
+                      <div className="flex justify-between items-center">
+                        <h5 className="text-xs font-black text-blue-500 uppercase tracking-wider">Debt Sub-Assets</h5>
+                        <span className="text-xs font-mono font-bold text-blue-500">{debtSubSum}%</span>
+                      </div>
                       <div className="space-y-2">
                         <div className="space-y-1">
                           <Label className="text-[11px]" htmlFor="sub_fd">Fixed Deposits / Bonds (%)</Label>
@@ -868,11 +893,19 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                           />
                         </div>
                       </div>
+                      {parseInt(recDebt || "0") > 0 && debtSubSum !== 100 && (
+                        <p className="text-[10px] text-amber-600 mt-2 flex items-center gap-1">
+                          <AlertTriangle className="w-3.5 h-3.5" /> Sub-assets must sum to 100%
+                        </p>
+                      )}
                     </div>
 
                     {/* Commodities Sub Assets */}
                     <div className="space-y-3">
-                      <h5 className="text-xs font-black text-amber-500 uppercase tracking-wider">Commodities Sub-Assets</h5>
+                      <div className="flex justify-between items-center">
+                        <h5 className="text-xs font-black text-amber-500 uppercase tracking-wider">Commodities Sub-Assets</h5>
+                        <span className="text-xs font-mono font-bold text-amber-500">{commoditiesSubSum}%</span>
+                      </div>
                       <div className="space-y-2">
                         <div className="space-y-1">
                           <Label className="text-[11px]" htmlFor="sub_gold">Gold ETFs (%)</Label>
@@ -905,6 +938,11 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                           />
                         </div>
                       </div>
+                      {parseInt(recCommodities || "0") > 0 && commoditiesSubSum !== 100 && (
+                        <p className="text-[10px] text-amber-600 mt-2 flex items-center gap-1">
+                          <AlertTriangle className="w-3.5 h-3.5" /> Sub-assets must sum to 100%
+                        </p>
+                      )}
                     </div>
 
                   </div>
