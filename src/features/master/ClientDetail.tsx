@@ -46,6 +46,9 @@ import { AnalysisDashboard } from "@/features/financial-analysis/AnalysisDashboa
 import { FinancialAnalysisResult, FinancialAnalysisService } from "@/core/services/financial-analysis.service";
 import { DocumentVault } from "./components/DocumentVault";
 import { ClientVersionHistory } from "./components/ClientVersionHistory";
+import { AdviceNoteList } from "@/features/investment-advice/AdviceNoteList";
+import { AdviceNoteForm } from "@/features/investment-advice/AdviceNoteForm";
+import { AdviceNoteDetail } from "@/features/investment-advice/AdviceNoteDetail";
 
 interface ClientDetailProps {
   client: ClientCreate;
@@ -246,6 +249,9 @@ export default function ClientDetail({ client }: ClientDetailProps) {
                   </TabsTrigger>
                   <TabsTrigger value="versions" className="px-6 py-4 gap-2 data-[state=active]:bg-primary/5 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none text-xs sm:text-sm transition-all">
                     <History className="w-4 h-4 text-purple-500" /> Version History
+                  </TabsTrigger>
+                  <TabsTrigger value="advice" className="px-6 py-4 gap-2 data-[state=active]:bg-primary/5 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none text-xs sm:text-sm transition-all">
+                    <FileText className="w-4 h-4 text-emerald-500" /> Investment Advice
                   </TabsTrigger>
               </TabsList>
             </div>
@@ -475,6 +481,13 @@ export default function ClientDetail({ client }: ClientDetailProps) {
                     clientName={client.client_name}
                  />
               </TabsContent>
+
+              <TabsContent value="advice" className="mt-0 space-y-8">
+                 <AdviceTabContent 
+                    clientId={client.id!} 
+                    client={currentClient} 
+                 />
+              </TabsContent>
             </div>
           </Tabs>
         </CardContent>
@@ -599,6 +612,45 @@ function AnalysisTabContent({ clientId, clientName }: { clientId: string, client
            
           result={selectedResult} 
           clientName={clientName} 
+        />
+      )}
+    </div>
+  );
+}
+
+function AdviceTabContent({ clientId, client }: { clientId: string, client: ClientCreate }) {
+  const [view, setView] = React.useState<"LIST" | "FORM" | "DETAIL">("LIST");
+  const [selectedNoteId, setSelectedNoteId] = React.useState<string | null>(null);
+
+  return (
+    <div className="space-y-6">
+      {view === "LIST" && (
+        <AdviceNoteList 
+          clientId={clientId}
+          clientName={client.client_name}
+          onSelectNote={(noteId) => {
+            setSelectedNoteId(noteId);
+            setView("DETAIL");
+          }}
+          onCreateNew={() => setView("FORM")}
+        />
+      )}
+
+      {view === "FORM" && (
+        <AdviceNoteForm 
+          client={client}
+          onSuccess={(noteId) => {
+            setSelectedNoteId(noteId);
+            setView("DETAIL");
+          }}
+          onCancel={() => setView("LIST")}
+        />
+      )}
+
+      {view === "DETAIL" && selectedNoteId && (
+        <AdviceNoteDetail 
+          noteId={selectedNoteId}
+          onBack={() => setView("LIST")}
         />
       )}
     </div>

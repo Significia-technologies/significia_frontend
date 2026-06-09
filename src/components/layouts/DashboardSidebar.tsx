@@ -22,6 +22,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
+  FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -80,6 +81,11 @@ const NAV_ITEMS: NavItem[] = [
     label: "Asset Allocation",
     href: "/asset-allocation",
     icon: PieChart,
+  },
+  {
+    label: "Investment Advice",
+    href: "/investment-advice",
+    icon: FileText,
   },
   {
     label: "Product Basket",
@@ -223,6 +229,10 @@ export function SidebarContent() {
     if (!(isIAOwner || isIAPartner || isSuperAdmin)) {
       if (item.href === "/product-basket") {
         const hasPerm = user?.permissions?.find((p: any) => p.module === "Product Basket")?.can_read;
+        if (!hasPerm) return false;
+      }
+      if (item.href === "/investment-advice") {
+        const hasPerm = user?.permissions?.find((p: any) => p.module === "Investment Advice")?.can_read;
         if (!hasPerm) return false;
       }
       if (item.children && item.children.length === 0) {

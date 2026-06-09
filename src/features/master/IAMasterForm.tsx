@@ -67,6 +67,7 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
     registered_contact_number: "",
     office_contact_number: "",
     registered_email_id: "",
+    website: "",
     cin_number: "",
     bank_account_number: "",
     bank_name: "",
@@ -102,6 +103,7 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
         registered_contact_number: initialData.registered_contact_number || "",
         office_contact_number: initialData.office_contact_number || "",
         registered_email_id: initialData.registered_email_id || "",
+        website: initialData.website || "",
         cin_number: initialData.cin_number || "",
         bank_account_number: initialData.bank_account_number || "",
         bank_name: initialData.bank_name || "",
@@ -459,7 +461,7 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
                     <Textarea name="registered_address" value={formData.registered_address} onChange={handleChange} required className="min-h-[100px] bg-background/50" />
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     <div className="space-y-2">
                       <Label>Contact Number *</Label>
                       <Input type="tel" name="registered_contact_number" value={formData.registered_contact_number} onChange={handleChange} required className="bg-background/50" />
@@ -467,6 +469,10 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
                     <div className="space-y-2">
                       <Label>Registered Email *</Label>
                       <Input type="email" name="registered_email_id" value={formData.registered_email_id} onChange={handleChange} required className="bg-background/50" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Website</Label>
+                      <Input type="text" name="website" value={formData.website} onChange={handleChange} placeholder="e.g. www.alphawealthadvisors.com" className="bg-background/50" />
                     </div>
                   </div>
 

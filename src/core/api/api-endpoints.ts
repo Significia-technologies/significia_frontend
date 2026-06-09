@@ -297,4 +297,19 @@ export const API_ENDPOINTS = {
     SEND_REPORT: `${API_BASE}/email/send/report`,
     LOGS: `${API_BASE}/email/logs`,
   },
+
+  // ── Investment Advice Note (Bridge-powered) ──────────────────
+  ADVISORY: {
+    LIST_ALL: `${API_BASE}/advisory/investment-advice-notes`,
+    LIST: (clientId: string) => `${API_BASE}/advisory/investment-advice-notes/${clientId}`,
+    CREATE: (clientId: string) => `${API_BASE}/advisory/investment-advice-notes/${clientId}`,
+    DETAIL: (noteId: string) => `${API_BASE}/advisory/investment-advice-note/${noteId}`,
+    UPDATE: (noteId: string) => `${API_BASE}/advisory/investment-advice-note/${noteId}`,
+    LOCK: (noteId: string) => `${API_BASE}/advisory/investment-advice-note/${noteId}/lock`,
+    ADD_REC: (noteId: string) => `${API_BASE}/advisory/investment-advice-note/${noteId}/recommendations`,
+    DELETE_REC: (noteId: string, recId: string) => `${API_BASE}/advisory/investment-advice-note/${noteId}/recommendations/${recId}`,
+    NEXT_SERIAL: (noteId: string) => `${API_BASE}/advisory/investment-advice-note/${noteId}/next-serial`,
+    PDF: (noteId: string) => `${API_BASE}/advisory/investment-advice-note/${noteId}/export/pdf`,
+    DOCX: (noteId: string) => `${API_BASE}/advisory/investment-advice-note/${noteId}/export/docx`,
+  },
 };

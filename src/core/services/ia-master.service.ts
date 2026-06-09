@@ -45,6 +45,7 @@ export interface IAMaster {
   registered_contact_number: string;
   office_contact_number?: string;
   registered_email_id: string;
+  website?: string;
   cin_number?: string;
   bank_account_number: string;
   bank_name: string;

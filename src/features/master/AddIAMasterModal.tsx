@@ -42,6 +42,7 @@ export function AddIAMasterModal({ isOpen, onClose, onSuccess }: AddIAMasterModa
     registered_contact_number: "",
     office_contact_number: "",
     registered_email_id: "",
+    website: "",
     cin_number: "",
     bank_account_number: "",
     bank_name: "",
@@ -245,7 +246,7 @@ export function AddIAMasterModal({ isOpen, onClose, onSuccess }: AddIAMasterModa
                 <Textarea name="registered_address" value={formData.registered_address} onChange={handleChange} required className="min-h-[80px]" />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label>Contact Number *</Label>
                   <Input type="tel" name="registered_contact_number" value={formData.registered_contact_number} onChange={handleChange} required />
@@ -253,6 +254,10 @@ export function AddIAMasterModal({ isOpen, onClose, onSuccess }: AddIAMasterModa
                 <div className="space-y-2">
                   <Label>Registered Email *</Label>
                   <Input type="email" name="registered_email_id" value={formData.registered_email_id} onChange={handleChange} required />
+                </div>
+                <div className="space-y-2">
+                  <Label>Website</Label>
+                  <Input type="text" name="website" value={formData.website} onChange={handleChange} placeholder="e.g. www.alphawealthadvisors.com" />
                 </div>
               </div>
             </TabsContent>
