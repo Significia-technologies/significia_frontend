@@ -392,7 +392,7 @@ function AddEntryDialog({
 
           {/* Life Insurance Type & Nature */}
           {assetClass === "life_insurance" && (
-            <>
+            <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Type <span className="text-destructive">*</span></Label>
                 <Select value={productSubtype} onValueChange={setProductSubtype}>
@@ -419,39 +419,42 @@ function AddEntryDialog({
                   </Select>
                 </div>
               )}
-            </>
+            </div>
           )}
 
-          {/* Percentage */}
-          <div className="space-y-1.5">
-            <Label>{pctLabel} <span className="text-destructive">*</span></Label>
-            <Input
-              type="number"
-              min="0"
-              max="100"
-              step="0.01"
-              value={percentage}
-              onChange={(e) => setPercentage(e.target.value)}
-              placeholder="e.g. 25"
-            />
-            {wouldExceed && pct > 0 && (
-              <p className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
-                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                Total will exceed 100% (current: {currentTotalPct.toFixed(1)}%)
-              </p>
-            )}
-          </div>
+          {/* Percentage & Suggested Investment Amount in One Line */}
+          <div className="grid grid-cols-2 gap-3">
+            {/* Percentage */}
+            <div className="space-y-1.5">
+              <Label>{pctLabel} <span className="text-destructive">*</span></Label>
+              <Input
+                type="number"
+                min="0"
+                max="100"
+                step="0.01"
+                value={percentage}
+                onChange={(e) => setPercentage(e.target.value)}
+                placeholder="e.g. 25"
+              />
+              {wouldExceed && pct > 0 && (
+                <p className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                  Total will exceed 100% (current: {currentTotalPct.toFixed(1)}%)
+                </p>
+              )}
+            </div>
 
-          {/* Suggested Investment Amount */}
-          <div className="space-y-1.5">
-            <Label>Suggested Investment Amount (Rs.) <span className="text-destructive">*</span></Label>
-            <Input
-              type="number"
-              min="0"
-              value={suggestedAmount}
-              onChange={(e) => setSuggestedAmount(e.target.value)}
-              placeholder="e.g. 50000"
-            />
+            {/* Suggested Investment Amount */}
+            <div className="space-y-1.5">
+              <Label>Suggested Investment Amount <span className="text-destructive">*</span></Label>
+              <Input
+                type="number"
+                min="0"
+                value={suggestedAmount}
+                onChange={(e) => setSuggestedAmount(e.target.value)}
+                placeholder="e.g. 50000"
+              />
+            </div>
           </div>
 
           {/* Objective (Shares / MF / ETF) */}
