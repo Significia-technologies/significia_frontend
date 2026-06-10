@@ -74,6 +74,14 @@ function SuitabilityCell({ value }: { value: string | null | undefined }) {
   );
 }
 
+function formatIndianNumber(val: number | null | undefined): string {
+  if (val === null || val === undefined) return "—";
+  return "Rs. " + val.toLocaleString("en-IN", {
+    maximumFractionDigits: 2,
+    minimumFractionDigits: val % 1 === 0 ? 0 : 2
+  });
+}
+
 // ── Searchable Product Combobox ─────────────────────────────────────
 
 function ProductCombobox({
@@ -219,6 +227,7 @@ function AddEntryDialog({
 
   const [productId, setProductId] = useState("");
   const [percentage, setPercentage] = useState("");
+  const [suggestedAmount, setSuggestedAmount] = useState("");
   const [objective, setObjective] = useState("");
   const [lifeObjective, setLifeObjective] = useState("");
   const [reason, setReason] = useState("");
@@ -251,6 +260,11 @@ function AddEntryDialog({
     if (!percentage || isNaN(pct) || pct <= 0) return toast.error("Enter a valid percentage.");
     if (pct > 100) return toast.error("Percentage cannot exceed 100.");
 
+    const amt = parseFloat(suggestedAmount);
+    if (!suggestedAmount || isNaN(amt) || amt <= 0) {
+      return toast.error("Enter a valid suggested investment amount.");
+    }
+
     if (assetClass !== "life_insurance" && assetClass !== "health_insurance" && !objective)
       return toast.error("Select an investment objective.");
     if (assetClass === "life_insurance" && !lifeObjective)
@@ -262,6 +276,7 @@ function AddEntryDialog({
       asset_class: assetClass,
       product_id: productId,
       percentage: pct,
+      suggested_investment_amount: amt,
       objective: assetClass === "health_insurance"
         ? "Health Cover"
         : assetClass === "life_insurance"
@@ -338,6 +353,18 @@ function AddEntryDialog({
                 Total will exceed 100% (current: {currentTotalPct.toFixed(1)}%)
               </p>
             )}
+          </div>
+
+          {/* Suggested Investment Amount */}
+          <div className="space-y-1.5">
+            <Label>Suggested Investment Amount (Rs.) <span className="text-destructive">*</span></Label>
+            <Input
+              type="number"
+              min="0"
+              value={suggestedAmount}
+              onChange={(e) => setSuggestedAmount(e.target.value)}
+              placeholder="e.g. 50000"
+            />
           </div>
 
           {/* Objective (Shares / MF / ETF) */}
@@ -499,6 +526,7 @@ function AssetClassTab({
               <TableRow>
                 <TableHead>Product</TableHead>
                 <TableHead>{pctColLabel}</TableHead>
+                <TableHead>Suggested Amount</TableHead>
                 <TableHead>{objectiveColLabel}</TableHead>
                 <TableHead>Suitability</TableHead>
                 <TableHead>Status</TableHead>
@@ -509,14 +537,14 @@ function AssetClassTab({
               {loading ? (
                 Array.from({ length: 2 }).map((_, i) => (
                   <TableRow key={i}>
-                    {Array.from({ length: 6 }).map((_, j) => (
+                    {Array.from({ length: 7 }).map((_, j) => (
                       <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
                     ))}
                   </TableRow>
                 ))
               ) : entries.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                     No products added yet.
                   </TableCell>
                 </TableRow>
@@ -532,6 +560,11 @@ function AssetClassTab({
                         totalPct > 100 && e.is_active && "text-amber-600"
                       )}>
                         {e.percentage.toFixed(1)}%
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="font-semibold text-sm">
+                        {formatIndianNumber(e.suggested_investment_amount)}
                       </span>
                     </TableCell>
                     <TableCell className="text-sm">
@@ -601,26 +634,30 @@ function AssetClassTab({
                     {e.is_active ? "Active" : "Inactive"}
                   </Badge>
                 </div>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
                   <div>
                     <span className="text-muted-foreground">{pctColLabel}</span>
                     <p className="font-semibold mt-0.5">{e.percentage.toFixed(1)}%</p>
                   </div>
                   <div>
+                    <span className="text-muted-foreground">Suggested Amount</span>
+                    <p className="font-semibold mt-0.5">{formatIndianNumber(e.suggested_investment_amount)}</p>
+                  </div>
+                  <div className="col-span-2">
                     <span className="text-muted-foreground">{objectiveColLabel}</span>
                     {assetClass === "life_insurance" ? (
                       <div className="mt-0.5">
-                        <p>{e.objective || "—"}</p>
+                        <p className="font-medium">{e.objective || "—"}</p>
                         {e.reason_for_investment && (
                           <p className="text-xs text-muted-foreground">{e.reason_for_investment}</p>
                         )}
                       </div>
                     ) : (
-                      <p className="mt-0.5">{e.objective || "—"}</p>
+                      <p className="font-medium mt-0.5">{e.objective || "—"}</p>
                     )}
                   </div>
                   {e.remarks && (
-                    <div className="col-span-2 mt-1">
+                    <div className="col-span-2">
                       <span className="text-muted-foreground">Suitability</span>
                       <p className="mt-0.5 text-xs">
                         <SuitabilityCell value={e.remarks} />
