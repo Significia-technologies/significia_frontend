@@ -12,6 +12,8 @@ export interface TargetPortfolioEntry {
   product_name: string;
   percentage: number;
   suggested_investment_amount: number | null;
+  product_subtype: string | null;
+  nature: string | null;
   objective: string | null;
   reason_for_investment: string | null;
   remarks: string | null;
@@ -38,6 +40,8 @@ export interface TargetPortfolioCreate {
   product_id: string;
   percentage: number;
   suggested_investment_amount?: number;
+  product_subtype?: string;
+  nature?: string;
   objective?: string;
   reason_for_investment?: string;
   remarks?: string;

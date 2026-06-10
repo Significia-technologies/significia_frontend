@@ -228,10 +228,18 @@ function AddEntryDialog({
   const [productId, setProductId] = useState("");
   const [percentage, setPercentage] = useState("");
   const [suggestedAmount, setSuggestedAmount] = useState("");
+  const [productSubtype, setProductSubtype] = useState("");
+  const [nature, setNature] = useState("");
   const [objective, setObjective] = useState("");
   const [lifeObjective, setLifeObjective] = useState("");
   const [reason, setReason] = useState("");
   const [remarks, setRemarks] = useState("");
+
+  useEffect(() => {
+    if (productSubtype !== "ULIP") {
+      setNature("");
+    }
+  }, [productSubtype]);
 
   useEffect(() => {
     if (!open) return;
@@ -265,6 +273,21 @@ function AddEntryDialog({
       return toast.error("Enter a valid suggested investment amount.");
     }
 
+    if (assetClass === "mf" && !productSubtype) {
+      return toast.error("Select a Mutual Fund type.");
+    }
+    if (assetClass === "etf" && !productSubtype) {
+      return toast.error("Select an ETF type.");
+    }
+    if (assetClass === "life_insurance") {
+      if (!productSubtype) {
+        return toast.error("Select a Life Insurance type.");
+      }
+      if (productSubtype === "ULIP" && !nature) {
+        return toast.error("Select a ULIP nature.");
+      }
+    }
+
     if (assetClass !== "life_insurance" && assetClass !== "health_insurance" && !objective)
       return toast.error("Select an investment objective.");
     if (assetClass === "life_insurance" && !lifeObjective)
@@ -277,6 +300,8 @@ function AddEntryDialog({
       product_id: productId,
       percentage: pct,
       suggested_investment_amount: amt,
+      product_subtype: productSubtype || undefined,
+      nature: nature || undefined,
       objective: assetClass === "health_insurance"
         ? "Health Cover"
         : assetClass === "life_insurance"
@@ -334,6 +359,68 @@ function AddEntryDialog({
               />
             )}
           </div>
+
+          {/* Mutual Fund Type */}
+          {assetClass === "mf" && (
+            <div className="space-y-1.5">
+              <Label>Type <span className="text-destructive">*</span></Label>
+              <Select value={productSubtype} onValueChange={setProductSubtype}>
+                <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Equity">Equity</SelectItem>
+                  <SelectItem value="Debt">Debt</SelectItem>
+                  <SelectItem value="Hybrid">Hybrid</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* ETF Type */}
+          {assetClass === "etf" && (
+            <div className="space-y-1.5">
+              <Label>Type <span className="text-destructive">*</span></Label>
+              <Select value={productSubtype} onValueChange={setProductSubtype}>
+                <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Gold">Gold</SelectItem>
+                  <SelectItem value="Silver">Silver</SelectItem>
+                  <SelectItem value="Other ETF">Other ETF</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* Life Insurance Type & Nature */}
+          {assetClass === "life_insurance" && (
+            <>
+              <div className="space-y-1.5">
+                <Label>Type <span className="text-destructive">*</span></Label>
+                <Select value={productSubtype} onValueChange={setProductSubtype}>
+                  <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Term">Term</SelectItem>
+                    <SelectItem value="Endowment">Endowment</SelectItem>
+                    <SelectItem value="ULIP">ULIP</SelectItem>
+                    <SelectItem value="Annuity">Annuity</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {productSubtype === "ULIP" && (
+                <div className="space-y-1.5">
+                  <Label>Nature <span className="text-destructive">*</span></Label>
+                  <Select value={nature} onValueChange={setNature}>
+                    <SelectTrigger><SelectValue placeholder="Select nature" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Equity">Equity</SelectItem>
+                      <SelectItem value="Debt">Debt</SelectItem>
+                      <SelectItem value="Hybrid">Hybrid</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </>
+          )}
 
           {/* Percentage */}
           <div className="space-y-1.5">
@@ -553,6 +640,11 @@ function AssetClassTab({
                   <TableRow key={e.id} className={!e.is_active ? "opacity-50" : ""}>
                     <TableCell className="font-medium max-w-[200px]">
                       <span className="line-clamp-2">{e.product_name}</span>
+                      {e.product_subtype && (
+                        <span className="block mt-0.5 text-xs text-muted-foreground font-normal">
+                          {e.product_subtype}{e.nature ? ` — ${e.nature}` : ""}
+                        </span>
+                      )}
                     </TableCell>
                     <TableCell>
                       <span className={cn(
@@ -629,7 +721,14 @@ function AssetClassTab({
             <Card key={e.id} className={!e.is_active ? "opacity-60" : ""}>
               <CardContent className="p-4 space-y-3">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="font-semibold text-sm leading-snug flex-1">{e.product_name}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm leading-snug">{e.product_name}</p>
+                    {e.product_subtype && (
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {e.product_subtype}{e.nature ? ` — ${e.nature}` : ""}
+                      </p>
+                    )}
+                  </div>
                   <Badge variant={e.is_active ? "default" : "secondary"} className="shrink-0 text-xs">
                     {e.is_active ? "Active" : "Inactive"}
                   </Badge>
