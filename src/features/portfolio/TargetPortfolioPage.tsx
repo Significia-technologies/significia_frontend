@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Plus, Loader2, MoreHorizontal, ToggleLeft, ToggleRight,
   AlertTriangle, TrendingUp, Check, ChevronsUpDown, Download,
+  ChevronDown, ChevronUp, ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,8 +39,35 @@ import {
   AvailableProduct,
 } from "@/core/services/target-portfolio.service";
 import { InvestorMember } from "@/core/services/investor-master.service";
+import { AssetAllocationService, AssetAllocation } from "@/core/services/asset-allocation.service";
 
 // ── Constants ──────────────────────────────────────────────────────
+
+interface SubAssetConfig {
+  key: string;
+  label: string;
+  parent: "Equities" | "Debt" | "Commodities";
+}
+
+const SUB_ASSETS: SubAssetConfig[] = [
+  // Equities
+  { key: "stocks_percentage", label: "Stocks / Shares", parent: "Equities" },
+  { key: "mutual_fund_equity_percentage", label: "Mutual Fund (Equity)", parent: "Equities" },
+  { key: "ulip_equity_percentage", label: "ULIP (Equity)", parent: "Equities" },
+  { key: "etf_equity_percentage", label: "ETF (Equity)", parent: "Equities" },
+  
+  // Debt
+  { key: "fixed_deposits_bonds_percentage", label: "Fixed Deposits & Bonds", parent: "Debt" },
+  { key: "mutual_fund_debt_percentage", label: "Mutual Fund (Debt)", parent: "Debt" },
+  { key: "ulip_debt_percentage", label: "ULIP (Debt)", parent: "Debt" },
+  { key: "etf_debt_percentage", label: "ETF (Debt)", parent: "Debt" },
+  
+  // Commodities
+  { key: "gold_etf_percentage", label: "Gold ETF", parent: "Commodities" },
+  { key: "silver_etf_percentage", label: "Silver ETF", parent: "Commodities" },
+  { key: "etf_commodity_percentage", label: "ETF (Commodity)", parent: "Commodities" },
+];
+
 
 const TABS: { key: AssetClass; label: string }[] = [
   { key: "shares", label: "Shares" },
@@ -211,7 +239,7 @@ function ProductCombobox({
 
 function AddEntryDialog({
   open, onClose, onAdded,
-  clientId, member, assetClass, currentTotalPct,
+  clientId, member, assetClass, currentTotalPct, totalPortfolioSize, latestAllocation,
 }: {
   open: boolean;
   onClose: () => void;
@@ -220,6 +248,8 @@ function AddEntryDialog({
   member: InvestorMember;
   assetClass: AssetClass;
   currentTotalPct: number;
+  totalPortfolioSize: number;
+  latestAllocation: any | null;
 }) {
   const [products, setProducts] = useState<AvailableProduct[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
@@ -234,6 +264,51 @@ function AddEntryDialog({
   const [lifeObjective, setLifeObjective] = useState("");
   const [reason, setReason] = useState("");
   const [remarks, setRemarks] = useState("");
+
+  const getSelectedSubAssetDetails = () => {
+    if (!latestAllocation || !totalPortfolioSize || totalPortfolioSize <= 0) return null;
+    
+    let key: string | null = null;
+    if (assetClass === "shares") {
+      key = "stocks_percentage";
+    } else if (assetClass === "mf") {
+      if (productSubtype === "Equity") key = "mutual_fund_equity_percentage";
+      if (productSubtype === "Debt") key = "mutual_fund_debt_percentage";
+    } else if (assetClass === "etf") {
+      if (productSubtype === "Gold") key = "gold_etf_percentage";
+      if (productSubtype === "Silver") key = "silver_etf_percentage";
+      if (productSubtype === "Other ETF") key = "etf_commodity_percentage";
+    } else if (assetClass === "life_insurance" && productSubtype === "ULIP") {
+      if (nature === "Equity") key = "ulip_equity_percentage";
+      if (nature === "Debt") key = "ulip_debt_percentage";
+    }
+
+    if (!key) return null;
+
+    const subAssetConfig = SUB_ASSETS.find((s) => s.key === key);
+    if (!subAssetConfig) return null;
+
+    const pct = parseFloat(latestAllocation[key]) || 0;
+    const parentKey = subAssetConfig.parent === "Equities"
+      ? "equities_percentage"
+      : subAssetConfig.parent === "Debt"
+      ? "debt_securities_percentage"
+      : "commodities_percentage";
+    const parentPct = parseFloat(latestAllocation[parentKey]) || 0;
+    const parentAmt = (parentPct / 100) * totalPortfolioSize;
+    const targetAmt = (pct / 100) * parentAmt;
+
+    return {
+      label: subAssetConfig.label,
+      pct,
+      targetAmt,
+    };
+  };
+
+  const selectedSubAsset = getSelectedSubAssetDetails();
+  const enteredAmount = parseFloat(suggestedAmount) || 0;
+  const isOverTarget = selectedSubAsset && enteredAmount > selectedSubAsset.targetAmt;
+
 
   useEffect(() => {
     if (productSubtype !== "ULIP") {
@@ -422,6 +497,20 @@ function AddEntryDialog({
             </div>
           )}
 
+          {selectedSubAsset && (
+            <div className="p-3 rounded-md bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900/30 text-green-800 dark:text-green-300 text-xs space-y-1">
+              <div className="font-semibold flex items-center justify-between">
+                <span>Guideline Target for {selectedSubAsset.label}:</span>
+                <span className="bg-green-100 dark:bg-green-900/40 px-1.5 py-0.5 rounded font-mono font-bold">
+                  {selectedSubAsset.pct.toFixed(1)}%
+                </span>
+              </div>
+              <p>
+                Recommended target amount: <span className="font-bold font-mono">{formatIndianNumber(selectedSubAsset.targetAmt)}</span>
+              </p>
+            </div>
+          )}
+
           {/* Percentage & Suggested Investment Amount in One Line */}
           <div className="grid grid-cols-2 gap-3">
             {/* Percentage */}
@@ -454,8 +543,15 @@ function AddEntryDialog({
                 onChange={(e) => setSuggestedAmount(e.target.value)}
                 placeholder="e.g. 50000"
               />
+              {isOverTarget && (
+                <p className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 mt-1">
+                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                  Exceeds recommended target amount ({formatIndianNumber(selectedSubAsset.targetAmt)})
+                </p>
+              )}
             </div>
           </div>
+
 
           {/* Objective (Shares / MF / ETF) */}
           {!isInsurance && (
@@ -534,11 +630,13 @@ function AddEntryDialog({
 // ── Asset Class Tab Content ─────────────────────────────────────────
 
 function AssetClassTab({
-  clientId, member, assetClass,
+  clientId, member, assetClass, totalPortfolioSize, latestAllocation,
 }: {
   clientId: string;
   member: InvestorMember;
   assetClass: AssetClass;
+  totalPortfolioSize: number;
+  latestAllocation: any | null;
 }) {
   const [entries, setEntries] = useState<TargetPortfolioEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -801,6 +899,8 @@ function AssetClassTab({
           member={member}
           assetClass={assetClass}
           currentTotalPct={totalPct}
+          totalPortfolioSize={totalPortfolioSize}
+          latestAllocation={latestAllocation}
         />
       )}
     </div>
@@ -904,6 +1004,50 @@ export function TargetPortfolioPage({
 
   const selectedMember = activeMembers.find((m) => m.id === selectedMemberId) ?? null;
 
+  const [latestAllocation, setLatestAllocation] = useState<any | null>(null);
+  const [loadingAllocation, setLoadingAllocation] = useState(false);
+  const [totalPortfolioSize, setTotalPortfolioSize] = useState<string>("");
+  const [isCalculatorCollapsed, setIsCalculatorCollapsed] = useState<boolean>(false);
+  const [expandedBreakdown, setExpandedBreakdown] = useState<Record<string, boolean>>({
+    Equities: false,
+    "Debt Securities": false,
+    Commodities: false,
+  });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedSize = localStorage.getItem(`target_portfolio_size_${clientId}_${selectedMemberId}`) || "";
+      setTotalPortfolioSize(savedSize);
+      const savedCollapsed = localStorage.getItem(`target_portfolio_calculator_collapsed_${clientId}_${selectedMemberId}`) === "true";
+      setIsCalculatorCollapsed(savedCollapsed);
+    }
+  }, [clientId, selectedMemberId]);
+
+  useEffect(() => {
+    const fetchLatestAllocation = async () => {
+      if (!clientId) return;
+      setLoadingAllocation(true);
+      try {
+        const allocations = await AssetAllocationService.getAll(clientId);
+        if (allocations && allocations.length > 0) {
+          const latest = allocations.sort((a: any, b: any) => 
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          )[0];
+          setLatestAllocation(latest);
+        } else {
+          setLatestAllocation(null);
+        }
+      } catch (error) {
+        console.error("Failed to fetch latest asset allocation", error);
+        setLatestAllocation(null);
+      } finally {
+        setLoadingAllocation(false);
+      }
+    };
+
+    fetchLatestAllocation();
+  }, [clientId]);
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -964,6 +1108,201 @@ export function TargetPortfolioPage({
         </CardContent>
       </Card>
 
+      {/* Target Allocation Calculator Card */}
+      {selectedMember && (
+        <Card className="shadow-sm border-border bg-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-base font-semibold flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-primary" />
+              Target Allocation Calculator
+            </CardTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={() => {
+                const newCollapsed = !isCalculatorCollapsed;
+                setIsCalculatorCollapsed(newCollapsed);
+                localStorage.setItem(
+                  `target_portfolio_calculator_collapsed_${clientId}_${selectedMemberId}`,
+                  String(newCollapsed)
+                );
+              }}
+            >
+              {isCalculatorCollapsed ? (
+                <ChevronDown className="h-4 w-4" />
+              ) : (
+                <ChevronUp className="h-4 w-4" />
+              )}
+            </Button>
+          </CardHeader>
+          
+          <CardContent className={cn("space-y-4", isCalculatorCollapsed && "hidden")}>
+            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between pb-2 border-b border-border">
+              <div className="space-y-1.5 flex-1 max-w-sm">
+                <Label htmlFor="total_portfolio_size" className="text-xs font-semibold uppercase text-muted-foreground">
+                  Total Portfolio Size (Rs.)
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="total_portfolio_size"
+                    type="number"
+                    min="0"
+                    placeholder="e.g. 1000000"
+                    value={totalPortfolioSize}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setTotalPortfolioSize(val);
+                      localStorage.setItem(`target_portfolio_size_${clientId}_${selectedMemberId}`, val);
+                    }}
+                    className="pr-16"
+                  />
+                  <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-xs text-muted-foreground font-semibold">
+                    INR
+                  </div>
+                </div>
+                {totalPortfolioSize && parseFloat(totalPortfolioSize) > 0 && (
+                  <p className="text-xs text-green-600 font-medium mt-1">
+                    Value: {formatIndianNumber(parseFloat(totalPortfolioSize))}
+                  </p>
+                )}
+              </div>
+
+              {totalPortfolioSize && parseFloat(totalPortfolioSize) > 0 && latestAllocation && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      await TargetPortfolioService.downloadAllocationTargetPDF(
+                        clientId,
+                        selectedMember.id,
+                        parseFloat(totalPortfolioSize),
+                        clientName,
+                        clientCode,
+                        selectedMember.full_name,
+                        selectedMember.investor_code
+                      );
+                      toast.success("Target allocation breakdown report downloaded.");
+                    } catch {
+                      toast.error("Failed to download report.");
+                    }
+                  }}
+                  className="mt-2 md:mt-0"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download Target PDF
+                </Button>
+              )}
+            </div>
+
+            {loadingAllocation ? (
+              <div className="py-8 text-center text-sm text-muted-foreground">
+                <Loader2 className="h-5 w-5 animate-spin mx-auto mb-2 text-primary" />
+                Loading latest asset allocation...
+              </div>
+            ) : !latestAllocation ? (
+              <div className="p-4 rounded-md bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 text-amber-800 dark:text-amber-300 text-sm flex items-start gap-2">
+                <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="font-semibold mb-0.5">No Asset Allocation Found</h4>
+                  <p>
+                    Please create an asset allocation report for this client in the Asset Allocation tool first, so target portfolio ratios can be computed.
+                  </p>
+                </div>
+              </div>
+            ) : !totalPortfolioSize || parseFloat(totalPortfolioSize) <= 0 ? (
+              <div className="py-6 text-center text-sm text-muted-foreground border border-dashed rounded-md">
+                Enter a Total Portfolio Size above to calculate investment target amounts for each asset class.
+              </div>
+            ) : (
+              <div className="border rounded-md overflow-hidden">
+                <Table>
+                  <TableHeader className="bg-muted/40">
+                    <TableRow>
+                      <TableHead className="w-[50%]">Asset / Sub-Asset Class</TableHead>
+                      <TableHead className="text-right">Recommended %</TableHead>
+                      <TableHead className="text-right">Target Amount</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {[
+                      {
+                        label: "Equities",
+                        pctKey: "equities_percentage",
+                        items: [
+                          { key: "stocks_percentage", label: "Stocks / Shares" },
+                          { key: "mutual_fund_equity_percentage", label: "Mutual Fund (Equity)" },
+                          { key: "ulip_equity_percentage", label: "ULIP (Equity)" },
+                          { key: "etf_equity_percentage", label: "ETF (Equity)" },
+                        ]
+                      },
+                      {
+                        label: "Debt Securities",
+                        pctKey: "debt_securities_percentage",
+                        items: [
+                          { key: "fixed_deposits_bonds_percentage", label: "Fixed Deposits & Bonds" },
+                          { key: "mutual_fund_debt_percentage", label: "Mutual Fund (Debt)" },
+                          { key: "ulip_debt_percentage", label: "ULIP (Debt)" },
+                          { key: "etf_debt_percentage", label: "ETF (Debt)" },
+                        ]
+                      },
+                      {
+                        label: "Commodities",
+                        pctKey: "commodities_percentage",
+                        items: [
+                          { key: "gold_etf_percentage", label: "Gold ETF" },
+                          { key: "silver_etf_percentage", label: "Silver ETF" },
+                          { key: "etf_commodity_percentage", label: "ETF (Commodity)" },
+                        ]
+                      }
+                    ].map((cat) => {
+                      const catPct = parseFloat(latestAllocation[cat.pctKey]) || 0;
+                      const catAmt = (catPct / 100) * parseFloat(totalPortfolioSize);
+
+                      return (
+                        <React.Fragment key={cat.label}>
+                          <TableRow 
+                            className="bg-muted/20 font-semibold text-foreground cursor-pointer hover:bg-muted/30 select-none"
+                            onClick={() => setExpandedBreakdown(prev => ({ ...prev, [cat.label]: !prev[cat.label] }))}
+                          >
+                            <TableCell className="font-semibold py-3">
+                              <span className="flex items-center gap-1.5">
+                                {expandedBreakdown[cat.label] ? (
+                                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                ) : (
+                                  <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                )}
+                                {cat.label}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-right">{catPct.toFixed(1)}%</TableCell>
+                            <TableCell className="text-right">{formatIndianNumber(catAmt)}</TableCell>
+                          </TableRow>
+                          {expandedBreakdown[cat.label] && cat.items.map((item) => {
+                            const itemPct = parseFloat(latestAllocation[item.key]) || 0;
+                            const itemAmt = (itemPct / 100) * catAmt;
+                            return (
+                              <TableRow key={item.key} className="hover:bg-muted/10">
+                                <TableCell className="pl-6 text-muted-foreground font-normal">
+                                  • &nbsp;{item.label}
+                                </TableCell>
+                                <TableCell className="text-right text-muted-foreground">{itemPct.toFixed(1)}%</TableCell>
+                                <TableCell className="text-right font-medium text-foreground">{formatIndianNumber(itemAmt)}</TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </React.Fragment>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Tabs */}
       {selectedMember ? (
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as AssetClass)}>
@@ -982,6 +1321,8 @@ export function TargetPortfolioPage({
                 clientId={clientId}
                 member={selectedMember}
                 assetClass={t.key}
+                totalPortfolioSize={totalPortfolioSize ? parseFloat(totalPortfolioSize) : 0}
+                latestAllocation={latestAllocation}
               />
             </TabsContent>
           ))}
@@ -994,3 +1335,4 @@ export function TargetPortfolioPage({
     </div>
   );
 }
+

@@ -118,4 +118,37 @@ export class TargetPortfolioService {
     link.remove();
     setTimeout(() => window.URL.revokeObjectURL(url), 10_000);
   }
+
+  static async downloadAllocationTargetPDF(
+    clientId: string,
+    memberId: string,
+    totalPortfolioSize: number,
+    clientName: string,
+    clientCode: string,
+    memberName: string,
+    memberCode: string,
+  ): Promise<void> {
+    const res = await httpClient.get(
+      `${API_ENDPOINTS.TARGET_PORTFOLIO.LIST(clientId, memberId)}/allocation-target/pdf`,
+      {
+        params: {
+          total_portfolio_size: totalPortfolioSize,
+          client_name: clientName,
+          client_code: clientCode,
+          member_name: memberName,
+          member_code: memberCode,
+        },
+        responseType: "blob",
+      }
+    );
+    const url = window.URL.createObjectURL(new Blob([res.data], { type: "application/pdf" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `TargetPortfolio_Allocation_Breakdown_${clientCode}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => window.URL.revokeObjectURL(url), 10_000);
+  }
 }
+
