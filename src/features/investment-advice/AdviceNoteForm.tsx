@@ -161,6 +161,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
     "Financial Goals, Risk profile, income, liabilities, Asset Allocation, Target Portfolio, existing portfolio and investment horizon reviewed"
   );
   const [investorAdvice, setInvestorAdvice] = useState<string>("");
+  const [originalInvestorAdvice, setOriginalInvestorAdvice] = useState<string>("");
 
   const equitySubSum = (parseFloat(subStocks) || 0) + 
                        (parseFloat(subMfEquity) || 0) + 
@@ -287,6 +288,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
           setSubEtfCommodity(String(latest.etf_commodity_percentage ?? 0));
           
           setInvestorAdvice(latest.tier_recommendation || "");
+          setOriginalInvestorAdvice(latest.tier_recommendation || "");
         }
       } catch (error) {
         console.error("Failed to fetch client latest asset allocation", error);
@@ -880,7 +882,12 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                     id="investor_advice"
                     className="min-h-16"
                     value={investorAdvice}
-                    onChange={(e) => setInvestorAdvice(e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val.startsWith(originalInvestorAdvice)) {
+                        setInvestorAdvice(val);
+                      }
+                    }}
                     placeholder="Enter investor advice..."
                   />
                 </div>
@@ -1106,6 +1113,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                     type="date"
                     value={dateOfAllocation}
                     onChange={(e) => setDateOfAllocation(e.target.value)}
+                    disabled
                   />
                 </div>
 
