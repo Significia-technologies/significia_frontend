@@ -98,21 +98,37 @@ export class TargetPortfolioService {
   static async downloadReport(
     clientId: string,
     memberId: string,
-    objective: string,
     clientName: string,
     clientCode: string,
+    options: {
+      exportBasis: "objective" | "product";
+      objective?: string;
+      assetClasses?: string[];
+    }
   ): Promise<void> {
+    const params: any = {
+      client_name: clientName,
+      client_code: clientCode,
+      export_basis: options.exportBasis,
+    };
+    if (options.exportBasis === "objective") {
+      params.objective = options.objective;
+    } else {
+      params.asset_classes = options.assetClasses?.join(",");
+    }
+
     const res = await httpClient.get(
       API_ENDPOINTS.TARGET_PORTFOLIO.REPORT_PDF(clientId, memberId),
       {
-        params: { objective, client_name: clientName, client_code: clientCode },
+        params,
         responseType: "blob",
       }
     );
     const url = window.URL.createObjectURL(new Blob([res.data], { type: "application/pdf" }));
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", `TargetPortfolio_${clientCode}_${objective}.pdf`);
+    const suffix = options.exportBasis === "objective" ? options.objective : "Products";
+    link.setAttribute("download", `TargetPortfolio_${clientCode}_${suffix}.pdf`);
     document.body.appendChild(link);
     link.click();
     link.remove();

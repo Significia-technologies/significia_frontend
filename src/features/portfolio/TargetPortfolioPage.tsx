@@ -1074,8 +1074,18 @@ function AssetClassTab({
 
 // ── Export Report Dialog ────────────────────────────────────────────
 
+// ── Export Report Dialog ────────────────────────────────────────────
+
 const ALL_OBJECTIVES = [
   "Retirement", "Child Education", "Child Marriage", "General", "HLV", "Health Cover",
+];
+
+const PRODUCT_CATEGORIES = [
+  { key: "shares", label: "Shares / Stocks" },
+  { key: "mf", label: "Mutual Funds" },
+  { key: "etf", label: "ETFs" },
+  { key: "life_insurance", label: "Life Insurance" },
+  { key: "health_insurance", label: "Health Insurance" },
 ];
 
 function ExportReportDialog({
@@ -1089,20 +1099,39 @@ function ExportReportDialog({
   clientName: string;
   clientCode: string;
 }) {
+  const [exportBasis, setExportBasis] = useState<"objective" | "product">("objective");
   const [selectedObjective, setSelectedObjective] = useState("");
+  const [selectedAssetClasses, setSelectedAssetClasses] = useState<string[]>([]);
   const [downloading, setDownloading] = useState(false);
 
   const handleDownload = async () => {
-    if (!selectedObjective) return toast.error("Select an objective.");
+    if (exportBasis === "objective" && !selectedObjective) {
+      return toast.error("Select an objective.");
+    }
+    if (exportBasis === "product" && selectedAssetClasses.length === 0) {
+      return toast.error("Select at least one product category.");
+    }
+
     setDownloading(true);
     try {
       await TargetPortfolioService.downloadReport(
-        clientId, memberId, selectedObjective, clientName, clientCode
+        clientId,
+        memberId,
+        clientName,
+        clientCode,
+        {
+          exportBasis,
+          objective: exportBasis === "objective" ? selectedObjective : undefined,
+          assetClasses: exportBasis === "product" ? selectedAssetClasses : undefined,
+        }
       );
       onClose();
     } catch (err: any) {
       if (err?.response?.status === 404) {
-        toast.error(`No active entries found for objective "${selectedObjective}".`);
+        const desc = exportBasis === "objective"
+          ? `objective "${selectedObjective}"`
+          : "selected product types";
+        toast.error(`No active entries found for ${desc}.`);
       } else {
         toast.error("Failed to generate report.");
       }
@@ -1111,33 +1140,108 @@ function ExportReportDialog({
     }
   };
 
+  const isSubmitDisabled = downloading || (exportBasis === "objective" ? !selectedObjective : selectedAssetClasses.length === 0);
+
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Download className="h-4 w-4" /> Export Portfolio Report
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-1">
-          <p className="text-sm text-muted-foreground">
-            Select an objective to generate a PDF report showing all matching active entries across all asset classes.
-          </p>
           <div className="space-y-1.5">
-            <Label>Objective <span className="text-destructive">*</span></Label>
-            <Select value={selectedObjective} onValueChange={setSelectedObjective}>
-              <SelectTrigger><SelectValue placeholder="Select objective" /></SelectTrigger>
+            <Label>Export Report By</Label>
+            <Select value={exportBasis} onValueChange={(val: any) => setExportBasis(val)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {ALL_OBJECTIVES.map((o) => (
-                  <SelectItem key={o} value={o}>{o}</SelectItem>
-                ))}
+                <SelectItem value="objective">Goal / Objective-wise</SelectItem>
+                <SelectItem value="product">Product-wise</SelectItem>
               </SelectContent>
             </Select>
           </div>
+
+          {exportBasis === "objective" ? (
+            <>
+              <p className="text-sm text-muted-foreground">
+                Select an objective to generate a PDF report showing all matching active entries across all asset classes.
+              </p>
+              <div className="space-y-1.5">
+                <Label>Objective <span className="text-destructive">*</span></Label>
+                <Select value={selectedObjective} onValueChange={setSelectedObjective}>
+                  <SelectTrigger><SelectValue placeholder="Select objective" /></SelectTrigger>
+                  <SelectContent>
+                    {ALL_OBJECTIVES.map((o) => (
+                      <SelectItem key={o} value={o}>{o}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="text-sm text-muted-foreground">
+                Select product categories to include in the generated report. Active target portfolio products matching these groups will be exported.
+              </p>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>Select Product Types <span className="text-destructive">*</span></Label>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedAssetClasses(PRODUCT_CATEGORIES.map(p => p.key))}
+                      className="text-xs text-primary hover:underline font-medium"
+                    >
+                      Select All
+                    </button>
+                    <span className="text-muted-foreground text-xs font-normal">|</span>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedAssetClasses([])}
+                      className="text-xs text-muted-foreground hover:underline font-medium"
+                    >
+                      Clear All
+                    </button>
+                  </div>
+                </div>
+                <div className="space-y-1.5 max-h-48 overflow-y-auto border rounded-md p-2 bg-background">
+                  {PRODUCT_CATEGORIES.map((p) => {
+                    const isChecked = selectedAssetClasses.includes(p.key);
+                    return (
+                      <label
+                        key={p.key}
+                        className={cn(
+                          "flex items-center justify-between px-3 py-2 rounded-md border text-sm cursor-pointer transition-colors",
+                          isChecked
+                            ? "bg-primary/5 border-primary text-foreground"
+                            : "hover:bg-accent hover:text-accent-foreground border-transparent text-muted-foreground"
+                        )}
+                      >
+                        <span>{p.label}</span>
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedAssetClasses([...selectedAssetClasses, p.key]);
+                            } else {
+                              setSelectedAssetClasses(selectedAssetClasses.filter((c) => c !== p.key));
+                            }
+                          }}
+                          className="rounded border-input text-primary focus:ring-primary h-4 w-4"
+                        />
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={downloading}>Cancel</Button>
-          <Button onClick={handleDownload} disabled={downloading || !selectedObjective}>
+          <Button onClick={handleDownload} disabled={isSubmitDisabled}>
             {downloading
               ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Generating…</>
               : <><Download className="h-4 w-4 mr-2" /> Download PDF</>}
