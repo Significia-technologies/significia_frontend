@@ -1269,11 +1269,12 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
 
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
                   <div className="md:col-span-6 space-y-1.5">
-                    <Label>Product Name (Override)</Label>
+                    <Label>Product Name</Label>
                     <Input 
                       value={recProductName}
                       onChange={(e) => setRecProductName(e.target.value)}
                       placeholder="e.g. HDFC Bank Limited"
+                      disabled
                     />
                   </div>
 
@@ -1283,6 +1284,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                       value={recIsin}
                       onChange={(e) => setRecIsin(e.target.value)}
                       placeholder="e.g. INE040A01034"
+                      disabled
                     />
                   </div>
 
@@ -1294,6 +1296,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                       value={recPriceNav}
                       onChange={(e) => setRecPriceNav(e.target.value)}
                       placeholder="e.g. 1530"
+                      disabled
                     />
                   </div>
                 </div>
