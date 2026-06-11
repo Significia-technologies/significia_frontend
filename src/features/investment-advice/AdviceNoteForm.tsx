@@ -364,6 +364,12 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
       product_name: entry.product_name
     } as any);
 
+    if (entry.suggested_investment_amount !== null && entry.suggested_investment_amount !== undefined) {
+      setRecAmount(String(entry.suggested_investment_amount));
+    } else {
+      setRecAmount("");
+    }
+
     try {
       const res = await ProductMasterService.list(recProductType as any, entry.product_name);
       const matchedProduct = res.items.find(item => item.id === entry.product_id) || res.items[0];
@@ -413,6 +419,16 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
     const freq = ['SIP', 'STP', 'SWP'].includes(ttype) ? recFrequency : null;
     const amountVal = ['SIP', 'STP', 'SWP', 'LUMP_SUM'].includes(ttype) ? (recAmount ? parseFloat(recAmount) : null) : null;
     const customInst = ttype === 'TEXT_ONLY' ? recCustomInstruction : null;
+
+    if (amountVal !== null && !isNaN(amountVal)) {
+      const entry = targetPortfolioEntries.find(e => e.id === selectedTargetPortfolioEntryId);
+      if (entry && entry.suggested_investment_amount !== null && entry.suggested_investment_amount !== undefined) {
+        if (amountVal > entry.suggested_investment_amount) {
+          toast.error(`Amount Exceeded: Recommended amount of Rs. ${amountVal.toLocaleString('en-IN')} exceeds the target portfolio suggested amount of Rs. ${entry.suggested_investment_amount.toLocaleString('en-IN')} for "${entry.product_name}".`);
+          return;
+        }
+      }
+    }
 
     const tempRec: Partial<InvestmentAdviceRecommendation> = {
       transaction_type: ttype,
@@ -639,6 +655,11 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
     };
     return entry.asset_class === mapping[recProductType];
   });
+
+  const selectedEntry = targetPortfolioEntries.find(e => e.id === selectedTargetPortfolioEntryId);
+  const selectedSuggestedAmount = selectedEntry?.suggested_investment_amount ?? null;
+  const enteredRecAmount = parseFloat(recAmount) || 0;
+  const isPriceExceeded = selectedSuggestedAmount !== null && enteredRecAmount > selectedSuggestedAmount;
 
   return (
     <div className="max-w-4xl mx-auto py-4">
@@ -1165,6 +1186,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                       setRecProductName("");
                       setRecIsin("");
                       setRecPriceNav("");
+                      setRecAmount("");
                     }}>
                       <SelectTrigger className="w-full max-w-full">
                         <SelectValue />
@@ -1327,7 +1349,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
 
                   {/* Conditional Amount/Instruction Input */}
                   <div className={`${['SIP', 'STP', 'SWP'].includes(recTransactionType) ? 'md:col-span-6' : 'md:col-span-9'} space-y-1.5`}>
-                    <Label>
+                    <Label className={isPriceExceeded ? "text-destructive" : ""}>
                       {recTransactionType === 'HOLDING' ? 'Amount / Description' : recTransactionType === 'TEXT_ONLY' ? 'Custom Note Text' : 'Amount'}
                     </Label>
                     
@@ -1336,12 +1358,18 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground">Rs.</span>
                         <Input 
                           type="number"
-                          className="pl-9"
+                          className={`pl-9 ${isPriceExceeded ? 'border-destructive focus-visible:ring-destructive text-destructive bg-destructive/5 placeholder:text-destructive/40' : ''}`}
                           value={recAmount}
                           onChange={(e) => setRecAmount(e.target.value)}
                           placeholder="e.g. 10000"
                         />
                       </div>
+                    )}
+
+                    {['SIP', 'STP', 'SWP', 'LUMP_SUM'].includes(recTransactionType) && isPriceExceeded && selectedSuggestedAmount !== null && (
+                      <p className="text-xs text-destructive mt-1.5 flex items-center gap-1.5 animate-in fade-in duration-200">
+                        <AlertTriangle className="w-3.5 h-3.5 shrink-0" /> Exceeds target portfolio suggested amount of Rs. {selectedSuggestedAmount.toLocaleString('en-IN')}
+                      </p>
                     )}
 
                     {recTransactionType === 'TEXT_ONLY' && (
