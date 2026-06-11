@@ -895,6 +895,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                         type="number"
                         value={recEquity}
                         onChange={(e) => setRecEquity(e.target.value)}
+                        disabled
                       />
                     </div>
                     <div className="space-y-2">
@@ -904,6 +905,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                         type="number"
                         value={recDebt}
                         onChange={(e) => setRecDebt(e.target.value)}
+                        disabled
                       />
                     </div>
                     <div className="space-y-2">
@@ -913,6 +915,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                         type="number"
                         value={recCommodities}
                         onChange={(e) => setRecCommodities(e.target.value)}
+                        disabled
                       />
                     </div>
                   </div>
@@ -935,6 +938,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                             className="h-8 text-xs"
                             value={subStocks} 
                             onChange={(e) => setSubStocks(e.target.value)} 
+                            disabled
                           />
                         </div>
                         <div className="space-y-1">
@@ -945,6 +949,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                             className="h-8 text-xs"
                             value={subMfEquity} 
                             onChange={(e) => setSubMfEquity(e.target.value)} 
+                            disabled
                           />
                         </div>
                         <div className="space-y-1">
@@ -955,6 +960,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                             className="h-8 text-xs"
                             value={subUlipEquity} 
                             onChange={(e) => setSubUlipEquity(e.target.value)} 
+                            disabled
                           />
                         </div>
                         <div className="space-y-1">
@@ -965,6 +971,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                             className="h-8 text-xs"
                             value={subEtfEquity} 
                             onChange={(e) => setSubEtfEquity(e.target.value)} 
+                            disabled
                           />
                         </div>
                       </div>
@@ -990,6 +997,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                             className="h-8 text-xs"
                             value={subFdBonds} 
                             onChange={(e) => setSubFdBonds(e.target.value)} 
+                            disabled
                           />
                         </div>
                         <div className="space-y-1">
@@ -1000,6 +1008,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                             className="h-8 text-xs"
                             value={subMfDebt} 
                             onChange={(e) => setSubMfDebt(e.target.value)} 
+                            disabled
                           />
                         </div>
                         <div className="space-y-1">
@@ -1010,6 +1019,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                             className="h-8 text-xs"
                             value={subUlipDebt} 
                             onChange={(e) => setSubUlipDebt(e.target.value)} 
+                            disabled
                           />
                         </div>
                         <div className="space-y-1">
@@ -1020,6 +1030,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                             className="h-8 text-xs"
                             value={subEtfDebt} 
                             onChange={(e) => setSubEtfDebt(e.target.value)} 
+                            disabled
                           />
                         </div>
                       </div>
@@ -1045,6 +1056,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                             className="h-8 text-xs"
                             value={subGoldEtf} 
                             onChange={(e) => setSubGoldEtf(e.target.value)} 
+                            disabled
                           />
                         </div>
                         <div className="space-y-1">
@@ -1055,6 +1067,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                             className="h-8 text-xs"
                             value={subSilverEtf} 
                             onChange={(e) => setSubSilverEtf(e.target.value)} 
+                            disabled
                           />
                         </div>
                         <div className="space-y-1">
@@ -1065,6 +1078,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                             className="h-8 text-xs"
                             value={subEtfCommodity} 
                             onChange={(e) => setSubEtfCommodity(e.target.value)} 
+                            disabled
                           />
                         </div>
                       </div>
