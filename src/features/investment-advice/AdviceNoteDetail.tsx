@@ -147,7 +147,7 @@ export function AdviceNoteDetail({ noteId, onBack }: AdviceNoteDetailProps) {
   const GridRow = ({ label, value }: { label: string; value: any }) => (
     <div className="grid grid-cols-3 gap-2 py-2 border-b border-primary/5 text-sm">
       <span className="font-bold text-muted-foreground">{label}</span>
-      <span className="col-span-2 text-foreground font-medium">{value || "N/A"}</span>
+      <span className="col-span-2 text-foreground font-normal">{value || "N/A"}</span>
     </div>
   );
 
@@ -337,7 +337,7 @@ export function AdviceNoteDetail({ noteId, onBack }: AdviceNoteDetailProps) {
 
             {/* Section C */}
             <div>
-              <SectionHeader num="C" title="Suitability Assessment [Regulation 17]" />
+              <SectionHeader num="C" title="Suitability Assessment" />
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1">
                   <GridRow label="Advice Suitable?" value={note.suitability_assessment} />
@@ -364,7 +364,7 @@ export function AdviceNoteDetail({ noteId, onBack }: AdviceNoteDetailProps) {
         {/* Section D: Product Recommendations */}
         <Card className="border-primary/10 shadow-lg bg-card/40 backdrop-blur-sm">
           <CardContent className="p-6">
-            <SectionHeader num="D" title="Investment Recommendations [Regulation 16]" />
+            <SectionHeader num="D" title="Investment Recommendations" />
             <div className="border border-primary/10 rounded-xl overflow-hidden mt-4">
               <Table>
                 <TableHeader className="bg-primary/5">
@@ -414,7 +414,7 @@ export function AdviceNoteDetail({ noteId, onBack }: AdviceNoteDetailProps) {
         {/* Section E: Rationale */}
         <Card className="border-primary/10 shadow-lg bg-card/40 backdrop-blur-sm">
           <CardContent className="p-6">
-            <SectionHeader num="E" title="Rationale for Advice [Regulation 16(c)]" />
+            <SectionHeader num="E" title="Rationale for Advice " />
             <div className="space-y-4 mt-4 divide-y divide-primary/5">
               {recs.filter(r => r.rationale).length === 0 ? (
                 <p className="text-sm text-muted-foreground italic">No specific product rationales available.</p>
@@ -441,7 +441,7 @@ export function AdviceNoteDetail({ noteId, onBack }: AdviceNoteDetailProps) {
             
             {/* Section F */}
             <div>
-              <SectionHeader num="F" title="Risk Disclosures [Regulation 16(d)]" />
+              <SectionHeader num="F" title="Risk Disclosures" />
               <div className="space-y-3.5 mt-4 text-xs leading-relaxed text-foreground">
                 <div className="grid grid-cols-4 gap-2">
                   <span className="font-bold text-muted-foreground col-span-1">Market / Price Risk:</span>
@@ -463,7 +463,7 @@ export function AdviceNoteDetail({ noteId, onBack }: AdviceNoteDetailProps) {
               <SectionHeader num="G" title="Conflict & AI Disclosure" />
               <div className="space-y-4 mt-4 text-xs leading-relaxed">
                 <div>
-                  <h5 className="font-bold text-muted-foreground mb-1">Conflict of Interest (Reg 18):</h5>
+                  <h5 className="font-bold text-muted-foreground mb-1">Conflict of Interest:</h5>
                   <p className="text-foreground bg-muted/20 p-3 rounded-lg border border-primary/5">{note.conflict_of_interest_text}</p>
                 </div>
                 <div>
@@ -471,7 +471,7 @@ export function AdviceNoteDetail({ noteId, onBack }: AdviceNoteDetailProps) {
                   <p className="text-foreground bg-muted/20 p-3 rounded-lg border border-primary/5">{note.no_execution_text}</p>
                 </div>
                 <div>
-                  <h5 className="font-bold text-muted-foreground mb-1">AI Tool Disclosure (Reg 15(14)):</h5>
+                  <h5 className="font-bold text-muted-foreground mb-1">AI Tool Disclosure:</h5>
                   <p className="text-foreground bg-muted/20 p-3 rounded-lg border border-primary/5">{note.ai_usage_text}</p>
                 </div>
               </div>
