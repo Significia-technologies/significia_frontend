@@ -116,8 +116,8 @@ export function AllAdviceNotesList({ onCreateNew, onSelectNote }: AllAdviceNotes
   };
 
   const filteredNotes = notes.filter((note) => {
-    const clientName = note.client_snapshot?.client_name || "";
-    const clientCode = note.client_snapshot?.client_code || "";
+    const clientName = note.client_name || note.client_snapshot?.client_name || "";
+    const clientCode = note.client_code || note.client_snapshot?.client_code || "";
     const noteNo = note.advice_note_no || "";
     const term = searchTerm.toLowerCase();
 
@@ -199,8 +199,8 @@ export function AllAdviceNotesList({ onCreateNew, onSelectNote }: AllAdviceNotes
                 ) : (
                   filteredNotes.map((note) => {
                     const isLocked = note.is_locked;
-                    const clientName = note.client_snapshot?.client_name || "Unknown Client";
-                    const clientCode = note.client_snapshot?.client_code || "N/A";
+                    const clientName = note.client_name || note.client_snapshot?.client_name || "Unknown Client";
+                    const clientCode = note.client_code || note.client_snapshot?.client_code || "N/A";
                     return (
                       <TableRow key={note.id} className="hover:bg-primary/5 transition-colors group">
                         <TableCell>
@@ -209,8 +209,10 @@ export function AllAdviceNotesList({ onCreateNew, onSelectNote }: AllAdviceNotes
                             <span className="text-xs text-muted-foreground">{clientCode}</span>
                           </div>
                         </TableCell>
-                        <TableCell className="font-bold text-foreground">
-                          {note.advice_note_no}
+                        <TableCell>
+                          <span className="font-mono text-[11px] text-muted-foreground bg-primary/5 border border-primary/10 px-2 py-0.5 rounded font-medium select-all whitespace-nowrap">
+                            {note.advice_note_no}
+                          </span>
                         </TableCell>
                         <TableCell className="whitespace-nowrap">
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">

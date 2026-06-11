@@ -53,6 +53,8 @@ export interface InvestmentAdviceNote {
   updated_at: string;
   recommendations?: InvestmentAdviceRecommendation[];
   client_snapshot?: any;
+  client_name?: string;
+  client_code?: string;
 }
 
 export class InvestmentAdviceService {
