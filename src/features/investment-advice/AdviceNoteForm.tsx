@@ -44,6 +44,8 @@ import { ProductMasterService, AnyProduct } from "@/core/services/product-master
 import { FinancialAnalysisService } from "@/core/services/financial-analysis.service";
 import { InvestmentAdviceService, InvestmentAdviceRecommendation } from "@/core/services/investment-advice.service";
 import { AssetAllocationService } from "@/core/services/asset-allocation.service";
+import { InvestorMasterService } from "@/core/services/investor-master.service";
+import { TargetPortfolioService, TargetPortfolioEntry, AssetClass } from "@/core/services/target-portfolio.service";
 import { toast } from "sonner";
 
 interface AdviceNoteFormProps {
@@ -178,9 +180,9 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
   
   // Recommendations editor row state
   const [recProductType, setRecProductType] = useState<string>("shares");
-  const [recSearchQuery, setRecSearchQuery] = useState<string>("");
-  const [searchResults, setSearchResults] = useState<AnyProduct[]>([]);
-  const [searchingProducts, setSearchingProducts] = useState(false);
+  const [targetPortfolioEntries, setTargetPortfolioEntries] = useState<TargetPortfolioEntry[]>([]);
+  const [loadingTargetPortfolio, setLoadingTargetPortfolio] = useState(false);
+  const [selectedTargetPortfolioEntryId, setSelectedTargetPortfolioEntryId] = useState<string>("");
   const [selectedProduct, setSelectedProduct] = useState<AnyProduct | null>(null);
   
   const [recProductName, setRecProductName] = useState<string>("");
@@ -303,71 +305,100 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
       }
     };
 
+    // 5. Fetch Target Portfolio Entries
+    const fetchTargetPortfolio = async () => {
+      if (!client.id) return;
+      setLoadingTargetPortfolio(true);
+      try {
+        const { members } = await InvestorMasterService.listMembers(client.id, "active");
+        const allEntries: TargetPortfolioEntry[] = [];
+        const assetClasses: AssetClass[] = ["shares", "mf", "etf", "life_insurance", "health_insurance"];
+        
+        const promises = members.flatMap(member =>
+          assetClasses.map(async (ac) => {
+            try {
+              const res = await TargetPortfolioService.listEntries(client.id!, member.id, ac);
+              return (res.entries || []).map(entry => ({
+                ...entry,
+                member_name: member.full_name
+              }));
+            } catch (e) {
+              console.error(`Error fetching target portfolio for member ${member.id} and asset class ${ac}`, e);
+              return [];
+            }
+          })
+        );
+        
+        const results = await Promise.all(promises);
+        results.forEach(entries => {
+          allEntries.push(...entries);
+        });
+        
+        const activeEntries = allEntries.filter(entry => entry.is_active !== false);
+        setTargetPortfolioEntries(activeEntries);
+      } catch (error) {
+        console.error("Failed to load target portfolio", error);
+      } finally {
+        setLoadingTargetPortfolio(false);
+      }
+    };
+
     fetchEmployees();
     fetchAnalysisGoal();
     fetchLatestAllocation();
     fetchIAMaster();
+    fetchTargetPortfolio();
   }, [client]);
 
-  // Handle product searches
-  useEffect(() => {
-    if (!recSearchQuery.trim()) {
-      setSearchResults([]);
-      return;
-    }
+  const handleSelectTargetPortfolioEntry = async (entry: TargetPortfolioEntry) => {
+    setRecProductName(entry.product_name);
+    
+    // Set a dummy/partial selectedProduct object so that selectedProduct.id is populated
+    setSelectedProduct({
+      id: entry.product_id,
+      product_name: entry.product_name
+    } as any);
 
-    const timer = setTimeout(async () => {
-      setSearchingProducts(true);
-      try {
-        const res = await ProductMasterService.list(recProductType as any, recSearchQuery);
-        setSearchResults(res.items);
-      } catch (error) {
-        console.error("Product search failed", error);
-      } finally {
-        setSearchingProducts(false);
+    try {
+      const res = await ProductMasterService.list(recProductType as any, entry.product_name);
+      const matchedProduct = res.items.find(item => item.id === entry.product_id) || res.items[0];
+      if (matchedProduct) {
+        setSelectedProduct(matchedProduct);
+
+        let code = "";
+        if (recProductType === "shares") {
+          code = (matchedProduct as any).isin_code || "";
+        } else if (recProductType === "mutual-funds") {
+          code = (matchedProduct as any).scheme_code || "";
+        } else if (recProductType === "etfs") {
+          code = (matchedProduct as any).isin_code || "";
+        } else if (recProductType === "life-insurance" || recProductType === "health-insurance") {
+          code = (matchedProduct as any).uin || "";
+        }
+        setRecIsin(code);
+
+        const latestPrice = (matchedProduct as any).latest_price;
+        if (latestPrice !== undefined && latestPrice !== null) {
+          setRecPriceNav(String(latestPrice));
+        } else {
+          setRecPriceNav("");
+        }
+      } else {
+        setRecIsin("");
+        setRecPriceNav("");
       }
-    }, 400);
-
-    return () => clearTimeout(timer);
-  }, [recSearchQuery, recProductType]);
-
-  const selectProduct = (product: AnyProduct) => {
-    setSelectedProduct(product);
-    
-    // Extract name and code based on product type
-    let name = "";
-    let code = "";
-    
-    if (recProductType === "shares") {
-      name = (product as any).share_name || "";
-      code = (product as any).isin_code || "";
-    } else if (recProductType === "mutual-funds") {
-      name = (product as any).scheme_name || "";
-      code = (product as any).scheme_code || "";
-    } else if (recProductType === "etfs") {
-      name = (product as any).etf_name || "";
-      code = (product as any).isin_code || "";
-    } else if (recProductType === "life-insurance" || recProductType === "health-insurance") {
-      name = `${(product as any).company_name} - ${(product as any).policy_name}`;
-      code = (product as any).uin || "UIN: Pending";
-    }
-
-    setRecProductName(name);
-    setRecIsin(code);
-
-    // Auto-fill price / NAV if available
-    const latestPrice = (product as any).latest_price;
-    if (latestPrice !== undefined && latestPrice !== null) {
-      setRecPriceNav(String(latestPrice));
-    } else {
+    } catch (error) {
+      console.error("Failed to fetch product details from master", error);
+      setRecIsin("");
       setRecPriceNav("");
     }
-
-    setRecSearchQuery("");
-    setSearchResults([]);
   };
 
   const addRecommendation = () => {
+    if (!selectedProduct?.id) {
+      toast.error("Please select a product from the client's Target Portfolio");
+      return;
+    }
     if (!recProductName.trim()) {
       toast.error("Please select or enter a Product Name");
       return;
@@ -404,6 +435,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
 
     // Clear recommendation row
     setSelectedProduct(null);
+    setSelectedTargetPortfolioEntryId("");
     setRecProductName("");
     setRecIsin("");
     setRecAction("BUY");
@@ -413,12 +445,40 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
     setRecCustomInstruction("");
     setRecPriceNav("");
     setRecRationale("");
-    setRecSearchQuery("");
     toast.success("Recommendation added to draft table.");
   };
 
   const removeRecommendation = (index: number) => {
     setRecommendations(recommendations.filter((_, i) => i !== index));
+  };
+
+  const getSubAssetKey = (entry: TargetPortfolioEntry): string | null => {
+    const ac = entry.asset_class;
+    const subtype = entry.product_subtype || "";
+    const nature = entry.nature || "";
+
+    if (ac === "shares") {
+      return "subStocks";
+    }
+    if (ac === "mf") {
+      if (subtype === "Equity") return "subMfEquity";
+      if (subtype === "Debt") return "subMfDebt";
+    }
+    if (ac === "etf") {
+      if (subtype === "Gold") return "subGoldEtf";
+      if (subtype === "Silver") return "subSilverEtf";
+      if (subtype === "Other ETF") return "subEtfEquity";
+    }
+    if (ac === "life_insurance") {
+      if (subtype === "ULIP") {
+        if (nature === "Equity") return "subUlipEquity";
+        if (nature === "Debt") return "subUlipDebt";
+      }
+      if (subtype === "Endowment" || subtype === "Annuity") {
+        return "subUlipDebt";
+      }
+    }
+    return null;
   };
 
   const handleSubmit = async () => {
@@ -446,6 +506,50 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
     if (cmAlloc > 0 && commoditiesSubSum !== 100) {
       toast.error(`Commodities sub-assets must sum to 100% (currently ${commoditiesSubSum}%).`);
       return;
+    }
+
+    // Enforce sub-asset limit validation against recommended allocation
+    const subAssetSums: Record<string, number> = {};
+    const subAssetProductNames: Record<string, string[]> = {};
+
+    for (const rec of recommendations) {
+      const entry = targetPortfolioEntries.find(e => e.product_id === rec.product_id);
+      if (!entry) {
+        continue;
+      }
+
+      const key = getSubAssetKey(entry);
+      if (key) {
+        subAssetSums[key] = (subAssetSums[key] || 0) + (entry.percentage || 0);
+        if (!subAssetProductNames[key]) {
+          subAssetProductNames[key] = [];
+        }
+        subAssetProductNames[key].push(`${rec.product_name} (${entry.percentage}%)`);
+      }
+    }
+
+    const limits: Record<string, { label: string; limitValue: number }> = {
+      subStocks: { label: "Direct Equity / Stocks", limitValue: parseFloat(subStocks) || 0 },
+      subMfEquity: { label: "Equity Mutual Funds", limitValue: parseFloat(subMfEquity) || 0 },
+      subUlipEquity: { label: "Equity ULIPs", limitValue: parseFloat(subUlipEquity) || 0 },
+      subEtfEquity: { label: "Equity ETFs", limitValue: parseFloat(subEtfEquity) || 0 },
+      subMfDebt: { label: "Debt Mutual Funds", limitValue: parseFloat(subMfDebt) || 0 },
+      subUlipDebt: { label: "Debt ULIPs", limitValue: parseFloat(subUlipDebt) || 0 },
+      subGoldEtf: { label: "Gold ETFs", limitValue: parseFloat(subGoldEtf) || 0 },
+      subSilverEtf: { label: "Silver ETFs", limitValue: parseFloat(subSilverEtf) || 0 },
+    };
+
+    for (const key of Object.keys(subAssetSums)) {
+      const sum = subAssetSums[key];
+      const limitInfo = limits[key];
+      if (limitInfo) {
+        if (sum > limitInfo.limitValue) {
+          toast.error(
+            `Allocation Exceeded: Sum of recommended allocations in "${limitInfo.label}" is ${sum}%, which exceeds the recommended sub-asset allocation limit of ${limitInfo.limitValue}%. Products: ${subAssetProductNames[key].join(", ")}`
+          );
+          return;
+        }
+      }
     }
 
     setIsSubmitting(true);
@@ -518,6 +622,17 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
       setIsSubmitting(false);
     }
   };
+
+  const filteredPortfolioEntries = targetPortfolioEntries.filter(entry => {
+    const mapping: Record<string, string> = {
+      "shares": "shares",
+      "mutual-funds": "mf",
+      "etfs": "etf",
+      "life-insurance": "life_insurance",
+      "health-insurance": "health_insurance"
+    };
+    return entry.asset_class === mapping[recProductType];
+  });
 
   return (
     <div className="max-w-4xl mx-auto py-4">
@@ -1009,10 +1124,12 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                     <Select value={recProductType} onValueChange={(val) => {
                       setRecProductType(val);
                       setSelectedProduct(null);
+                      setSelectedTargetPortfolioEntryId("");
                       setRecProductName("");
                       setRecIsin("");
+                      setRecPriceNav("");
                     }}>
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full max-w-full">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -1025,62 +1142,60 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                     </Select>
                   </div>
 
-                  <div className="md:col-span-6 space-y-1.5 relative">
-                    <Label>Search Product</Label>
-                    <div className="relative">
-                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground opacity-50" />
-                      <Input 
-                        className="pl-9"
-                        placeholder="Search product master..."
-                        value={recSearchQuery}
-                        onChange={(e) => setRecSearchQuery(e.target.value)}
-                      />
-                    </div>
-
-                    {/* Autocomplete Results */}
-                    {searchingProducts && (
-                      <div className="absolute z-10 w-full bg-background border border-primary/10 rounded-md p-2 text-center text-xs mt-1 shadow-lg">
-                        <Loader2 className="w-4 h-4 animate-spin inline mr-2" /> Searching...
+                  <div className="md:col-span-6 space-y-1.5">
+                    <Label>Select Target Portfolio Product</Label>
+                    {loadingTargetPortfolio ? (
+                      <div className="h-10 bg-muted animate-pulse rounded flex items-center justify-center text-xs text-muted-foreground">
+                        <Loader2 className="w-4 h-4 animate-spin mr-2" /> Loading target portfolio...
                       </div>
-                    )}
-                    {!searchingProducts && searchResults.length > 0 && (
-                      <div className="absolute z-10 w-full bg-background border border-primary/10 rounded-md shadow-lg max-h-48 overflow-y-auto mt-1 divide-y divide-muted">
-                        {searchResults.map((product) => {
-                          let label = "";
-                          let sub = "";
-                          if (recProductType === "shares") {
-                            label = (product as any).share_name;
-                            sub = (product as any).symbol || (product as any).isin_code;
-                          } else if (recProductType === "mutual-funds") {
-                            label = (product as any).scheme_name;
-                            sub = (product as any).scheme_code;
-                          } else if (recProductType === "etfs") {
-                            label = (product as any).etf_name;
-                            sub = (product as any).symbol || (product as any).isin_code;
-                          } else if (recProductType === "life-insurance" || recProductType === "health-insurance") {
-                            label = (product as any).policy_name;
-                            sub = (product as any).company_name;
+                    ) : (
+                      <Select 
+                        value={selectedTargetPortfolioEntryId} 
+                        onValueChange={(entryId) => {
+                          const entry = targetPortfolioEntries.find(e => e.id === entryId);
+                          if (entry) {
+                            setSelectedTargetPortfolioEntryId(entryId);
+                            handleSelectTargetPortfolioEntry(entry);
                           }
-                          return (
-                            <button
-                              key={product.id}
-                              type="button"
-                              className="w-full text-left p-2 hover:bg-primary/5 text-xs flex justify-between"
-                              onClick={() => selectProduct(product)}
-                            >
-                              <span className="font-bold truncate">{label}</span>
-                              <span className="text-[10px] text-muted-foreground ml-2 shrink-0">{sub}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
+                        }}
+                      >
+                        <SelectTrigger className="w-full max-w-full">
+                          <SelectValue placeholder="Choose a product from target portfolio..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {filteredPortfolioEntries.length === 0 ? (
+                            <SelectItem value="none" disabled>
+                              No active target portfolio products for this type
+                            </SelectItem>
+                          ) : (
+                            filteredPortfolioEntries.map((entry) => {
+                              let details = "";
+                              if (entry.product_subtype) {
+                                details = entry.product_subtype;
+                                if (entry.nature) {
+                                  details += ` - ${entry.nature}`;
+                                }
+                              }
+                              const pctLabel = entry.asset_class === "life_insurance" ? "HLV" : "Alloc";
+                              const desc = details ? ` (${details})` : "";
+                              const memberLabel = (entry as any).member_name ? ` [${(entry as any).member_name}]` : "";
+                              
+                              return (
+                                <SelectItem key={entry.id} value={entry.id}>
+                                  {entry.product_name}{desc} — {entry.percentage}% {pctLabel}{memberLabel}
+                                </SelectItem>
+                              );
+                            })
+                          )}
+                        </SelectContent>
+                      </Select>
                     )}
                   </div>
 
                   <div className="md:col-span-3 space-y-1.5">
                     <Label>Action</Label>
                     <Select value={recAction} onValueChange={(val: any) => setRecAction(val)}>
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full max-w-full">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
