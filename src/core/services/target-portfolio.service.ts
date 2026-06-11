@@ -17,6 +17,8 @@ export interface TargetPortfolioEntry {
   objective: string | null;
   reason_for_investment: string | null;
   remarks: string | null;
+  transaction_type?: string | null;
+  frequency?: string | null;
   is_active: boolean;
   created_at: string;
 }
@@ -45,6 +47,8 @@ export interface TargetPortfolioCreate {
   objective?: string;
   reason_for_investment?: string;
   remarks?: string;
+  transaction_type?: string;
+  frequency?: string;
 }
 
 export class TargetPortfolioService {

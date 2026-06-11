@@ -370,6 +370,27 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
       setRecAmount("");
     }
 
+    if (entry.transaction_type) {
+      if (entry.transaction_type === "SINGLE_PAY") {
+        setRecTransactionType("LUMP_SUM");
+      } else if (entry.transaction_type === "RECURRING") {
+        setRecTransactionType("SIP");
+      } else {
+        setRecTransactionType(entry.transaction_type as any);
+      }
+    }
+
+    if (entry.frequency) {
+      const freq = entry.frequency;
+      if (freq === "MONTHLY" || freq === "QUARTERLY" || freq === "HALF_YEARLY") {
+        setRecFrequency(freq);
+      } else if (freq === "YEARLY" || freq === "ANNUAL" || freq === "ANNUALLY") {
+        setRecFrequency("YEARLY");
+      } else {
+        setRecFrequency("MONTHLY");
+      }
+    }
+
     try {
       const res = await ProductMasterService.list(recProductType as any, entry.product_name);
       const matchedProduct = res.items.find(item => item.id === entry.product_id) || res.items[0];

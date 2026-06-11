@@ -110,6 +110,20 @@ function formatIndianNumber(val: number | null | undefined): string {
   });
 }
 
+function formatTxType(type: string | null | undefined): string {
+  if (!type) return "—";
+  if (type === "SIP" || type === "STP") return type;
+  if (type === "LUMP_SUM") return "Lumpsum";
+  return type.replace("_", " ").toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function formatFrequency(freq: string | null | undefined): string {
+  if (!freq) return "—";
+  if (freq === "SIP" || freq === "STP") return freq;
+  if (freq === "LUMP_SUM") return "Lumpsum";
+  return freq.replace("_", " ").toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+}
+
 // ── Searchable Product Combobox ─────────────────────────────────────
 
 function ProductCombobox({
@@ -265,6 +279,27 @@ function AddEntryDialog({
   const [lifeObjective, setLifeObjective] = useState("");
   const [reason, setReason] = useState("");
   const [remarks, setRemarks] = useState("");
+  const [transactionType, setTransactionType] = useState("");
+  const [frequency, setFrequency] = useState("");
+
+  const handleTransactionTypeChange = (val: string) => {
+    setTransactionType(val);
+    if (val === "LUMP_SUM") {
+      if (assetClass === "health_insurance") {
+        setFrequency("ANNUAL");
+      } else {
+        setFrequency("LUMP_SUM");
+      }
+    } else if (val === "SINGLE_PAY") {
+      setFrequency("SINGLE_PAY");
+    } else if (val === "SIP" || val === "STP") {
+      setFrequency("MONTHLY");
+    } else if (val === "RECURRING") {
+      setFrequency("ANNUAL");
+    } else {
+      setFrequency("");
+    }
+  };
 
   const getSelectedSubAssetDetails = () => {
     if (!latestAllocation || !totalPortfolioSize || totalPortfolioSize <= 0) return null;
@@ -354,6 +389,30 @@ function AddEntryDialog({
   useEffect(() => {
     if (!open) return;
     setLoadingProducts(true);
+    setProductId("");
+    setPercentage("");
+    setSuggestedAmount("");
+    setProductSubtype("");
+    setNature("");
+    setObjective("");
+    setLifeObjective("");
+    setReason("");
+    setRemarks("");
+
+    if (assetClass === "health_insurance") {
+      setTransactionType("LUMP_SUM");
+      setFrequency("ANNUAL");
+    } else if (assetClass === "shares" || assetClass === "mf" || assetClass === "etf") {
+      setTransactionType("LUMP_SUM");
+      setFrequency("LUMP_SUM");
+    } else if (assetClass === "life_insurance") {
+      setTransactionType("SINGLE_PAY");
+      setFrequency("SINGLE_PAY");
+    } else {
+      setTransactionType("");
+      setFrequency("");
+    }
+
     TargetPortfolioService.listProducts(clientId, member.id, assetClass)
       .then((res) => setProducts(res.products))
       .catch(() => toast.error("Failed to load products."))
@@ -484,6 +543,8 @@ function AddEntryDialog({
         : objective || undefined,
       reason_for_investment: reason || undefined,
       remarks: remarks.trim() || undefined,
+      transaction_type: transactionType || undefined,
+      frequency: frequency || undefined,
     };
 
     setSubmitting(true);
@@ -508,20 +569,20 @@ function AddEntryDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle>
-            Add to {TABS.find((t) => t.key === assetClass)?.label} —{" "}
-            <span className="font-mono text-sm">{member.investor_code}</span>
+      <DialogContent className="max-w-md">
+        <DialogHeader className="pb-1">
+          <DialogTitle className="text-base">
+            Add to {TABS.find((t) => t.key === assetClass)?.label}{" "}
+            <span className="font-mono text-xs text-muted-foreground">— {member.investor_code}</span>
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 py-1">
+        <div className="space-y-3">
           {/* Product */}
-          <div className="space-y-1.5">
-            <Label>Product <span className="text-destructive">*</span></Label>
+          <div className="space-y-1">
+            <Label className="text-xs">Product <span className="text-destructive">*</span></Label>
             {!loadingProducts && products.length === 0 ? (
-              <p className="text-sm text-muted-foreground border rounded-md px-3 py-2">
+              <p className="text-xs text-muted-foreground border rounded-md px-3 py-2">
                 No active products in this basket.
               </p>
             ) : (
@@ -537,10 +598,10 @@ function AddEntryDialog({
 
           {/* Mutual Fund Type */}
           {assetClass === "mf" && (
-            <div className="space-y-1.5">
-              <Label>Type <span className="text-destructive">*</span></Label>
+            <div className="space-y-1">
+              <Label className="text-xs">Type <span className="text-destructive">*</span></Label>
               <Select value={productSubtype} onValueChange={setProductSubtype}>
-                <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select type" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Equity">Equity</SelectItem>
                   <SelectItem value="Debt">Debt</SelectItem>
@@ -552,10 +613,10 @@ function AddEntryDialog({
 
           {/* ETF Type */}
           {assetClass === "etf" && (
-            <div className="space-y-1.5">
-              <Label>Type <span className="text-destructive">*</span></Label>
+            <div className="space-y-1">
+              <Label className="text-xs">Type <span className="text-destructive">*</span></Label>
               <Select value={productSubtype} onValueChange={setProductSubtype}>
-                <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select type" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Gold">Gold</SelectItem>
                   <SelectItem value="Silver">Silver</SelectItem>
@@ -567,11 +628,11 @@ function AddEntryDialog({
 
           {/* Life Insurance Type & Nature */}
           {assetClass === "life_insurance" && (
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>Type <span className="text-destructive">*</span></Label>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <Label className="text-xs">Type <span className="text-destructive">*</span></Label>
                 <Select value={productSubtype} onValueChange={setProductSubtype}>
-                  <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select type" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Term">Term</SelectItem>
                     <SelectItem value="Endowment">Endowment</SelectItem>
@@ -582,10 +643,10 @@ function AddEntryDialog({
               </div>
 
               {productSubtype === "ULIP" && (
-                <div className="space-y-1.5">
-                  <Label>Nature <span className="text-destructive">*</span></Label>
+                <div className="space-y-1">
+                  <Label className="text-xs">Nature <span className="text-destructive">*</span></Label>
                   <Select value={nature} onValueChange={setNature}>
-                    <SelectTrigger><SelectValue placeholder="Select nature" /></SelectTrigger>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select nature" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Equity">Equity</SelectItem>
                       <SelectItem value="Debt">Debt</SelectItem>
@@ -597,12 +658,75 @@ function AddEntryDialog({
             </div>
           )}
 
+          {/* Transaction Type + Frequency in 2-col grid */}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <Label className="text-xs">Transaction Type <span className="text-destructive">*</span></Label>
+              <Select value={transactionType} onValueChange={handleTransactionTypeChange}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select type" /></SelectTrigger>
+                <SelectContent>
+                  {(assetClass === "shares" || assetClass === "mf" || assetClass === "etf") && (
+                    <>
+                      <SelectItem value="LUMP_SUM">Lumpsum</SelectItem>
+                      <SelectItem value="SIP">SIP</SelectItem>
+                      {assetClass === "mf" && <SelectItem value="STP">STP</SelectItem>}
+                    </>
+                  )}
+                  {assetClass === "health_insurance" && (
+                    <SelectItem value="LUMP_SUM">Lumpsum</SelectItem>
+                  )}
+                  {assetClass === "life_insurance" && (
+                    <>
+                      <SelectItem value="SINGLE_PAY">Single Pay</SelectItem>
+                      <SelectItem value="RECURRING">Recurring</SelectItem>
+                    </>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
 
-          {/* Percentage & Suggested Investment Amount in One Line */}
-          <div className="grid grid-cols-2 gap-3">
-            {/* Percentage */}
-            <div className="space-y-1.5">
-              <Label className={cn(hasPctError && "text-destructive")}>
+            <div className="space-y-1">
+              <Label className="text-xs">Frequency <span className="text-destructive">*</span></Label>
+              <Select value={frequency} onValueChange={setFrequency}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select frequency" /></SelectTrigger>
+                <SelectContent>
+                  {transactionType === "LUMP_SUM" && assetClass !== "health_insurance" && (
+                    <SelectItem value="LUMP_SUM">Lumpsum</SelectItem>
+                  )}
+                  {transactionType === "LUMP_SUM" && assetClass === "health_insurance" && (
+                    <>
+                      <SelectItem value="ANNUAL">Annual</SelectItem>
+                      <SelectItem value="BI_YEARLY">Bi-yearly</SelectItem>
+                    </>
+                  )}
+                  {transactionType === "SINGLE_PAY" && (
+                    <SelectItem value="SINGLE_PAY">Single Pay</SelectItem>
+                  )}
+                  {(transactionType === "SIP" || transactionType === "STP") && (
+                    <>
+                      <SelectItem value="WEEKLY">Weekly</SelectItem>
+                      <SelectItem value="MONTHLY">Monthly</SelectItem>
+                      <SelectItem value="QUARTERLY">Quarterly</SelectItem>
+                      <SelectItem value="HALF_YEARLY">Half-yearly</SelectItem>
+                    </>
+                  )}
+                  {transactionType === "RECURRING" && (
+                    <>
+                      <SelectItem value="MONTHLY">Monthly</SelectItem>
+                      <SelectItem value="QUARTERLY">Quarterly</SelectItem>
+                      <SelectItem value="HALF_YEARLY">Half-yearly</SelectItem>
+                      <SelectItem value="ANNUALLY">Annually</SelectItem>
+                    </>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* % Investment + Suggested Amount in 2-col grid */}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <Label className={cn("text-xs", hasPctError && "text-destructive")}>
                 {pctLabel} <span className="text-destructive">*</span>
               </Label>
               <Input
@@ -614,24 +738,24 @@ function AddEntryDialog({
                 onChange={(e) => handlePercentageChange(e.target.value)}
                 placeholder="e.g. 25"
                 className={cn(
-                  hasPctError && "border-destructive/60 focus-visible:ring-destructive/80 text-destructive bg-destructive/5 placeholder:text-destructive/40"
+                  "h-8 text-xs",
+                  hasPctError && "border-destructive/60 focus-visible:ring-destructive/80 text-destructive bg-destructive/5"
                 )}
               />
               <span className={cn(
-                "text-xs mt-1 block font-medium flex items-center gap-1",
+                "text-[10px] font-medium flex items-center gap-1",
                 hasPctError ? "text-destructive" : "text-muted-foreground"
               )}>
-                {hasPctError && <AlertTriangle className="h-3 w-3 shrink-0" />}
-                {hasPctError 
-                  ? `Exceeded by ${Math.abs(currentRemainingPct).toFixed(1)}%` 
+                {hasPctError && <AlertTriangle className="h-2.5 w-2.5 shrink-0" />}
+                {hasPctError
+                  ? `Exceeded by ${Math.abs(currentRemainingPct).toFixed(1)}%`
                   : `${currentRemainingPct.toFixed(1)}% remaining`}
               </span>
             </div>
 
-            {/* Suggested Investment Amount */}
-            <div className="space-y-1.5">
-              <Label className={cn(hasAmtError && "text-destructive")}>
-                Suggested Investment Amount <span className="text-destructive">*</span>
+            <div className="space-y-1">
+              <Label className={cn("text-xs", hasAmtError && "text-destructive")}>
+                Suggested Amt <span className="text-destructive">*</span>
               </Label>
               <Input
                 type="number"
@@ -640,30 +764,30 @@ function AddEntryDialog({
                 onChange={(e) => handleAmountChange(e.target.value)}
                 placeholder="e.g. 50000"
                 className={cn(
-                  hasAmtError && "border-destructive/60 focus-visible:ring-destructive/80 text-destructive bg-destructive/5 placeholder:text-destructive/40"
+                  "h-8 text-xs",
+                  hasAmtError && "border-destructive/60 focus-visible:ring-destructive/80 text-destructive bg-destructive/5"
                 )}
               />
               {selectedSubAsset && (
                 <span className={cn(
-                  "text-xs mt-1 block font-medium flex items-center gap-1",
+                  "text-[10px] font-medium flex items-center gap-1",
                   hasAmtError ? "text-destructive" : "text-muted-foreground"
                 )}>
-                  {hasAmtError && <AlertTriangle className="h-3 w-3 shrink-0" />}
-                  {hasAmtError 
-                    ? `Exceeded by ${formatIndianNumber(Math.abs(currentRemainingAmt))}` 
+                  {hasAmtError && <AlertTriangle className="h-2.5 w-2.5 shrink-0" />}
+                  {hasAmtError
+                    ? `Exceeded by ${formatIndianNumber(Math.abs(currentRemainingAmt))}`
                     : `${formatIndianNumber(currentRemainingAmt)} remaining`}
                 </span>
               )}
             </div>
           </div>
 
-
           {/* Objective (Shares / MF / ETF) */}
           {!isInsurance && (
-            <div className="space-y-1.5">
-              <Label>Investment Objective <span className="text-destructive">*</span></Label>
+            <div className="space-y-1">
+              <Label className="text-xs">Investment Objective <span className="text-destructive">*</span></Label>
               <Select value={objective} onValueChange={setObjective}>
-                <SelectTrigger><SelectValue placeholder="Select objective" /></SelectTrigger>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select objective" /></SelectTrigger>
                 <SelectContent>
                   {OBJECTIVES.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
                 </SelectContent>
@@ -673,20 +797,20 @@ function AddEntryDialog({
 
           {/* Objective + Reason (Life Insurance) — side by side */}
           {assetClass === "life_insurance" && (
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>Investment Objective <span className="text-destructive">*</span></Label>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <Label className="text-xs">Objective <span className="text-destructive">*</span></Label>
                 <Select value={lifeObjective} onValueChange={setLifeObjective}>
-                  <SelectTrigger><SelectValue placeholder="Select objective" /></SelectTrigger>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select objective" /></SelectTrigger>
                   <SelectContent>
                     {LIFE_OBJECTIVES.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1.5">
-                <Label>Reason for Investment <span className="text-destructive">*</span></Label>
+              <div className="space-y-1">
+                <Label className="text-xs">Reason <span className="text-destructive">*</span></Label>
                 <Select value={reason} onValueChange={setReason}>
-                  <SelectTrigger><SelectValue placeholder="Select reason" /></SelectTrigger>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select reason" /></SelectTrigger>
                   <SelectContent>
                     {LIFE_REASONS.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
                   </SelectContent>
@@ -697,17 +821,17 @@ function AddEntryDialog({
 
           {/* Objective (Health Insurance — read-only) */}
           {assetClass === "health_insurance" && (
-            <div className="space-y-1.5">
-              <Label>Objective</Label>
-              <Input value="Health Cover" readOnly className="bg-muted text-muted-foreground" />
+            <div className="space-y-1">
+              <Label className="text-xs">Objective</Label>
+              <Input value="Health Cover" readOnly className="h-8 text-xs bg-muted text-muted-foreground" />
             </div>
           )}
 
           {/* Remarks */}
-          <div className="space-y-1.5">
-            <Label className="flex items-center justify-between">
+          <div className="space-y-1">
+            <Label className="text-xs flex items-center justify-between">
               Remarks on Suitability
-              <span className={cn("text-xs font-normal", remarks.length > 150 ? "text-destructive" : "text-muted-foreground")}>
+              <span className={cn("font-normal", remarks.length > 150 ? "text-destructive" : "text-muted-foreground")}>
                 {remarks.length}/150
               </span>
             </Label>
@@ -716,14 +840,15 @@ function AddEntryDialog({
               onChange={(e) => setRemarks(e.target.value.slice(0, 150))}
               placeholder="Optional remarks"
               maxLength={150}
+              className="h-8 text-xs"
             />
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSubmit} disabled={submitting || loadingProducts}>
-            {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+        <DialogFooter className="pt-2">
+          <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
+          <Button size="sm" onClick={handleSubmit} disabled={submitting || loadingProducts}>
+            {submitting && <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />}
             Add
           </Button>
         </DialogFooter>
@@ -871,42 +996,43 @@ function AssetClassTab({
       </div>
 
       {/* Desktop table */}
-      <Card className="hidden md:block">
+      <Card className="hidden md:block overflow-x-auto">
         <CardContent className="p-0">
-          <Table>
+          <Table className="text-xs">
             <TableHeader>
               <TableRow>
-                <TableHead>Product</TableHead>
-                <TableHead>{pctColLabel}</TableHead>
-                <TableHead>Suggested Amount</TableHead>
-                <TableHead>{objectiveColLabel}</TableHead>
-                <TableHead>Suitability</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Action</TableHead>
+                <TableHead className="min-w-[140px]">Product</TableHead>
+                <TableHead className="w-[80px]">{pctColLabel}</TableHead>
+                <TableHead className="w-[110px]">Suggested Amt</TableHead>
+                <TableHead className="w-[100px]">Tx / Freq</TableHead>
+                <TableHead className="w-[100px]">{objectiveColLabel}</TableHead>
+                <TableHead className="w-[110px]">Suitability</TableHead>
+                <TableHead className="w-[68px]">Status</TableHead>
+                <TableHead className="w-[48px] text-right">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 Array.from({ length: 2 }).map((_, i) => (
                   <TableRow key={i}>
-                    {Array.from({ length: 7 }).map((_, j) => (
-                      <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
+                    {Array.from({ length: 8 }).map((_, j) => (
+                      <TableCell key={j}><Skeleton className="h-3 w-full" /></TableCell>
                     ))}
                   </TableRow>
                 ))
               ) : entries.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                     No products added yet.
                   </TableCell>
                 </TableRow>
               ) : (
                 entries.map((e) => (
                   <TableRow key={e.id} className={!e.is_active ? "opacity-50" : ""}>
-                    <TableCell className="font-medium max-w-[200px]">
-                      <span className="line-clamp-2">{e.product_name}</span>
+                    <TableCell className="font-medium">
+                      <span className="line-clamp-2 leading-snug">{e.product_name}</span>
                       {e.product_subtype && (
-                        <span className="block mt-0.5 text-xs text-muted-foreground font-normal">
+                        <span className="block mt-0.5 text-[10px] text-muted-foreground font-normal">
                           {e.product_subtype}{e.nature ? ` — ${e.nature}` : ""}
                         </span>
                       )}
@@ -919,38 +1045,42 @@ function AssetClassTab({
                         {e.percentage.toFixed(1)}%
                       </span>
                     </TableCell>
-                    <TableCell>
-                      <span className="font-semibold text-sm">
-                        {formatIndianNumber(e.suggested_investment_amount)}
-                      </span>
+                    <TableCell className="font-semibold">
+                      {formatIndianNumber(e.suggested_investment_amount)}
                     </TableCell>
-                    <TableCell className="text-sm">
+                    <TableCell>
+                      <span className="font-semibold">{formatTxType(e.transaction_type)}</span>
+                      {e.frequency && e.frequency !== e.transaction_type && (
+                        <span className="block text-[10px] text-muted-foreground">{formatFrequency(e.frequency)}</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
                       {assetClass === "life_insurance" ? (
                         <div>
                           <span>{e.objective || "—"}</span>
                           {e.reason_for_investment && (
-                            <span className="block text-xs text-muted-foreground">{e.reason_for_investment}</span>
+                            <span className="block text-[10px] text-muted-foreground">{e.reason_for_investment}</span>
                           )}
                         </div>
                       ) : (
                         e.objective || "—"
                       )}
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
+                    <TableCell className="text-muted-foreground">
                       <SuitabilityCell value={e.remarks} />
                     </TableCell>
                     <TableCell>
-                      <Badge variant={e.is_active ? "default" : "secondary"}>
+                      <Badge variant={e.is_active ? "default" : "secondary"} className="text-[10px] px-1.5 py-0">
                         {e.is_active ? "Active" : "Inactive"}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8" disabled={togglingId === e.id}>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" disabled={togglingId === e.id}>
                             {togglingId === e.id
-                              ? <Loader2 className="h-4 w-4 animate-spin" />
-                              : <MoreHorizontal className="h-4 w-4" />}
+                              ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              : <MoreHorizontal className="h-3.5 w-3.5" />}
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
@@ -1006,6 +1136,14 @@ function AssetClassTab({
                   <div>
                     <span className="text-muted-foreground">Suggested Amount</span>
                     <p className="font-semibold mt-0.5">{formatIndianNumber(e.suggested_investment_amount)}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Transaction Type</span>
+                    <p className="font-semibold mt-0.5">{formatTxType(e.transaction_type)}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Frequency</span>
+                    <p className="font-semibold mt-0.5">{formatFrequency(e.frequency)}</p>
                   </div>
                   <div className="col-span-2">
                     <span className="text-muted-foreground">{objectiveColLabel}</span>
