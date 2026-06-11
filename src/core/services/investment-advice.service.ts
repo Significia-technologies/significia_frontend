@@ -10,7 +10,7 @@ export interface InvestmentAdviceRecommendation {
   isin_code_scheme_code_uin: string;
   action: "BUY" | "HOLD" | "SELL" | "REVIEW";
   amount_units: string;
-  transaction_type?: 'SIP' | 'STP' | 'SWP' | 'LUMP_SUM' | 'HOLDING' | 'TEXT_ONLY';
+  transaction_type?: 'SIP' | 'STP' | 'SWP' | 'LUMP_SUM' | 'HOLDING' | 'TEXT_ONLY' | 'SWITCH_IN' | 'SWITCH_OUT' | 'TRANSFER_IN' | 'TRANSFER_OUT';
   frequency?: 'MONTHLY' | 'QUARTERLY' | 'HALF_YEARLY' | 'YEARLY' | null;
   amount?: number | null;
   custom_instruction?: string | null;

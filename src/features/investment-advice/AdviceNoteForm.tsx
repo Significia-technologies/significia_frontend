@@ -92,6 +92,18 @@ export const formatAmountUnits = (rec: Partial<InvestmentAdviceRecommendation>, 
   if (ttype === 'LUMP_SUM') {
     return `Rs. ${formattedAmount} lump sum`;
   }
+  if (ttype === 'SWITCH_IN') {
+    return `Rs. ${formattedAmount} Switch In`;
+  }
+  if (ttype === 'SWITCH_OUT') {
+    return `Rs. ${formattedAmount} Switch Out`;
+  }
+  if (ttype === 'TRANSFER_IN') {
+    return `Rs. ${formattedAmount} Transfer In`;
+  }
+  if (ttype === 'TRANSFER_OUT') {
+    return `Rs. ${formattedAmount} Transfer Out`;
+  }
 
   const isLifeInsurance = productType?.toLowerCase() === 'life-insurance';
   const freq = rec.frequency;
@@ -190,12 +202,24 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
   const [recProductName, setRecProductName] = useState<string>("");
   const [recIsin, setRecIsin] = useState<string>("");
   const [recAction, setRecAction] = useState<"BUY" | "HOLD" | "SELL" | "REVIEW">("BUY");
-  const [recTransactionType, setRecTransactionType] = useState<'SIP' | 'STP' | 'SWP' | 'LUMP_SUM' | 'HOLDING' | 'TEXT_ONLY'>("SIP");
+  const [recTransactionType, setRecTransactionType] = useState<'SIP' | 'STP' | 'SWP' | 'LUMP_SUM' | 'HOLDING' | 'TEXT_ONLY' | 'SWITCH_IN' | 'SWITCH_OUT' | 'TRANSFER_IN' | 'TRANSFER_OUT'>("SIP");
   const [recFrequency, setRecFrequency] = useState<'MONTHLY' | 'QUARTERLY' | 'HALF_YEARLY' | 'YEARLY'>("MONTHLY");
   const [recAmount, setRecAmount] = useState<string>("");
   const [recCustomInstruction, setRecCustomInstruction] = useState<string>("");
   const [recPriceNav, setRecPriceNav] = useState<string>("");
   const [recRationale, setRecRationale] = useState<string>("");
+
+  const selectedEntry = targetPortfolioEntries.find(e => e.id === selectedTargetPortfolioEntryId);
+  let mappedType: 'SIP' | 'STP' | 'SWP' | 'LUMP_SUM' | 'HOLDING' | 'TEXT_ONLY' | 'SWITCH_IN' | 'SWITCH_OUT' | 'TRANSFER_IN' | 'TRANSFER_OUT' | null = null;
+  if (selectedEntry?.transaction_type) {
+    if (selectedEntry.transaction_type === "SINGLE_PAY") {
+      mappedType = "LUMP_SUM";
+    } else if (selectedEntry.transaction_type === "RECURRING") {
+      mappedType = "SIP";
+    } else {
+      mappedType = selectedEntry.transaction_type as any;
+    }
+  }
 
   // Disclosures Defaults
   const [conflictText, setConflictText] = useState<string>(
@@ -438,7 +462,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
 
     const ttype = recTransactionType;
     const freq = ['SIP', 'STP', 'SWP'].includes(ttype) ? recFrequency : null;
-    const amountVal = ['SIP', 'STP', 'SWP', 'LUMP_SUM'].includes(ttype) ? (recAmount ? parseFloat(recAmount) : null) : null;
+    const amountVal = ['SIP', 'STP', 'SWP', 'LUMP_SUM', 'SWITCH_IN', 'SWITCH_OUT', 'TRANSFER_IN', 'TRANSFER_OUT'].includes(ttype) ? (recAmount ? parseFloat(recAmount) : null) : null;
     const customInst = ttype === 'TEXT_ONLY' ? recCustomInstruction : null;
 
     if (amountVal !== null && !isNaN(amountVal)) {
@@ -677,7 +701,6 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
     return entry.asset_class === mapping[recProductType];
   });
 
-  const selectedEntry = targetPortfolioEntries.find(e => e.id === selectedTargetPortfolioEntryId);
   const selectedSuggestedAmount = selectedEntry?.suggested_investment_amount ?? null;
   const enteredRecAmount = parseFloat(recAmount) || 0;
   const isPriceExceeded = selectedSuggestedAmount !== null && enteredRecAmount > selectedSuggestedAmount;
@@ -1340,12 +1363,49 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="SIP">SIP</SelectItem>
-                        <SelectItem value="STP">STP</SelectItem>
-                        <SelectItem value="SWP">SWP</SelectItem>
-                        <SelectItem value="LUMP_SUM">Lump Sum</SelectItem>
-                        <SelectItem value="HOLDING">Hold</SelectItem>
-                        <SelectItem value="TEXT_ONLY">Custom Note</SelectItem>
+                        {recProductType === "mutual-funds" ? (
+                          // Mutual Fund options: show mapped + SWP + Hold + Custom Note + Switch In/Out + Transfer In/Out
+                          selectedEntry ? (
+                            <>
+                              {mappedType === "SIP" && <SelectItem value="SIP">SIP</SelectItem>}
+                              {mappedType === "STP" && <SelectItem value="STP">STP</SelectItem>}
+                              {mappedType === "LUMP_SUM" && <SelectItem value="LUMP_SUM">Lump Sum</SelectItem>}
+                              <SelectItem value="SWP">SWP</SelectItem>
+                              <SelectItem value="HOLDING">Hold</SelectItem>
+                              <SelectItem value="TEXT_ONLY">Custom Note</SelectItem>
+                              <SelectItem value="SWITCH_IN">Switch In</SelectItem>
+                              <SelectItem value="SWITCH_OUT">Switch Out</SelectItem>
+                              <SelectItem value="TRANSFER_IN">Transfer In</SelectItem>
+                              <SelectItem value="TRANSFER_OUT">Transfer Out</SelectItem>
+                            </>
+                          ) : (
+                            <>
+                              <SelectItem value="SIP">SIP</SelectItem>
+                              <SelectItem value="STP">STP</SelectItem>
+                              <SelectItem value="SWP">SWP</SelectItem>
+                              <SelectItem value="LUMP_SUM">Lump Sum</SelectItem>
+                              <SelectItem value="HOLDING">Hold</SelectItem>
+                              <SelectItem value="TEXT_ONLY">Custom Note</SelectItem>
+                              <SelectItem value="SWITCH_IN">Switch In</SelectItem>
+                              <SelectItem value="SWITCH_OUT">Switch Out</SelectItem>
+                              <SelectItem value="TRANSFER_IN">Transfer In</SelectItem>
+                              <SelectItem value="TRANSFER_OUT">Transfer Out</SelectItem>
+                            </>
+                          )
+                        ) : (
+                          // Other products: show ONLY mappedType (when selected), or standard options (when not selected)
+                          selectedEntry ? (
+                            <>
+                              {mappedType === "SIP" && <SelectItem value="SIP">SIP</SelectItem>}
+                              {mappedType === "LUMP_SUM" && <SelectItem value="LUMP_SUM">Lump Sum</SelectItem>}
+                            </>
+                          ) : (
+                            <>
+                              {recProductType !== "health-insurance" && <SelectItem value="SIP">SIP</SelectItem>}
+                              <SelectItem value="LUMP_SUM">Lump Sum</SelectItem>
+                            </>
+                          )
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -1377,7 +1437,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                       {recTransactionType === 'HOLDING' ? 'Amount / Description' : recTransactionType === 'TEXT_ONLY' ? 'Custom Note Text' : 'Amount'}
                     </Label>
                     
-                    {['SIP', 'STP', 'SWP', 'LUMP_SUM'].includes(recTransactionType) && (
+                    {['SIP', 'STP', 'SWP', 'LUMP_SUM', 'SWITCH_IN', 'SWITCH_OUT', 'TRANSFER_IN', 'TRANSFER_OUT'].includes(recTransactionType) && (
                       <div className="relative animate-in fade-in duration-200">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground">Rs.</span>
                         <Input 
@@ -1390,7 +1450,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                       </div>
                     )}
 
-                    {['SIP', 'STP', 'SWP', 'LUMP_SUM'].includes(recTransactionType) && isPriceExceeded && selectedSuggestedAmount !== null && (
+                    {['SIP', 'STP', 'SWP', 'LUMP_SUM', 'SWITCH_IN', 'SWITCH_OUT', 'TRANSFER_IN', 'TRANSFER_OUT'].includes(recTransactionType) && isPriceExceeded && selectedSuggestedAmount !== null && (
                       <p className="text-xs text-destructive mt-1.5 flex items-center gap-1.5 animate-in fade-in duration-200">
                         <AlertTriangle className="w-3.5 h-3.5 shrink-0" /> Exceeds target portfolio suggested amount of Rs. {selectedSuggestedAmount.toLocaleString('en-IN')}
                       </p>
