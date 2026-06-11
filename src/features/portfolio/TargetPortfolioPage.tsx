@@ -239,7 +239,7 @@ function ProductCombobox({
 
 function AddEntryDialog({
   open, onClose, onAdded,
-  clientId, member, assetClass, currentTotalPct, totalPortfolioSize, latestAllocation,
+  clientId, member, assetClass, currentTotalPct, totalPortfolioSize, latestAllocation, existingEntries,
 }: {
   open: boolean;
   onClose: () => void;
@@ -250,6 +250,7 @@ function AddEntryDialog({
   currentTotalPct: number;
   totalPortfolioSize: number;
   latestAllocation: any | null;
+  existingEntries: TargetPortfolioEntry[];
 }) {
   const [products, setProducts] = useState<AvailableProduct[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
@@ -273,14 +274,14 @@ function AddEntryDialog({
       key = "stocks_percentage";
     } else if (assetClass === "mf") {
       if (productSubtype === "Equity") key = "mutual_fund_equity_percentage";
-      if (productSubtype === "Debt") key = "mutual_fund_debt_percentage";
+      if (productSubtype === "Debt" || productSubtype === "Hybrid") key = "mutual_fund_debt_percentage";
     } else if (assetClass === "etf") {
       if (productSubtype === "Gold") key = "gold_etf_percentage";
       if (productSubtype === "Silver") key = "silver_etf_percentage";
       if (productSubtype === "Other ETF") key = "etf_commodity_percentage";
     } else if (assetClass === "life_insurance" && productSubtype === "ULIP") {
       if (nature === "Equity") key = "ulip_equity_percentage";
-      if (nature === "Debt") key = "ulip_debt_percentage";
+      if (nature === "Debt" || nature === "Hybrid") key = "ulip_debt_percentage";
     }
 
     if (!key) return null;
@@ -309,6 +310,40 @@ function AddEntryDialog({
   const enteredAmount = parseFloat(suggestedAmount) || 0;
   const isOverTarget = selectedSubAsset && enteredAmount > selectedSubAsset.targetAmt;
 
+  const handleAmountChange = (val: string) => {
+    setSuggestedAmount(val);
+    const amt = parseFloat(val);
+    if (!isNaN(amt) && amt >= 0 && selectedSubAsset && selectedSubAsset.targetAmt > 0) {
+      const computedPct = (amt / selectedSubAsset.targetAmt) * 100;
+      setPercentage((Math.round(computedPct * 100) / 100).toString());
+    } else if (!val) {
+      setPercentage("");
+    }
+  };
+
+  const handlePercentageChange = (val: string) => {
+    setPercentage(val);
+    const pctVal = parseFloat(val);
+    if (!isNaN(pctVal) && pctVal >= 0 && selectedSubAsset && selectedSubAsset.targetAmt > 0) {
+      const computedAmt = (pctVal / 100) * selectedSubAsset.targetAmt;
+      setSuggestedAmount((Math.round(computedAmt * 100) / 100).toString());
+    } else if (!val) {
+      setSuggestedAmount("");
+    }
+  };
+
+  // Recalculate amount if sub-asset category changes and percentage is already filled
+  useEffect(() => {
+    if (percentage && selectedSubAsset && selectedSubAsset.targetAmt > 0) {
+      const pctVal = parseFloat(percentage);
+      if (!isNaN(pctVal)) {
+        const computedAmt = (pctVal / 100) * selectedSubAsset.targetAmt;
+        setSuggestedAmount((Math.round(computedAmt * 100) / 100).toString());
+      }
+    }
+  }, [productSubtype, nature, latestAllocation, totalPortfolioSize]);
+
+
 
   useEffect(() => {
     if (productSubtype !== "ULIP") {
@@ -326,7 +361,66 @@ function AddEntryDialog({
   }, [open, clientId, member.id, assetClass]);
 
   const pct = parseFloat(percentage) || 0;
-  const wouldExceed = currentTotalPct + pct > 100;
+
+  // Sum of percentages of existing active entries matching the selected sub-asset
+  const activeSubAssetPct = existingEntries
+    .filter((e) => {
+      if (!e.is_active) return false;
+      if (assetClass === "shares") {
+        return e.asset_class === "shares";
+      } else if (assetClass === "mf") {
+        const isDebtGroup = productSubtype === "Debt" || productSubtype === "Hybrid";
+        if (isDebtGroup) {
+          return e.asset_class === "mf" && (e.product_subtype === "Debt" || e.product_subtype === "Hybrid");
+        }
+        return e.asset_class === "mf" && e.product_subtype === productSubtype;
+      } else if (assetClass === "etf") {
+        return e.asset_class === "etf" && e.product_subtype === productSubtype;
+      } else if (assetClass === "life_insurance") {
+        if (productSubtype === "ULIP") {
+          const isDebtGroup = nature === "Debt" || nature === "Hybrid";
+          if (isDebtGroup) {
+            return e.asset_class === "life_insurance" && e.product_subtype === "ULIP" && (e.nature === "Debt" || e.nature === "Hybrid");
+          }
+          return e.asset_class === "life_insurance" && e.product_subtype === "ULIP" && e.nature === nature;
+        } else {
+          return e.asset_class === "life_insurance" && e.product_subtype === productSubtype;
+        }
+      } else if (assetClass === "health_insurance") {
+        return e.asset_class === "health_insurance";
+      }
+      return false;
+    })
+    .reduce((sum, e) => sum + e.percentage, 0);
+
+  const getSubAssetName = () => {
+    if (assetClass === "shares") return "Stocks / Shares";
+    if (assetClass === "mf") {
+      if (productSubtype === "Debt" || productSubtype === "Hybrid") return "Mutual Fund (Debt/Hybrid)";
+      return `Mutual Fund (${productSubtype || "Select type"})`;
+    }
+    if (assetClass === "etf") return `ETF (${productSubtype || "Select type"})`;
+    if (assetClass === "life_insurance") {
+      if (productSubtype === "ULIP") {
+        if (nature === "Debt" || nature === "Hybrid") return "ULIP (Debt/Hybrid)";
+        return `ULIP (${nature || "Select nature"})`;
+      }
+      return `Life Insurance (${productSubtype || "Select type"})`;
+    }
+    if (assetClass === "health_insurance") return "Health Insurance";
+    return "Sub-asset";
+  };
+
+  const wouldExceedSubAsset = activeSubAssetPct + pct > 100.001;
+
+  const remainingPctVal = 100 - activeSubAssetPct;
+  const remainingAmtVal = selectedSubAsset ? (selectedSubAsset.targetAmt - (activeSubAssetPct / 100) * selectedSubAsset.targetAmt) : 0;
+
+  const currentRemainingPct = remainingPctVal - pct;
+  const currentRemainingAmt = remainingAmtVal - enteredAmount;
+
+  const hasPctError = pct > 100 || currentRemainingPct < -0.001;
+  const hasAmtError = selectedSubAsset ? (currentRemainingAmt < -0.001) : false;
 
   const productLabel = (p: AvailableProduct) => {
     if (assetClass === "shares" || assetClass === "etf")
@@ -369,6 +463,12 @@ function AddEntryDialog({
       return toast.error("Select an investment objective.");
     if (assetClass === "life_insurance" && !reason)
       return toast.error("Select reason for investment.");
+
+    if (activeSubAssetPct + pct > 100.001) {
+      return toast.error(
+        `Total allocation for ${getSubAssetName()} cannot exceed 100% (currently at ${activeSubAssetPct.toFixed(1)}%).`
+      );
+    }
 
     const payload: TargetPortfolioCreate = {
       asset_class: assetClass,
@@ -497,57 +597,62 @@ function AddEntryDialog({
             </div>
           )}
 
-          {selectedSubAsset && (
-            <div className="p-3 rounded-md bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900/30 text-green-800 dark:text-green-300 text-xs space-y-1">
-              <div className="font-semibold flex items-center justify-between">
-                <span>Guideline Target for {selectedSubAsset.label}:</span>
-                <span className="bg-green-100 dark:bg-green-900/40 px-1.5 py-0.5 rounded font-mono font-bold">
-                  {selectedSubAsset.pct.toFixed(1)}%
-                </span>
-              </div>
-              <p>
-                Recommended target amount: <span className="font-bold font-mono">{formatIndianNumber(selectedSubAsset.targetAmt)}</span>
-              </p>
-            </div>
-          )}
 
           {/* Percentage & Suggested Investment Amount in One Line */}
           <div className="grid grid-cols-2 gap-3">
             {/* Percentage */}
             <div className="space-y-1.5">
-              <Label>{pctLabel} <span className="text-destructive">*</span></Label>
+              <Label className={cn(hasPctError && "text-destructive")}>
+                {pctLabel} <span className="text-destructive">*</span>
+              </Label>
               <Input
                 type="number"
                 min="0"
                 max="100"
                 step="0.01"
                 value={percentage}
-                onChange={(e) => setPercentage(e.target.value)}
+                onChange={(e) => handlePercentageChange(e.target.value)}
                 placeholder="e.g. 25"
+                className={cn(
+                  hasPctError && "border-destructive/60 focus-visible:ring-destructive/80 text-destructive bg-destructive/5 placeholder:text-destructive/40"
+                )}
               />
-              {wouldExceed && pct > 0 && (
-                <p className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
-                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                  Total will exceed 100% (current: {currentTotalPct.toFixed(1)}%)
-                </p>
-              )}
+              <span className={cn(
+                "text-xs mt-1 block font-medium flex items-center gap-1",
+                hasPctError ? "text-destructive" : "text-muted-foreground"
+              )}>
+                {hasPctError && <AlertTriangle className="h-3 w-3 shrink-0" />}
+                {hasPctError 
+                  ? `Exceeded by ${Math.abs(currentRemainingPct).toFixed(1)}%` 
+                  : `${currentRemainingPct.toFixed(1)}% remaining`}
+              </span>
             </div>
 
             {/* Suggested Investment Amount */}
             <div className="space-y-1.5">
-              <Label>Suggested Investment Amount <span className="text-destructive">*</span></Label>
+              <Label className={cn(hasAmtError && "text-destructive")}>
+                Suggested Investment Amount <span className="text-destructive">*</span>
+              </Label>
               <Input
                 type="number"
                 min="0"
                 value={suggestedAmount}
-                onChange={(e) => setSuggestedAmount(e.target.value)}
+                onChange={(e) => handleAmountChange(e.target.value)}
                 placeholder="e.g. 50000"
+                className={cn(
+                  hasAmtError && "border-destructive/60 focus-visible:ring-destructive/80 text-destructive bg-destructive/5 placeholder:text-destructive/40"
+                )}
               />
-              {isOverTarget && (
-                <p className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 mt-1">
-                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                  Exceeds recommended target amount ({formatIndianNumber(selectedSubAsset.targetAmt)})
-                </p>
+              {selectedSubAsset && (
+                <span className={cn(
+                  "text-xs mt-1 block font-medium flex items-center gap-1",
+                  hasAmtError ? "text-destructive" : "text-muted-foreground"
+                )}>
+                  {hasAmtError && <AlertTriangle className="h-3 w-3 shrink-0" />}
+                  {hasAmtError 
+                    ? `Exceeded by ${formatIndianNumber(Math.abs(currentRemainingAmt))}` 
+                    : `${formatIndianNumber(currentRemainingAmt)} remaining`}
+                </span>
               )}
             </div>
           </div>
@@ -660,6 +765,65 @@ function AssetClassTab({
   useEffect(() => { fetch(); }, [fetch]);
 
   const handleToggle = async (entry: TargetPortfolioEntry) => {
+    if (!entry.is_active) {
+      let subAssetName = "";
+      let matchingEntries = entries.filter((e) => e.is_active && e.id !== entry.id);
+
+      if (assetClass === "shares") {
+        subAssetName = "Stocks / Shares";
+        matchingEntries = matchingEntries.filter((e) => e.asset_class === "shares");
+      } else if (assetClass === "mf") {
+        const isDebtGroup = entry.product_subtype === "Debt" || entry.product_subtype === "Hybrid";
+        if (isDebtGroup) {
+          subAssetName = "Mutual Fund (Debt/Hybrid)";
+          matchingEntries = matchingEntries.filter(
+            (e) => e.asset_class === "mf" && (e.product_subtype === "Debt" || e.product_subtype === "Hybrid")
+          );
+        } else {
+          subAssetName = `Mutual Fund (${entry.product_subtype})`;
+          matchingEntries = matchingEntries.filter(
+            (e) => e.asset_class === "mf" && e.product_subtype === entry.product_subtype
+          );
+        }
+      } else if (assetClass === "etf") {
+        subAssetName = `ETF (${entry.product_subtype})`;
+        matchingEntries = matchingEntries.filter(
+          (e) => e.asset_class === "etf" && e.product_subtype === entry.product_subtype
+        );
+      } else if (assetClass === "life_insurance") {
+        if (entry.product_subtype === "ULIP") {
+          const isDebtGroup = entry.nature === "Debt" || entry.nature === "Hybrid";
+          if (isDebtGroup) {
+            subAssetName = "ULIP (Debt/Hybrid)";
+            matchingEntries = matchingEntries.filter(
+              (e) => e.asset_class === "life_insurance" && e.product_subtype === "ULIP" && (e.nature === "Debt" || e.nature === "Hybrid")
+            );
+          } else {
+            subAssetName = `ULIP (${entry.nature})`;
+            matchingEntries = matchingEntries.filter(
+              (e) => e.asset_class === "life_insurance" && e.product_subtype === "ULIP" && e.nature === entry.nature
+            );
+          }
+        } else {
+          subAssetName = `Life Insurance (${entry.product_subtype})`;
+          matchingEntries = matchingEntries.filter(
+            (e) => e.asset_class === "life_insurance" && e.product_subtype === entry.product_subtype
+          );
+        }
+      } else if (assetClass === "health_insurance") {
+        subAssetName = "Health Insurance";
+        matchingEntries = matchingEntries.filter((e) => e.asset_class === "health_insurance");
+      }
+
+      const existingPct = matchingEntries.reduce((sum, e) => sum + e.percentage, 0);
+      if (existingPct + entry.percentage > 100.001) {
+        toast.error(
+          `Cannot activate ${entry.product_name} because total allocation for ${subAssetName} would exceed 100% (currently at ${existingPct.toFixed(1)}%).`
+        );
+        return;
+      }
+    }
+
     setTogglingId(entry.id);
     try {
       await TargetPortfolioService.toggleEntry(clientId, member.id, entry.id);
@@ -901,6 +1065,7 @@ function AssetClassTab({
           currentTotalPct={totalPct}
           totalPortfolioSize={totalPortfolioSize}
           latestAllocation={latestAllocation}
+          existingEntries={entries}
         />
       )}
     </div>
