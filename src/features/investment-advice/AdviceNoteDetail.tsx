@@ -340,6 +340,7 @@ export function AdviceNoteDetail({ noteId, onBack }: AdviceNoteDetailProps) {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1">
                   <GridRow label="Advice Suitable?" value={note.suitability_assessment} />
                   <GridRow label="Suitability Basis" value={note.suitability_basis} />
+                  <GridRow label="Investor Advice" value={note.investor_advice} />
                 </div>
                 <div className="p-4 bg-muted/30 rounded-xl space-y-3">
                   <div>

@@ -160,6 +160,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
   const [suitabilityBasis, setSuitabilityBasis] = useState<string>(
     "Financial Goals, Risk profile, income, liabilities, Asset Allocation, Target Portfolio, existing portfolio and investment horizon reviewed"
   );
+  const [investorAdvice, setInvestorAdvice] = useState<string>("");
 
   const equitySubSum = (parseFloat(subStocks) || 0) + 
                        (parseFloat(subMfEquity) || 0) + 
@@ -284,6 +285,8 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
           setSubGoldEtf(String(latest.gold_etf_percentage ?? 0));
           setSubSilverEtf(String(latest.silver_etf_percentage ?? 0));
           setSubEtfCommodity(String(latest.etf_commodity_percentage ?? 0));
+          
+          setInvestorAdvice(latest.tier_recommendation || "");
         }
       } catch (error) {
         console.error("Failed to fetch client latest asset allocation", error);
@@ -606,6 +609,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
           ? "YES — Advice is suitable to the client's risk profile, financial goals and overall financial situation"
           : "NO",
         suitability_basis: suitabilityBasis,
+        investor_advice: investorAdvice,
         conflict_of_interest_text: conflictText,
         no_execution_text: noExecutionText,
         ai_usage_text: aiUsageText,
@@ -867,6 +871,17 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                     className="min-h-16"
                     value={suitabilityBasis}
                     onChange={(e) => setSuitabilityBasis(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="investor_advice">Investor Advice</Label>
+                  <Textarea 
+                    id="investor_advice"
+                    className="min-h-16"
+                    value={investorAdvice}
+                    onChange={(e) => setInvestorAdvice(e.target.value)}
+                    placeholder="Enter investor advice..."
                   />
                 </div>
 

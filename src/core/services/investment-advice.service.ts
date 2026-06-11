@@ -42,6 +42,7 @@ export interface InvestmentAdviceNote {
   financial_analysis_profile_id?: string | null;
   suitability_assessment?: string | null;
   suitability_basis?: string | null;
+  investor_advice?: string | null;
   conflict_of_interest_text?: string | null;
   no_execution_text?: string | null;
   ai_usage_text?: string | null;
