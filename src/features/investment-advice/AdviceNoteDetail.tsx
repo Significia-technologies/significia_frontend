@@ -251,6 +251,7 @@ export function AdviceNoteDetail({ noteId, onBack }: AdviceNoteDetailProps) {
             <span>Export PDF</span>
           </Button>
 
+          {/*
           <Button 
             variant="outline" 
             size="sm"
@@ -265,6 +266,7 @@ export function AdviceNoteDetail({ noteId, onBack }: AdviceNoteDetailProps) {
             )}
             <span>Export DOCX</span>
           </Button>
+          */}
 
           {!note.is_locked && (
             <Button 

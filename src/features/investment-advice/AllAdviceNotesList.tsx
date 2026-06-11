@@ -239,16 +239,6 @@ export function AllAdviceNotesList({ onCreateNew, onSelectNote }: AllAdviceNotes
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="h-8 gap-1.5 hover:bg-primary/10 text-primary"
-                              onClick={() => onSelectNote(note.id)}
-                            >
-                              <Eye className="w-4 h-4" />
-                              View
-                            </Button>
-
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10">
@@ -256,6 +246,13 @@ export function AllAdviceNotesList({ onCreateNew, onSelectNote }: AllAdviceNotes
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-48 border-primary/20 bg-background/95 backdrop-blur-md">
+                                <DropdownMenuItem 
+                                  className="gap-2 cursor-pointer" 
+                                  onClick={() => onSelectNote(note.id)}
+                                >
+                                  <Eye className="w-4 h-4 text-primary" />
+                                  View
+                                </DropdownMenuItem>
                                 <DropdownMenuItem 
                                   className="gap-2 cursor-pointer" 
                                   onClick={() => handleDownload(note.id, note.advice_note_no, 'pdf')}
@@ -268,6 +265,7 @@ export function AllAdviceNotesList({ onCreateNew, onSelectNote }: AllAdviceNotes
                                   )}
                                   Download PDF
                                 </DropdownMenuItem>
+                                {/*
                                 <DropdownMenuItem 
                                   className="gap-2 cursor-pointer" 
                                   onClick={() => handleDownload(note.id, note.advice_note_no, 'docx')}
@@ -280,6 +278,7 @@ export function AllAdviceNotesList({ onCreateNew, onSelectNote }: AllAdviceNotes
                                   )}
                                   Download Word (.docx)
                                 </DropdownMenuItem>
+                                */}
                                 
                                 {!isLocked && (
                                   <>
