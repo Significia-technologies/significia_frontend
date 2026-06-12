@@ -1237,7 +1237,7 @@ function ExportReportDialog({
   clientName: string;
   clientCode: string;
 }) {
-  const [exportBasis, setExportBasis] = useState<"objective" | "product">("objective");
+  const [exportBasis, setExportBasis] = useState<"objective" | "product" | "investor">("objective");
   const [selectedObjective, setSelectedObjective] = useState("");
   const [selectedAssetClasses, setSelectedAssetClasses] = useState<string[]>([]);
   const [downloading, setDownloading] = useState(false);
@@ -1268,7 +1268,9 @@ function ExportReportDialog({
       if (err?.response?.status === 404) {
         const desc = exportBasis === "objective"
           ? `objective "${selectedObjective}"`
-          : "selected product types";
+          : exportBasis === "product"
+          ? "selected product types"
+          : "active investor members";
         toast.error(`No active entries found for ${desc}.`);
       } else {
         toast.error("Failed to generate report.");
@@ -1278,7 +1280,13 @@ function ExportReportDialog({
     }
   };
 
-  const isSubmitDisabled = downloading || (exportBasis === "objective" ? !selectedObjective : selectedAssetClasses.length === 0);
+  const isSubmitDisabled = downloading || (
+    exportBasis === "objective"
+      ? !selectedObjective
+      : exportBasis === "product"
+      ? selectedAssetClasses.length === 0
+      : false
+  );
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
@@ -1296,6 +1304,7 @@ function ExportReportDialog({
               <SelectContent>
                 <SelectItem value="objective">Goal / Objective-wise</SelectItem>
                 <SelectItem value="product">Product-wise</SelectItem>
+                <SelectItem value="investor">Investor-wise (All Members)</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -1317,7 +1326,7 @@ function ExportReportDialog({
                 </Select>
               </div>
             </>
-          ) : (
+          ) : exportBasis === "product" ? (
             <>
               <p className="text-sm text-muted-foreground">
                 Select product categories to include in the generated report. Active target portfolio products matching these groups will be exported.
@@ -1374,6 +1383,12 @@ function ExportReportDialog({
                   })}
                 </div>
               </div>
+            </>
+          ) : (
+            <>
+              <p className="text-sm text-muted-foreground">
+                Generates a consolidated PDF report for all active investor members of this client, grouped by investor.
+              </p>
             </>
           )}
         </div>

@@ -105,7 +105,7 @@ export class TargetPortfolioService {
     clientName: string,
     clientCode: string,
     options: {
-      exportBasis: "objective" | "product";
+      exportBasis: "objective" | "product" | "investor";
       objective?: string;
       assetClasses?: string[];
     }
@@ -117,12 +117,16 @@ export class TargetPortfolioService {
     };
     if (options.exportBasis === "objective") {
       params.objective = options.objective;
-    } else {
+    } else if (options.exportBasis === "product") {
       params.asset_classes = options.assetClasses?.join(",");
     }
 
+    const endpoint = options.exportBasis === "investor"
+      ? API_ENDPOINTS.TARGET_PORTFOLIO.REPORT_PDF_CLIENT(clientId)
+      : API_ENDPOINTS.TARGET_PORTFOLIO.REPORT_PDF(clientId, memberId);
+
     const res = await httpClient.get(
-      API_ENDPOINTS.TARGET_PORTFOLIO.REPORT_PDF(clientId, memberId),
+      endpoint,
       {
         params,
         responseType: "blob",
@@ -131,7 +135,16 @@ export class TargetPortfolioService {
     const url = window.URL.createObjectURL(new Blob([res.data], { type: "application/pdf" }));
     const link = document.createElement("a");
     link.href = url;
-    const suffix = options.exportBasis === "objective" ? options.objective : "Products";
+    
+    let suffix = "Report";
+    if (options.exportBasis === "objective") {
+      suffix = options.objective || "Objective";
+    } else if (options.exportBasis === "product") {
+      suffix = "Products";
+    } else if (options.exportBasis === "investor") {
+      suffix = "InvestorWise";
+    }
+
     link.setAttribute("download", `TargetPortfolio_${clientCode}_${suffix}.pdf`);
     document.body.appendChild(link);
     link.click();
