@@ -35,9 +35,17 @@ import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
 import { PreRegistrationChecklist } from "./components/PreRegistrationChecklist";
+import { useAppStore } from "@/store/useAppStore";
 
 export function ClientList() {
   const router = useRouter();
+  const { user } = useAppStore();
+  const isIAOwner = user?.role === "owner";
+  const isIAPartner = user?.role === "partner";
+  const isSuperAdmin = user?.role === "super_admin";
+  const canCreateClient = isIAOwner || isIAPartner || isSuperAdmin || 
+    !!user?.permissions?.find((p: any) => p.module === "Clients")?.can_create;
+
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
@@ -170,11 +178,13 @@ export function ClientList() {
             <span className="hidden xs:inline">{downloading ? "Generating..." : "Master Report"}</span>
             <span className="xs:hidden">Report</span>
           </Button>
-          <Button className="flex-1 sm:flex-none gap-2 bg-primary hover:bg-primary/90 h-9 text-xs sm:text-sm" onClick={() => setShowChecklist(true)}>
-            <UserPlus className="w-4 h-4" />
-            <span className="hidden xs:inline">Add Client</span>
-            <span className="xs:hidden">Add</span>
-          </Button>
+          {canCreateClient && (
+            <Button className="flex-1 sm:flex-none gap-2 bg-primary hover:bg-primary/90 h-9 text-xs sm:text-sm" onClick={() => setShowChecklist(true)}>
+              <UserPlus className="w-4 h-4" />
+              <span className="hidden xs:inline">Add Client</span>
+              <span className="xs:hidden">Add</span>
+            </Button>
+          )}
 
           <PreRegistrationChecklist 
             isOpen={showChecklist}
