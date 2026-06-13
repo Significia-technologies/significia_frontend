@@ -72,7 +72,13 @@ export function AddIAMasterModal({ isOpen, onClose, onSuccess }: AddIAMasterModa
     } else if (name === "ifsc_code") {
       sanitizedValue = value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, 11);
     }
-    setFormData((prev) => ({ ...prev, [name]: sanitizedValue }));
+    setFormData((prev) => {
+      const updated = { ...prev, [name]: sanitizedValue };
+      if (name === "nature_of_entity" && sanitizedValue !== "body") {
+        updated.cin_number = "";
+      }
+      return updated;
+    });
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -307,10 +313,12 @@ export function AddIAMasterModal({ isOpen, onClose, onSuccess }: AddIAMasterModa
                   />
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label>CIN Number (if applicable)</Label>
-                <Input name="cin_number" value={formData.cin_number} onChange={handleChange} />
-              </div>
+              {formData.nature_of_entity === "body" && (
+                <div className="space-y-2">
+                  <Label>CIN Number *</Label>
+                  <Input name="cin_number" value={formData.cin_number} onChange={handleChange} required />
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="docs" className="space-y-6 pt-4">

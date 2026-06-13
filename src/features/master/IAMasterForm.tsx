@@ -171,6 +171,9 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
   const handleEntityTypeChange = (value: string) => {
     setFormData((prev) => {
       const updated = { ...prev, nature_of_entity: value, date_of_birth: "" };
+      if (value !== "body") {
+        updated.cin_number = "";
+      }
       if (["llp", "body", "partnership"].includes(value)) {
         updated.name_of_entity = prev.name_of_ia;
       } else if (value === "individual") {
@@ -578,10 +581,12 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
                       />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label>CIN Number (if applicable)</Label>
-                    <Input name="cin_number" value={formData.cin_number} onChange={handleChange} className="bg-background/50" />
-                  </div>
+                  {formData.nature_of_entity === "body" && (
+                    <div className="space-y-2">
+                      <Label>CIN Number *</Label>
+                      <Input name="cin_number" value={formData.cin_number} onChange={handleChange} required className="bg-background/50" />
+                    </div>
+                  )}
                 </TabsContent>
 
                 <TabsContent value="docs" className="space-y-8 mt-0">
