@@ -15,7 +15,8 @@ import {
   XCircle,
   Loader2,
   Building2,
-  FileText
+  FileText,
+  Search
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -23,6 +24,18 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useAppStore } from "@/store/useAppStore";
+import { MasterDataService, Client } from "@/core/services/master.service";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { CustomCheckbox } from "@/components/ui/CustomCheckbox";
+import { Input } from "@/components/ui/input";
 
 export default function MemberDetailsView() {
   const { identifier } = useParams() as { identifier: string };
@@ -35,6 +48,14 @@ export default function MemberDetailsView() {
   const [member, setMember] = useState<TeamMember | null>(null);
   const [permissions, setPermissions] = useState<ModulePermission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  const { user } = useAppStore();
+  const [allClients, setAllClients] = useState<Client[]>([]);
+  const [assignedClients, setAssignedClients] = useState<Client[]>([]);
+  const [showManageModal, setShowManageModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedClientIds, setSelectedClientIds] = useState<string[]>([]);
+  const [isSavingAssignments, setIsSavingAssignments] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -65,6 +86,15 @@ export default function MemberDetailsView() {
           };
         });
         setPermissions(completePermissions);
+
+        // Fetch clients if non-advisory
+        if (found.employee_type === "non-advisory") {
+          const clientRes = await MasterDataService.listClients({ limit: 1000 });
+          setAllClients(clientRes.clients);
+          const assigned = clientRes.clients.filter(c => c.assigned_employee_id === found.id);
+          setAssignedClients(assigned);
+          setSelectedClientIds(assigned.map(c => c.id));
+        }
       } catch (error) {
         toast.error("Failed to load details");
       } finally {
@@ -74,6 +104,49 @@ export default function MemberDetailsView() {
 
     fetchData();
   }, [id]);
+
+  const isIAOwner = user?.role === "owner";
+  const isIAPartner = user?.role === "partner";
+  const isSuperAdmin = user?.role === "super_admin";
+  const isAdminRole = user?.role === "admin";
+  const canManage = isIAOwner || isIAPartner || isSuperAdmin || isAdminRole;
+
+  const handleSaveAssignments = async () => {
+    if (!member) return;
+    try {
+      setIsSavingAssignments(true);
+
+      const currentAssignedIds = assignedClients.map(c => c.id);
+      
+      const toAssign = selectedClientIds.filter(cid => !currentAssignedIds.includes(cid));
+      const toUnassign = currentAssignedIds.filter(cid => !selectedClientIds.includes(cid));
+
+      const promises = [
+        ...toAssign.map(clientId => 
+          MasterDataService.assignClient(clientId, member.id)
+        ),
+        ...toUnassign.map(clientId => 
+          MasterDataService.assignClient(clientId, "")
+        )
+      ];
+
+      await Promise.all(promises);
+
+      const clientRes = await MasterDataService.listClients({ limit: 1000 });
+      setAllClients(clientRes.clients);
+      const assigned = clientRes.clients.filter(c => c.assigned_employee_id === member.id);
+      setAssignedClients(assigned);
+      setSelectedClientIds(assigned.map(c => c.id));
+
+      toast.success("Client assignments updated successfully");
+      setShowManageModal(false);
+    } catch (error) {
+      console.error("Failed to save assignments", error);
+      toast.error("Failed to update client assignments");
+    } finally {
+      setIsSavingAssignments(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -279,54 +352,205 @@ export default function MemberDetailsView() {
           </CardContent>
         </Card>
 
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-lg">Access Permissions</CardTitle>
-                <CardDescription>Active permissions across all application modules.</CardDescription>
+        <div className="md:col-span-2 space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg">Access Permissions</CardTitle>
+                  <CardDescription>Active permissions across all application modules.</CardDescription>
+                </div>
+                <Button variant="outline" size="sm" className="gap-2" onClick={() => router.push(`/team/${identifier}/permissions`)}>
+                  Edit Access
+                </Button>
               </div>
-              <Button variant="outline" size="sm" className="gap-2" onClick={() => router.push(`/team/${identifier}/permissions`)}>
-                Edit Access
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="rounded-md border overflow-hidden">
-              <Table>
-                <TableHeader className="bg-muted/50">
-                  <TableRow>
-                    <TableHead className="w-[180px]">Module</TableHead>
-                    <TableHead className="text-center text-[10px] uppercase font-black">Read</TableHead>
-                    <TableHead className="text-center text-[10px] uppercase font-black">Create</TableHead>
-                    <TableHead className="text-center text-[10px] uppercase font-black">Update</TableHead>
-                    <TableHead className="text-center text-[10px] uppercase font-black">Delete</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {permissions.map((p) => (
-                    <TableRow key={p.module}>
-                      <TableCell className="font-medium text-sm">{p.module}</TableCell>
-                      <TableCell className="text-center">
-                        {p.can_read ? <CheckCircle2 className="h-4 w-4 text-emerald-500 mx-auto" /> : <XCircle className="h-4 w-4 text-muted-foreground/30 mx-auto" />}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {p.can_create ? <CheckCircle2 className="h-4 w-4 text-emerald-500 mx-auto" /> : <XCircle className="h-4 w-4 text-muted-foreground/30 mx-auto" />}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {p.can_update ? <CheckCircle2 className="h-4 w-4 text-emerald-500 mx-auto" /> : <XCircle className="h-4 w-4 text-muted-foreground/30 mx-auto" />}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {p.can_delete ? <CheckCircle2 className="h-4 w-4 text-emerald-500 mx-auto" /> : <XCircle className="h-4 w-4 text-muted-foreground/30 mx-auto" />}
-                      </TableCell>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-md border overflow-hidden">
+                <Table>
+                  <TableHeader className="bg-muted/50">
+                    <TableRow>
+                      <TableHead className="w-[180px]">Module</TableHead>
+                      <TableHead className="text-center text-[10px] uppercase font-black">Read</TableHead>
+                      <TableHead className="text-center text-[10px] uppercase font-black">Create</TableHead>
+                      <TableHead className="text-center text-[10px] uppercase font-black">Update</TableHead>
+                      <TableHead className="text-center text-[10px] uppercase font-black">Delete</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {permissions.map((p) => (
+                      <TableRow key={p.module}>
+                        <TableCell className="font-medium text-sm">{p.module}</TableCell>
+                        <TableCell className="text-center">
+                          {p.can_read ? <CheckCircle2 className="h-4 w-4 text-emerald-500 mx-auto" /> : <XCircle className="h-4 w-4 text-muted-foreground/30 mx-auto" />}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {p.can_create ? <CheckCircle2 className="h-4 w-4 text-emerald-500 mx-auto" /> : <XCircle className="h-4 w-4 text-muted-foreground/30 mx-auto" />}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {p.can_update ? <CheckCircle2 className="h-4 w-4 text-emerald-500 mx-auto" /> : <XCircle className="h-4 w-4 text-muted-foreground/30 mx-auto" />}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {p.can_delete ? <CheckCircle2 className="h-4 w-4 text-emerald-500 mx-auto" /> : <XCircle className="h-4 w-4 text-muted-foreground/30 mx-auto" />}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+
+          {member.employee_type === "non-advisory" && (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-lg">Assigned Clients Mapping</CardTitle>
+                    <CardDescription>Clients assigned to this non-advisory staff member.</CardDescription>
+                  </div>
+                  {canManage && (
+                    <Button variant="outline" size="sm" onClick={() => {
+                      setSelectedClientIds(assignedClients.map(c => c.id));
+                      setShowManageModal(true);
+                    }}>
+                      Manage Assignments
+                    </Button>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent>
+                {assignedClients.length === 0 ? (
+                  <div className="p-8 text-center text-sm text-muted-foreground border border-dashed rounded-lg">
+                    No clients assigned to this staff member.
+                  </div>
+                ) : (
+                  <div className="rounded-md border overflow-hidden">
+                    <Table>
+                      <TableHeader className="bg-muted/50">
+                        <TableRow>
+                          <TableHead>Client Name</TableHead>
+                          <TableHead>Client Code</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead className="text-right">Status</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {assignedClients.map((client) => (
+                          <TableRow key={client.id}>
+                            <TableCell className="font-medium">{client.client_name}</TableCell>
+                            <TableCell className="font-mono text-xs uppercase">{client.client_code}</TableCell>
+                            <TableCell className="text-muted-foreground text-sm">{client.email || 'N/A'}</TableCell>
+                            <TableCell className="text-right">
+                              <Badge variant={client.is_active ? 'default' : 'secondary'} className={client.is_active ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' : 'bg-red-500/10 text-red-600 border-red-500/20'}>
+                                {client.is_active ? 'Active' : 'Inactive'}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
+
+      {/* Manage Assignments Dialog */}
+      <Dialog open={showManageModal} onOpenChange={setShowManageModal}>
+        <DialogContent className="max-w-2xl bg-card border border-primary/20">
+          <DialogHeader>
+            <DialogTitle>Manage Assigned Clients</DialogTitle>
+            <DialogDescription>
+              Select the clients list to assign to {member.full_name}.
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Search bar */}
+          <div className="relative my-2">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input 
+              placeholder="Search clients by name or code..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 bg-background/50 border-primary/20"
+            />
+          </div>
+
+          {/* Scrollable checklist */}
+          <div className="max-h-[350px] overflow-y-auto border rounded-md p-1.5 space-y-1 bg-background/30">
+            {allClients
+              .filter(client => {
+                const search = searchQuery.toLowerCase();
+                return client.client_name.toLowerCase().includes(search) || 
+                       client.client_code.toLowerCase().includes(search);
+              })
+              .map(client => {
+                const isChecked = selectedClientIds.includes(client.id);
+                const isAssignedToOther = client.assigned_employee_id && client.assigned_employee_id !== member.id;
+                
+                return (
+                  <div key={client.id} className="flex items-center space-x-2 py-1.5 px-2 rounded hover:bg-muted/50 transition-colors">
+                    <CustomCheckbox
+                      id={`client-${client.id}`}
+                      checked={isChecked}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setSelectedClientIds(prev => [...prev, client.id]);
+                        } else {
+                          setSelectedClientIds(prev => prev.filter(id => id !== client.id));
+                        }
+                      }}
+                    />
+                    <div className="flex-1 flex items-center justify-between min-w-0">
+                      <label 
+                        htmlFor={`client-${client.id}`}
+                        className="text-xs font-semibold leading-none cursor-pointer flex items-baseline gap-2 min-w-0"
+                      >
+                        <span className="font-medium text-sm text-foreground truncate">{client.client_name}</span>
+                        <span className="text-[10px] text-muted-foreground font-mono uppercase">({client.client_code})</span>
+                      </label>
+                      
+                      {isAssignedToOther && (
+                        <span className="text-[10px] text-orange-500 bg-orange-50 dark:bg-orange-950/20 px-2 py-0.5 rounded border border-orange-100 dark:border-orange-900/40 shrink-0 ml-2">
+                          Assigned: {client.assigned_employee_name || "Another staff"}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+
+            {allClients.filter(client => {
+              const search = searchQuery.toLowerCase();
+              return client.client_name.toLowerCase().includes(search) || 
+                     client.client_code.toLowerCase().includes(search);
+            }).length === 0 && (
+              <div className="p-8 text-center text-sm text-muted-foreground">
+                No clients found.
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="mt-4 flex flex-row justify-end gap-3">
+            <Button variant="outline" onClick={() => setShowManageModal(false)} disabled={isSavingAssignments}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveAssignments} disabled={isSavingAssignments}>
+              {isSavingAssignments ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save Changes"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
