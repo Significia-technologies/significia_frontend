@@ -416,7 +416,14 @@ export default function ClientRegistrationForm({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     
-    if (type === "number") {
+    if (type === "number" && ["annual_income", "net_worth", "existing_portfolio_value"].includes(name)) {
+      // Integer only — no decimals allowed for monetary fields
+      const cleaned = value.replace(/[^0-9]/g, '');
+      setFormData((prev) => ({
+        ...prev,
+        [name]: cleaned === "" ? "" : parseInt(cleaned, 10),
+      }));
+    } else if (type === "number") {
       setFormData((prev) => ({
         ...prev,
         [name]: value === "" ? "" : parseFloat(value),
@@ -456,7 +463,7 @@ export default function ClientRegistrationForm({
         ...prev,
         [name]: cleaned,
       }));
-    } else if (["client_name", "father_name", "mother_name", "spouse_name", "nominee_name", "nominee_relationship", "bank_name", "bank_branch"].includes(name)) {
+    } else if (["client_name", "father_name", "mother_name", "spouse_name", "nominee_name", "nominee_relationship", "bank_name", "bank_branch", "occupation"].includes(name)) {
       // Restrict to alphabetical characters and spaces
       const cleaned = value.replace(/[^a-zA-Z\s]/g, '');
       setFormData((prev) => ({
@@ -1275,11 +1282,11 @@ export default function ClientRegistrationForm({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label>Annual Income (INR) <span className="text-red-500">*</span></Label>
-                      <Input type="number" name="annual_income" disabled={isFieldDisabled("annual_income")} value={formData.annual_income} onChange={handleChange} placeholder="e.g. 500000" required />
+                      <Input type="number" step={1} min={0} name="annual_income" disabled={isFieldDisabled("annual_income")} value={formData.annual_income} onChange={handleChange} placeholder="e.g. 500000" required />
                     </div>
                     <div className="space-y-2">
                       <Label>Estimated Net Worth (INR) <span className="text-red-500">*</span></Label>
-                      <Input type="number" name="net_worth" disabled={isFieldDisabled("net_worth")} value={formData.net_worth} onChange={handleChange} placeholder="e.g. 500000" required />
+                      <Input type="number" step={1} min={0} name="net_worth" disabled={isFieldDisabled("net_worth")} value={formData.net_worth} onChange={handleChange} placeholder="e.g. 500000" required />
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1312,7 +1319,7 @@ export default function ClientRegistrationForm({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
                     <div className="space-y-2">
                       <Label>Existing Portfolio Value (₹) <span className="text-red-500">*</span></Label>
-                      <Input type="number" name="existing_portfolio_value" disabled={isFieldDisabled("existing_portfolio_value")} value={formData.existing_portfolio_value} onChange={handleChange} placeholder="e.g. 500000" required />
+                      <Input type="number" step={1} min={0} name="existing_portfolio_value" disabled={isFieldDisabled("existing_portfolio_value")} value={formData.existing_portfolio_value} onChange={handleChange} placeholder="e.g. 500000" required />
                     </div>
                   </div>
                   <div className="space-y-2 pt-4">
