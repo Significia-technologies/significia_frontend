@@ -81,6 +81,7 @@ const DEFAULT_FORM_DATA: ClientCreate = {
   father_name: "",
   mother_name: "",
   spouse_name: "",
+  spouse_dob: "",
   aadhar_number: "",
   passport_number: "",
   annual_income: "" as any,
@@ -252,6 +253,7 @@ export default function ClientRegistrationForm({
               net_worth: client.net_worth || "" as any,
               existing_portfolio_value: client.existing_portfolio_value || "" as any,
               date_of_birth: client.date_of_birth?.split('T')[0] || "",
+              spouse_dob: client.spouse_dob?.split('T')[0] || "",
               client_date: client.client_date?.split('T')[0] || "",
               agreement_date: client.agreement_date?.split('T')[0] || "",
             }));
@@ -282,6 +284,7 @@ export default function ClientRegistrationForm({
         net_worth: initialData.net_worth || "" as any,
         existing_portfolio_value: initialData.existing_portfolio_value || "" as any,
         date_of_birth: initialData.date_of_birth?.split('T')[0] || "",
+        spouse_dob: initialData.spouse_dob?.split('T')[0] || "",
         client_date: initialData.client_date?.split('T')[0] || "",
         agreement_date: initialData.agreement_date?.split('T')[0] || "",
       }));
@@ -369,6 +372,11 @@ export default function ClientRegistrationForm({
   const currentAge = calculateAge(formData.date_of_birth);
   const isUnderage = formData.date_of_birth !== "" && currentAge < 18;
 
+  const spouseAge = calculateAge(formData.spouse_dob || "");
+  const isSpouseUnderage = !!formData.spouse_name && !!formData.spouse_dob && spouseAge < 18;
+  const isSpouseDobMissing = !!formData.spouse_name && !formData.spouse_dob;
+  const isSpouseDobInvalid = isSpouseUnderage || isSpouseDobMissing;
+
   const passwordCriteria = {
     length: formData.password.length >= 8,
     upper: /[A-Z]/.test(formData.password),
@@ -454,6 +462,10 @@ export default function ClientRegistrationForm({
 
     // Only validate when trying to move forward
     if (targetIndex > currentIndex) {
+      if (activeTab === "personal" && isSpouseDobInvalid) {
+        return;
+      }
+
       const activeTabContent = document.querySelector('[role="tabpanel"][data-state="active"]');
       if (activeTabContent) {
         const requiredInputs = activeTabContent.querySelectorAll('input[required], select[required], textarea[required]');
@@ -478,6 +490,9 @@ export default function ClientRegistrationForm({
     e.preventDefault();
     if (formData.date_of_birth && currentAge < 18) {
       toast.error("Client must be at least 18 years old.");
+      return;
+    }
+    if (isSpouseDobInvalid) {
       return;
     }
     if (!isEdit && activeTab === "documents") {
@@ -512,6 +527,7 @@ export default function ClientRegistrationForm({
       existing_portfolio_value: Number(formData.existing_portfolio_value) || 0,
       assigned_employee_id: formData.assigned_employee_id || undefined,
       ipv_done_by_id: formData.ipv_done_by_id || undefined,
+      spouse_dob: formData.spouse_dob || undefined,
     };
 
     try {
@@ -869,7 +885,7 @@ export default function ClientRegistrationForm({
                     <Textarea name="address" disabled={isFieldDisabled("address")} value={formData.address} onChange={handleChange} required placeholder="Complete address with City, State, ZIP..." className="min-h-[100px]" />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6 pt-4">
                     <div className="space-y-2">
                       <Label>Father's Name *</Label>
                       <Input name="father_name" disabled={isFieldDisabled("father_name")} value={formData.father_name} onChange={handleChange} required />
@@ -879,8 +895,30 @@ export default function ClientRegistrationForm({
                       <Input name="mother_name" disabled={isFieldDisabled("mother_name")} value={formData.mother_name} onChange={handleChange} required />
                     </div>
                     <div className="space-y-2">
-                      <Label>Spouse Name (Optional)</Label>
+                      <Label>Spouse Name</Label>
                       <Input name="spouse_name" disabled={isFieldDisabled("spouse_name")} value={formData.spouse_name} onChange={handleChange} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className={isSpouseDobInvalid ? "text-red-500" : ""}>
+                        Spouse DOB {formData.spouse_name ? "*" : ""}
+                      </Label>
+                      <DatePicker 
+                        date={formData.spouse_dob} 
+                        onChange={(val) => setFormData(prev => ({ ...prev, spouse_dob: val }))}
+                        disabled={isFieldDisabled("spouse_dob")}
+                        placeholder="Select Spouse DOB"
+                        fromYear={1930}
+                        className={isSpouseDobInvalid ? "border-red-500 ring-offset-red-500 focus-visible:ring-red-500" : ""}
+                      />
+                      {formData.spouse_name && (
+                        <p className={`text-[10px] italic ${isSpouseDobInvalid ? "text-red-500 font-bold" : "text-muted-foreground"}`}>
+                          {isSpouseDobMissing 
+                            ? "Spouse Date of Birth is required." 
+                            : isSpouseUnderage 
+                            ? `Spouse age is ${spouseAge}. Must be 18+ years.` 
+                            : "Spouse must be at least 18 years old."}
+                        </p>
+                      )}
                     </div>
                   </div>
 
