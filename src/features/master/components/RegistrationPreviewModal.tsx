@@ -158,8 +158,25 @@ export function RegistrationPreviewModal({
                 </div>
                 <div>
                   <SectionHeader icon={Users} title="Nominee Details" />
-                  <PreviewItem label="Nominee Name" value={formData.nominee_name} />
-                  <PreviewItem label="Relationship" value={formData.nominee_relationship} />
+                  {formData.nominees && formData.nominees.length > 0 ? (
+                    formData.nominees.map((nom: any, idx: number) => (
+                      <div key={idx} className="mb-4 border-b border-primary/5 pb-2 last:border-0 last:pb-0">
+                        <p className="text-xs font-bold text-primary mb-1">Nominee #{idx + 1} ({nom.percentage}%)</p>
+                        <div className="grid grid-cols-2 gap-4">
+                          <PreviewItem label="Nominee Name" value={nom.name} />
+                          <PreviewItem label="Relationship" value={nom.relationship} />
+                          <div className="col-span-2">
+                            <PreviewItem label="Nominee DOB" value={nom.dob} />
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <>
+                      <PreviewItem label="Nominee Name" value={formData.nominee_name} />
+                      <PreviewItem label="Relationship" value={formData.nominee_relationship} />
+                    </>
+                  )}
                   <div className="mt-8 p-3 rounded bg-primary/5 border border-primary/10">
                     <p className="text-[10px] uppercase font-bold text-primary mb-1">Registration Date</p>
                     <p className="text-sm font-medium">{new Date().toLocaleDateString()}</p>

@@ -106,6 +106,7 @@ const DEFAULT_FORM_DATA: ClientCreate = {
   client_date: new Date().toISOString().split('T')[0],
   nominee_name: "",
   nominee_relationship: "",
+  nominees: [{ name: "", relationship: "", dob: "", percentage: 100 }],
   previous_advisor_name: "",
   referral_source: "",
   declaration_signed: true,
@@ -256,6 +257,10 @@ export default function ClientRegistrationForm({
               spouse_dob: client.spouse_dob?.split('T')[0] || "",
               client_date: client.client_date?.split('T')[0] || "",
               agreement_date: client.agreement_date?.split('T')[0] || "",
+              nominees: client.nominees ? client.nominees.map((n: any) => ({
+                ...n,
+                dob: n.dob ? n.dob.split('T')[0] : ""
+              })) : [{ name: "", relationship: "", dob: "", percentage: 100 }],
             }));
           }
 
@@ -287,6 +292,10 @@ export default function ClientRegistrationForm({
         spouse_dob: initialData.spouse_dob?.split('T')[0] || "",
         client_date: initialData.client_date?.split('T')[0] || "",
         agreement_date: initialData.agreement_date?.split('T')[0] || "",
+        nominees: initialData.nominees ? initialData.nominees.map((n: any) => ({
+          ...n,
+          dob: n.dob ? n.dob.split('T')[0] : ""
+        })) : [{ name: "", relationship: "", dob: "", percentage: 100 }],
       }));
     }
   }, [initialData, isEdit]);
@@ -462,6 +471,89 @@ export default function ClientRegistrationForm({
     }
   };
 
+  const handleAddNominee = () => {
+    setFormData(prev => {
+      const currentNominees = prev.nominees || [];
+      return {
+        ...prev,
+        nominees: [...currentNominees, { name: "", relationship: "", dob: "", percentage: "" as any }]
+      };
+    });
+  };
+
+  const handleRemoveNominee = (index: number) => {
+    setFormData(prev => {
+      const currentNominees = prev.nominees || [];
+      return {
+        ...prev,
+        nominees: currentNominees.filter((_, i) => i !== index)
+      };
+    });
+  };
+
+  const handleNomineeChange = (index: number, field: string, value: any) => {
+    setFormData(prev => {
+      const currentNominees = [...(prev.nominees || [])];
+      if (field === "percentage") {
+        // Clamp between 0 and 100, reject values > 100
+        const num = value === "" ? "" : Math.min(100, Math.max(0, Number(value)));
+        currentNominees[index] = {
+          ...currentNominees[index],
+          [field]: num as any
+        };
+      } else if (field === "name" || field === "relationship") {
+        const cleaned = value.replace(/[^a-zA-Z\s]/g, '');
+        currentNominees[index] = {
+          ...currentNominees[index],
+          [field]: cleaned
+        };
+      } else {
+        currentNominees[index] = {
+          ...currentNominees[index],
+          [field]: value
+        };
+      }
+      return {
+        ...prev,
+        nominees: currentNominees
+      };
+    });
+  };
+
+  const validateNominees = () => {
+    const nominees = formData.nominees || [];
+    if (nominees.length === 0) {
+      return "At least 1 nominee is required.";
+    }
+
+    let totalPercentage = 0;
+    for (let i = 0; i < nominees.length; i++) {
+      const nom = nominees[i];
+      if (!nom.name.trim()) {
+        return `Nominee #${i + 1} Name is required.`;
+      }
+      if (!nom.relationship.trim()) {
+        return `Relationship for Nominee #${i + 1} is required.`;
+      }
+      if (!nom.dob) {
+        return `Date of Birth for Nominee #${i + 1} is required.`;
+      }
+      if (new Date(nom.dob) > new Date()) {
+        return `Date of Birth for Nominee #${i + 1} cannot be in the future.`;
+      }
+      if (!nom.percentage || nom.percentage <= 0) {
+        return `Allocation percentage for Nominee #${i + 1} must be greater than 0.`;
+      }
+      totalPercentage += Number(nom.percentage);
+    }
+
+    if (totalPercentage !== 100) {
+      return `Total nominee allocation percentage must sum up to exactly 100% (currently ${totalPercentage}%).`;
+    }
+
+    return null;
+  };
+
   const handleTabChange = (value: string) => {
     const tabs = ["personal", "financial", "bank", "investment", "compliance", "documents"];
     const currentIndex = tabs.indexOf(activeTab);
@@ -469,8 +561,13 @@ export default function ClientRegistrationForm({
 
     // Only validate when trying to move forward
     if (targetIndex > currentIndex) {
-      if (activeTab === "personal" && isSpouseDobInvalid) {
-        return;
+      if (activeTab === "personal") {
+        if (isSpouseDobInvalid) return;
+        const nomineeError = validateNominees();
+        if (nomineeError) {
+          toast.error(nomineeError);
+          return;
+        }
       }
 
       const activeTabContent = document.querySelector('[role="tabpanel"][data-state="active"]');
@@ -495,6 +592,13 @@ export default function ClientRegistrationForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const nomineeError = validateNominees();
+    if (nomineeError) {
+      toast.error(nomineeError);
+      setActiveTab("personal");
+      return;
+    }
+
     if (formData.date_of_birth && currentAge < 18) {
       toast.error("Client must be at least 18 years old.");
       return;
@@ -975,15 +1079,112 @@ export default function ClientRegistrationForm({
 
                   <hr className="border-primary/10" />
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label>Nominee Name</Label>
-                      <Input name="nominee_name" disabled={isFieldDisabled("nominee_name")} value={formData.nominee_name} onChange={handleChange} placeholder="Optional" />
+                  <div className="space-y-6 pt-2">
+                    <div className="flex items-center justify-between border-b border-primary/10 pb-2">
+                      <Label className="text-sm font-bold uppercase tracking-wider text-primary">Nominee Details <span className="text-red-500">*</span></Label>
+                      {!isFieldDisabled("nominees") && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleAddNominee}
+                          className="border-primary/20 hover:bg-primary/5 text-primary text-xs h-8"
+                        >
+                          + Add Nominee
+                        </Button>
+                      )}
                     </div>
-                    <div className="space-y-2">
-                      <Label>Relationship with Nominee</Label>
-                      <Input name="nominee_relationship" disabled={isFieldDisabled("nominee_relationship")} value={formData.nominee_relationship} onChange={handleChange} placeholder="e.g. Spouse, Son, Mother" />
-                    </div>
+                    
+                    {formData.nominees && formData.nominees.map((nominee, index) => (
+                      <div key={index} className="p-4 rounded-xl border border-primary/10 bg-primary/5 space-y-4">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-primary">Nominee #{index + 1}</span>
+                          {formData.nominees && formData.nominees.length > 1 && !isFieldDisabled("nominees") && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveNominee(index)}
+                              className="text-red-500 hover:text-red-700 text-xs font-bold transition-colors"
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                          <div className="space-y-2">
+                            <Label>Nominee Name <span className="text-red-500">*</span></Label>
+                            <Input
+                              disabled={isFieldDisabled("nominees")}
+                              value={nominee.name}
+                              onChange={(e) => handleNomineeChange(index, "name", e.target.value)}
+                              placeholder="Full Name"
+                              required
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Relationship <span className="text-red-500">*</span></Label>
+                            <Input
+                              disabled={isFieldDisabled("nominees")}
+                              value={nominee.relationship}
+                              onChange={(e) => handleNomineeChange(index, "relationship", e.target.value)}
+                              placeholder="e.g. Spouse, Son, Mother"
+                              required
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Nominee DOB <span className="text-red-500">*</span></Label>
+                            <DatePicker
+                              date={nominee.dob}
+                              onChange={(val) => handleNomineeChange(index, "dob", val)}
+                              disabled={isFieldDisabled("nominees")}
+                              placeholder="Select DOB"
+                              fromYear={1900}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Allocation Share (%) <span className="text-red-500">*</span></Label>
+                            <Input
+                              type="number"
+                              disabled={isFieldDisabled("nominees")}
+                              value={nominee.percentage}
+                              onChange={(e) => handleNomineeChange(index, "percentage", e.target.value)}
+                              placeholder="0"
+                              min={1}
+                              max={100}
+                              required
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Live total allocation indicator */}
+                    {formData.nominees && formData.nominees.length > 0 && (() => {
+                      const total = formData.nominees.reduce((sum, n) => sum + (Number(n.percentage) || 0), 0);
+                      const isOver = total > 100;
+                      const isExact = total === 100;
+                      return (
+                        <div className={`flex items-center justify-between px-4 py-2 rounded-lg text-sm font-medium border ${
+                          isOver
+                            ? "bg-red-500/10 border-red-500/30 text-red-500"
+                            : isExact
+                            ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-500"
+                            : "bg-primary/5 border-primary/10 text-muted-foreground"
+                        }`}>
+                          <span>Total Allocated</span>
+                          <span className="font-bold tabular-nums">{total}%
+                            {isOver && " — exceeds 100%!"}
+                            {isExact && " ✓"}
+                          </span>
+                        </div>
+                      );
+                    })()}
+                    {/* Per-nominee over-limit hint */}
+                    {formData.nominees && formData.nominees.reduce((sum, n) => sum + (Number(n.percentage) || 0), 0) > 100 && (
+                      <p className="text-xs text-red-500 font-medium">
+                        Total nominee allocation exceeds 100%. Please reduce one or more nominee shares before proceeding.
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-2">

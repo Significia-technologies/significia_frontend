@@ -311,8 +311,37 @@ export default function ClientDetail({ client }: ClientDetailProps) {
                             <DetailItem label="Declaration Signed" value={currentClient.declaration_signed ? <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Yes</Badge> : <Badge variant="destructive">No</Badge>} />
                         </div>
                         <div className="space-y-4 bg-muted/30 p-4 rounded-lg">
-                            <DetailItem label="Nominee Name" value={currentClient.nominee_name} />
-                            <DetailItem label="Nominee Relationship" value={currentClient.nominee_relationship} />
+                            {currentClient.nominees && currentClient.nominees.length > 0 ? (
+                              <div className="space-y-3">
+                                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Nominees Details</p>
+                                <div className="space-y-3 divide-y divide-primary/5">
+                                  {currentClient.nominees.map((nom: any, idx: number) => (
+                                    <div key={idx} className="pt-2 first:pt-0">
+                                      <p className="text-xs font-bold text-primary mb-1">Nominee #{idx + 1} ({nom.percentage}%)</p>
+                                      <div className="grid grid-cols-2 gap-x-4">
+                                        <div>
+                                          <span className="text-[10px] text-muted-foreground uppercase">Name: </span>
+                                          <span className="text-sm font-semibold">{nom.name}</span>
+                                        </div>
+                                        <div>
+                                          <span className="text-[10px] text-muted-foreground uppercase">Relation: </span>
+                                          <span className="text-sm font-semibold">{nom.relationship}</span>
+                                        </div>
+                                        <div className="col-span-2 mt-1">
+                                          <span className="text-[10px] text-muted-foreground uppercase">DOB: </span>
+                                          <span className="text-sm font-semibold">{nom.dob}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ) : (
+                              <>
+                                <DetailItem label="Nominee Name" value={currentClient.nominee_name} />
+                                <DetailItem label="Nominee Relationship" value={currentClient.nominee_relationship} />
+                              </>
+                            )}
                             <DetailItem label="Residential Status" value={currentClient.residential_status} />
                         </div>
                     </div>

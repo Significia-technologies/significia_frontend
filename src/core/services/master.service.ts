@@ -85,6 +85,12 @@ export interface ClientCreate {
   client_date: string;
   nominee_name?: string;
   nominee_relationship?: string;
+  nominees?: {
+    name: string;
+    relationship: string;
+    dob: string;
+    percentage: number;
+  }[];
   previous_advisor_name?: string;
   referral_source?: string;
   declaration_signed: boolean;
