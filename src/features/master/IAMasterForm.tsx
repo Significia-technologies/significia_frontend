@@ -36,6 +36,17 @@ import { useAppStore } from "@/store/useAppStore";
 import { DatePicker } from "@/components/ui/date-picker";
 
 
+const normalizeEntityType = (val: string | undefined): string => {
+  if (!val) return "";
+  const clean = val.toLowerCase().trim();
+  if (clean.includes("individual")) return "individual";
+  if (clean.includes("proprietor")) return "proprietorship";
+  if (clean.includes("partnership")) return "partnership";
+  if (clean.includes("llp")) return "llp";
+  if (clean.includes("body") || clean.includes("corporate") || clean.includes("llc")) return "body";
+  return clean;
+};
+
 interface IAMasterFormProps {
   
   initialData?: IAMaster | null;
@@ -93,7 +104,7 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
       setFormData({
         name_of_ia: initialData.name_of_ia || "",
         date_of_birth: initialData.date_of_birth || "",
-        nature_of_entity: initialData.nature_of_entity || "",
+        nature_of_entity: normalizeEntityType(initialData.nature_of_entity),
         name_of_entity: initialData.name_of_entity || "",
         basl_membership_id: initialData.basl_membership_id || "",
         ia_registration_number: initialData.ia_registration_number || "",
