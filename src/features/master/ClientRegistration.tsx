@@ -979,6 +979,7 @@ export default function ClientRegistrationForm({
                           />
                           <div className="absolute left-0 right-0 top-full mt-1 bg-card border border-primary/20 rounded-md shadow-lg z-50 max-h-[300px] overflow-y-auto">
                             {employees
+                              .filter(emp => emp.employee_type === "advisory")
                               .filter(emp => {
                                 const name = (emp.full_name || emp.name || emp.name_of_employee || "").toLowerCase();
                                 const desig = (emp.designation || "").toLowerCase();
@@ -1004,7 +1005,9 @@ export default function ClientRegistrationForm({
                                   </span>
                                 </div>
                               ))}
-                            {employees.filter(emp => {
+                            {employees
+                              .filter(emp => emp.employee_type === "advisory")
+                              .filter(emp => {
                                 const name = (emp.full_name || emp.name || emp.name_of_employee || "").toLowerCase();
                                 const desig = (emp.designation || "").toLowerCase();
                                 const search = assignedSearchTerm.toLowerCase();
