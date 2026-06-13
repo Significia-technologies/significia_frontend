@@ -227,6 +227,10 @@ export function SidebarContent() {
 
     // Enforce permission checks for standard users
     if (!(isIAOwner || isIAPartner || isSuperAdmin)) {
+      if (item.href === "/clients") {
+        const hasPerm = user?.permissions?.find((p: any) => p.module === "Clients")?.can_read;
+        if (!hasPerm) return false;
+      }
       if (item.href === "/product-basket") {
         const hasPerm = user?.permissions?.find((p: any) => p.module === "Product Basket")?.can_read;
         if (!hasPerm) return false;
