@@ -425,7 +425,14 @@ export default function ClientRegistrationForm({
         ...prev,
         [name]: cleaned,
       }));
-    } else if (["client_name", "father_name", "mother_name", "spouse_name", "nominee_name", "nominee_relationship"].includes(name)) {
+    } else if (name === "bank_account_number") {
+      // Restrict to Digits and Max 18 characters
+      const cleaned = value.replace(/\D/g, '').slice(0, 18);
+      setFormData((prev) => ({
+        ...prev,
+        [name]: cleaned,
+      }));
+    } else if (["client_name", "father_name", "mother_name", "spouse_name", "nominee_name", "nominee_relationship", "bank_name", "bank_branch"].includes(name)) {
       // Restrict to alphabetical characters and spaces
       const cleaned = value.replace(/[^a-zA-Z\s]/g, '');
       setFormData((prev) => ({
@@ -1069,17 +1076,27 @@ export default function ClientRegistrationForm({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label>Bank Account Number *</Label>
-                      <Input name="bank_account_number" disabled={isFieldDisabled("bank_account_number")} value={formData.bank_account_number} onChange={handleChange} placeholder="e.g. 1234567890" required />
+                      <Input 
+                        name="bank_account_number" 
+                        disabled={isFieldDisabled("bank_account_number")} 
+                        value={formData.bank_account_number} 
+                        onChange={handleChange} 
+                        placeholder="e.g. 1234567890" 
+                        required 
+                        maxLength={18}
+                        pattern="\d*"
+                        inputMode="numeric"
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label>Bank Name *</Label>
-                      <Input name="bank_name" disabled={isFieldDisabled("bank_name")} value={formData.bank_name} onChange={handleChange} placeholder="e.g. HDFC Bank, ICICI Bank" required />
+                      <Input name="bank_name" disabled={isFieldDisabled("bank_name")} value={formData.bank_name} onChange={handleChange} placeholder="e.g. HDFC Bank, ICICI Bank" required pattern="[A-Za-z\s]*" />
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label>Bank Branch *</Label>
-                      <Input name="bank_branch" disabled={isFieldDisabled("bank_branch")} value={formData.bank_branch} onChange={handleChange} required />
+                      <Input name="bank_branch" disabled={isFieldDisabled("bank_branch")} value={formData.bank_branch} onChange={handleChange} required pattern="[A-Za-z\s]*" />
                     </div>
                     <div className="space-y-2">
                       <Label className={formData.ifsc_code && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(formData.ifsc_code) ? "text-orange-500 font-medium" : ""}>
@@ -1091,6 +1108,8 @@ export default function ClientRegistrationForm({
                         value={formData.ifsc_code} 
                         onChange={handleChange} 
                         required 
+                        maxLength={11}
+                        pattern="^[A-Za-z]{4}0[A-Za-z0-9]{6}$"
                         placeholder="e.g. HDFC0001234" 
                         className={formData.ifsc_code && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(formData.ifsc_code) ? "border-orange-500" : ""}
                       />

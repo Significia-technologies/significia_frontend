@@ -64,7 +64,15 @@ export function AddIAMasterModal({ isOpen, onClose, onSuccess }: AddIAMasterModa
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    let sanitizedValue = value;
+    if (name === "bank_account_number") {
+      sanitizedValue = value.replace(/\D/g, "").slice(0, 18);
+    } else if (name === "bank_name" || name === "bank_branch") {
+      sanitizedValue = value.replace(/[^a-zA-Z\s]/g, "");
+    } else if (name === "ifsc_code") {
+      sanitizedValue = value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, 11);
+    }
+    setFormData((prev) => ({ ...prev, [name]: sanitizedValue }));
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -266,21 +274,37 @@ export function AddIAMasterModal({ isOpen, onClose, onSuccess }: AddIAMasterModa
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Bank Account Number *</Label>
-                  <Input name="bank_account_number" value={formData.bank_account_number} onChange={handleChange} required />
+                  <Input 
+                    name="bank_account_number" 
+                    value={formData.bank_account_number} 
+                    onChange={handleChange} 
+                    required 
+                    maxLength={18}
+                    pattern="\d*"
+                    inputMode="numeric"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Bank Name *</Label>
-                  <Input name="bank_name" value={formData.bank_name} onChange={handleChange} required />
+                  <Input name="bank_name" value={formData.bank_name} onChange={handleChange} required pattern="[A-Za-z\s]*" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Bank Branch *</Label>
-                  <Input name="bank_branch" value={formData.bank_branch} onChange={handleChange} required />
+                  <Input name="bank_branch" value={formData.bank_branch} onChange={handleChange} required pattern="[A-Za-z\s]*" />
                 </div>
                 <div className="space-y-2">
                   <Label>IFSC Code *</Label>
-                  <Input name="ifsc_code" value={formData.ifsc_code} onChange={handleChange} required />
+                  <Input 
+                    name="ifsc_code" 
+                    value={formData.ifsc_code} 
+                    onChange={handleChange} 
+                    required 
+                    maxLength={11}
+                    pattern="^[A-Za-z]{4}0[A-Za-z0-9]{6}$"
+                    placeholder="e.g. HDFC0001234"
+                  />
                 </div>
               </div>
               <div className="space-y-2">
