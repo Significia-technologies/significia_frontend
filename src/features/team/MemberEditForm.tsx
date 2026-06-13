@@ -175,6 +175,8 @@ export default function MemberEditForm() {
                     value={formData.full_name}
                     onChange={(e) => setFormData({...formData, full_name: e.target.value})}
                     required
+                    disabled={member?.role === "owner"}
+                    className={cn(member?.role === "owner" && "bg-muted pointer-events-none")}
                   />
                 </div>
                 <div className="grid gap-2">
@@ -216,6 +218,7 @@ export default function MemberEditForm() {
                   <Select 
                       value={formData.role}
                       onValueChange={(val) => setFormData({...formData, role: val})}
+                      disabled={member?.role === "owner"}
                   >
                     <SelectTrigger id="role" className="bg-background/50">
                       <SelectValue placeholder="Select role" />

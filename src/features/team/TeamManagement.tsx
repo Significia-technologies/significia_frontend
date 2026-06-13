@@ -455,8 +455,11 @@ export default function TeamManagement() {
                             {new Date(member.created_at).toLocaleDateString()}
                           </TableCell>
                           <TableCell className="text-right">
-                             <div className="flex justify-end">
-                               {member.role !== 'owner' && member.status === 'active' && (
+                             <div className="flex justify-end items-center gap-2">
+                               {member.role === 'owner' && (
+                                 <Badge variant="outline" className="text-[10px]">Primary Admin</Badge>
+                               )}
+                               {member.status === 'active' && (
                                    <DropdownMenu>
                                      <DropdownMenuTrigger asChild>
                                        <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -474,23 +477,24 @@ export default function TeamManagement() {
                                          <Edit className="mr-2 h-4 w-4" />
                                          Update Details
                                        </DropdownMenuItem>
-                                       <DropdownMenuItem onClick={() => router.push(`/team/${getIdentifier(member)}/permissions`)}>
-                                         <Lock className="mr-2 h-4 w-4" />
-                                         Permissions
-                                       </DropdownMenuItem>
-                                       <DropdownMenuSeparator />
-                                       <DropdownMenuItem 
-                                         variant="destructive"
-                                         onClick={() => handleDeactivate(member.id)}
-                                       >
-                                         <Trash2 className="mr-2 h-4 w-4" />
-                                         Deactivate
-                                       </DropdownMenuItem>
+                                       {member.role !== 'owner' && (
+                                         <>
+                                           <DropdownMenuItem onClick={() => router.push(`/team/${getIdentifier(member)}/permissions`)}>
+                                             <Lock className="mr-2 h-4 w-4" />
+                                             Permissions
+                                           </DropdownMenuItem>
+                                           <DropdownMenuSeparator />
+                                           <DropdownMenuItem 
+                                             variant="destructive"
+                                             onClick={() => handleDeactivate(member.id)}
+                                           >
+                                             <Trash2 className="mr-2 h-4 w-4" />
+                                             Deactivate
+                                           </DropdownMenuItem>
+                                         </>
+                                       )}
                                      </DropdownMenuContent>
                                    </DropdownMenu>
-                               )}
-                               {member.role === 'owner' && (
-                                 <Badge variant="outline" className="text-[10px]">Primary Admin</Badge>
                                )}
                              </div>
                           </TableCell>
