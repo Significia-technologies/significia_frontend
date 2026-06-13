@@ -420,6 +420,9 @@ export default function ClientDetail({ client }: ClientDetailProps) {
                         <DetailItem label="Father's Name" value={currentClient.father_name} />
                         <DetailItem label="Mother's Name" value={currentClient.mother_name} />
                         <DetailItem label="Spouse Name" value={currentClient.spouse_name} />
+                        {currentClient.spouse_dob && (
+                            <DetailItem label="Spouse Date of Birth" value={currentClient.spouse_dob} />
+                        )}
                     </div>
                 </div>
               </TabsContent>
