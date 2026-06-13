@@ -166,7 +166,7 @@ export default function MemberOnboardingForm() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Onboard Member</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Onboard Employee</h1>
           <p className="text-muted-foreground">Register new Partner, Staff, or Analyst personnel.</p>
         </div>
       </div>
@@ -178,7 +178,7 @@ export default function MemberOnboardingForm() {
             <CardHeader className="border-b bg-muted/20">
               <CardTitle className="text-xl flex items-center gap-2">
                 <UserPlus className="h-5 w-5 text-primary" />
-                Member Profile
+                Employee Profile
               </CardTitle>
               <CardDescription>Core identity and employment information.</CardDescription>
             </CardHeader>
@@ -365,7 +365,7 @@ export default function MemberOnboardingForm() {
             </CardHeader>
             <CardContent className="pt-6 space-y-4">
               <div className="grid gap-2">
-                  <Label htmlFor="reg_no">Certificate Registration No. *</Label>
+                  <Label htmlFor="reg_no">Certificate No. *</Label>
                   <Input 
                       id="reg_no" 
                       placeholder="e.g. INA0000000"

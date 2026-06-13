@@ -372,7 +372,7 @@ export default function TeamManagement() {
               </div>
               <Button onClick={() => router.push("/team/onboard")} className="gap-2 bg-primary">
                 <Plus className="h-4 w-4" />
-                Add Member
+                Add Employee
               </Button>
             </CardHeader>
             <CardContent>
@@ -381,7 +381,7 @@ export default function TeamManagement() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[200px]">Member</TableHead>
+                      <TableHead className="w-[200px]">Name</TableHead>
                       <TableHead>Role, ID & Designation</TableHead>
                       <TableHead>Department</TableHead>
                       <TableHead>Status</TableHead>
