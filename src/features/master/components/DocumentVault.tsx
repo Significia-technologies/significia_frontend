@@ -219,7 +219,7 @@ export function DocumentVault({ clientId, documents, onUploadSuccess, readOnly =
           
           <div className="grid gap-6 py-4 w-full overflow-hidden">
             <div className="space-y-2 w-full">
-              <Label>Document Category *</Label>
+              <Label>Document Category <span className="text-red-500">*</span></Label>
               <Select value={selectedType} onValueChange={setSelectedType}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select document type..." />
@@ -234,7 +234,7 @@ export function DocumentVault({ clientId, documents, onUploadSuccess, readOnly =
 
             {selectedType === "Other" && (
               <div className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
-                <Label>Custom Document Name *</Label>
+                <Label>Custom Document Name <span className="text-red-500">*</span></Label>
                 <Input 
                   placeholder="Enter document name (e.g. Electricity Bill)" 
                   value={customType}
@@ -244,7 +244,7 @@ export function DocumentVault({ clientId, documents, onUploadSuccess, readOnly =
             )}
 
             <div className="space-y-2">
-                <Label>File *</Label>
+                <Label>File <span className="text-red-500">*</span></Label>
                 <div 
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={handleFileDrop}

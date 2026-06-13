@@ -185,7 +185,7 @@ export default function MemberOnboardingForm() {
             <CardContent className="pt-6 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="name">Full Name *</Label>
+                  <Label htmlFor="name">Full Name <span className="text-red-500">*</span></Label>
                   <Input 
                     id="name" 
                     placeholder="Enter full name" 
@@ -195,7 +195,7 @@ export default function MemberOnboardingForm() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="email">Email Address *</Label>
+                  <Label htmlFor="email">Email Address <span className="text-red-500">*</span></Label>
                   <Input 
                     id="email" 
                     type="email" 
@@ -210,7 +210,7 @@ export default function MemberOnboardingForm() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="phone" className={newMember.phone_number && !/^[6-9][0-9]{9}$/.test(newMember.phone_number) ? "text-orange-500 font-medium" : ""}>
-                    Phone Number *
+                    Phone Number <span className="text-red-500">*</span>
                   </Label>
                   <Input 
                     id="phone" 
@@ -230,7 +230,7 @@ export default function MemberOnboardingForm() {
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="password" className={passwordBlurred && missingReqs.length > 0 ? "text-red-500 font-medium" : ""}>
-                    Temporary Password *
+                    Temporary Password <span className="text-red-500">*</span>
                   </Label>
                   <div className="relative">
                     <Input 
@@ -262,7 +262,7 @@ export default function MemberOnboardingForm() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="role">System Role *</Label>
+                  <Label htmlFor="role">System Role <span className="text-red-500">*</span></Label>
                   <Select 
                       value={newMember.role}
                       onValueChange={(val) => setNewMember({...newMember, role: val})}
@@ -280,7 +280,7 @@ export default function MemberOnboardingForm() {
                   </Select>
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="type">Employee Type *</Label>
+                  <Label htmlFor="type">Employee Type <span className="text-red-500">*</span></Label>
                   <Select 
                       value={newMember.employee_type}
                       onValueChange={(val: any) => setNewMember({...newMember, employee_type: val})}
@@ -298,7 +298,7 @@ export default function MemberOnboardingForm() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="staff_code">Staff Code / ID *</Label>
+                  <Label htmlFor="staff_code">Staff Code / ID <span className="text-red-500">*</span></Label>
                   <Input 
                     id="staff_code" 
                     placeholder="e.g. SIG-001" 
@@ -337,7 +337,7 @@ export default function MemberOnboardingForm() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label>Date of Joining *</Label>
+                  <Label>Date of Joining <span className="text-red-500">*</span></Label>
                   <DatePicker 
                     date={newMember.date_of_joining}
                     onChange={(val) => setNewMember({...newMember, date_of_joining: val})}
@@ -365,7 +365,7 @@ export default function MemberOnboardingForm() {
             </CardHeader>
             <CardContent className="pt-6 space-y-4">
               <div className="grid gap-2">
-                  <Label htmlFor="reg_no">Certificate No. *</Label>
+                  <Label htmlFor="reg_no">Certificate No. <span className="text-red-500">*</span></Label>
                   <Input 
                       id="reg_no" 
                       placeholder="e.g. INA0000000"
@@ -376,7 +376,7 @@ export default function MemberOnboardingForm() {
               </div>
 
               <div className="grid gap-2">
-                  <Label htmlFor="issue_date">Certificate Issue Date *</Label>
+                  <Label htmlFor="issue_date">Certificate Issue Date <span className="text-red-500">*</span></Label>
                   <DatePicker 
                       date={newMember.certificate_issue_date}
                       onChange={(val) => setNewMember({...newMember, certificate_issue_date: val})}
@@ -385,7 +385,7 @@ export default function MemberOnboardingForm() {
               </div>
 
               <div className="grid gap-2">
-                  <Label htmlFor="exp_date">Registration Expiry Date *</Label>
+                  <Label htmlFor="exp_date">Registration Expiry Date <span className="text-red-500">*</span></Label>
                   <DatePicker 
                       date={newMember.date_of_registration_expiry}
                       onChange={(val) => setNewMember({...newMember, date_of_registration_expiry: val})}
@@ -394,7 +394,7 @@ export default function MemberOnboardingForm() {
               </div>
 
               <div className="grid gap-2 pt-2">
-                  <Label htmlFor="certificate">Upload Certificate (PDF) *</Label>
+                  <Label htmlFor="certificate">Upload Certificate (PDF) <span className="text-red-500">*</span></Label>
                   <div className="flex flex-col gap-2 p-3 border-2 border-dashed rounded-md bg-background/50 transition-colors hover:border-primary/30 overflow-hidden">
                     <div className="flex items-center gap-2 min-w-0">
                         <FileText className="h-5 w-5 text-muted-foreground shrink-0" />
@@ -418,7 +418,7 @@ export default function MemberOnboardingForm() {
 
               <div className="grid gap-2 pt-2">
                   <Label htmlFor="signature" className={newMember.employee_type === "advisory" && !newMember.signature ? "text-orange-500 font-medium" : ""}>
-                      Upload Signature (PNG/JPG) {newMember.employee_type === "advisory" ? "*" : ""}
+                      Upload Signature (PNG/JPG) {newMember.employee_type === "advisory" && <span className="text-red-500">*</span>}
                   </Label>
                   <div className={`flex flex-col gap-2 p-3 border-2 border-dashed rounded-md bg-background/50 transition-colors hover:border-primary/30 overflow-hidden ${newMember.employee_type === "advisory" && !newMember.signature ? "border-orange-500" : ""}`}>
                     <div className="flex items-center gap-2 min-w-0">

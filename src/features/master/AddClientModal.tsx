@@ -154,7 +154,7 @@ export function AddClientModal({ isOpen, onClose, onSuccess }: AddClientModalPro
               />
             </div>
             <div className="space-y-2">
-              <Label>Residential Status *</Label>
+              <Label>Residential Status <span className="text-red-500">*</span></Label>
               <select 
                 name="residential_status" 
                 value={formData.residential_status} 
@@ -173,7 +173,7 @@ export function AddClientModal({ isOpen, onClose, onSuccess }: AddClientModalPro
           <div className="grid grid-cols-2 gap-4">
             {formData.residential_status === "Resident Individual" ? (
               <div className="space-y-2">
-                <Label>Aadhar Number *</Label>
+                <Label>Aadhar Number <span className="text-red-500">*</span></Label>
                 <Input 
                   name="aadhar_number" 
                   value={formData.aadhar_number} 
@@ -187,7 +187,7 @@ export function AddClientModal({ isOpen, onClose, onSuccess }: AddClientModalPro
               </div>
             ) : (
               <div className="space-y-2">
-                <Label>Passport Number *</Label>
+                <Label>Passport Number <span className="text-red-500">*</span></Label>
                 <Input 
                   name="passport_number" 
                   value={formData.passport_number} 
@@ -224,7 +224,7 @@ export function AddClientModal({ isOpen, onClose, onSuccess }: AddClientModalPro
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="assigned_employee_id">Assigned Professional *</Label>
+              <Label htmlFor="assigned_employee_id">Assigned Professional <span className="text-red-500">*</span></Label>
               <select 
                 id="assigned_employee_id"
                 name="assigned_employee_id" 

@@ -531,7 +531,7 @@ export function AnalysisForm({ clientId, copyFromProfileId, onSuccess, onCancel 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label className="flex justify-between">
-                      Client Code * 
+                      <span>Client Code <span className="text-red-500">*</span></span>
                       {isValidating && <span className="text-[10px] animate-spin">⌛</span>}
                     </Label>
                     <div className="relative">
@@ -570,7 +570,7 @@ export function AnalysisForm({ clientId, copyFromProfileId, onSuccess, onCancel 
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label>Occupation *</Label>
+                    <Label>Occupation <span className="text-red-500">*</span></Label>
                     <Input 
                       value={formData.occupation} 
                       onChange={e => handleTopLevelChange('occupation', e.target.value)}
@@ -580,7 +580,7 @@ export function AnalysisForm({ clientId, copyFromProfileId, onSuccess, onCancel 
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Date of Birth *</Label>
+                    <Label>Date of Birth <span className="text-red-500">*</span></Label>
                     {clientFound ? (
                       <Input 
                         value={formData.dob} 
@@ -597,7 +597,7 @@ export function AnalysisForm({ clientId, copyFromProfileId, onSuccess, onCancel 
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label>Annual Income (₹) *</Label>
+                    <Label>Annual Income (₹) <span className="text-red-500">*</span></Label>
                     <div className="relative">
                       <span className="absolute left-3 top-2.5 text-xs opacity-50">₹</span>
                       <Input 
@@ -713,11 +713,11 @@ export function AnalysisForm({ clientId, copyFromProfileId, onSuccess, onCancel 
                 <SectionHeader title="4. Contact Information" icon={MessageSquare} number="4" />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label>Contact Number *</Label>
+                    <Label>Contact Number <span className="text-red-500">*</span></Label>
                     <Input value={formData.contact} onChange={e => handleTopLevelChange('contact', e.target.value)} maxLength={10} placeholder="10-digit mobile" />
                   </div>
                   <div className="space-y-2">
-                    <Label>Email ID *</Label>
+                    <Label>Email ID <span className="text-red-500">*</span></Label>
                     <Input value={formData.email} onChange={e => handleTopLevelChange('email', e.target.value)} placeholder="client@example.com" />
                   </div>
                 </div>

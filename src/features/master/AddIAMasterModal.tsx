@@ -200,11 +200,11 @@ export function AddIAMasterModal({ isOpen, onClose, onSuccess }: AddIAMasterModa
             <TabsContent value="basic" className="space-y-4 pt-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Name of Investment Advisor *</Label>
+                  <Label>Name of Investment Advisor <span className="text-red-500">*</span></Label>
                   <Input name="name_of_ia" value={formData.name_of_ia} onChange={handleChange} required />
                 </div>
                 <div className="space-y-2">
-                  <Label>Nature of Entity *</Label>
+                  <Label>Nature of Entity <span className="text-red-500">*</span></Label>
                   <select 
                     name="nature_of_entity" 
                     value={formData.nature_of_entity} 
@@ -229,7 +229,7 @@ export function AddIAMasterModal({ isOpen, onClose, onSuccess }: AddIAMasterModa
 
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label>IA Reg Number *</Label>
+                  <Label>IA Reg Number <span className="text-red-500">*</span></Label>
                   <Input 
                     name="ia_registration_number" 
                     value={formData.ia_registration_number} 
@@ -240,14 +240,14 @@ export function AddIAMasterModal({ isOpen, onClose, onSuccess }: AddIAMasterModa
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Reg Date *</Label>
+                  <Label>Reg Date <span className="text-red-500">*</span></Label>
                   <DatePicker 
                     date={formData.date_of_registration} 
                     onChange={(val) => setFormData(prev => ({ ...prev, date_of_registration: val }))}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Expiry Date *</Label>
+                  <Label>Expiry Date <span className="text-red-500">*</span></Label>
                   <DatePicker 
                     date={formData.date_of_registration_expiry} 
                     onChange={(val) => setFormData(prev => ({ ...prev, date_of_registration_expiry: val }))}
@@ -256,17 +256,17 @@ export function AddIAMasterModal({ isOpen, onClose, onSuccess }: AddIAMasterModa
               </div>
 
               <div className="space-y-2">
-                <Label>Registered Address *</Label>
+                <Label>Registered Address <span className="text-red-500">*</span></Label>
                 <Textarea name="registered_address" value={formData.registered_address} onChange={handleChange} required className="min-h-[80px]" />
               </div>
 
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label>Contact Number *</Label>
+                  <Label>Contact Number <span className="text-red-500">*</span></Label>
                   <Input type="tel" name="registered_contact_number" value={formData.registered_contact_number} onChange={handleChange} required />
                 </div>
                 <div className="space-y-2">
-                  <Label>Registered Email *</Label>
+                  <Label>Registered Email <span className="text-red-500">*</span></Label>
                   <Input type="email" name="registered_email_id" value={formData.registered_email_id} onChange={handleChange} required />
                 </div>
                 <div className="space-y-2">
@@ -279,7 +279,7 @@ export function AddIAMasterModal({ isOpen, onClose, onSuccess }: AddIAMasterModa
             <TabsContent value="bank" className="space-y-4 pt-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Bank Account Number *</Label>
+                  <Label>Bank Account Number <span className="text-red-500">*</span></Label>
                   <Input 
                     name="bank_account_number" 
                     value={formData.bank_account_number} 
@@ -291,17 +291,17 @@ export function AddIAMasterModal({ isOpen, onClose, onSuccess }: AddIAMasterModa
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Bank Name *</Label>
+                  <Label>Bank Name <span className="text-red-500">*</span></Label>
                   <Input name="bank_name" value={formData.bank_name} onChange={handleChange} required pattern="[A-Za-z\s]*" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Bank Branch *</Label>
+                  <Label>Bank Branch <span className="text-red-500">*</span></Label>
                   <Input name="bank_branch" value={formData.bank_branch} onChange={handleChange} required pattern="[A-Za-z\s]*" />
                 </div>
                 <div className="space-y-2">
-                  <Label>IFSC Code *</Label>
+                  <Label>IFSC Code <span className="text-red-500">*</span></Label>
                   <Input 
                     name="ifsc_code" 
                     value={formData.ifsc_code} 
@@ -315,7 +315,7 @@ export function AddIAMasterModal({ isOpen, onClose, onSuccess }: AddIAMasterModa
               </div>
               {formData.nature_of_entity === "body" && (
                 <div className="space-y-2">
-                  <Label>CIN Number *</Label>
+                  <Label>CIN Number <span className="text-red-500">*</span></Label>
                   <Input name="cin_number" value={formData.cin_number} onChange={handleChange} required />
                 </div>
               )}
@@ -331,15 +331,15 @@ export function AddIAMasterModal({ isOpen, onClose, onSuccess }: AddIAMasterModa
 
               <div className="grid grid-cols-1 gap-6">
                 <div className="space-y-2">
-                  <Label>IA Registration Certificate *</Label>
+                  <Label>IA Registration Certificate <span className="text-red-500">*</span></Label>
                   <Input type="file" name="ia_certificate" onChange={handleFileChange} accept=".png,.jpg,.jpeg,.pdf" required />
                 </div>
                 <div className="space-y-2">
-                  <Label>IA Signature *</Label>
+                  <Label>IA Signature <span className="text-red-500">*</span></Label>
                   <Input type="file" name="ia_signature" onChange={handleFileChange} accept=".png,.jpg,.jpeg" required />
                 </div>
                 <div className="space-y-2">
-                  <Label>IA Logo *</Label>
+                  <Label>IA Logo <span className="text-red-500">*</span></Label>
                   <Input type="file" name="ia_logo" onChange={handleFileChange} accept=".png,.jpg,.jpeg" required />
                 </div>
               </div>

@@ -702,11 +702,11 @@ export default function ClientRegistrationForm({
                 <TabsContent value="personal" className="space-y-6 mt-0">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label>Client Name *</Label>
+                      <Label>Client Name <span className="text-red-500">*</span></Label>
                       <Input name="client_name" disabled={isFieldDisabled("client_name")} value={formData.client_name} onChange={handleChange} required placeholder="Full name as per PAN" />
                     </div>
                     <div className="space-y-2">
-                      <Label className={isUnderage ? "text-red-500" : ""}>Date of Birth *</Label>
+                      <Label className={isUnderage ? "text-red-500" : ""}>Date of Birth <span className="text-red-500">*</span></Label>
                       <DatePicker 
                         date={formData.date_of_birth} 
                         onChange={(val) => setFormData(prev => ({ ...prev, date_of_birth: val }))}
@@ -723,13 +723,13 @@ export default function ClientRegistrationForm({
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                        <Label>Email (Login Username) *</Label>
+                        <Label>Email (Login Username) <span className="text-red-500">*</span></Label>
                         <Input type="email" name="email" value={formData.email} onChange={handleChange} required placeholder="client@example.com" disabled={isFieldDisabled("email")} />
                     </div>
                     {!isEdit && (
                       <div className="space-y-2">
                           <Label className={passwordBlurred && missingReqs.length > 0 ? "text-red-500 font-medium" : ""}>
-                            Password for Client Login *
+                            Password for Client Login <span className="text-red-500">*</span>
                           </Label>
                           <div className="relative">
                             <Input 
@@ -764,7 +764,7 @@ export default function ClientRegistrationForm({
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
                     <div className="space-y-2">
-                        <Label>Residential Status *</Label>
+                        <Label>Residential Status <span className="text-red-500">*</span></Label>
                         <Select 
                           name="residential_status" disabled={isFieldDisabled("residential_status")} 
                           value={formData.residential_status} 
@@ -784,7 +784,7 @@ export default function ClientRegistrationForm({
                     </div>
                     {formData.residential_status === "Resident Individual" ? (
                       <div className="space-y-2">
-                          <Label>Aadhar Number *</Label>
+                          <Label>Aadhar Number <span className="text-red-500">*</span></Label>
                           <Input 
                             name="aadhar_number" disabled={isFieldDisabled("aadhar_number")} 
                             value={formData.aadhar_number} 
@@ -802,12 +802,12 @@ export default function ClientRegistrationForm({
                       </div>
                     ) : (
                       <div className="space-y-2">
-                          <Label>Passport Number *</Label>
+                          <Label>Passport Number <span className="text-red-500">*</span></Label>
                           <Input name="passport_number" disabled={isFieldDisabled("passport_number")} value={formData.passport_number} onChange={handleChange} required placeholder="Passport number" />
                       </div>
                     )}
                     <div className="space-y-2">
-                        <Label>Nationality *</Label>
+                        <Label>Nationality <span className="text-red-500">*</span></Label>
                         <Input name="nationality" disabled={isFieldDisabled("nationality")} value={formData.nationality} onChange={handleChange} required />
                     </div>
                   </div>
@@ -815,7 +815,7 @@ export default function ClientRegistrationForm({
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <div className="space-y-2">
                        <Label className={formData.pan_number && !/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(formData.pan_number) ? "text-orange-500 font-medium" : ""}>
-                         PAN Number *
+                         PAN Number <span className="text-red-500">*</span>
                        </Label>
                        <Input 
                          name="pan_number" 
@@ -832,7 +832,7 @@ export default function ClientRegistrationForm({
                     </div>
                     <div className="space-y-2">
                       <Label className={formData.phone_number && !/^[6-9][0-9]{9}$/.test(formData.phone_number) ? "text-orange-500 font-medium" : ""}>
-                        Phone Number *
+                        Phone Number <span className="text-red-500">*</span>
                       </Label>
                       <Input 
                         type="tel" 
@@ -849,7 +849,7 @@ export default function ClientRegistrationForm({
                       )}
                     </div>
                     <div className="space-y-2">
-                        <Label>Gender *</Label>
+                        <Label>Gender <span className="text-red-500">*</span></Label>
                         <Select 
                           name="gender" disabled={isFieldDisabled("gender")} 
                           value={formData.gender} 
@@ -867,7 +867,7 @@ export default function ClientRegistrationForm({
                         </Select>
                     </div>
                     <div className="space-y-2">
-                        <Label>Marital Status *</Label>
+                        <Label>Marital Status <span className="text-red-500">*</span></Label>
                         <Select 
                           name="marital_status" disabled={isFieldDisabled("marital_status")} 
                           value={formData.marital_status} 
@@ -888,17 +888,17 @@ export default function ClientRegistrationForm({
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Permanent Address *</Label>
+                    <Label>Permanent Address <span className="text-red-500">*</span></Label>
                     <Textarea name="address" disabled={isFieldDisabled("address")} value={formData.address} onChange={handleChange} required placeholder="Complete address with City, State, ZIP..." className="min-h-[100px]" />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-6 pt-4">
                     <div className="space-y-2">
-                      <Label>Father's Name *</Label>
+                      <Label>Father's Name <span className="text-red-500">*</span></Label>
                       <Input name="father_name" disabled={isFieldDisabled("father_name")} value={formData.father_name} onChange={handleChange} required />
                     </div>
                     <div className="space-y-2">
-                      <Label>Mother's Name *</Label>
+                      <Label>Mother's Name <span className="text-red-500">*</span></Label>
                       <Input name="mother_name" disabled={isFieldDisabled("mother_name")} value={formData.mother_name} onChange={handleChange} required />
                     </div>
                     <div className="space-y-2">
@@ -907,7 +907,7 @@ export default function ClientRegistrationForm({
                     </div>
                     <div className="space-y-2">
                       <Label className={isSpouseDobInvalid ? "text-red-500" : ""}>
-                        Spouse DOB {formData.spouse_name ? "*" : ""}
+                        Spouse DOB {formData.spouse_name && <span className="text-red-500">*</span>}
                       </Label>
                       <DatePicker 
                         date={formData.spouse_dob} 
@@ -931,11 +931,11 @@ export default function ClientRegistrationForm({
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
                     <div className="space-y-2">
-                        <Label>Tax Residency *</Label>
+                        <Label>Tax Residency <span className="text-red-500">*</span></Label>
                         <Input name="tax_residency" disabled={isFieldDisabled("tax_residency")} value={formData.tax_residency} onChange={handleChange} required />
                     </div>
                     <div className="space-y-2">
-                      <Label>PEP Status *</Label>
+                      <Label>PEP Status <span className="text-red-500">*</span></Label>
                       <Select 
                         name="pep_status" disabled={isFieldDisabled("pep_status")} 
                         value={formData.pep_status} 
@@ -954,7 +954,7 @@ export default function ClientRegistrationForm({
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label>FATCA Compliance *</Label>
+                      <Label>FATCA Compliance <span className="text-red-500">*</span></Label>
                       <Select 
                         name="fatca_compliance" disabled={isFieldDisabled("fatca_compliance")} 
                         value={formData.fatca_compliance} 
@@ -987,7 +987,7 @@ export default function ClientRegistrationForm({
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Assigned Professional (Employee/Partner) *</Label>
+                    <Label>Assigned Professional (Employee/Partner) <span className="text-red-500">*</span></Label>
                     <div className="relative">
                       <Input
                         placeholder="Type to search staff/partner..."
@@ -1073,17 +1073,17 @@ export default function ClientRegistrationForm({
                 <TabsContent value="financial" className="space-y-6 mt-0">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label>Annual Income (INR) *</Label>
+                      <Label>Annual Income (INR) <span className="text-red-500">*</span></Label>
                       <Input type="number" name="annual_income" disabled={isFieldDisabled("annual_income")} value={formData.annual_income} onChange={handleChange} placeholder="e.g. 500000" required />
                     </div>
                     <div className="space-y-2">
-                      <Label>Estimated Net Worth (INR) *</Label>
+                      <Label>Estimated Net Worth (INR) <span className="text-red-500">*</span></Label>
                       <Input type="number" name="net_worth" disabled={isFieldDisabled("net_worth")} value={formData.net_worth} onChange={handleChange} placeholder="e.g. 500000" required />
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label>Source of Income *</Label>
+                      <Label>Source of Income <span className="text-red-500">*</span></Label>
                       <Select 
                         name="income_source" disabled={isFieldDisabled("income_source")} 
                         value={formData.income_source} 
@@ -1104,13 +1104,13 @@ export default function ClientRegistrationForm({
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label>Occupation *</Label>
+                      <Label>Occupation <span className="text-red-500">*</span></Label>
                       <Input name="occupation" disabled={isFieldDisabled("occupation")} value={formData.occupation} onChange={handleChange} required placeholder="Software Engineer, Doctor, etc." />
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
                     <div className="space-y-2">
-                      <Label>Existing Portfolio Value (₹) *</Label>
+                      <Label>Existing Portfolio Value (₹) <span className="text-red-500">*</span></Label>
                       <Input type="number" name="existing_portfolio_value" disabled={isFieldDisabled("existing_portfolio_value")} value={formData.existing_portfolio_value} onChange={handleChange} placeholder="e.g. 500000" required />
                     </div>
                   </div>
@@ -1123,7 +1123,7 @@ export default function ClientRegistrationForm({
                 <TabsContent value="bank" className="space-y-6 mt-0">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label>Bank Account Number *</Label>
+                      <Label>Bank Account Number <span className="text-red-500">*</span></Label>
                       <Input 
                         name="bank_account_number" 
                         disabled={isFieldDisabled("bank_account_number")} 
@@ -1137,18 +1137,18 @@ export default function ClientRegistrationForm({
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Bank Name *</Label>
+                      <Label>Bank Name <span className="text-red-500">*</span></Label>
                       <Input name="bank_name" disabled={isFieldDisabled("bank_name")} value={formData.bank_name} onChange={handleChange} placeholder="e.g. HDFC Bank, ICICI Bank" required pattern="[A-Za-z\s]*" />
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label>Bank Branch *</Label>
+                      <Label>Bank Branch <span className="text-red-500">*</span></Label>
                       <Input name="bank_branch" disabled={isFieldDisabled("bank_branch")} value={formData.bank_branch} onChange={handleChange} required pattern="[A-Za-z\s]*" />
                     </div>
                     <div className="space-y-2">
                       <Label className={formData.ifsc_code && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(formData.ifsc_code) ? "text-orange-500 font-medium" : ""}>
-                        IFSC Code *
+                        IFSC Code <span className="text-red-500">*</span>
                       </Label>
                       <Input 
                         name="ifsc_code" 
@@ -1181,7 +1181,7 @@ export default function ClientRegistrationForm({
                 <TabsContent value="investment" className="space-y-6 mt-0">
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label>Risk Profile *</Label>
+                      <Label>Risk Profile <span className="text-red-500">*</span></Label>
                       <Select 
                         name="risk_profile" disabled={isFieldDisabled("risk_profile")} 
                         value={formData.risk_profile} 
@@ -1201,7 +1201,7 @@ export default function ClientRegistrationForm({
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label>Investment Horizon *</Label>
+                      <Label>Investment Horizon <span className="text-red-500">*</span></Label>
                       <Select 
                         name="investment_horizon" disabled={isFieldDisabled("investment_horizon")} 
                         value={formData.investment_horizon} 
@@ -1220,12 +1220,12 @@ export default function ClientRegistrationForm({
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label>Investment Objectives *</Label>
+                    <Label>Investment Objectives <span className="text-red-500">*</span></Label>
                     <Textarea name="investment_objectives" disabled={isFieldDisabled("investment_objectives")} value={formData.investment_objectives} onChange={handleChange} required placeholder="e.g. Wealth Creation, Pension Planning, Children Education..." />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label>Investment Experience *</Label>
+                      <Label>Investment Experience <span className="text-red-500">*</span></Label>
                       <Select 
                         name="investment_experience" disabled={isFieldDisabled("investment_experience")} 
                         value={formData.investment_experience} 
@@ -1244,7 +1244,7 @@ export default function ClientRegistrationForm({
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label>Liquidity Needs *</Label>
+                      <Label>Liquidity Needs <span className="text-red-500">*</span></Label>
                       <Select 
                         name="liquidity_needs" disabled={isFieldDisabled("liquidity_needs")} 
                         value={formData.liquidity_needs} 
@@ -1324,7 +1324,7 @@ export default function ClientRegistrationForm({
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                          <Label>KYC Verified Status *</Label>
+                          <Label>KYC Verified Status <span className="text-red-500">*</span></Label>
                           <Select 
                             name="kyc_verified" disabled={isFieldDisabled("kyc_verified")} 
                             value={formData.kyc_verified ? "yes" : "no"} 
@@ -1368,7 +1368,7 @@ export default function ClientRegistrationForm({
                         </div>
                         <div className="space-y-2">
                           <Label className={formData.ckyc_number && !/^[SLOM][0-9A-Z]{13}$|^[0-9]{14}$/.test(formData.ckyc_number) ? "text-orange-500 font-medium" : ""}>
-                            CKYC Number *
+                            CKYC Number <span className="text-red-500">*</span>
                           </Label>
                           <Input 
                             name="ckyc_number" 
@@ -1399,7 +1399,7 @@ export default function ClientRegistrationForm({
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                          <Label>Client Onboarding Date *</Label>
+                          <Label>Client Onboarding Date <span className="text-red-500">*</span></Label>
                           <DatePicker 
                             date={formData.client_date} 
                             onChange={(val) => setFormData(prev => ({ ...prev, client_date: val }))}
@@ -1407,7 +1407,7 @@ export default function ClientRegistrationForm({
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label>Agreement Date *</Label>
+                          <Label>Agreement Date <span className="text-red-500">*</span></Label>
                           <DatePicker 
                             date={formData.agreement_date} 
                             onChange={(val) => setFormData(prev => ({ ...prev, agreement_date: val }))}
@@ -1418,7 +1418,7 @@ export default function ClientRegistrationForm({
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2 relative">
-                          <Label>In-Person Verification (IPV) Done By *</Label>
+                          <Label>In-Person Verification (IPV) Done By <span className="text-red-500">*</span></Label>
                           <div className="relative">
                             <Input
                               placeholder="Type to search staff..."
@@ -1496,7 +1496,7 @@ export default function ClientRegistrationForm({
                           </div>
                         </div>
                         <div className="space-y-2">
-                          <Label>IPV Date *</Label>
+                          <Label>IPV Date <span className="text-red-500">*</span></Label>
                           <DatePicker 
                             date={formData.ipv_date} 
                             onChange={(val) => setFormData(prev => ({ ...prev, ipv_date: val }))}

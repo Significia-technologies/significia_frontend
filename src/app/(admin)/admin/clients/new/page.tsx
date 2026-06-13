@@ -340,7 +340,7 @@ export default function NewClientProvisioningPage() {
                   <CardContent className="space-y-4 pt-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1.5">
-                        <Label htmlFor="companyName" className="text-xs font-bold text-neutral-800 dark:text-neutral-300">Full Company Name *</Label>
+                        <Label htmlFor="companyName" className="text-xs font-bold text-neutral-800 dark:text-neutral-300">Full Company Name <span className="text-red-500">*</span></Label>
                         <Input
                           id="companyName"
                           placeholder="Acme Capital Management"
@@ -351,7 +351,7 @@ export default function NewClientProvisioningPage() {
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <Label htmlFor="email" className="text-xs font-bold text-neutral-800 dark:text-neutral-300">Root Owner Email *</Label>
+                        <Label htmlFor="email" className="text-xs font-bold text-neutral-800 dark:text-neutral-300">Root Owner Email <span className="text-red-500">*</span></Label>
                         <Input
                           id="email"
                           type="email"
@@ -363,7 +363,7 @@ export default function NewClientProvisioningPage() {
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <Label htmlFor="date_of_birth" className="text-xs font-bold text-neutral-800 dark:text-neutral-300">Date of Incorporation *</Label>
+                        <Label htmlFor="date_of_birth" className="text-xs font-bold text-neutral-800 dark:text-neutral-300">Date of Incorporation <span className="text-red-500">*</span></Label>
                         <div className="relative">
                           <Input
                             id="date_of_birth"
@@ -407,7 +407,7 @@ export default function NewClientProvisioningPage() {
                   <CardContent className="space-y-4 pt-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1.5">
-                        <Label className="text-xs font-bold text-neutral-800 dark:text-neutral-300">Nature of Entity *</Label>
+                        <Label className="text-xs font-bold text-neutral-800 dark:text-neutral-300">Nature of Entity <span className="text-red-500">*</span></Label>
                         <Select 
                           value={formData.nature_of_entity}
                           onValueChange={(v) => setFormData(prev => ({ ...prev, nature_of_entity: v }))}
@@ -425,7 +425,7 @@ export default function NewClientProvisioningPage() {
                         </Select>
                       </div>
                       <div className="space-y-1.5">
-                        <Label htmlFor="registration_no" className="text-xs font-bold text-neutral-800 dark:text-neutral-300">Registration Number *</Label>
+                        <Label htmlFor="registration_no" className="text-xs font-bold text-neutral-800 dark:text-neutral-300">Registration Number <span className="text-red-500">*</span></Label>
                         <Input
                           id="registration_no"
                           placeholder="INA000012345"
@@ -439,7 +439,7 @@ export default function NewClientProvisioningPage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1.5">
-                        <Label htmlFor="registration_date" className="text-xs font-bold text-neutral-800 dark:text-neutral-300">Registration Date *</Label>
+                        <Label htmlFor="registration_date" className="text-xs font-bold text-neutral-800 dark:text-neutral-300">Registration Date <span className="text-red-500">*</span></Label>
                         <Input
                           id="registration_date"
                           type="date"
@@ -450,7 +450,7 @@ export default function NewClientProvisioningPage() {
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <Label htmlFor="license_expiry_date" className="text-xs font-bold text-neutral-800 dark:text-neutral-300">License Expiry *</Label>
+                        <Label htmlFor="license_expiry_date" className="text-xs font-bold text-neutral-800 dark:text-neutral-300">License Expiry <span className="text-red-500">*</span></Label>
                         <Input
                           id="license_expiry_date"
                           type="date"
@@ -479,7 +479,7 @@ export default function NewClientProvisioningPage() {
                   </CardHeader>
                   <CardContent className="space-y-4 pt-4">
                     <div className="space-y-1.5">
-                      <Label htmlFor="registered_address" className="text-xs font-bold text-neutral-800 dark:text-neutral-300">Registered Address *</Label>
+                      <Label htmlFor="registered_address" className="text-xs font-bold text-neutral-800 dark:text-neutral-300">Registered Address <span className="text-red-500">*</span></Label>
                       <textarea
                         id="registered_address"
                         placeholder="Enter full registered address"
@@ -492,7 +492,7 @@ export default function NewClientProvisioningPage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1.5">
-                        <Label htmlFor="registered_contact_number" className="text-xs font-bold text-neutral-800 dark:text-neutral-300">Primary Contact *</Label>
+                        <Label htmlFor="registered_contact_number" className="text-xs font-bold text-neutral-800 dark:text-neutral-300">Primary Contact <span className="text-red-500">*</span></Label>
                         <div className="relative">
                           <Input
                             id="registered_contact_number"
@@ -577,7 +577,7 @@ export default function NewClientProvisioningPage() {
                   <CardContent className="space-y-6 pt-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
-                        <Label htmlFor="bank_name" className="font-bold text-neutral-800 dark:text-neutral-300">Bank Name *</Label>
+                        <Label htmlFor="bank_name" className="font-bold text-neutral-800 dark:text-neutral-300">Bank Name <span className="text-red-500">*</span></Label>
                         <Input
                           id="bank_name"
                           placeholder="e.g. HDFC Bank"
@@ -588,7 +588,7 @@ export default function NewClientProvisioningPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="bank_account_number" className="font-bold text-neutral-800 dark:text-neutral-300">Account Number *</Label>
+                        <Label htmlFor="bank_account_number" className="font-bold text-neutral-800 dark:text-neutral-300">Account Number <span className="text-red-500">*</span></Label>
                         <Input
                           id="bank_account_number"
                           placeholder="Enter account number"
@@ -599,7 +599,7 @@ export default function NewClientProvisioningPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="bank_branch" className="font-bold text-neutral-800 dark:text-neutral-300">Branch Name *</Label>
+                        <Label htmlFor="bank_branch" className="font-bold text-neutral-800 dark:text-neutral-300">Branch Name <span className="text-red-500">*</span></Label>
                         <Input
                           id="bank_branch"
                           placeholder="e.g. Bandra East"
@@ -610,7 +610,7 @@ export default function NewClientProvisioningPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="ifsc_code" className="font-bold text-neutral-800 dark:text-neutral-300">IFSC Code *</Label>
+                        <Label htmlFor="ifsc_code" className="font-bold text-neutral-800 dark:text-neutral-300">IFSC Code <span className="text-red-500">*</span></Label>
                         <Input
                           id="ifsc_code"
                           placeholder="HDFC0001234"
@@ -638,7 +638,7 @@ export default function NewClientProvisioningPage() {
                        <div className="space-y-6">
                           <div className="space-y-2">
                              <Label className="font-bold flex items-center gap-2 text-neutral-800 dark:text-neutral-300">
-                               <UserCheck className="w-4 h-4 text-primary" /> Assigned Relationship Manager *
+                               <UserCheck className="w-4 h-4 text-primary" /> Assigned Relationship Manager <span className="text-red-500">*</span>
                              </Label>
                              <Select 
                                 value={formData.relationship_manager_id}

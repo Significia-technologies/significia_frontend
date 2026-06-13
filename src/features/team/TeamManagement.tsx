@@ -559,7 +559,7 @@ export default function TeamManagement() {
                     </DialogHeader>
                     <div className="py-6">
                       <div className="grid gap-2">
-                        <Label htmlFor="dept_name">Department Name *</Label>
+                        <Label htmlFor="dept_name">Department Name <span className="text-red-500">*</span></Label>
                         <Input 
                           id="dept_name"
                           placeholder="e.g. Operations, Compliance, etc." 

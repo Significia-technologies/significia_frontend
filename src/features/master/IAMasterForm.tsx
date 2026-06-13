@@ -346,11 +346,11 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
                   {/* Row 1: IA Name + Nature of Entity */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label>Name of Investment Advisor *</Label>
+                      <Label>Name of Investment Advisor <span className="text-red-500">*</span></Label>
                       <Input name="name_of_ia" value={formData.name_of_ia} onChange={handleChange} required className="bg-background/50" />
                     </div>
                     <div className="space-y-2">
-                      <Label>Nature of Entity *</Label>
+                      <Label>Nature of Entity <span className="text-red-500">*</span></Label>
                       <Select 
                         name="nature_of_entity" 
                         value={formData.nature_of_entity} 
@@ -376,7 +376,7 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
                     {/* Entity Name: hidden for Individual, read-only for LLP/Body/Partnership, editable for Proprietorship */}
                     {!isIndividual && formData.nature_of_entity && (
                       <div className="space-y-2">
-                        <Label>Name of Entity {isNonPersonEntity ? "" : "*"}</Label>
+                        <Label>Name of Entity {isNonPersonEntity ? "" : <span className="text-red-500">*</span>}</Label>
                         <Input 
                           name="name_of_entity" 
                           value={formData.name_of_entity} 
@@ -398,7 +398,7 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
                         {showDOB ? (
                           <>
                             <Label className={calculateAge(formData.date_of_birth) < 18 && formData.date_of_birth ? "text-destructive font-bold" : ""}>
-                              Date of Birth * {calculateAge(formData.date_of_birth) < 18 && formData.date_of_birth && `(Age: ${calculateAge(formData.date_of_birth)})`}
+                              Date of Birth <span className="text-red-500">*</span> {calculateAge(formData.date_of_birth) < 18 && formData.date_of_birth && `(Age: ${calculateAge(formData.date_of_birth)})`}
                             </Label>
                             <DatePicker 
                               date={formData.date_of_birth} 
@@ -414,7 +414,7 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
                         ) : showDateOfFormation ? (
                           <>
                             <Label className={isFormationDateInvalid || isFormationDateFuture ? "text-destructive font-bold" : ""}>
-                              Date of Formation / Incorporation *
+                              Date of Formation / Incorporation <span className="text-red-500">*</span>
                             </Label>
                             <DatePicker 
                               date={formData.date_of_birth} 
@@ -441,7 +441,7 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     <div className="space-y-2">
-                      <Label>BASL Membership ID *</Label>
+                      <Label>BASL Membership ID <span className="text-red-500">*</span></Label>
                       <Input 
                         name="basl_membership_id" 
                         value={formData.basl_membership_id} 
@@ -452,7 +452,7 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>IA Reg Number *</Label>
+                      <Label>IA Reg Number <span className="text-red-500">*</span></Label>
                       <Input 
                         name="ia_registration_number" 
                         value={formData.ia_registration_number} 
@@ -463,14 +463,14 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Reg Date *</Label>
+                      <Label>Reg Date <span className="text-red-500">*</span></Label>
                       <DatePicker 
                         date={formData.date_of_registration} 
                         onChange={(val) => setFormData(prev => ({ ...prev, date_of_registration: val }))}
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Expiry Date *</Label>
+                      <Label>Expiry Date <span className="text-red-500">*</span></Label>
                       <DatePicker 
                         date={formData.date_of_registration_expiry} 
                         onChange={(val) => setFormData(prev => ({ ...prev, date_of_registration_expiry: val }))}
@@ -479,17 +479,17 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Registered Address *</Label>
+                    <Label>Registered Address <span className="text-red-500">*</span></Label>
                     <Textarea name="registered_address" value={formData.registered_address} onChange={handleChange} required className="min-h-[100px] bg-background/50" />
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     <div className="space-y-2">
-                      <Label>Contact Number *</Label>
+                      <Label>Contact Number <span className="text-red-500">*</span></Label>
                       <Input type="tel" name="registered_contact_number" value={formData.registered_contact_number} onChange={handleChange} required className="bg-background/50" />
                     </div>
                     <div className="space-y-2">
-                      <Label>Registered Email *</Label>
+                      <Label>Registered Email <span className="text-red-500">*</span></Label>
                       <Input type="email" name="registered_email_id" value={formData.registered_email_id} onChange={handleChange} required className="bg-background/50" />
                     </div>
                     <div className="space-y-2">
@@ -507,7 +507,7 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                          <Label className="text-amber-700 dark:text-amber-300">Reason Category *</Label>
+                          <Label className="text-amber-700 dark:text-amber-300">Reason Category <span className="text-red-500">*</span></Label>
                           <Select 
                             name="change_reason_type" 
                             value={formData.change_reason_type} 
@@ -519,13 +519,13 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
                             <SelectContent>
                               <SelectItem value="data_correction">Data Correction</SelectItem>
                               <SelectItem value="client_update">Client Update</SelectItem>
-                              <SelectItem value="assumption_change">Assumption Change / Review Adjustment</SelectItem>
+                              <SelectItem value="assumption_change">Change Rationale / Review Adjustment</SelectItem>
                               <SelectItem value="regulatory_compliance">Regulatory Compliance</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-amber-700 dark:text-amber-300">Detailed Explanation *</Label>
+                          <Label className="text-amber-700 dark:text-amber-300">Detailed Explanation <span className="text-red-500">*</span></Label>
                           <Input 
                             name="change_reason_text" 
                             value={formData.change_reason_text} 
@@ -545,7 +545,7 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
                 <TabsContent value="bank" className="space-y-6 mt-0">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label>Bank Account Number *</Label>
+                      <Label>Bank Account Number <span className="text-red-500">*</span></Label>
                       <Input 
                         name="bank_account_number" 
                         value={formData.bank_account_number} 
@@ -558,17 +558,17 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Bank Name *</Label>
+                      <Label>Bank Name <span className="text-red-500">*</span></Label>
                       <Input name="bank_name" value={formData.bank_name} onChange={handleChange} required pattern="[A-Za-z\s]*" className="bg-background/50" />
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label>Bank Branch *</Label>
+                      <Label>Bank Branch <span className="text-red-500">*</span></Label>
                       <Input name="bank_branch" value={formData.bank_branch} onChange={handleChange} required pattern="[A-Za-z\s]*" className="bg-background/50" />
                     </div>
                     <div className="space-y-2">
-                      <Label>IFSC Code *</Label>
+                      <Label>IFSC Code <span className="text-red-500">*</span></Label>
                       <Input 
                         name="ifsc_code" 
                         value={formData.ifsc_code} 
@@ -583,7 +583,7 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
                   </div>
                   {formData.nature_of_entity === "body" && (
                     <div className="space-y-2">
-                      <Label>CIN Number *</Label>
+                      <Label>CIN Number <span className="text-red-500">*</span></Label>
                       <Input name="cin_number" value={formData.cin_number} onChange={handleChange} required className="bg-background/50" />
                     </div>
                   )}
@@ -600,7 +600,7 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
                   <div className="grid grid-cols-1 gap-8">
                     <div className="space-y-3">
                       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-2">
-                        <Label className="text-base text-nowrap">IA Registration Certificate *</Label>
+                        <Label className="text-base text-nowrap">IA Registration Certificate <span className="text-red-500">*</span></Label>
                         {initialData?.ia_certificate_path && (
                           <div className="flex items-center gap-2">
                             <span className="text-[10px] text-primary font-medium flex items-center gap-1">
@@ -617,7 +617,7 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
                     </div>
                     <div className="space-y-3">
                       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-2">
-                        <Label className="text-base text-nowrap">IA Signature *</Label>
+                        <Label className="text-base text-nowrap">IA Signature <span className="text-red-500">*</span></Label>
                         {initialData?.ia_signature_path && (
                           <div className="flex items-center gap-2">
                             <span className="text-[10px] text-primary font-medium flex items-center gap-1">
@@ -634,7 +634,7 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
                     </div>
                     <div className="space-y-3">
                       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-2">
-                        <Label className="text-base text-nowrap">IA Logo *</Label>
+                        <Label className="text-base text-nowrap">IA Logo <span className="text-red-500">*</span></Label>
                         {initialData?.ia_logo_path && (
                           <div className="flex items-center gap-2">
                             <span className="text-[10px] text-primary font-medium flex items-center gap-1">
