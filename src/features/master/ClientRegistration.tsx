@@ -342,6 +342,13 @@ export default function ClientRegistrationForm({
     }
   }, [employees, formData.ipv_done_by_id, formData.assigned_employee_id]);
 
+  // Reset Spouse DOB when Spouse Name is cleared
+  React.useEffect(() => {
+    if (!formData.spouse_name && formData.spouse_dob) {
+      setFormData(prev => ({ ...prev, spouse_dob: "" }));
+    }
+  }, [formData.spouse_name]);
+
   // Auto-save form data to localStorage (only in create mode, debounced)
   React.useEffect(() => {
     if (isEdit) return;
@@ -905,7 +912,7 @@ export default function ClientRegistrationForm({
                       <DatePicker 
                         date={formData.spouse_dob} 
                         onChange={(val) => setFormData(prev => ({ ...prev, spouse_dob: val }))}
-                        disabled={isFieldDisabled("spouse_dob")}
+                        disabled={(isFieldDisabled("spouse_dob") && isFieldDisabled("spouse_name")) || !formData.spouse_name}
                         placeholder="Select Spouse DOB"
                         fromYear={1930}
                         className={isSpouseDobInvalid ? "border-red-500 ring-offset-red-500 focus-visible:ring-red-500" : ""}
