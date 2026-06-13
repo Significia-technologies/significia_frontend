@@ -224,7 +224,12 @@ export default function TeamManagement() {
   const togglePermission = (module: string, field: keyof Omit<ModulePermission, 'module'>) => {
     setPermissions(prev => prev.map(p => {
       if (p.module === module) {
-        return { ...p, [field]: !p[field] };
+        const updated = { ...p, [field]: !p[field] };
+        if (field === 'can_read' && !updated.can_read) {
+          updated.can_update = false;
+          updated.can_delete = false;
+        }
+        return updated;
       }
       return p;
     }));
@@ -260,6 +265,26 @@ export default function TeamManagement() {
       }
       return { ...p, can_read: false, can_create: false, can_update: false, can_delete: false };
     }));
+  };
+
+  const selectAll = () => {
+    setPermissions(prev => prev.map(p => ({
+      ...p,
+      can_read: true,
+      can_create: true,
+      can_update: true,
+      can_delete: true
+    })));
+  };
+
+  const deselectAll = () => {
+    setPermissions(prev => prev.map(p => ({
+      ...p,
+      can_read: false,
+      can_create: false,
+      can_update: false,
+      can_delete: false
+    })));
   };
 
   // ── Stats Calculation ──────────────────────────────
@@ -625,6 +650,8 @@ export default function TeamManagement() {
           <div className="flex gap-2 mb-4">
              <Button variant="outline" size="sm" className="h-7 text-[10px]" onClick={() => applyPreset('partner')}>Full Access Preset</Button>
              <Button variant="outline" size="sm" className="h-7 text-[10px]" onClick={() => applyPreset('ia_staff')}>Reset (No Access)</Button>
+             <Button variant="outline" size="sm" className="h-7 text-[10px] bg-primary/10 text-primary hover:bg-primary/20 border-primary/20" onClick={selectAll}>Select All</Button>
+             <Button variant="outline" size="sm" className="h-7 text-[10px]" onClick={deselectAll}>Deselect All</Button>
           </div>
 
           <div className="max-h-[400px] overflow-y-auto border rounded-md">
@@ -663,7 +690,8 @@ export default function TeamManagement() {
                         type="checkbox" 
                         checked={p.can_update} 
                         onChange={() => togglePermission(p.module, 'can_update')}
-                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                        disabled={!p.can_read}
+                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                       />
                     </TableCell>
                     <TableCell className="text-center">
@@ -671,7 +699,8 @@ export default function TeamManagement() {
                         type="checkbox" 
                         checked={p.can_delete} 
                         onChange={() => togglePermission(p.module, 'can_delete')}
-                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                        disabled={!p.can_read}
+                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                       />
                     </TableCell>
                   </TableRow>

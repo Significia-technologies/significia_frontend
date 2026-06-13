@@ -73,10 +73,35 @@ export default function MemberPermissionsView() {
   const togglePermission = (module: string, field: keyof Omit<ModulePermission, "module">) => {
     setPermissions(prev => prev.map(p => {
       if (p.module === module) {
-        return { ...p, [field]: !p[field] };
+        const updated = { ...p, [field]: !p[field] };
+        if (field === "can_read" && !updated.can_read) {
+          updated.can_update = false;
+          updated.can_delete = false;
+        }
+        return updated;
       }
       return p;
     }));
+  };
+
+  const selectAll = () => {
+    setPermissions(prev => prev.map(p => ({
+      ...p,
+      can_read: true,
+      can_create: true,
+      can_update: true,
+      can_delete: true
+    })));
+  };
+
+  const deselectAll = () => {
+    setPermissions(prev => prev.map(p => ({
+      ...p,
+      can_read: false,
+      can_create: false,
+      can_update: false,
+      can_delete: false
+    })));
   };
 
   const handleSave = async () => {
@@ -131,6 +156,10 @@ export default function MemberPermissionsView() {
           <CardDescription>Grant or revoke specific capabilities across each system module.</CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="flex gap-2 mb-4">
+            <Button type="button" variant="outline" size="sm" className="h-8 text-xs bg-primary/10 text-primary hover:bg-primary/20 border-primary/20" onClick={selectAll}>Select All</Button>
+            <Button type="button" variant="outline" size="sm" className="h-8 text-xs" onClick={deselectAll}>Deselect All</Button>
+          </div>
           <div className="rounded-md border overflow-hidden">
             <Table>
               <TableHeader className="bg-muted/50">
@@ -164,6 +193,7 @@ export default function MemberPermissionsView() {
                       <CustomCheckbox 
                         checked={p.can_update} 
                         onCheckedChange={() => togglePermission(p.module, "can_update")} 
+                        disabled={!p.can_read}
                         className="data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
                       />
                     </TableCell>
@@ -171,6 +201,7 @@ export default function MemberPermissionsView() {
                       <CustomCheckbox 
                         checked={p.can_delete} 
                         onCheckedChange={() => togglePermission(p.module, "can_delete")} 
+                        disabled={!p.can_read}
                         className="data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
                       />
                     </TableCell>
