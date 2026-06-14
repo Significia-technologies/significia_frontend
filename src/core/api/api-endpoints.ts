@@ -151,6 +151,15 @@ export const API_ENDPOINTS = {
       `${API_BASE}/asset-allocation/bridge/allocation/${id}/email`,
   },
 
+  // ── Existing Asset Allocation ──────────────────────────────────
+  EXISTING_ASSET_ALLOCATION: {
+    VALIDATE_CLIENT: `${API_BASE}/asset-allocation/bridge/validate-client`,
+    SAVE: `${API_BASE}/existing-asset-allocation/bridge/save`,
+    LIST: `${API_BASE}/existing-asset-allocation/bridge/allocations`,
+    DETAIL: (id: string) =>
+      `${API_BASE}/existing-asset-allocation/bridge/allocation/${id}`,
+  },
+
   // ── Bridge Management (Super Admin only) ───────────────────
   BRIDGE: {
     BASE: `${API_BASE}/bridge/tenants`,

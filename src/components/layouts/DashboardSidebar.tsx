@@ -83,6 +83,11 @@ const NAV_ITEMS: NavItem[] = [
     icon: PieChart,
   },
   {
+    label: "Existing Allocation",
+    href: "/existing-asset-allocation",
+    icon: PieChart,
+  },
+  {
     label: "Investment Advice",
     href: "/investment-advice",
     icon: FileText,
