@@ -362,14 +362,14 @@ export default function ClientDetail({ client }: ClientDetailProps) {
                                   })()
                                 : "Unassigned"
                             } />
-                            <DetailItem label="IPV Performer (Assigned Staff)" value={
+                            <DetailItem label="IPV Verifier (Assigned Staff)" value={
                               currentClient.ipv_done_by_id 
                                 ? (() => {
                                     if (loadingEmployees) return "Loading...";
                                     const emp = employees.find(e => (e.id || (e as any)._id) === currentClient.ipv_done_by_id);
                                     return emp 
                                       ? (emp.full_name || emp.name || emp.name_of_employee || "Staff Member") 
-                                      : "I-PV Performer Not Found";
+                                      : "I-PV Verifier Not Found";
                                   })()
                                 : "In-Person Verification Pending"
                             } />
