@@ -50,6 +50,7 @@ export const APP_MODULES = [
   "Financial Goals",
   "Risk Profiles",
   "Asset Allocation",
+  "Existing Asset Allocation",
   "Security Basket",
   "Operations",
   "Drawers",

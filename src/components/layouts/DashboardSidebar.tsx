@@ -205,6 +205,14 @@ export function SidebarContent() {
             const hasPerm = user?.permissions?.find((p: any) => p.module === "Target Portfolio")?.can_read;
             if (!hasPerm) return false;
           }
+          if (child.href === "/existing-asset-allocation") {
+            const hasPerm = user?.permissions?.find((p: any) => p.module === "Existing Asset Allocation")?.can_read;
+            if (!hasPerm) return false;
+          }
+          if (child.href === "/asset-allocation") {
+            const hasPerm = user?.permissions?.find((p: any) => p.module === "Asset Allocation")?.can_read;
+            if (!hasPerm) return false;
+          }
         }
         return true;
       });
