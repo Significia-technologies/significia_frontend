@@ -35,12 +35,21 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { useAppStore } from "@/store/useAppStore";
 
 interface ExistingAssetAllocationHistoryProps {
   onNewAllocation: () => void;
 }
 
 export function ExistingAssetAllocationHistory({ onNewAllocation }: ExistingAssetAllocationHistoryProps) {
+  const { user } = useAppStore();
+  
+  const isIAOwner = user?.role === "owner";
+  const isIAPartner = user?.role === "partner";
+  const isSuperAdmin = user?.role === "super_admin";
+  const canCreate = isIAOwner || isIAPartner || isSuperAdmin || 
+    !!user?.permissions?.find((p: any) => p.module === "Existing Asset Allocation")?.can_create;
+
   const [loading, setLoading] = useState(true);
   const [allocations, setAllocations] = useState<ExistingAssetAllocation[]>([]);
   const [search, setSearch] = useState("");
@@ -228,14 +237,16 @@ export function ExistingAssetAllocationHistory({ onNewAllocation }: ExistingAsse
             <span>Blank Form</span>
           </Button>
 
-          <Button
-            id="new-existing-allocation-btn"
-            onClick={onNewAllocation}
-            className="h-10 gap-2 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 font-black uppercase text-[10px] tracking-widest px-6"
-          >
-            <PlusCircle className="w-4 h-4" />
-            <span>New Existing Entry</span>
-          </Button>
+          {canCreate && (
+            <Button
+              id="new-existing-allocation-btn"
+              onClick={onNewAllocation}
+              className="h-10 gap-2 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 font-black uppercase text-[10px] tracking-widest px-6"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>New Existing Entry</span>
+            </Button>
+          )}
         </div>
       </div>
 

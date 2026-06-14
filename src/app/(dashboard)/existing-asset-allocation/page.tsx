@@ -1,9 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { PieChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useAppStore } from "@/store/useAppStore";
+import { useRouter } from "next/navigation";
 
 import type { ClientValidateResponse } from "@/core/services/asset-allocation.service";
 import { ClientValidator } from "@/features/asset-allocation/ClientValidator";
@@ -14,9 +16,32 @@ type ViewType = "HISTORY" | "NEW_ALLOCATION";
 type NewAllocStep = "VALIDATE" | "FORM";
 
 export default function ExistingAssetAllocationPage() {
+  const { user } = useAppStore();
+  const router = useRouter();
+
+  const isIAOwner = user?.role === "owner";
+  const isIAPartner = user?.role === "partner";
+  const isSuperAdmin = user?.role === "super_admin";
+  const canRead = isIAOwner || isIAPartner || isSuperAdmin || 
+    !!user?.permissions?.find((p: any) => p.module === "Existing Asset Allocation")?.can_read;
+
+  useEffect(() => {
+    if (user && !canRead) {
+      router.replace("/");
+    }
+  }, [user, canRead, router]);
+
   const [view, setView] = useState<ViewType>("HISTORY");
   const [step, setStep] = useState<NewAllocStep>("VALIDATE");
   const [clientInfo, setClientInfo] = useState<(ClientValidateResponse & { client_code: string }) | null>(null);
+
+  if (!user || !canRead) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Redirecting...</p>
+      </div>
+    );
+  }
 
   const handleStartNew = () => {
     setStep("VALIDATE");
