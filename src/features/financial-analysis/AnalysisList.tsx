@@ -94,7 +94,7 @@ export function AnalysisList({ clientId, onSelectAnalysis, onCreateNew, onDownlo
         },
         confirmation_mode: "Data Correction",
         is_investor_requested: false,
-        initiation_reason: "Internal rectification initiated from Financial Analysis vault"
+        initiation_reason: "Internal rectification initiated from Financial Goals vault"
       });
 
       toast.success("Rectification Draft Created (E-Serial No Assigned)");
@@ -201,7 +201,7 @@ export function AnalysisList({ clientId, onSelectAnalysis, onCreateNew, onDownlo
     <div className="space-y-6">
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div className="min-w-0">
-          <h2 className="text-2xl font-black tracking-tight text-primary uppercase truncate">Financial Analysis Vault</h2>
+          <h2 className="text-2xl font-black tracking-tight text-primary uppercase truncate">Financial Goals Vault</h2>
           <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest opacity-60 truncate">Analyze client portfolios and generate professional reports</p>
         </div>
         <div className="flex flex-row items-center gap-2 w-full lg:w-auto shrink-0">
@@ -225,7 +225,7 @@ export function AnalysisList({ clientId, onSelectAnalysis, onCreateNew, onDownlo
 
           <Button className="h-10 gap-2 bg-primary hover:bg-primary/90 shrink-0" onClick={onCreateNew}>
             <PlusCircle className="w-4 h-4" />
-            <span className="hidden xl:inline">New Analysis</span>
+            <span className="hidden xl:inline">New Goals</span>
             <span className="xl:hidden">New</span>
           </Button>
         </div>
