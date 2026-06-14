@@ -47,6 +47,22 @@ export function ExistingAssetAllocationHistory({ onNewAllocation }: ExistingAsse
   const [search, setSearch] = useState("");
   const [expandedClient, setExpandedClient] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  const downloadReport = async (item: ExistingAssetAllocation) => {
+    setDownloadingId(item.id);
+    try {
+      await ExistingAssetAllocationService.downloadPDF(
+        item.id,
+        `Existing_Asset_Allocation_${item.client_code || item.client_id}.pdf`
+      );
+      toast.success("PDF report downloaded successfully");
+    } catch {
+      toast.error("Failed to download PDF report");
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   const toggleRow = (clientKey: string) => {
     if (expandedClient === clientKey) {
@@ -243,20 +259,21 @@ export function ExistingAssetAllocationHistory({ onNewAllocation }: ExistingAsse
                 <TableHead className="text-[10px] font-black uppercase tracking-widest text-primary/60">Total Valuation</TableHead>
                 <TableHead className="text-[10px] font-black uppercase tracking-widest text-primary/60">Holding Split</TableHead>
                 <TableHead className="text-[10px] font-black uppercase tracking-widest text-primary/60">Date</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest text-primary/60 text-right">Report</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <TableRow key={i} className="border-primary/5">
-                    <TableCell colSpan={5} className="h-16">
+                    <TableCell colSpan={6} className="h-16">
                       <Skeleton className="h-8 w-full rounded-lg" />
                     </TableCell>
                   </TableRow>
                 ))
               ) : filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-32 text-center text-muted-foreground font-medium italic">
+                  <TableCell colSpan={6} className="h-32 text-center text-muted-foreground font-medium italic">
                     No holding records found.
                   </TableCell>
                 </TableRow>
@@ -330,11 +347,32 @@ export function ExistingAssetAllocationHistory({ onNewAllocation }: ExistingAsse
                             {format(new Date(a.created_at), "MMM dd, yyyy")}
                           </div>
                         </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 px-2.5 gap-1.5 border border-primary/10 hover:bg-primary/5 text-muted-foreground"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                downloadReport(a);
+                              }}
+                              disabled={downloadingId !== null}
+                            >
+                              {downloadingId === a.id ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <Download className="w-3.5 h-3.5 text-red-500" />
+                              )}
+                              <span className="text-[9px] font-black uppercase tracking-tight text-red-500">Report</span>
+                            </Button>
+                          </div>
+                        </TableCell>
                       </TableRow>
 
                       {isExpanded && (
                         <TableRow className="bg-primary/[0.01] hover:bg-transparent border-primary/5">
-                          <TableCell colSpan={5} className="p-6 bg-card/5 backdrop-blur-md border-t border-b border-primary/5">
+                          <TableCell colSpan={6} className="p-6 bg-card/5 backdrop-blur-md border-t border-b border-primary/5">
                             <div className="animate-in slide-in-from-top-2 duration-300 space-y-3">
                               <div className="flex items-center justify-between border-b border-primary/5 pb-2 mb-3">
                                 <h4 className="text-[10px] font-black uppercase tracking-widest text-primary/80">
@@ -390,6 +428,25 @@ export function ExistingAssetAllocationHistory({ onNewAllocation }: ExistingAsse
                                               {getAllocBar(historyItem)}
                                             </div>
                                           </div>
+                                        </div>
+                                        <div className="flex items-center gap-1.5">
+                                          <Button 
+                                            variant="ghost" 
+                                            size="sm" 
+                                            className="h-8 px-2 gap-1 border border-primary/5 hover:bg-red-500/10 text-red-500 hover:border-red-500/20 rounded-md transition-all"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              downloadReport(historyItem);
+                                            }}
+                                            disabled={downloadingId !== null}
+                                          >
+                                            {downloadingId === historyItem.id ? (
+                                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                            ) : (
+                                              <Download className="w-3.5 h-3.5" />
+                                            )}
+                                            <span className="text-[9px] font-black uppercase tracking-tight">PDF</span>
+                                          </Button>
                                         </div>
                                       </div>
                                     );
