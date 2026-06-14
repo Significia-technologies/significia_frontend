@@ -329,7 +329,7 @@ export function SidebarContent() {
                   </TooltipContent>
                 </Tooltip>
                 {item.children?.map((child) => {
-                  const childActive = pathname.startsWith(child.href);
+                  const childActive = child.href === "/asset-allocation" ? pathname === "/asset-allocation" : pathname.startsWith(child.href);
                   return (
                     <Tooltip key={child.href} delayDuration={0}>
                       <TooltipTrigger asChild>
@@ -408,7 +408,7 @@ export function SidebarContent() {
                 {isOpen && (
                   <div className="mt-0.5 ml-4 pl-3 border-l border-border space-y-0.5">
                     {item.children!.map((child) => {
-                      const childActive = pathname.startsWith(child.href);
+                      const childActive = child.href === "/asset-allocation" ? pathname === "/asset-allocation" : pathname.startsWith(child.href);
                       return (
                         <Link
                           key={child.href}
