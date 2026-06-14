@@ -81,11 +81,10 @@ const NAV_ITEMS: NavItem[] = [
     label: "Asset Allocation",
     href: "/asset-allocation",
     icon: PieChart,
-  },
-  {
-    label: "Existing Allocation",
-    href: "/existing-asset-allocation",
-    icon: PieChart,
+    children: [
+      { label: "Existing Asset Allocation", href: "/existing-asset-allocation" },
+      { label: "Target Asset Allocation", href: "/asset-allocation" },
+    ],
   },
   {
     label: "Investment Advice",
@@ -303,7 +302,7 @@ export function SidebarContent() {
                       href={item.href}
                       className={cn(
                         "flex items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium transition-colors",
-                        pathname.startsWith(item.href)
+                        pathname.startsWith(item.href) || item.children?.some((c) => pathname.startsWith(c.href))
                           ? "bg-primary text-primary-foreground"
                           : "text-foreground hover:bg-accent hover:text-accent-foreground"
                       )}
@@ -376,7 +375,7 @@ export function SidebarContent() {
                   onClick={() => toggleMenu(item.href)}
                   className={cn(
                     "w-full flex items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium transition-colors",
-                    pathname.startsWith(item.href)
+                    pathname.startsWith(item.href) || item.children?.some((c) => pathname.startsWith(c.href))
                       ? "text-primary"
                       : "text-foreground hover:bg-accent hover:text-accent-foreground"
                   )}
