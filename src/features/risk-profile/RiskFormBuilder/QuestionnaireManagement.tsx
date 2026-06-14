@@ -62,7 +62,7 @@ export function QuestionnaireManagement({ onEdit, onView, onAddNew, onBack }: Qu
       // Prepend Sample Protocol (Hardcoded System Default)
       const sampleProtocol = {
         id: "sample-form",
-        portfolio_name: "Strategic Risk Assessment (Sample)",
+        portfolio_name: "Risk Profile (Sample)",
         status: "active",
         is_system: true,
         questions: Array(16).fill(0), // Dummy count for UI

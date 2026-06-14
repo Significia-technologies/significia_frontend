@@ -19,7 +19,7 @@ import { toast } from "sonner";
 export default function ToolsPage() {
   const [loading, setLoading] = useState(true);
   const [questionnaires, setQuestionnaires] = useState<any[]>([
-    { id: "sample-form", portfolio_name: "Strategic Risk Assessment (Sample)", is_system: true },
+    { id: "sample-form", portfolio_name: "Risk Profile (Sample)", is_system: true },
   ]);
 
   useEffect(() => {
@@ -32,7 +32,7 @@ export default function ToolsPage() {
       const data = await RiskProfileService.listQuestionnaires();
       const activeCustoms = data.filter((q: any) => q.status === "active");
       setQuestionnaires([
-        { id: "sample-form", portfolio_name: "Strategic Risk Assessment (Sample)", is_system: true },
+        { id: "sample-form", portfolio_name: "Risk Profile (Sample)", is_system: true },
         ...activeCustoms,
       ]);
     } catch {
