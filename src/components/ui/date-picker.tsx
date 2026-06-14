@@ -23,6 +23,7 @@ interface DatePickerProps {
   toYear?: number
   side?: "top" | "bottom" | "left" | "right"
   align?: "start" | "center" | "end"
+  disableFutureDates?: boolean
 }
 
 export function DatePicker({
@@ -35,6 +36,7 @@ export function DatePicker({
   toYear = new Date().getFullYear() + 20,
   side = "bottom",
   align = "start",
+  disableFutureDates = false,
 }: DatePickerProps) {
   // Parse the date string safely
   const selectedDate = React.useMemo(() => {
@@ -91,6 +93,11 @@ export function DatePicker({
             toYear={toYear}
             captionLayout="dropdown"
             className="rounded-md border-0"
+            disabled={disableFutureDates ? (date) => {
+              const today = new Date()
+              today.setHours(0, 0, 0, 0)
+              return date > today
+            } : undefined}
           />
         </PopoverContent>
       </Popover>

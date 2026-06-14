@@ -577,6 +577,24 @@ export default function ClientRegistrationForm({
         }
       }
 
+      if (activeTab === "compliance") {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (formData.client_date && new Date(formData.client_date) > today) {
+          toast.error("Client Onboarding Date cannot be a future date.");
+          return;
+        }
+        if (formData.agreement_date && new Date(formData.agreement_date) > today) {
+          toast.error("Agreement Date cannot be a future date.");
+          return;
+        }
+        if (formData.ipv_date && new Date(formData.ipv_date) > today) {
+          toast.error("IPV Date cannot be a future date.");
+          return;
+        }
+      }
+
       const activeTabContent = document.querySelector('[role="tabpanel"][data-state="active"]');
       if (activeTabContent) {
         const requiredInputs = activeTabContent.querySelectorAll('input[required], select[required], textarea[required]');
@@ -613,6 +631,26 @@ export default function ClientRegistrationForm({
     if (isSpouseDobInvalid) {
       return;
     }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (formData.client_date && new Date(formData.client_date) > today) {
+      toast.error("Client Onboarding Date cannot be a future date.");
+      setActiveTab("compliance");
+      return;
+    }
+    if (formData.agreement_date && new Date(formData.agreement_date) > today) {
+      toast.error("Agreement Date cannot be a future date.");
+      setActiveTab("compliance");
+      return;
+    }
+    if (formData.ipv_date && new Date(formData.ipv_date) > today) {
+      toast.error("IPV Date cannot be a future date.");
+      setActiveTab("compliance");
+      return;
+    }
+
     if (!isEdit && activeTab === "documents") {
         const missingDocs = REQUIRED_DOCUMENTS.filter(doc => !pendingDocuments[doc]);
         if (missingDocs.length > 0) {
@@ -1612,6 +1650,7 @@ export default function ClientRegistrationForm({
                             date={formData.client_date} 
                             onChange={(val) => setFormData(prev => ({ ...prev, client_date: val }))}
                             disabled={isFieldDisabled("client_date")}
+                            disableFutureDates
                           />
                         </div>
                         <div className="space-y-2">
@@ -1620,6 +1659,7 @@ export default function ClientRegistrationForm({
                             date={formData.agreement_date} 
                             onChange={(val) => setFormData(prev => ({ ...prev, agreement_date: val }))}
                             disabled={isFieldDisabled("agreement_date")}
+                            disableFutureDates
                           />
                         </div>
                       </div>
@@ -1710,6 +1750,7 @@ export default function ClientRegistrationForm({
                             onChange={(val) => setFormData(prev => ({ ...prev, ipv_date: val }))}
                             disabled={isFieldDisabled("ipv_date")}
                             placeholder="Select IPV Date"
+                            disableFutureDates
                           />
                         </div>
                       </div>
