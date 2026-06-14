@@ -88,11 +88,6 @@ const NAV_ITEMS: NavItem[] = [
     ],
   },
   {
-    label: "Investment Advice",
-    href: "/investment-advice",
-    icon: FileText,
-  },
-  {
     label: "Product Basket",
     href: "/product-basket",
     icon: ShieldCheck,
@@ -107,15 +102,20 @@ const NAV_ITEMS: NavItem[] = [
     ],
   },
   {
-    label: "Data Rectification",
-    href: "/rectification",
-    icon: ClipboardCheck,
-    minRole: "admin",
+    label: "Investment Advice",
+    href: "/investment-advice",
+    icon: FileText,
   },
   {
     label: "Team",
     href: "/team",
     icon: Users,
+    minRole: "admin",
+  },
+  {
+    label: "Data Rectification",
+    href: "/rectification",
+    icon: ClipboardCheck,
     minRole: "admin",
   },
   {
