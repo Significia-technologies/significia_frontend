@@ -9,7 +9,6 @@ import {
   Loader2,
   PlusCircle,
   PieChart,
-  RefreshCcw,
   IndianRupee,
   TrendingUp,
   Landmark,
@@ -203,15 +202,6 @@ export function ExistingAssetAllocationHistory({ onNewAllocation }: ExistingAsse
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-
-          <Button
-            id="refresh-btn"
-            variant="outline"
-            className="h-10 w-10 p-0 border-primary/10 hover:bg-primary/5 transition-all text-muted-foreground"
-            onClick={loadAllocations}
-          >
-            <RefreshCcw className="w-4 h-4" />
-          </Button>
 
           <Button
             id="download-blank-form-btn"
