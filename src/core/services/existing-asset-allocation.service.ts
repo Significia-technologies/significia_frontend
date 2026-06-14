@@ -149,4 +149,24 @@ export class ExistingAssetAllocationService {
     link.click();
     link.remove();
   }
+
+  static async getComparisons(clientId?: string): Promise<any[]> {
+    const response = await httpClient.get<any[]>(
+      API_ENDPOINTS.EXISTING_ASSET_ALLOCATION.COMPARISONS,
+      { params: clientId ? { client_id: clientId } : undefined }
+    );
+    return response.data;
+  }
+
+  static async saveComparison(payload: {
+    client_id: string;
+    existing_allocation_id: string;
+    target_allocation_id: string;
+  }): Promise<any> {
+    const response = await httpClient.post<any>(
+      API_ENDPOINTS.EXISTING_ASSET_ALLOCATION.COMPARE_SAVE,
+      payload
+    );
+    return response.data;
+  }
 }

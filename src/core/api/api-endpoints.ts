@@ -163,6 +163,8 @@ export const API_ENDPOINTS = {
       `${API_BASE}/existing-asset-allocation/bridge/allocation/${id}/pdf`,
     COMPARE_PDF: (existingId: string, targetId: string) =>
       `${API_BASE}/existing-asset-allocation/bridge/allocation/compare/pdf?existing_id=${existingId}&target_id=${targetId}`,
+    COMPARISONS: `${API_BASE}/existing-asset-allocation/bridge/comparisons`,
+    COMPARE_SAVE: `${API_BASE}/existing-asset-allocation/bridge/compare/save`,
   },
 
   // ── Bridge Management (Super Admin only) ───────────────────

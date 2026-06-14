@@ -1,21 +1,37 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { ArrowLeftRight, Loader2, Download, AlertTriangle, ArrowRight, ChevronLeft } from "lucide-react";
+import { 
+  ArrowLeftRight, 
+  Loader2, 
+  Download, 
+  AlertTriangle, 
+  ArrowRight, 
+  ChevronLeft, 
+  Search, 
+  Plus, 
+  History, 
+  Calendar,
+  CheckCircle2
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import { toast } from "sonner";
 import { useAppStore } from "@/store/useAppStore";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { format } from "date-fns";
 
 import { ClientValidator } from "@/features/asset-allocation/ClientValidator";
 import { ExistingAssetAllocationService, ExistingAssetAllocation } from "@/core/services/existing-asset-allocation.service";
 import { AssetAllocationService, AssetAllocation, ClientValidateResponse } from "@/core/services/asset-allocation.service";
 
-type StepType = "VALIDATE" | "COMPARE";
+type StepType = "HISTORY" | "VALIDATE" | "COMPARE";
 
 export default function AllocationComparisonPage() {
   const { user } = useAppStore();
@@ -39,12 +55,37 @@ export default function AllocationComparisonPage() {
     }
   }, [user, hasExistingPerm, hasTargetPerm, router]);
 
-  const [step, setStep] = useState<StepType>("VALIDATE");
+  const [step, setStep] = useState<StepType>("HISTORY");
   const [clientInfo, setClientInfo] = useState<(ClientValidateResponse & { client_code: string }) | null>(null);
   const [loading, setLoading] = useState(false);
   const [existingAlloc, setExistingAlloc] = useState<ExistingAssetAllocation | null>(null);
   const [targetAlloc, setTargetAlloc] = useState<AssetAllocation | null>(null);
   const [downloading, setDownloading] = useState(false);
+
+  // Comparison History States
+  const [history, setHistory] = useState<any[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSavingComparison, setIsSavingComparison] = useState(false);
+  const [savedComparisonIds, setSavedComparisonIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (user && hasExistingPerm && hasTargetPerm) {
+      loadHistory();
+    }
+  }, [user, hasExistingPerm, hasTargetPerm]);
+
+  const loadHistory = async () => {
+    setHistoryLoading(true);
+    try {
+      const data = await ExistingAssetAllocationService.getComparisons();
+      setHistory(data);
+    } catch {
+      toast.error("Failed to load past comparisons history");
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
 
   const handleClientValidated = async (info: ClientValidateResponse & { client_code: string }) => {
     setClientInfo(info);
@@ -71,11 +112,66 @@ export default function AllocationComparisonPage() {
     }
   };
 
+  const handleSelectHistory = async (item: any) => {
+    setLoading(true);
+    setClientInfo({
+      success: true,
+      client_name: item.client_name,
+      client_id: item.client_id,
+      client_code: item.client_code,
+      registration_number: "",
+      category_name: item.target_risk_tier,
+      form_name: ""
+    });
+    try {
+      const [existingAllocData, targetAllocData] = await Promise.all([
+        ExistingAssetAllocationService.getById(item.existing_allocation_id),
+        AssetAllocationService.getById(item.target_allocation_id)
+      ]);
+      setExistingAlloc(existingAllocData);
+      setTargetAlloc(targetAllocData);
+      setStep("COMPARE");
+      setSavedComparisonIds(prev => {
+        const next = new Set(prev);
+        next.add(`${item.existing_allocation_id}-${item.target_allocation_id}`);
+        return next;
+      });
+    } catch {
+      toast.error("Failed to load past comparison details");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveComparison = async () => {
+    if (!existingAlloc || !targetAlloc || !clientInfo?.client_id) return;
+    setIsSavingComparison(true);
+    try {
+      await ExistingAssetAllocationService.saveComparison({
+        client_id: clientInfo.client_id,
+        existing_allocation_id: existingAlloc.id,
+        target_allocation_id: targetAlloc.id
+      });
+      toast.success("Comparison saved to history successfully.");
+      const pairKey = `${existingAlloc.id}-${targetAlloc.id}`;
+      setSavedComparisonIds(prev => {
+        const next = new Set(prev);
+        next.add(pairKey);
+        return next;
+      });
+      loadHistory();
+    } catch {
+      toast.error("Failed to save comparison to history.");
+    } finally {
+      setIsSavingComparison(false);
+    }
+  };
+
   const handleReset = () => {
     setClientInfo(null);
     setExistingAlloc(null);
     setTargetAlloc(null);
-    setStep("VALIDATE");
+    setStep("HISTORY");
   };
 
   const handleDownloadPDF = async () => {
@@ -96,6 +192,41 @@ export default function AllocationComparisonPage() {
     }
   };
 
+  const formatCurrency = (val: number) => {
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      maximumFractionDigits: 0
+    }).format(val);
+  };
+
+  const getTierStyles = (tier: string) => {
+    const t = tier?.toLowerCase() || "";
+    if (t.includes("aggressive")) return {
+      bg: "bg-red-500/10",
+      text: "text-red-400",
+      border: "border-red-500/20",
+      dot: "bg-red-500"
+    };
+    if (t.includes("moderate")) return {
+      bg: "bg-amber-500/10",
+      text: "text-amber-400",
+      border: "border-amber-500/20",
+      dot: "bg-amber-500"
+    };
+    if (t.includes("conservative")) return {
+      bg: "bg-emerald-500/10",
+      text: "text-emerald-400",
+      border: "border-emerald-500/20",
+      dot: "bg-emerald-500"
+    };
+    return {
+      bg: "bg-primary/10",
+      text: "text-primary/80",
+      border: "border-primary/20",
+      dot: "bg-primary"
+    };
+  };
 
   if (!user || !hasExistingPerm || !hasTargetPerm) {
     return (
@@ -146,6 +277,32 @@ export default function AllocationComparisonPage() {
               <span className="text-xs font-black text-primary">{clientInfo?.client_name}</span>
               <span className="text-[9px] font-mono text-muted-foreground/50 uppercase">{clientInfo?.client_code}</span>
             </div>
+
+            {/* Save to History Button */}
+            {existingAlloc && targetAlloc && (
+              <Button
+                onClick={handleSaveComparison}
+                disabled={isSavingComparison || savedComparisonIds.has(`${existingAlloc.id}-${targetAlloc.id}`)}
+                variant={savedComparisonIds.has(`${existingAlloc.id}-${targetAlloc.id}`) ? "outline" : "default"}
+                size="sm"
+                className={cn(
+                  "gap-1.5 font-black uppercase text-[9px] tracking-widest h-8 px-3 transition-all",
+                  savedComparisonIds.has(`${existingAlloc.id}-${targetAlloc.id}`) 
+                    ? "border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/10" 
+                    : "bg-amber-600 hover:bg-amber-700 text-white"
+                )}
+              >
+                {isSavingComparison ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : savedComparisonIds.has(`${existingAlloc.id}-${targetAlloc.id}`) ? (
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                ) : (
+                  <History className="w-3 h-3" />
+                )}
+                <span>{savedComparisonIds.has(`${existingAlloc.id}-${targetAlloc.id}`) ? "Saved" : "Save Comparison"}</span>
+              </Button>
+            )}
+
             {/* Report PDF */}
             <Button
               onClick={handleDownloadPDF}
@@ -164,14 +321,169 @@ export default function AllocationComparisonPage() {
               className="gap-1.5 h-8 px-3 font-black uppercase text-[9px] tracking-widest border-primary/20 hover:bg-primary/5 text-muted-foreground"
             >
               <ChevronLeft className="w-3 h-3" />
-              Change Client
+              Back
             </Button>
           </div>
         )}
       </div>
 
-      {step === "VALIDATE" ? (
-        <div className="max-w-2xl mx-auto rounded-xl border border-primary/10 bg-card/30 backdrop-blur-sm p-6 relative">
+      {step === "HISTORY" && (
+        <div className="space-y-4 animate-in fade-in duration-500">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="relative w-full sm:max-w-xs">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground opacity-50" />
+              <Input
+                placeholder="Search past comparisons..."
+                className="pl-10 h-9 bg-card/50 border-primary/10 font-medium"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <Button
+              onClick={() => setStep("VALIDATE")}
+              className="w-full sm:w-auto h-9 gap-1.5 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 font-black uppercase text-[10px] tracking-widest px-4"
+            >
+              <Plus className="w-4 h-4" />
+              Compare New Client
+            </Button>
+          </div>
+
+          <Card className="border-primary/10 bg-card/30 backdrop-blur-sm overflow-hidden">
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader className="bg-primary/5">
+                  <TableRow className="hover:bg-transparent border-primary/10">
+                    <TableHead className="text-[10px] font-black uppercase tracking-widest text-primary/60">Client</TableHead>
+                    <TableHead className="text-[10px] font-black uppercase tracking-widest text-primary/60">Existing Portfolio</TableHead>
+                    <TableHead className="text-[10px] font-black uppercase tracking-widest text-primary/60">Target Profile</TableHead>
+                    <TableHead className="text-[10px] font-black uppercase tracking-widest text-primary/60">Comparison Date</TableHead>
+                    <TableHead className="text-[10px] font-black uppercase tracking-widest text-primary/60 text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {historyLoading ? (
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <TableRow key={i} className="border-primary/5">
+                        <TableCell colSpan={5} className="h-16">
+                          <Skeleton className="h-8 w-full rounded-lg" />
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : history.filter(item => 
+                    item.client_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    item.client_code?.toLowerCase().includes(searchQuery.toLowerCase())
+                  ).length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="h-32 text-center text-muted-foreground font-medium italic">
+                        No past comparisons found.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    history
+                      .filter(item => 
+                        item.client_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        item.client_code?.toLowerCase().includes(searchQuery.toLowerCase())
+                      )
+                      .map((item) => {
+                        const existingStyles = getTierStyles(item.existing_risk_tier);
+                        const targetStyles = getTierStyles(item.target_risk_tier);
+                        return (
+                          <TableRow key={item.id} className="group hover:bg-primary/5 border-primary/5 transition-colors">
+                            <TableCell>
+                              <div className="flex flex-col">
+                                <span className="font-bold text-sm text-foreground group-hover:text-primary transition-colors">
+                                  {item.client_name || "Unknown Client"}
+                                </span>
+                                <span className="text-[10px] font-mono tracking-widest opacity-50 uppercase">
+                                  {item.client_code || "N/A"}
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex flex-col gap-1.5">
+                                <span className="font-black text-xs text-primary/80">
+                                  {formatCurrency(item.existing_total)}
+                                </span>
+                                <Badge variant="outline" className={cn("gap-1 py-0.5 px-2 border uppercase font-black text-[7.5px] tracking-widest rounded-full w-fit", existingStyles.bg, existingStyles.text, existingStyles.border)}>
+                                  <span className={cn("w-1 h-1 rounded-full", existingStyles.dot)} />
+                                  {item.existing_risk_tier || "N/A"}
+                                </Badge>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className={cn("gap-1 py-0.5 px-2 border uppercase font-black text-[7.5px] tracking-widest rounded-full w-fit", targetStyles.bg, targetStyles.text, targetStyles.border)}>
+                                <span className={cn("w-1 h-1 rounded-full", targetStyles.dot)} />
+                                {item.target_risk_tier || "N/A"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-xs font-medium text-muted-foreground">
+                              <div className="flex items-center gap-1.5">
+                                <Calendar className="w-3 h-3 opacity-40" />
+                                {format(new Date(item.created_at), "MMM dd, yyyy • HH:mm")}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleSelectHistory(item)}
+                                  className="h-8 px-2.5 gap-1.5 border border-primary/10 hover:bg-primary/5 text-muted-foreground"
+                                >
+                                  <ArrowRight className="w-3.5 h-3.5" />
+                                  <span className="text-[9px] font-black uppercase tracking-tight">View</span>
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    setDownloading(true);
+                                    try {
+                                      await ExistingAssetAllocationService.downloadComparisonPDF(
+                                        item.existing_allocation_id,
+                                        item.target_allocation_id,
+                                        `Allocation_Comparison_${item.client_code}.pdf`
+                                      );
+                                      toast.success("PDF report downloaded successfully.");
+                                    } catch {
+                                      toast.error("Failed to download PDF.");
+                                    } finally {
+                                      setDownloading(false);
+                                    }
+                                  }}
+                                  className="h-8 px-2.5 gap-1.5 border border-primary/10 hover:bg-primary/5 text-muted-foreground"
+                                >
+                                  <Download className="w-3.5 h-3.5 text-red-500" />
+                                  <span className="text-[9px] font-black uppercase tracking-tight text-red-500">PDF</span>
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {step === "VALIDATE" && (
+        <div className="max-w-2xl mx-auto rounded-xl border border-primary/10 bg-card/30 backdrop-blur-sm p-6 relative space-y-4">
+          <div className="flex items-center justify-between border-b border-primary/5 pb-2">
+            <h3 className="text-sm font-black uppercase tracking-wider text-primary">Validate Client for Comparison</h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setStep("HISTORY")}
+              className="gap-1.5 h-8 px-2 font-black uppercase text-[9px] tracking-widest text-muted-foreground"
+            >
+              <ChevronLeft className="w-3 h-3" />
+              Back to History
+            </Button>
+          </div>
           {loading && (
             <div className="absolute inset-0 bg-background/50 backdrop-blur-xs flex items-center justify-center rounded-xl z-20">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -179,7 +491,9 @@ export default function AllocationComparisonPage() {
           )}
           <ClientValidator onValidated={handleClientValidated} />
         </div>
-      ) : (
+      )}
+
+      {step === "COMPARE" && (
         <div className="space-y-5 animate-in fade-in duration-500">
           {/* Missing Allocations Warning */}
           {(!existingAlloc || !targetAlloc) && (
@@ -210,7 +524,6 @@ export default function AllocationComparisonPage() {
 
           {existingAlloc && targetAlloc && (
             <>
-
               {/* Main Comparison Matrix Card */}
               <Card className="border-primary/10 bg-card/30 backdrop-blur-sm overflow-hidden">
                 <CardHeader className="border-b border-primary/5 bg-primary/5 pb-4">
@@ -288,15 +601,13 @@ export default function AllocationComparisonPage() {
                   description: string,
                   data: { label: string; ext: number; tgt: number; color: string }[]
                 ) => {
-                  const filtered = data;
-
-                  const maxVal = Math.max(...filtered.flatMap(d => [d.ext, d.tgt]), 10);
+                  const maxVal = Math.max(...data.flatMap(d => [d.ext, d.tgt]), 10);
                   const chartH = 180;
                   const barW = 20;
                   const gap = 8;
                   const groupGap = 28;
                   const groupW = barW * 2 + gap;
-                  const totalW = filtered.length * (groupW + groupGap);
+                  const totalW = data.length * (groupW + groupGap);
                   const paddingLeft = 44;
                   const paddingBottom = 56;
                   const paddingTop = 20;
@@ -330,7 +641,7 @@ export default function AllocationComparisonPage() {
                             })}
 
                             {/* Bars */}
-                            {filtered.map((item, i) => {
+                            {data.map((item, i) => {
                               const x = paddingLeft + i * (groupW + groupGap);
                               const extH = (item.ext / maxVal) * chartH;
                               const tgtH = (item.tgt / maxVal) * chartH;
@@ -394,7 +705,7 @@ export default function AllocationComparisonPage() {
 
                       {/* Chart 2: Equities sub-assets */}
                       {renderChart(
-                        "Equities â€” Sub-Asset Breakdown",
+                        "Equities — Sub-Asset Breakdown",
                         "Direct Stocks, Mutual Funds, ULIPs & ETFs (Equity)",
                         [
                           { label: "Stocks", ext: existingAlloc.stocks_percentage, tgt: targetAlloc.stocks_percentage ?? 0, color: "#ec4899" },
@@ -406,7 +717,7 @@ export default function AllocationComparisonPage() {
 
                       {/* Chart 3: Debt sub-assets */}
                       {renderChart(
-                        "Debt Securities â€” Sub-Asset Breakdown",
+                        "Debt Securities — Sub-Asset Breakdown",
                         "FD & Bonds, Mutual Funds, ULIPs & ETFs (Debt)",
                         [
                           { label: "FD & Bonds", ext: existingAlloc.fixed_deposits_bonds_percentage, tgt: targetAlloc.fixed_deposits_bonds_percentage, color: "#06b6d4" },
@@ -418,7 +729,7 @@ export default function AllocationComparisonPage() {
 
                       {/* Chart 4: Commodities sub-assets */}
                       {renderChart(
-                        "Commodities â€” Sub-Asset Breakdown",
+                        "Commodities — Sub-Asset Breakdown",
                         "Gold ETF, Silver ETF & Other Commodity ETFs",
                         [
                           { label: "Gold ETF", ext: existingAlloc.gold_etf_percentage, tgt: targetAlloc.gold_etf_percentage, color: "#f59e0b" },
@@ -457,4 +768,3 @@ export default function AllocationComparisonPage() {
     </div>
   );
 }
-
