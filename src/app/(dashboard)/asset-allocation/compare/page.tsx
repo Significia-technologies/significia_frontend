@@ -1,0 +1,460 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { ArrowLeftRight, Loader2, Download, AlertTriangle, ArrowRight, ChevronLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+
+import { toast } from "sonner";
+import { useAppStore } from "@/store/useAppStore";
+import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
+
+import { ClientValidator } from "@/features/asset-allocation/ClientValidator";
+import { ExistingAssetAllocationService, ExistingAssetAllocation } from "@/core/services/existing-asset-allocation.service";
+import { AssetAllocationService, AssetAllocation, ClientValidateResponse } from "@/core/services/asset-allocation.service";
+
+type StepType = "VALIDATE" | "COMPARE";
+
+export default function AllocationComparisonPage() {
+  const { user } = useAppStore();
+  const router = useRouter();
+
+  // Enforce read permission for BOTH modules
+  const isIAOwner = user?.role === "owner";
+  const isIAPartner = user?.role === "partner";
+  const isSuperAdmin = user?.role === "super_admin";
+  
+  const hasExistingPerm = isIAOwner || isIAPartner || isSuperAdmin || 
+    !!user?.permissions?.find((p: any) => p.module === "Existing Asset Allocation")?.can_read;
+  
+  const hasTargetPerm = isIAOwner || isIAPartner || isSuperAdmin || 
+    !!user?.permissions?.find((p: any) => p.module === "Asset Allocation")?.can_read;
+
+  useEffect(() => {
+    if (user && (!hasExistingPerm || !hasTargetPerm)) {
+      toast.error("Access Restricted: You need permissions for both Existing and Target Asset Allocation modules.");
+      router.replace("/");
+    }
+  }, [user, hasExistingPerm, hasTargetPerm, router]);
+
+  const [step, setStep] = useState<StepType>("VALIDATE");
+  const [clientInfo, setClientInfo] = useState<(ClientValidateResponse & { client_code: string }) | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [existingAlloc, setExistingAlloc] = useState<ExistingAssetAllocation | null>(null);
+  const [targetAlloc, setTargetAlloc] = useState<AssetAllocation | null>(null);
+  const [downloading, setDownloading] = useState(false);
+
+  const handleClientValidated = async (info: ClientValidateResponse & { client_code: string }) => {
+    setClientInfo(info);
+    if (!info.client_id) {
+      toast.error("Internal client identifier missing in validation response");
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      // Fetch both allocations in parallel
+      const [existingList, targetList] = await Promise.all([
+        ExistingAssetAllocationService.getAll(info.client_id),
+        AssetAllocationService.getAll(info.client_id)
+      ]);
+      
+      setExistingAlloc(existingList[0] || null);
+      setTargetAlloc(targetList[0] || null);
+      setStep("COMPARE");
+    } catch {
+      toast.error("Failed to load client allocation histories");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReset = () => {
+    setClientInfo(null);
+    setExistingAlloc(null);
+    setTargetAlloc(null);
+    setStep("VALIDATE");
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!existingAlloc || !targetAlloc || !clientInfo) return;
+    setDownloading(true);
+    try {
+      const filename = `Allocation_Comparison_${clientInfo.client_code}.pdf`;
+      await ExistingAssetAllocationService.downloadComparisonPDF(
+        existingAlloc.id,
+        targetAlloc.id,
+        filename
+      );
+      toast.success("PDF report downloaded successfully.");
+    } catch {
+      toast.error("Failed to compile comparison report PDF.");
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+
+  if (!user || !hasExistingPerm || !hasTargetPerm) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Redirecting...</p>
+      </div>
+    );
+  }
+
+  // Define breakdown segments
+  const rowItems = [
+    { cat: "Equities", label: "Direct Equity (Stocks)", extPctKey: "stocks_percentage", tgtPctKey: "stocks_percentage" },
+    { cat: "Equities", label: "Mutual Funds (Equity)", extPctKey: "mutual_fund_equity_percentage", tgtPctKey: "mutual_fund_equity_percentage" },
+    { cat: "Equities", label: "ULIPs (Equity)", extPctKey: "ulip_equity_percentage", tgtPctKey: "ulip_equity_percentage" },
+    { cat: "Equities", label: "ETFs (Equity)", extPctKey: "etf_equity_percentage", tgtPctKey: "etf_equity_percentage" },
+    { cat: "Equities", label: "EQUITIES TOTAL", extPctKey: "equities_percentage", tgtPctKey: "equities_percentage", isCategoryTotal: true },
+
+    { cat: "Debt Securities", label: "Fixed Deposits & Bonds", extPctKey: "fixed_deposits_bonds_percentage", tgtPctKey: "fixed_deposits_bonds_percentage" },
+    { cat: "Debt Securities", label: "Mutual Funds (Debt)", extPctKey: "mutual_fund_debt_percentage", tgtPctKey: "mutual_fund_debt_percentage" },
+    { cat: "Debt Securities", label: "ULIPs (Debt)", extPctKey: "ulip_debt_percentage", tgtPctKey: "ulip_debt_percentage" },
+    { cat: "Debt Securities", label: "ETFs (Debt)", extPctKey: "etf_debt_percentage", tgtPctKey: "etf_debt_percentage" },
+    { cat: "Debt Securities", label: "DEBT SECURITIES TOTAL", extPctKey: "debt_securities_percentage", tgtPctKey: "debt_securities_percentage", isCategoryTotal: true },
+
+    { cat: "Commodities", label: "Gold ETFs", extPctKey: "gold_etf_percentage", tgtPctKey: "gold_etf_percentage" },
+    { cat: "Commodities", label: "Silver ETFs", extPctKey: "silver_etf_percentage", tgtPctKey: "silver_etf_percentage" },
+    { cat: "Commodities", label: "Other ETFs (Commodity)", extPctKey: "etf_commodity_percentage", tgtPctKey: "etf_commodity_percentage" },
+    { cat: "Commodities", label: "COMMODITIES TOTAL", extPctKey: "commodities_percentage", tgtPctKey: "commodities_percentage", isCategoryTotal: true },
+  ];
+
+  return (
+    <div className="max-w-7xl mx-auto py-4 px-4 space-y-5">
+      {/* Compact Header Bar */}
+      <div className="flex items-center justify-between border-b border-primary/10 pb-3 animate-in fade-in duration-500">
+        <div className="flex items-center gap-3">
+          <div className="p-1.5 rounded-lg bg-primary/10">
+            <ArrowLeftRight className="w-4 h-4 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-base font-black tracking-tight text-foreground uppercase leading-none">Allocation Comparison</h1>
+            <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest opacity-40 mt-0.5">Existing vs Target allocation — percentage only</p>
+          </div>
+        </div>
+        {step === "COMPARE" && (
+          <div className="flex items-center gap-3">
+            {/* Client badge */}
+            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary/10 border border-primary/10">
+              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Client:</span>
+              <span className="text-xs font-black text-primary">{clientInfo?.client_name}</span>
+              <span className="text-[9px] font-mono text-muted-foreground/50 uppercase">{clientInfo?.client_code}</span>
+            </div>
+            {/* Report PDF */}
+            <Button
+              onClick={handleDownloadPDF}
+              disabled={downloading}
+              size="sm"
+              className="gap-1.5 bg-primary hover:bg-primary/90 font-black uppercase text-[9px] tracking-widest h-8 px-3"
+            >
+              {downloading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
+              PDF
+            </Button>
+            {/* Change Client */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleReset}
+              className="gap-1.5 h-8 px-3 font-black uppercase text-[9px] tracking-widest border-primary/20 hover:bg-primary/5 text-muted-foreground"
+            >
+              <ChevronLeft className="w-3 h-3" />
+              Change Client
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {step === "VALIDATE" ? (
+        <div className="max-w-2xl mx-auto rounded-xl border border-primary/10 bg-card/30 backdrop-blur-sm p-6 relative">
+          {loading && (
+            <div className="absolute inset-0 bg-background/50 backdrop-blur-xs flex items-center justify-center rounded-xl z-20">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          )}
+          <ClientValidator onValidated={handleClientValidated} />
+        </div>
+      ) : (
+        <div className="space-y-5 animate-in fade-in duration-500">
+          {/* Missing Allocations Warning */}
+          {(!existingAlloc || !targetAlloc) && (
+            <Card className="border-amber-500/20 bg-amber-500/5 rounded-xl">
+              <CardContent className="p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                  <div>
+                    <h3 className="font-bold text-sm text-foreground">Incomplete Allocations Registered</h3>
+                    <p className="text-xs text-muted-foreground mt-1">Both target and existing allocations are required for comparison.</p>
+                    <div className="flex gap-4 mt-2">
+                      {!existingAlloc && (
+                        <Button variant="link" onClick={() => router.push("/existing-asset-allocation")} className="p-0 h-auto text-xs font-bold text-amber-500 hover:text-amber-400 gap-1">
+                          Create Existing Holdings <ArrowRight className="w-3 h-3" />
+                        </Button>
+                      )}
+                      {!targetAlloc && (
+                        <Button variant="link" onClick={() => router.push("/asset-allocation")} className="p-0 h-auto text-xs font-bold text-amber-500 hover:text-amber-400 gap-1">
+                          Create Target Allocation <ArrowRight className="w-3 h-3" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {existingAlloc && targetAlloc && (
+            <>
+
+              {/* Main Comparison Matrix Card */}
+              <Card className="border-primary/10 bg-card/30 backdrop-blur-sm overflow-hidden">
+                <CardHeader className="border-b border-primary/5 bg-primary/5 pb-4">
+                  <CardTitle className="text-sm font-black uppercase tracking-widest text-primary">Asset Allocation Comparison Matrix</CardTitle>
+                  <CardDescription>Comparative breakdown of current values vs target values and percentage deviations</CardDescription>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader className="bg-primary/5">
+                      <TableRow className="hover:bg-transparent border-primary/10">
+                        <TableHead className="text-[10px] font-black uppercase tracking-widest text-primary/60">Asset Category</TableHead>
+                        <TableHead className="text-[10px] font-black uppercase tracking-widest text-primary/60">Sub-Asset Class</TableHead>
+                        <TableHead className="text-[10px] font-black uppercase tracking-widest text-primary/60 text-right">Existing %</TableHead>
+                        <TableHead className="text-[10px] font-black uppercase tracking-widest text-primary/60 text-right">Target %</TableHead>
+                        <TableHead className="text-[10px] font-black uppercase tracking-widest text-primary/60 text-right">Variance %</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {rowItems.map((item, idx) => {
+                        const extPct = existingAlloc[item.extPctKey as keyof ExistingAssetAllocation] as number || 0;
+                        const tgtPct = targetAlloc[item.tgtPctKey as keyof AssetAllocation] as number || 0;
+                        const variance = extPct - tgtPct;
+                        const varSign = variance > 0 ? "+" : "";
+
+                        return (
+                          <TableRow
+                            key={idx}
+                            className={cn(
+                              "transition-colors",
+                              item.isCategoryTotal
+                                ? "bg-primary/15 border-t border-b border-primary/20 hover:bg-primary/20"
+                                : "border-primary/5 hover:bg-primary/5"
+                            )}
+                          >
+                            <TableCell className={cn("text-xs font-semibold", item.isCategoryTotal ? "text-primary font-black" : "text-muted-foreground/60")}>
+                              {idx % 5 === 0 && item.cat}
+                            </TableCell>
+                            <TableCell className={cn("text-xs", item.isCategoryTotal ? "font-black text-foreground tracking-wide uppercase text-[11px]" : "font-medium")}>
+                              {item.label}
+                            </TableCell>
+                            <TableCell className={cn("text-xs text-right", item.isCategoryTotal ? "font-black text-foreground" : "font-medium")}>
+                              {extPct.toFixed(1)}%
+                            </TableCell>
+                            <TableCell className={cn("text-xs text-right", item.isCategoryTotal ? "font-black text-foreground" : "font-medium")}>
+                              {tgtPct.toFixed(1)}%
+                            </TableCell>
+                            <TableCell
+                              className={cn(
+                                "text-xs text-right font-black",
+                                variance > 1 ? "text-red-500" : variance < -1 ? "text-emerald-500" : "text-muted-foreground/55"
+                              )}
+                            >
+                              {varSign}{variance.toFixed(1)}%
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                      {/* Grand Total */}
+                      <TableRow className="bg-primary/10 border-primary/10 font-bold hover:bg-primary/15 transition-colors">
+                        <TableCell className="text-xs text-primary font-black"></TableCell>
+                        <TableCell className="text-xs font-black">GRAND TOTAL</TableCell>
+                        <TableCell className="text-xs text-right font-black">100.0%</TableCell>
+                        <TableCell className="text-xs text-right font-black">100.0%</TableCell>
+                        <TableCell className="text-xs text-right font-black text-muted-foreground/50">0.0%</TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+
+              {/* 4-Chart Grid: Asset-wise & Sub-asset Comparisons */}
+              {(() => {
+                const renderChart = (
+                  title: string,
+                  description: string,
+                  data: { label: string; ext: number; tgt: number; color: string }[]
+                ) => {
+                  const filtered = data;
+
+                  const maxVal = Math.max(...filtered.flatMap(d => [d.ext, d.tgt]), 10);
+                  const chartH = 180;
+                  const barW = 20;
+                  const gap = 8;
+                  const groupGap = 28;
+                  const groupW = barW * 2 + gap;
+                  const totalW = filtered.length * (groupW + groupGap);
+                  const paddingLeft = 44;
+                  const paddingBottom = 56;
+                  const paddingTop = 20;
+                  const svgW = Math.max(totalW + paddingLeft + 16, 280);
+                  const yLines = [0, 25, 50, 75, 100].filter(v => v <= Math.ceil(maxVal / 10) * 10 + 5);
+
+                  return (
+                    <Card className="border-primary/10 bg-card/30 backdrop-blur-sm overflow-hidden">
+                      <CardHeader className="bg-primary/5 pb-3 border-b border-primary/5">
+                        <CardTitle className="text-[11px] font-black uppercase tracking-widest text-primary">{title}</CardTitle>
+                        <CardDescription className="text-[10px]">{description}</CardDescription>
+                      </CardHeader>
+                      <CardContent className="pt-6 pb-4 px-4">
+                        <div className="w-full flex justify-center">
+                          <svg
+                            viewBox={`0 0 ${svgW} ${chartH + paddingBottom + paddingTop}`}
+                            width={svgW}
+                            height={chartH + paddingBottom + paddingTop}
+                            style={{ maxWidth: "100%", display: "block" }}
+                            className="overflow-visible"
+                          >
+                            {/* Y-axis grid */}
+                            {yLines.map(v => {
+                              const y = paddingTop + chartH - (v / maxVal) * chartH;
+                              return (
+                                <g key={v}>
+                                  <line x1={paddingLeft} x2={svgW} y1={y} y2={y} stroke="currentColor" strokeOpacity={0.06} strokeWidth={1} />
+                                  <text x={paddingLeft - 6} y={y + 3} textAnchor="end" fontSize={8} fill="currentColor" opacity={0.4} fontWeight="700" fontFamily="inherit">{v}%</text>
+                                </g>
+                              );
+                            })}
+
+                            {/* Bars */}
+                            {filtered.map((item, i) => {
+                              const x = paddingLeft + i * (groupW + groupGap);
+                              const extH = (item.ext / maxVal) * chartH;
+                              const tgtH = (item.tgt / maxVal) * chartH;
+                              const variance = item.ext - item.tgt;
+                              const varSign = variance > 0 ? "+" : "";
+                              const varCol = variance > 1 ? "#ef4444" : variance < -1 ? "#10b981" : "#6b7280";
+
+                              return (
+                                <g key={item.label}>
+                                  {/* Existing bar */}
+                                  <rect x={x} y={paddingTop + chartH - extH} width={barW} height={extH} rx={4} fill={item.color} opacity={0.85} />
+                                  {item.ext > 0 && (
+                                    <text x={x + barW / 2} y={paddingTop + chartH - extH - 4} textAnchor="middle" fontSize={7.5} fill={item.color} fontWeight="800" fontFamily="inherit">
+                                      {item.ext.toFixed(1)}%
+                                    </text>
+                                  )}
+
+                                  {/* Target bar */}
+                                  <rect x={x + barW + gap} y={paddingTop + chartH - tgtH} width={barW} height={tgtH} rx={4} fill={item.color} opacity={0.2} stroke={item.color} strokeWidth={1.5} strokeDasharray="4 2" />
+                                  {item.tgt > 0 && (
+                                    <text x={x + barW + gap + barW / 2} y={paddingTop + chartH - tgtH - 4} textAnchor="middle" fontSize={7.5} fill={item.color} fontWeight="800" fontFamily="inherit" opacity={0.7}>
+                                      {item.tgt.toFixed(1)}%
+                                    </text>
+                                  )}
+
+                                  {/* X label */}
+                                  <text x={x + groupW / 2} y={paddingTop + chartH + 16} textAnchor="middle" fontSize={8} fill="currentColor" opacity={0.45} fontWeight="700" fontFamily="inherit">
+                                    {item.label.length > 9 ? item.label.slice(0, 9) + "…" : item.label}
+                                  </text>
+
+                                  {/* Variance */}
+                                  <text x={x + groupW / 2} y={paddingTop + chartH + 29} textAnchor="middle" fontSize={7.5} fill={varCol} fontWeight="900" fontFamily="inherit">
+                                    {varSign}{variance.toFixed(1)}%
+                                  </text>
+                                </g>
+                              );
+                            })}
+
+                            {/* Baseline */}
+                            <line x1={paddingLeft} x2={svgW} y1={paddingTop + chartH} y2={paddingTop + chartH} stroke="currentColor" strokeOpacity={0.12} strokeWidth={1} />
+                          </svg>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                };
+
+                return (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Chart 1: Overall Asset Classes */}
+                      {renderChart(
+                        "Asset Class Comparison",
+                        "Top-level: Equities vs Debt vs Commodities",
+                        [
+                          { label: "Equities", ext: existingAlloc.equities_percentage, tgt: targetAlloc.equities_percentage, color: "#a855f7" },
+                          { label: "Debt", ext: existingAlloc.debt_securities_percentage, tgt: targetAlloc.debt_securities_percentage, color: "#3b82f6" },
+                          { label: "Commodities", ext: existingAlloc.commodities_percentage, tgt: targetAlloc.commodities_percentage, color: "#f59e0b" },
+                        ]
+                      )}
+
+                      {/* Chart 2: Equities sub-assets */}
+                      {renderChart(
+                        "Equities â€” Sub-Asset Breakdown",
+                        "Direct Stocks, Mutual Funds, ULIPs & ETFs (Equity)",
+                        [
+                          { label: "Stocks", ext: existingAlloc.stocks_percentage, tgt: targetAlloc.stocks_percentage ?? 0, color: "#ec4899" },
+                          { label: "MF Equity", ext: existingAlloc.mutual_fund_equity_percentage, tgt: targetAlloc.mutual_fund_equity_percentage, color: "#a855f7" },
+                          { label: "ULIP Eq.", ext: existingAlloc.ulip_equity_percentage, tgt: targetAlloc.ulip_equity_percentage, color: "#8b5cf6" },
+                          { label: "ETF Eq.", ext: existingAlloc.etf_equity_percentage, tgt: targetAlloc.etf_equity_percentage, color: "#c084fc" },
+                        ]
+                      )}
+
+                      {/* Chart 3: Debt sub-assets */}
+                      {renderChart(
+                        "Debt Securities â€” Sub-Asset Breakdown",
+                        "FD & Bonds, Mutual Funds, ULIPs & ETFs (Debt)",
+                        [
+                          { label: "FD & Bonds", ext: existingAlloc.fixed_deposits_bonds_percentage, tgt: targetAlloc.fixed_deposits_bonds_percentage, color: "#06b6d4" },
+                          { label: "MF Debt", ext: existingAlloc.mutual_fund_debt_percentage, tgt: targetAlloc.mutual_fund_debt_percentage, color: "#3b82f6" },
+                          { label: "ULIP Debt", ext: existingAlloc.ulip_debt_percentage, tgt: targetAlloc.ulip_debt_percentage, color: "#60a5fa" },
+                          { label: "ETF Debt", ext: existingAlloc.etf_debt_percentage, tgt: targetAlloc.etf_debt_percentage, color: "#7dd3fc" },
+                        ]
+                      )}
+
+                      {/* Chart 4: Commodities sub-assets */}
+                      {renderChart(
+                        "Commodities â€” Sub-Asset Breakdown",
+                        "Gold ETF, Silver ETF & Other Commodity ETFs",
+                        [
+                          { label: "Gold ETF", ext: existingAlloc.gold_etf_percentage, tgt: targetAlloc.gold_etf_percentage, color: "#f59e0b" },
+                          { label: "Silver ETF", ext: existingAlloc.silver_etf_percentage, tgt: targetAlloc.silver_etf_percentage, color: "#d1d5db" },
+                          { label: "Other ETF", ext: existingAlloc.etf_commodity_percentage, tgt: targetAlloc.etf_commodity_percentage, color: "#f97316" },
+                        ]
+                      )}
+                    </div>
+
+                    {/* Shared Legend */}
+                    <div className="flex gap-6 justify-center text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-50">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-3 h-3 rounded-sm bg-primary opacity-80" />
+                        <span>Existing (Solid)</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-3 h-3 rounded-sm border border-dashed border-primary opacity-50" />
+                        <span>Target (Dashed)</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-3 h-1 rounded-full bg-red-500" />
+                        <span className="text-red-400">Over-allocated</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-3 h-1 rounded-full bg-emerald-500" />
+                        <span className="text-emerald-400">Under-allocated</span>
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+

@@ -161,6 +161,8 @@ export const API_ENDPOINTS = {
     BLANK_PDF: `${API_BASE}/existing-asset-allocation/bridge/blank-form/pdf`,
     PDF: (id: string) =>
       `${API_BASE}/existing-asset-allocation/bridge/allocation/${id}/pdf`,
+    COMPARE_PDF: (existingId: string, targetId: string) =>
+      `${API_BASE}/existing-asset-allocation/bridge/allocation/compare/pdf?existing_id=${existingId}&target_id=${targetId}`,
   },
 
   // ── Bridge Management (Super Admin only) ───────────────────

@@ -84,6 +84,7 @@ const NAV_ITEMS: NavItem[] = [
     children: [
       { label: "Existing Asset Allocation", href: "/existing-asset-allocation" },
       { label: "Target Asset Allocation", href: "/asset-allocation" },
+      { label: "Allocation Comparison", href: "/asset-allocation/compare" },
     ],
   },
   {
@@ -212,6 +213,11 @@ export function SidebarContent() {
           if (child.href === "/asset-allocation") {
             const hasPerm = user?.permissions?.find((p: any) => p.module === "Asset Allocation")?.can_read;
             if (!hasPerm) return false;
+          }
+          if (child.href === "/asset-allocation/compare") {
+            const hasExisting = user?.permissions?.find((p: any) => p.module === "Existing Asset Allocation")?.can_read;
+            const hasTarget = user?.permissions?.find((p: any) => p.module === "Asset Allocation")?.can_read;
+            if (!hasExisting || !hasTarget) return false;
           }
         }
         return true;

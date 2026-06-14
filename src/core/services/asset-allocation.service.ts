@@ -65,6 +65,7 @@ export interface ClientValidateResponse {
   category_name?: string;
   form_name?: string;
   error?: string;
+  client_id?: string;
 }
 
 export interface AssetAllocationSaveResponse {
