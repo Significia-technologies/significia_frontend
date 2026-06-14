@@ -91,6 +91,7 @@ export function AnalysisForm({ clientId, copyFromProfileId, onSuccess, onCancel 
   const [loading, setLoading] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
   const [clientFound, setClientFound] = useState(false);
+  const [registeredNetWorth, setRegisteredNetWorth] = useState<number | null>(null);
 
   const [showConfirmAlert, setShowConfirmAlert] = useState(false);
   const [formData, setFormData] = useState<FinancialAnalysisCreate>({
@@ -222,6 +223,9 @@ export function AnalysisForm({ clientId, copyFromProfileId, onSuccess, onCancel 
   }, [clientId, copyFromProfileId]);
 
   const populateClientData = (client: ClientCreate, skipFormFields = false) => {
+    const nw = typeof client.net_worth === "string" ? parseFloat(client.net_worth) : client.net_worth;
+    setRegisteredNetWorth(typeof nw === "number" && !isNaN(nw) ? nw : null);
+
     if (!skipFormFields) {
       setFormData(prev => ({
         ...prev,
@@ -257,6 +261,7 @@ export function AnalysisForm({ clientId, copyFromProfileId, onSuccess, onCancel 
     } catch (error) {
       toast.error("Client Code not found in database.");
       setClientFound(false);
+      setRegisteredNetWorth(null);
       setDisplayInfo({ clientName: "", clientCode: code, iaName: "", iaReg: "" });
     } finally {
       setIsValidating(false);
@@ -427,6 +432,12 @@ export function AnalysisForm({ clientId, copyFromProfileId, onSuccess, onCancel 
         return;
       }
     }
+
+    if (step === 3) {
+      if (isNetWorthMismatch) {
+        toast.warning("Calculated Net Worth mismatches Registered Net Worth. Please verify.");
+      }
+    }
     
     setStep(s => Math.min(s + 1, 6));
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -458,6 +469,30 @@ export function AnalysisForm({ clientId, copyFromProfileId, onSuccess, onCancel 
     }
     return age >= 18;
   };
+
+  const calculateTotalAssets = () => {
+    const baseAssets = 
+      (Number(formData.assets.land) || 0) + 
+      (Number(formData.assets.inv) || 0) + 
+      (Number(formData.assets.cash) || 0) + 
+      (Number(formData.assets.retirement) || 0);
+    const otherAssets = (formData.assets.others || []).reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+    return baseAssets + otherAssets;
+  };
+
+  const calculateTotalLiabilities = () => {
+    const baseLiabilities = 
+      (Number(formData.liabilities.personal) || 0) + 
+      (Number(formData.liabilities.cc) || 0) + 
+      (Number(formData.liabilities.hb) || 0);
+    const otherLiabilities = (formData.liabilities.others || []).reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+    return baseLiabilities + otherLiabilities;
+  };
+
+  const totalAssets = calculateTotalAssets();
+  const totalLiabilities = calculateTotalLiabilities();
+  const calculatedNetWorth = totalAssets - totalLiabilities;
+  const isNetWorthMismatch = registeredNetWorth !== null && Math.round(calculatedNetWorth) !== Math.round(registeredNetWorth);
 
   const SectionHeader = ({ title, icon: Icon, number }: { title: string, icon: any, number: string }) => (
     <div className="flex items-center gap-3 mb-6 pb-2 border-b border-primary/10">
@@ -899,6 +934,69 @@ export function AnalysisForm({ clientId, copyFromProfileId, onSuccess, onCancel 
                   </div>
                 </div>
               </div>
+
+              {/* Real-time Net Worth Summary & Warning Panel */}
+              <Card className="border-primary/20 bg-primary/5 backdrop-blur-md overflow-hidden shadow-lg mt-6">
+                <CardContent className="p-6">
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                        <Calculator className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <h4 className="text-lg font-black text-foreground/80 tracking-wide uppercase">Net Worth Summary</h4>
+                        <p className="text-xs text-muted-foreground">Calculated in real-time as Total Assets minus Total Liabilities</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 w-full md:w-auto">
+                      <div className="bg-background/40 p-3 rounded-lg border border-primary/5 text-center min-w-[140px]">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-1">Total Assets</span>
+                        <span className="text-md font-bold text-green-600">
+                          ₹{totalAssets.toLocaleString('en-IN')}
+                        </span>
+                      </div>
+
+                      <div className="bg-background/40 p-3 rounded-lg border border-primary/5 text-center min-w-[140px]">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-1">Total Liabilities</span>
+                        <span className="text-md font-bold text-destructive">
+                          ₹{totalLiabilities.toLocaleString('en-IN')}
+                        </span>
+                      </div>
+
+                      <div className="bg-background/40 p-3 rounded-lg border border-primary/5 text-center min-w-[140px]">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-1">Calculated Net Worth</span>
+                        <span className={`text-md font-extrabold ${calculatedNetWorth >= 0 ? "text-primary" : "text-destructive"}`}>
+                          ₹{calculatedNetWorth.toLocaleString('en-IN')}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {registeredNetWorth !== null && (
+                    <div className="mt-6 pt-4 border-t border-primary/10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs text-muted-foreground font-bold font-sans">Registered Net Worth (from Client Onboarding):</span>
+                        <Badge variant="outline" className="font-mono text-xs border-primary/20 bg-primary/5 text-primary">
+                          ₹{registeredNetWorth.toLocaleString('en-IN')}
+                        </Badge>
+                      </div>
+
+                      {isNetWorthMismatch ? (
+                        <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 text-amber-600 rounded-lg p-2 px-3 text-xs font-semibold">
+                          <AlertCircle className="w-4 h-4 shrink-0 text-amber-500 animate-pulse" />
+                          <span>Warning: Mismatch against Client Registration Net Worth</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 bg-green-500/10 border border-green-500/20 text-green-600 rounded-lg p-2 px-3 text-xs font-semibold">
+                          <CheckCircle2 className="w-4 h-4 shrink-0 text-green-500" />
+                          <span>Net Worth matches Registration Data</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </div>
           )}
 
@@ -1167,8 +1265,22 @@ export function AnalysisForm({ clientId, copyFromProfileId, onSuccess, onCancel 
               <AlertCircle className="w-6 h-6 text-orange-500" />
               Verification Required
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-md font-bold text-foreground/80 py-4">
-              Check Accuracy before report generation
+            <AlertDialogDescription className="text-md font-bold text-foreground/80 py-4 space-y-4">
+              <div>Check Accuracy before report generation</div>
+              {isNetWorthMismatch && (
+                <div className="bg-amber-500/10 border border-amber-500/20 text-amber-600 p-4 rounded-xl flex items-start gap-3 text-left">
+                  <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-amber-500" />
+                  <div className="text-xs font-semibold leading-relaxed">
+                    <p className="font-bold text-amber-700 mb-1">Net Worth Mismatch Warning!</p>
+                    <p>
+                      The calculated Net Worth (₹{calculatedNetWorth.toLocaleString('en-IN')}) does not match the client's registered Net Worth (₹{registeredNetWorth?.toLocaleString('en-IN')}) entered during registration.
+                    </p>
+                    <p className="mt-1 font-normal opacity-90">
+                      Are you sure you want to proceed with this configuration?
+                    </p>
+                  </div>
+                </div>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-4">
