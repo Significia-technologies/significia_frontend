@@ -13,7 +13,8 @@ import {
   IndianRupee,
   TrendingUp,
   Landmark,
-  Gem
+  Gem,
+  Download
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,6 +46,7 @@ export function ExistingAssetAllocationHistory({ onNewAllocation }: ExistingAsse
   const [allocations, setAllocations] = useState<ExistingAssetAllocation[]>([]);
   const [search, setSearch] = useState("");
   const [expandedClient, setExpandedClient] = useState<string | null>(null);
+  const [downloading, setDownloading] = useState(false);
 
   const toggleRow = (clientKey: string) => {
     if (expandedClient === clientKey) {
@@ -193,6 +195,31 @@ export function ExistingAssetAllocationHistory({ onNewAllocation }: ExistingAsse
             onClick={loadAllocations}
           >
             <RefreshCcw className="w-4 h-4" />
+          </Button>
+
+          <Button
+            id="download-blank-form-btn"
+            variant="outline"
+            className="h-10 px-4 gap-2 border-primary/20 bg-primary/5 hover:bg-primary/10 transition-all text-[10px] font-black uppercase tracking-widest hidden xl:flex text-muted-foreground"
+            onClick={async () => {
+              setDownloading(true);
+              try {
+                await ExistingAssetAllocationService.downloadBlankPDF();
+                toast.success("Blank form downloaded successfully");
+              } catch {
+                toast.error("Failed to download blank form");
+              } finally {
+                setDownloading(false);
+              }
+            }}
+            disabled={downloading}
+          >
+            {downloading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Download className="w-4 h-4" />
+            )}
+            <span>Blank Form</span>
           </Button>
 
           <Button

@@ -8,6 +8,7 @@ import { FinancialAnalysisService } from "@/core/services/financial-analysis.ser
 import { MasterDataService } from "@/core/services/master.service";
 import { RiskProfileService } from "@/core/services/risk-profile.service";
 import { AssetAllocationService } from "@/core/services/asset-allocation.service";
+import { ExistingAssetAllocationService } from "@/core/services/existing-asset-allocation.service";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
@@ -81,6 +82,16 @@ export default function ToolsPage() {
     }
   };
 
+  const handleDownloadExistingAssetAllocationForm = async () => {
+    try {
+      toast.info("Generating form...");
+      await ExistingAssetAllocationService.downloadBlankPDF();
+      toast.success("Existing Asset Allocation form downloaded successfully.");
+    } catch {
+      toast.error("Failed to download existing asset allocation form.");
+    }
+  };
+
   const handleDownloadLetterhead = async () => {
     try {
       toast.info("Generating letterhead...");
@@ -131,6 +142,7 @@ export default function ToolsPage() {
                   { label: "Client Registration Form", desc: "Complete blank KYC & registration form", handler: handleDownloadClientForm },
                   { label: "Financial Analysis Form", desc: "Blank printable PDF data entry form", handler: handleDownloadForm },
                   { label: "Asset Allocation Form", desc: "Strategic portfolio distribution template", handler: handleDownloadAssetAllocationForm },
+                  { label: "Existing Asset Allocation Form", desc: "Current portfolio holding valuation template", handler: handleDownloadExistingAssetAllocationForm },
                   { label: "Blank Letterhead Form", desc: "Advisor letterhead format with logo & credentials", handler: handleDownloadLetterhead },
                 ].map((item) => (
                   <div key={item.label} className="flex items-center justify-between p-3 rounded-xl border bg-card hover:bg-accent/50 transition-all group cursor-default">

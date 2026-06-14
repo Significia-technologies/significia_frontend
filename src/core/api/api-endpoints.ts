@@ -158,6 +158,7 @@ export const API_ENDPOINTS = {
     LIST: `${API_BASE}/existing-asset-allocation/bridge/allocations`,
     DETAIL: (id: string) =>
       `${API_BASE}/existing-asset-allocation/bridge/allocation/${id}`,
+    BLANK_PDF: `${API_BASE}/existing-asset-allocation/bridge/blank-form/pdf`,
   },
 
   // ── Bridge Management (Super Admin only) ───────────────────
