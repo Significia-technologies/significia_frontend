@@ -169,6 +169,14 @@ export function DynamicRiskForm({ questionnaireId, questionnaire: initialQuestio
   const totalScore = calculateTotalScore();
   const currentCategory = getCurrentCategory(totalScore);
   const totalQuestions = questionnaire.questions.length;
+  const maxPossibleScore = questionnaire.max_possible_score || (
+    questionnaire.questions ? questionnaire.questions.reduce((sum: number, q: any) => {
+      const maxOptionScore = q.options && q.options.length > 0 
+        ? Math.max(...q.options.map((o: any) => typeof o.score === 'number' ? o.score : 0)) 
+        : 0;
+      return sum + maxOptionScore;
+    }, 0) : 0
+  );
   const progressPercent = currentStep === -1 ? 0 : currentStep === 999 ? 100 : Math.round(((currentStep + 1) / totalQuestions) * 100);
 
   return (
@@ -367,7 +375,10 @@ export function DynamicRiskForm({ questionnaireId, questionnaire: initialQuestio
                   <div className="grid grid-cols-1 gap-4 pt-4">
                     <div className="flex flex-col items-center justify-center p-6 rounded-2xl bg-primary/10 border border-primary/20 shadow-inner">
                        <span className="text-[9px] font-black uppercase tracking-[0.2em] opacity-40 mb-2">Calculated Total Score</span>
-                       <span className="text-5xl font-black text-primary">{calculateTotalScore()}</span>
+                       <div className="flex items-baseline gap-1">
+                         <span className="text-5xl font-black text-primary">{calculateTotalScore()}</span>
+                         <span className="text-xl font-bold text-muted-foreground/45">/ {maxPossibleScore}</span>
+                       </div>
                        {currentCategory && (
                           <Badge 
                             className="mt-3 px-3 h-6 uppercase font-black tracking-tight text-[10px] border-none shadow-lg"
