@@ -110,6 +110,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   }, [user, pathname, isInitializing, router]);
 
+  if (isInitializing || !user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
     <TooltipProvider>
       <div className="min-h-screen bg-background">
