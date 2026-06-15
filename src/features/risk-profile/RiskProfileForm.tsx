@@ -254,7 +254,8 @@ export function RiskProfileForm({ clientId }: RiskProfileFormProps) {
         form_name: "Sample"
       });
       
-      setLastAssessmentId(saveResp.assessment_id);
+      const assessmentId = saveResp.assessment_id || (saveResp as any).id;
+      setLastAssessmentId(assessmentId);
       setShowSuccessDialog(true);
       toast.success("Risk assessment saved successfully!");
     } catch (error) {
