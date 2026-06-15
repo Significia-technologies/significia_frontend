@@ -26,6 +26,7 @@ export interface ExistingAssetAllocationCreate {
   system_conclusion?: string;
   discussion_notes?: string;
   disclaimer_text?: string;
+  is_draft?: boolean;
 }
 
 export interface ExistingAssetAllocation {
@@ -76,6 +77,7 @@ export interface ExistingAssetAllocation {
   disclaimer_text?: string;
   created_at: string;
   updated_at: string;
+  is_draft?: boolean;
 }
 
 export class ExistingAssetAllocationService {
@@ -90,6 +92,14 @@ export class ExistingAssetAllocationService {
   static async save(data: ExistingAssetAllocationCreate): Promise<any> {
     const response = await httpClient.post<any>(
       API_ENDPOINTS.EXISTING_ASSET_ALLOCATION.SAVE,
+      data
+    );
+    return response.data;
+  }
+
+  static async update(id: string, data: Partial<ExistingAssetAllocationCreate>): Promise<any> {
+    const response = await httpClient.patch<any>(
+      API_ENDPOINTS.EXISTING_ASSET_ALLOCATION.DETAIL(id),
       data
     );
     return response.data;

@@ -66,6 +66,7 @@ export interface ClientValidateResponse {
   form_name?: string;
   error?: string;
   client_id?: string;
+  existing_portfolio_value?: number;
 }
 
 export interface AssetAllocationSaveResponse {

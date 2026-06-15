@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Loader2,
   ChevronDown,
@@ -17,11 +17,12 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { ASSET_ALLOCATION_DISCLAIMER } from "../financial-analysis/constants";
-import { ExistingAssetAllocationService } from "@/core/services/existing-asset-allocation.service";
+import { ExistingAssetAllocationService, ExistingAssetAllocation } from "@/core/services/existing-asset-allocation.service";
 import { ClientValidateResponse } from "@/core/services/asset-allocation.service";
 
 interface ExistingAssetAllocationFormProps {
   clientInfo: ClientValidateResponse & { client_code: string };
+  editData?: ExistingAssetAllocation;
   onSaved: () => void;
   onCancel: () => void;
 }
@@ -56,12 +57,34 @@ const DEFAULT_AMOUNTS: AmountValues = {
 
 export function ExistingAssetAllocationForm({
   clientInfo,
+  editData,
   onSaved,
   onCancel,
 }: ExistingAssetAllocationFormProps) {
   const [amounts, setAmounts] = useState<AmountValues>(DEFAULT_AMOUNTS);
   const [showOptionals, setShowOptionals] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // Initialize and sync amounts from editData
+  useEffect(() => {
+    if (editData) {
+      setAmounts({
+        stocks: editData.stocks_amount || 0,
+        mf_equity: editData.mutual_fund_equity_amount || 0,
+        ulip_equity: editData.ulip_equity_amount || 0,
+        etf_equity: editData.etf_equity_amount || 0,
+        fd_bonds: editData.fixed_deposits_bonds_amount || 0,
+        mf_debt: editData.mutual_fund_debt_amount || 0,
+        ulip_debt: editData.ulip_debt_amount || 0,
+        etf_debt: editData.etf_debt_amount || 0,
+        gold_etf: editData.gold_etf_amount || 0,
+        silver_etf: editData.silver_etf_amount || 0,
+        etf_commodity: editData.etf_commodity_amount || 0,
+      });
+    } else {
+      setAmounts(DEFAULT_AMOUNTS);
+    }
+  }, [editData]);
 
   // Math calculations
   const equitiesTotal = amounts.stocks + amounts.mf_equity + amounts.ulip_equity + amounts.etf_equity;
@@ -81,7 +104,7 @@ export function ExistingAssetAllocationForm({
 
   const isFormValid = grandTotal > 0;
 
-  const handleSave = async () => {
+  const handleSave = async (isDraft = false) => {
     if (!isFormValid) {
       toast.error("Please enter valuation amounts for at least one sub-asset.");
       return;
@@ -89,7 +112,7 @@ export function ExistingAssetAllocationForm({
 
     setSaving(true);
     try {
-      await ExistingAssetAllocationService.save({
+      const payload = {
         client_code: clientInfo.client_code,
         ia_registration_number: clientInfo.registration_number || "",
         assigned_risk_tier: clientInfo.category_name || "",
@@ -105,9 +128,24 @@ export function ExistingAssetAllocationForm({
         silver_etf_amount: amounts.silver_etf,
         etf_commodity_amount: amounts.etf_commodity,
         generate_system_conclusion: false,
-      });
+        is_draft: isDraft,
+      };
 
-      toast.success("Existing holdings and allocation recorded successfully!");
+      if (editData) {
+        await ExistingAssetAllocationService.update(editData.id, payload);
+        if (isDraft) {
+          toast.success("Draft holdings updated successfully!");
+        } else {
+          toast.success("Holdings finalized and recorded successfully!");
+        }
+      } else {
+        await ExistingAssetAllocationService.save(payload);
+        if (isDraft) {
+          toast.success("Existing holdings recorded as Draft successfully!");
+        } else {
+          toast.success("Existing holdings and allocation recorded successfully!");
+        }
+      }
       onSaved();
     } catch {
       toast.error("Failed to save allocation. Please try again.");
@@ -369,6 +407,17 @@ export function ExistingAssetAllocationForm({
         </div>
       </div>
 
+      {/* Valuation Balance Match Checker Alert */}
+      {grandTotal > 0 && grandTotal !== (clientInfo.existing_portfolio_value || 0) && (
+        <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 flex items-start gap-3 text-amber-500 animate-in fade-in slide-in-from-top-2 duration-300">
+          <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
+          <div className="text-xs">
+            <span className="font-bold block uppercase tracking-wide mb-0.5">Portfolio Valuation Mismatch Warning</span>
+            Client profile existing portfolio amount ({formatCurrency(clientInfo.existing_portfolio_value || 0)}) is not matching with total portfolio value provided ({formatCurrency(grandTotal)}).
+          </div>
+        </div>
+      )}
+
       {/* Portfolio Grand Total Summary Banner */}
       <div className="rounded-xl border border-primary/10 bg-primary/5 p-5 flex justify-between items-center animate-in fade-in duration-300">
         <div>
@@ -377,7 +426,11 @@ export function ExistingAssetAllocationForm({
         </div>
         <div className="text-right">
           <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-60">Status</p>
-          <p className="text-xs font-bold text-emerald-500 uppercase tracking-widest mt-1">✓ Valuation Balance Synchronized</p>
+          {grandTotal === (clientInfo.existing_portfolio_value || 0) ? (
+            <p className="text-xs font-bold text-emerald-500 uppercase tracking-widest mt-1">✓ Portfolio value matching</p>
+          ) : (
+            <p className="text-xs font-bold text-amber-500 uppercase tracking-widest mt-1">⚠ Portfolio value not matching</p>
+          )}
         </div>
       </div>
 
@@ -417,24 +470,42 @@ export function ExistingAssetAllocationForm({
         >
           Cancel
         </Button>
-        <Button
-          id="save-allocation-btn"
-          onClick={handleSave}
-          disabled={!isFormValid || saving}
-          className={cn(
-            "h-11 px-8 gap-2.5 text-[10px] font-black uppercase tracking-widest shadow-lg transition-all",
-            isFormValid ? "shadow-primary/20" : "opacity-50"
+        <div className="flex items-center gap-3">
+          {isFormValid && grandTotal !== (clientInfo.existing_portfolio_value || 0) && (
+            <Button
+              id="save-draft-allocation-btn"
+              variant="outline"
+              onClick={() => handleSave(true)}
+              disabled={saving}
+              className="h-11 px-6 gap-2.5 text-[10px] font-black uppercase tracking-widest border-amber-500/20 text-amber-400 hover:bg-amber-500/5 hover:text-amber-300 transition-all"
+            >
+              {saving ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <FileText className="w-4 h-4 text-amber-500" />
+              )}
+              <span>Save as Draft</span>
+            </Button>
           )}
-        >
-          {saving ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : isFormValid ? (
-            <CheckCircle2 className="w-4 h-4" />
-          ) : (
-            <AlertTriangle className="w-4 h-4" />
-          )}
-          {saving ? "Saving..." : "Save Holdings"}
-        </Button>
+          <Button
+            id="save-allocation-btn"
+            onClick={() => handleSave(false)}
+            disabled={!isFormValid || grandTotal !== (clientInfo.existing_portfolio_value || 0) || saving}
+            className={cn(
+              "h-11 px-8 gap-2.5 text-[10px] font-black uppercase tracking-widest shadow-lg transition-all",
+              (isFormValid && grandTotal === (clientInfo.existing_portfolio_value || 0)) ? "shadow-primary/20" : "opacity-50"
+            )}
+          >
+            {saving ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (isFormValid && grandTotal === (clientInfo.existing_portfolio_value || 0)) ? (
+              <CheckCircle2 className="w-4 h-4" />
+            ) : (
+              <AlertTriangle className="w-4 h-4" />
+            )}
+            {saving ? "Saving..." : "Save Holdings"}
+          </Button>
+        </div>
       </div>
     </div>
   );

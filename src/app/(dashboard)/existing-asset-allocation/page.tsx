@@ -11,6 +11,7 @@ import type { ClientValidateResponse } from "@/core/services/asset-allocation.se
 import { ClientValidator } from "@/features/asset-allocation/ClientValidator";
 import { ExistingAssetAllocationForm } from "@/features/existing-asset-allocation/ExistingAssetAllocationForm";
 import { ExistingAssetAllocationHistory } from "@/features/existing-asset-allocation/ExistingAssetAllocationHistory";
+import { ExistingAssetAllocationService, ExistingAssetAllocation } from "@/core/services/existing-asset-allocation.service";
 
 type ViewType = "HISTORY" | "NEW_ALLOCATION";
 type NewAllocStep = "VALIDATE" | "FORM";
@@ -34,6 +35,7 @@ export default function ExistingAssetAllocationPage() {
   const [view, setView] = useState<ViewType>("HISTORY");
   const [step, setStep] = useState<NewAllocStep>("VALIDATE");
   const [clientInfo, setClientInfo] = useState<(ClientValidateResponse & { client_code: string }) | null>(null);
+  const [editingAllocation, setEditingAllocation] = useState<ExistingAssetAllocation | null>(null);
 
   if (!user || !canRead) {
     return (
@@ -46,6 +48,7 @@ export default function ExistingAssetAllocationPage() {
   const handleStartNew = () => {
     setStep("VALIDATE");
     setClientInfo(null);
+    setEditingAllocation(null);
     setView("NEW_ALLOCATION");
   };
 
@@ -54,15 +57,49 @@ export default function ExistingAssetAllocationPage() {
     setStep("FORM");
   };
 
+  const handleEditDraft = async (allocation: ExistingAssetAllocation) => {
+    const clientCode = allocation.client_code || "";
+    if (!clientCode) {
+      toast.error("Client code not found on the draft allocation");
+      return;
+    }
+
+    try {
+      toast.loading("Loading client profile details...", { id: "edit-draft-loading" });
+      const clientData = await ExistingAssetAllocationService.validateClient(clientCode);
+      
+      if (clientData && clientData.success) {
+        setClientInfo({
+          ...clientData,
+          client_code: clientCode
+        });
+        setEditingAllocation(allocation);
+        setStep("FORM");
+        setView("NEW_ALLOCATION");
+        toast.success("Draft holdings loaded successfully.", { id: "edit-draft-loading" });
+      } else {
+        toast.error("Failed to load client profile details", { id: "edit-draft-loading" });
+      }
+    } catch {
+      toast.error("Error loading client profile details", { id: "edit-draft-loading" });
+    }
+  };
+
   const handleSaved = () => {
     setView("HISTORY");
     setStep("VALIDATE");
     setClientInfo(null);
+    setEditingAllocation(null);
     toast.success("Existing holdings logged successfully.");
   };
 
   const handleCancel = () => {
-    if (step === "FORM") {
+    if (editingAllocation) {
+      setView("HISTORY");
+      setStep("VALIDATE");
+      setClientInfo(null);
+      setEditingAllocation(null);
+    } else if (step === "FORM") {
       setStep("VALIDATE");
       setClientInfo(null);
     } else {
@@ -81,10 +118,10 @@ export default function ExistingAssetAllocationPage() {
             </div>
             <div>
               <h1 className="text-xl font-black tracking-tight text-foreground uppercase">
-                {step === "VALIDATE" ? "Validate Client" : "Valuation Setup"}
+                {editingAllocation ? "Edit Draft Valuation" : step === "VALIDATE" ? "Validate Client" : "Valuation Setup"}
               </h1>
               <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40">
-                {step === "VALIDATE" ? "Step 1 — Identify & validate client profile" : "Step 2 — Record current sub-asset holdings"}
+                {editingAllocation ? "Modify draft holdings to match client profile" : step === "VALIDATE" ? "Step 1 — Identify & validate client profile" : "Step 2 — Record current sub-asset holdings"}
               </p>
             </div>
           </div>
@@ -93,13 +130,13 @@ export default function ExistingAssetAllocationPage() {
             onClick={handleCancel}
             className="h-10 px-5 gap-2 hover:bg-primary/5 text-muted-foreground font-black uppercase text-[10px] tracking-widest rounded-xl transition-all border border-primary/5"
           >
-            ← {step === "FORM" ? "Change Client" : "Back to History"}
+            ← {(step === "FORM" && !editingAllocation) ? "Change Client" : "Back to History"}
           </Button>
         </div>
       )}
 
       {/* ── Stepper (Only for New Allocation) ── */}
-      {view === "NEW_ALLOCATION" && (
+      {view === "NEW_ALLOCATION" && !editingAllocation && (
         <div className="flex items-center gap-2 animate-in fade-in duration-300">
           {[
             { key: "VALIDATE", label: "Validate Client", num: 1 },
@@ -127,7 +164,10 @@ export default function ExistingAssetAllocationPage() {
       {/* ── Content ── */}
       <div className="animate-in fade-in duration-400">
         {view === "HISTORY" ? (
-          <ExistingAssetAllocationHistory onNewAllocation={handleStartNew} />
+          <ExistingAssetAllocationHistory 
+            onNewAllocation={handleStartNew} 
+            onEditDraft={handleEditDraft}
+          />
         ) : step === "VALIDATE" ? (
           <div className="max-w-2xl mx-auto rounded-xl border border-primary/10 bg-card/30 backdrop-blur-sm p-6">
             <ClientValidator onValidated={handleClientValidated} />
@@ -136,6 +176,7 @@ export default function ExistingAssetAllocationPage() {
           <div className="max-w-4xl mx-auto rounded-xl border border-primary/10 bg-card/30 backdrop-blur-sm p-6">
             <ExistingAssetAllocationForm
               clientInfo={clientInfo}
+              editData={editingAllocation || undefined}
               onSaved={handleSaved}
               onCancel={handleCancel}
             />

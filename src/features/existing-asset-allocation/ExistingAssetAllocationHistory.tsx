@@ -39,9 +39,10 @@ import { useAppStore } from "@/store/useAppStore";
 
 interface ExistingAssetAllocationHistoryProps {
   onNewAllocation: () => void;
+  onEditDraft?: (allocation: ExistingAssetAllocation) => void;
 }
 
-export function ExistingAssetAllocationHistory({ onNewAllocation }: ExistingAssetAllocationHistoryProps) {
+export function ExistingAssetAllocationHistory({ onNewAllocation, onEditDraft }: ExistingAssetAllocationHistoryProps) {
   const { user } = useAppStore();
   
   const isIAOwner = user?.role === "owner";
@@ -307,9 +308,14 @@ export function ExistingAssetAllocationHistory({ onNewAllocation }: ExistingAsse
                                 >
                                   {a.client_name || "Unknown Client"}
                                 </span>
-                                {(a as any).isLatest && (
+                                {(a as any).isLatest && !a.is_draft && (
                                   <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 text-[9px] uppercase font-black px-1.5 py-0 h-4 tracking-widest leading-none shrink-0">
                                     Active
+                                  </Badge>
+                                )}
+                                {a.is_draft && (
+                                  <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20 text-[9px] uppercase font-black px-1.5 py-0 h-4 tracking-widest leading-none shrink-0">
+                                    Draft
                                   </Badge>
                                 )}
                               </div>
@@ -381,9 +387,10 @@ export function ExistingAssetAllocationHistory({ onNewAllocation }: ExistingAsse
                                 </h4>
                               </div>
                               <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
-                                {allocations
-                                  .filter(item => (item.client_code && item.client_code === a.client_code) || (item.client_id && item.client_id === a.client_id))
-                                  .map((historyItem, idx) => {
+                                {(() => {
+                                  const clientHistory = allocations.filter(item => (item.client_code && item.client_code === a.client_code) || (item.client_id && item.client_id === a.client_id));
+                                  const latestFinalized = clientHistory.find(item => !item.is_draft);
+                                  return clientHistory.map((historyItem, idx) => {
                                     const styles = getTierStyles(historyItem.assigned_risk_tier);
                                     return (
                                       <div 
@@ -407,9 +414,14 @@ export function ExistingAssetAllocationHistory({ onNewAllocation }: ExistingAsse
                                               <span className="font-bold">{format(new Date(historyItem.created_at), "MMMM dd, yyyy • HH:mm")}</span>
                                               <span className="text-[10px] opacity-40">•</span>
                                               <span className="font-black text-primary/80">{formatCurrency(historyItem.total_amount)}</span>
-                                              {historyItem.id === a.id && (
+                                              {historyItem.id === latestFinalized?.id && (
                                                 <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 text-[8px] uppercase font-black px-1.5 py-0 h-4 leading-none tracking-widest shrink-0">
                                                   Active
+                                                </Badge>
+                                              )}
+                                              {historyItem.is_draft && (
+                                                <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20 text-[8px] uppercase font-black px-1.5 py-0 h-4 leading-none tracking-widest shrink-0">
+                                                  Draft
                                                 </Badge>
                                               )}
                                             </div>
@@ -431,6 +443,19 @@ export function ExistingAssetAllocationHistory({ onNewAllocation }: ExistingAsse
                                           </div>
                                         </div>
                                         <div className="flex items-center gap-1.5">
+                                          {historyItem.is_draft && onEditDraft && (
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              className="h-8 px-3 gap-1 border border-amber-500/20 hover:bg-amber-500/10 text-amber-500 hover:border-amber-500/30 rounded-md transition-all text-[9px] font-black uppercase tracking-tight"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                onEditDraft(historyItem);
+                                              }}
+                                            >
+                                              Edit Draft
+                                            </Button>
+                                          )}
                                           <Button 
                                             variant="ghost" 
                                             size="sm" 
@@ -451,7 +476,8 @@ export function ExistingAssetAllocationHistory({ onNewAllocation }: ExistingAsse
                                         </div>
                                       </div>
                                     );
-                                  })}
+                                  });
+                                })()}
                               </div>
                             </div>
                           </TableCell>
