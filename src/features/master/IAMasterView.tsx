@@ -43,6 +43,18 @@ import { useRouter } from "next/navigation";
 import { getAssetUrl } from "@/core/api/api-utils";
 import { BrandingCard } from "./BrandingCard";
 
+const getEntityTypeLabel = (type: string | undefined): string => {
+  if (!type) return "";
+  const mapping: Record<string, string> = {
+    individual: "Individual",
+    proprietorship: "Sole Proprietorship",
+    partnership: "Partnership Firm",
+    llp: "LLP",
+    body: "Body Corporate"
+  };
+  return mapping[type.toLowerCase().trim()] || type;
+};
+
 export function IAMasterView() {
   const router = useRouter();
   const [data, setData] = useState<IAMaster | null>(null);
@@ -194,7 +206,7 @@ export function IAMasterView() {
               <div className="flex flex-wrap justify-center sm:justify-start items-center gap-3">
                 <CardTitle className="text-2xl sm:text-3xl font-bold tracking-tight">{data.name_of_ia}</CardTitle>
                 <Badge className="bg-primary/20 text-primary border-primary/30 uppercase tracking-widest text-[10px] px-2 py-0.5 whitespace-nowrap">
-                  {data.nature_of_entity}
+                  {getEntityTypeLabel(data.nature_of_entity)}
                 </Badge>
               </div>
               <CardDescription className="text-base sm:text-lg mt-2 flex items-center gap-4">
