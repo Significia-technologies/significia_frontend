@@ -20,6 +20,7 @@ const PRICE_TABS: { value: PriceUploadType; label: string }[] = [
   { value: "share-prices", label: "Share Price Upload" },
   { value: "nav-uploads",  label: "NAV Upload" },
   { value: "etf-prices",   label: "ETF Price Upload" },
+  { value: "ulip-nav-uploads", label: "ULIP NAV Upload" },
 ];
 
 const PRICE_TYPE_SET = new Set<string>(PRICE_TABS.map((t) => t.value));

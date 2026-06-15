@@ -1,7 +1,7 @@
 import httpClient from "@/core/api/http-client";
 import { API_ENDPOINTS } from "@/core/api/api-endpoints";
 
-export type PriceUploadType = "share-prices" | "nav-uploads" | "etf-prices";
+export type PriceUploadType = "share-prices" | "nav-uploads" | "etf-prices" | "ulip-nav-uploads";
 
 export interface SharePriceRecord {
   id: string;
@@ -36,7 +36,19 @@ export interface ETFPriceRecord {
   created_at: string;
 }
 
-export type AnyPriceRecord = SharePriceRecord | NavUploadRecord | ETFPriceRecord;
+export interface ULIPNavUploadRecord {
+  id: string;
+  uin: string;
+  policy_name: string;
+  policy_type: string;
+  price_date: string;
+  nav: string;
+  is_active: boolean;
+  created_by: string | null;
+  created_at: string;
+}
+
+export type AnyPriceRecord = SharePriceRecord | NavUploadRecord | ETFPriceRecord | ULIPNavUploadRecord;
 
 export interface PriceExcelPreviewRow {
   data: Record<string, string>;

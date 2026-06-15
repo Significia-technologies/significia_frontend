@@ -24,6 +24,7 @@ const INITIAL: Record<PriceUploadType, FormState> = {
   "share-prices": { isin_code: "", symbol: "", price_date: "", share_price: "" },
   "nav-uploads":  { scheme_code: "", scheme_name: "", price_date: "", nav: "" },
   "etf-prices":   { isin_code: "", symbol: "", price_date: "", etf_price: "" },
+  "ulip-nav-uploads": { uin: "", policy_name: "", policy_type: "", price_date: "", nav: "" },
 };
 
 // ── Date helpers ────────────────────────────────────────────────────
@@ -134,6 +135,8 @@ export function PriceUploadFormModal({ open, onClose, priceType, onSaved }: Prop
     else if (field === "symbol") val = raw.toUpperCase();
     else if (field === "scheme_code") val = raw.toUpperCase();
     else if (field === "scheme_name") val = raw.replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+    else if (field === "uin") val = raw.toUpperCase();
+    else if (field === "policy_name") val = raw.toUpperCase();
     setForm((prev) => ({ ...prev, [field]: val }));
   }
 
@@ -231,6 +234,35 @@ export function PriceUploadFormModal({ open, onClose, priceType, onSaved }: Prop
               </Field>
               <Field label="ETF Price" required>
                 <Input type="number" step="any" min="0" value={form.etf_price} onChange={(e) => handleChange("etf_price", e.target.value)} placeholder="e.g. 248.75" />
+              </Field>
+            </>
+          )}
+
+          {priceType === "ulip-nav-uploads" && (
+            <>
+              <Field label="UIN" required hint="Alphanumeric, auto uppercase">
+                <Input value={form.uin} onChange={(e) => handleChange("uin", e.target.value)} placeholder="e.g. 101L048V03" />
+              </Field>
+              <Field label="Policy Name" required hint="Auto uppercase">
+                <Input value={form.policy_name} onChange={(e) => handleChange("policy_name", e.target.value)} placeholder="e.g. JEEVAN ANAND" />
+              </Field>
+              <Field label="Policy Type" required hint="Select ULIP type">
+                <select
+                  value={form.policy_type}
+                  onChange={(e) => handleChange("policy_type", e.target.value)}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="">Select ULIP Type</option>
+                  <option value="ULIP-Equity">ULIP-Equity</option>
+                  <option value="ULIP-Debt">ULIP-Debt</option>
+                  <option value="ULIP-Hybrid">ULIP-Hybrid</option>
+                </select>
+              </Field>
+              <Field label="Date" required hint="Auto-formats DD-MM-YYYY">
+                <DateField value={form.price_date} onChange={handleDateChange} error={dateError} />
+              </Field>
+              <Field label="NAV" required>
+                <Input type="number" step="any" min="0" value={form.nav} onChange={(e) => handleChange("nav", e.target.value)} placeholder="e.g. 145.23" />
               </Field>
             </>
           )}

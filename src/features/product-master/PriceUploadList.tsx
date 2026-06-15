@@ -35,6 +35,13 @@ const COLUMNS: Record<PriceUploadType, ColumnDef[]> = {
     { key: "price_date", label: "Date" },
     { key: "etf_price",  label: "ETF Price" },
   ],
+  "ulip-nav-uploads": [
+    { key: "uin",         label: "UIN" },
+    { key: "policy_name", label: "Policy Name" },
+    { key: "policy_type", label: "Policy Type" },
+    { key: "price_date",  label: "Date" },
+    { key: "nav",         label: "NAV" },
+  ],
 };
 
 export function PriceUploadList({ priceType }: Props) {
