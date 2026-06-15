@@ -31,7 +31,7 @@ import { CUSTOM_RISK_PROFILE_DISCLAIMER} from "../../financial-analysis/constant
 interface Option {
   id: string;
   text: string;
-  score: number;
+  score: number | string;
 }
 
 interface Question {
@@ -95,13 +95,15 @@ export function FormBuilderPage({ onClose, initialData }: FormBuilderPageProps) 
   };
 
   const totalPossibleScore = questions.reduce((sum, q) => {
-    const maxOptionScore = q.options.length > 0 ? Math.max(...q.options.map(o => o.score)) : 0;
+    const maxOptionScore = q.options.length > 0 
+      ? Math.max(...q.options.map(o => typeof o.score === 'number' ? o.score : 0)) 
+      : 0;
     return sum + maxOptionScore;
   }, 0);
 
   const addQuestion = () => {
     const newId = `q_${Date.now()}`;
-    const newQuestions = [...questions, { id: newId, text: "", options: [{ id: `opt_${Date.now()}`, text: "", score: 0 }] }];
+    const newQuestions = [...questions, { id: newId, text: "", options: [{ id: `opt_${Date.now()}`, text: "", score: "" }] }];
     setQuestions(newQuestions);
     setActiveQuestionIndex(newQuestions.length - 1);
   };
@@ -135,7 +137,7 @@ export function FormBuilderPage({ onClose, initialData }: FormBuilderPageProps) 
   const addOption = (qIndex: number) => {
     const newQuestions = [...questions];
     const newId = `opt_${Date.now()}`;
-    newQuestions[qIndex].options.push({ id: newId, text: "", score: 0 });
+    newQuestions[qIndex].options.push({ id: newId, text: "", score: "" });
     setQuestions(newQuestions);
   };
 
@@ -187,7 +189,13 @@ export function FormBuilderPage({ onClose, initialData }: FormBuilderPageProps) 
     try {
       const payload = {
         portfolio_name: portfolioName,
-        questions,
+        questions: questions.map(q => ({
+          ...q,
+          options: q.options.map(o => ({
+            ...o,
+            score: typeof o.score === 'number' ? o.score : 0
+          }))
+        })),
         categories,
         status: status,
         disclaimer,
@@ -370,14 +378,16 @@ export function FormBuilderPage({ onClose, initialData }: FormBuilderPageProps) 
                              />
                            </div>
                            <div className="w-24">
-                             <Input
-                               type="number"
-                               value={opt.score === 0 ? "" : opt.score}
-                               onChange={e => updateOption(idx, oIdx, "score", e.target.value === "" ? 0 : parseFloat(e.target.value))}
-                               onBlur={e => { if (e.target.value === "") updateOption(idx, oIdx, "score", 0); }}
-                               placeholder="0"
-                               className="h-9 text-sm text-center border-primary/10 bg-primary/5 rounded-lg focus-visible:ring-primary/15"
-                             />
+                              <Input
+                                type="number"
+                                value={opt.score}
+                                onChange={e => {
+                                  const val = e.target.value;
+                                  updateOption(idx, oIdx, "score", val === "" ? "" : parseFloat(val));
+                                }}
+                                placeholder="0"
+                                className="h-9 text-sm text-center border-primary/10 bg-primary/5 rounded-lg focus-visible:ring-primary/15"
+                              />
                            </div>
                            <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); removeOption(idx, oIdx); }} className="h-9 w-9 text-muted-foreground/25 hover:text-destructive hover:bg-destructive/5 rounded-lg shrink-0 transition-all">
                              <Trash2 className="w-3.5 h-3.5" />
