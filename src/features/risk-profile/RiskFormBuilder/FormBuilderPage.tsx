@@ -447,9 +447,16 @@ export function FormBuilderPage({ onClose, initialData }: FormBuilderPageProps) 
                       Define category names, colors, and score ranges mapping to the client's final risk classification.
                     </p>
                 </div>
-                <Button variant="outline" size="sm" onClick={addCategory} className="gap-1 border-primary/20 hover:bg-primary/5 text-xs font-medium h-8 px-3 rounded-lg shrink-0">
-                  <Plus className="w-3.5 h-3.5" /> Add Tier
-                </Button>
+                <div className="flex items-center gap-4 shrink-0">
+                  <div className="text-right">
+                    <span className="text-[10px] uppercase font-bold text-muted-foreground/50 tracking-wider block leading-none mb-1">Max Form Score</span>
+                    <span className="text-lg font-black text-primary tracking-tight leading-none">{totalPossibleScore}</span>
+                  </div>
+                  <Separator orientation="vertical" className="h-8 bg-primary/10" />
+                  <Button variant="outline" size="sm" onClick={addCategory} className="gap-1 border-primary/20 hover:bg-primary/5 text-xs font-medium h-8 px-3 rounded-lg">
+                    <Plus className="w-3.5 h-3.5" /> Add Tier
+                  </Button>
+                </div>
             </div>
 
             <Card className="bg-card/25 border-primary/10 rounded-xl p-5 space-y-5">
@@ -520,8 +527,21 @@ export function FormBuilderPage({ onClose, initialData }: FormBuilderPageProps) 
                                 <span className="absolute left-2.5 text-[10px] font-medium text-muted-foreground/40 uppercase">Min</span>
                                 <Input
                                     type="number"
+                                    min={0}
+                                    max={totalPossibleScore}
                                     value={cat.min_score}
-                                    onChange={e => updateCategory(cIdx, "min_score", e.target.value === "" ? "" : parseFloat(e.target.value))}
+                                    onChange={e => {
+                                      const rawVal = e.target.value;
+                                      if (rawVal === "") {
+                                        updateCategory(cIdx, "min_score", "");
+                                        return;
+                                      }
+                                      let val = parseFloat(rawVal);
+                                      if (isNaN(val)) return;
+                                      if (val > totalPossibleScore) val = totalPossibleScore;
+                                      if (val < 0) val = 0;
+                                      updateCategory(cIdx, "min_score", val);
+                                    }}
                                     className="h-8 pl-9 pr-2 text-xs border border-primary/10 bg-black/20 focus-visible:ring-primary/20 rounded-lg text-center font-semibold text-foreground"
                                 />
                               </div>
@@ -529,9 +549,22 @@ export function FormBuilderPage({ onClose, initialData }: FormBuilderPageProps) 
                                 <span className="absolute left-2.5 text-[10px] font-medium text-muted-foreground/40 uppercase">Max</span>
                                 <Input
                                     type="number"
+                                    min={0}
+                                    max={totalPossibleScore}
                                     value={cat.max_score}
-                                    onChange={e => updateCategory(cIdx, "max_score", e.target.value === "" ? "" : parseFloat(e.target.value))}
-                                    className="h-8 pl-9 pr-2 text-xs border border-primary/10 bg-black/20 focus-visible:ring-primary/20 rounded-lg text-center font-semibold text-foreground"
+                                    onChange={e => {
+                                      const rawVal = e.target.value;
+                                      if (rawVal === "") {
+                                        updateCategory(cIdx, "max_score", "");
+                                        return;
+                                      }
+                                      let val = parseFloat(rawVal);
+                                      if (isNaN(val)) return;
+                                      if (val > totalPossibleScore) val = totalPossibleScore;
+                                      if (val < 0) val = 0;
+                                      updateCategory(cIdx, "max_score", val);
+                                    }}
+                                    className="h-8 pl-9 pr-2 text-xs border border-primary/15 bg-black/20 focus-visible:ring-primary/20 rounded-lg text-center font-semibold text-foreground"
                                 />
                               </div>
                             </div>
