@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Plus, Loader2, MoreHorizontal, ToggleLeft, ToggleRight,
   AlertTriangle, TrendingUp, Check, ChevronsUpDown, Download,
-  ChevronDown, ChevronUp, ChevronRight,
+  ChevronDown, ChevronUp, ChevronRight, Calculator,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -1532,31 +1532,37 @@ export function TargetPortfolioPage({
 
       {/* Target Allocation Calculator Card */}
       {selectedMember && (
-        <Card className="shadow-sm border-border bg-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-base font-semibold flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-primary" />
-              Target Allocation Calculator
-            </CardTitle>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0"
-              onClick={() => {
-                const newCollapsed = !isCalculatorCollapsed;
-                setIsCalculatorCollapsed(newCollapsed);
-                localStorage.setItem(
-                  `target_portfolio_calculator_collapsed_${clientId}_${selectedMemberId}`,
-                  String(newCollapsed)
-                );
-              }}
-            >
+        <Card className="shadow-md border-primary/30 bg-gradient-to-r from-primary/[0.01] to-primary/[0.03] dark:from-primary/[0.03] dark:to-primary/[0.06] transition-all duration-300 hover:border-primary/50 relative overflow-hidden">
+          <CardHeader 
+            className="flex flex-row items-center justify-between space-y-0 pb-3 cursor-pointer select-none hover:bg-muted/5 transition-colors"
+            onClick={() => {
+              const newCollapsed = !isCalculatorCollapsed;
+              setIsCalculatorCollapsed(newCollapsed);
+              localStorage.setItem(
+                `target_portfolio_calculator_collapsed_${clientId}_${selectedMemberId}`,
+                String(newCollapsed)
+              );
+            }}
+          >
+            <div className="space-y-1">
+              <CardTitle className="text-base font-semibold flex items-center gap-2 flex-wrap">
+                <Calculator className="h-5 w-5 text-primary" />
+                <span>Target Allocation Calculator</span>
+                <Badge variant="secondary" className="bg-primary/15 text-primary border border-primary/20 hover:bg-primary/20 text-[10px] px-2 py-0.5 ml-1 font-semibold uppercase tracking-wider">
+                  Calculator Tool
+                </Badge>
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Enter total portfolio size to instantly compute recommended target amounts for each asset class
+              </p>
+            </div>
+            <div className="text-muted-foreground hover:text-foreground transition-colors p-1">
               {isCalculatorCollapsed ? (
-                <ChevronDown className="h-4 w-4" />
+                <ChevronDown className="h-5 w-5" />
               ) : (
-                <ChevronUp className="h-4 w-4" />
+                <ChevronUp className="h-5 w-5" />
               )}
-            </Button>
+            </div>
           </CardHeader>
           
           <CardContent className={cn("space-y-4", isCalculatorCollapsed && "hidden")}>
