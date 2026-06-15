@@ -55,6 +55,23 @@ const getEntityTypeLabel = (type: string | undefined): string => {
   return mapping[type.toLowerCase().trim()] || type;
 };
 
+const formatDateDMY = (dateStr: string | undefined): string => {
+  if (!dateStr) return "N/A";
+  try {
+    const clean = dateStr.trim().split("T")[0];
+    const parts = clean.split("-");
+    if (parts.length === 3) {
+      const [year, month, day] = parts;
+      if (year.length === 4) {
+        return `${day}-${month}-${year}`;
+      }
+    }
+    return dateStr;
+  } catch {
+    return dateStr;
+  }
+};
+
 export function IAMasterView() {
   const router = useRouter();
   const [data, setData] = useState<IAMaster | null>(null);
@@ -300,11 +317,11 @@ export function IAMasterView() {
             </h4>
             <div className="flex justify-between items-center py-1">
               <span className="text-sm text-muted-foreground">Registered on:</span>
-              <span className="text-sm font-semibold">{data.date_of_registration}</span>
+              <span className="text-sm font-semibold">{formatDateDMY(data.date_of_registration)}</span>
             </div>
             <div className="flex justify-between items-center py-1 border-t border-primary/10">
               <span className="text-sm text-muted-foreground">Expires on:</span>
-              <span className="text-sm font-semibold text-amber-600">{data.date_of_registration_expiry}</span>
+              <span className="text-sm font-semibold text-amber-600">{formatDateDMY(data.date_of_registration_expiry)}</span>
             </div>
           </div>
 
