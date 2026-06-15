@@ -225,9 +225,11 @@ export const ProductMasterService = {
 };
 
 export const PriceUploadService = {
-  async list(type: PriceUploadType, search?: string): Promise<{ items: AnyPriceRecord[]; total: number }> {
+  async list(type: PriceUploadType, search?: string, fromDate?: string, toDate?: string): Promise<{ items: AnyPriceRecord[]; total: number }> {
     const params: Record<string, string | number> = { limit: 200, skip: 0 };
     if (search) params.search = search;
+    if (fromDate) params.from_date = fromDate;
+    if (toDate) params.to_date = toDate;
     const res = await httpClient.get(API_ENDPOINTS.PRICE_UPLOAD.LIST(type), { params });
     return res.data;
   },

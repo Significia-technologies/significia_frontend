@@ -9,6 +9,7 @@ import { PriceUploadType, AnyPriceRecord, PriceUploadService } from "@/core/serv
 import { PriceExcelImportModal } from "./PriceExcelImportModal";
 import { CustomCheckbox } from "@/components/ui/CustomCheckbox";
 import { Download, Upload } from "lucide-react";
+import { DatePicker } from "@/components/ui/date-picker";
 
 interface Props {
   priceType: PriceUploadType;
@@ -44,11 +45,20 @@ const COLUMNS: Record<PriceUploadType, ColumnDef[]> = {
   ],
 };
 
+const formatToDDMMYYYY = (dateStr: string) => {
+  if (!dateStr) return "";
+  const parts = dateStr.split("-"); // yyyy-mm-dd
+  if (parts.length !== 3) return dateStr;
+  return `${parts[2]}-${parts[1]}-${parts[0]}`; // dd-mm-yyyy
+};
+
 export function PriceUploadList({ priceType }: Props) {
   const [items, setItems] = useState<AnyPriceRecord[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
 
   const [excelOpen, setExcelOpen] = useState(false);
   const [toggling, setToggling] = useState<string | null>(null);
@@ -56,7 +66,14 @@ export function PriceUploadList({ priceType }: Props) {
   const fetchItems = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await PriceUploadService.list(priceType, search || undefined);
+      const formattedFrom = formatToDDMMYYYY(fromDate);
+      const formattedTo = formatToDDMMYYYY(toDate);
+      const res = await PriceUploadService.list(
+        priceType,
+        search || undefined,
+        formattedFrom || undefined,
+        formattedTo || undefined
+      );
       setItems(res.items);
       setTotal(res.total);
     } catch {
@@ -64,7 +81,7 @@ export function PriceUploadList({ priceType }: Props) {
     } finally {
       setLoading(false);
     }
-  }, [priceType, search]);
+  }, [priceType, search, fromDate, toDate]);
 
   useEffect(() => {
     fetchItems();
@@ -90,14 +107,37 @@ export function PriceUploadList({ priceType }: Props) {
   return (
     <div className="space-y-4">
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-2">
-        <Input
-          placeholder="Search..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="h-8 w-56 text-sm"
-        />
-        <span className="text-xs text-muted-foreground">{total} records</span>
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-2">
+          <Input
+            placeholder="Search..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-8 w-48 text-sm"
+          />
+          <span className="text-xs text-muted-foreground whitespace-nowrap">{total} records</span>
+        </div>
+
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-muted-foreground">From:</span>
+          <DatePicker
+            date={fromDate}
+            onChange={setFromDate}
+            placeholder="DD-MM-YYYY"
+            className="w-36 [&_button]:h-8 [&_button]:text-xs [&_button_svg]:h-3.5 [&_button_svg]:w-3.5"
+          />
+        </div>
+
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-muted-foreground">To:</span>
+          <DatePicker
+            date={toDate}
+            onChange={setToDate}
+            placeholder="DD-MM-YYYY"
+            className="w-36 [&_button]:h-8 [&_button]:text-xs [&_button_svg]:h-3.5 [&_button_svg]:w-3.5"
+          />
+        </div>
+
         <div className="flex-1" />
         <Button variant="outline" size="sm" onClick={handleDownloadTemplate} className="gap-1.5">
           <Download className="h-3.5 w-3.5" />
