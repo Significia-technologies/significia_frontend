@@ -65,6 +65,7 @@ export function FormBuilderPage({ onClose, initialData }: FormBuilderPageProps) 
   const [disclaimer, setDisclaimer] = useState(initialData?.disclaimer || "");
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
   const [disclaimerExpanded, setDisclaimerExpanded] = useState(false);
+  const [showNameError, setShowNameError] = useState(false);
 
   const totalPossibleScore = questions.reduce((sum, q) => {
     const maxOptionScore = q.options.length > 0 ? Math.max(...q.options.map(o => o.score)) : 0;
@@ -144,7 +145,8 @@ export function FormBuilderPage({ onClose, initialData }: FormBuilderPageProps) 
   };
 
   const handleSave = async (status: "active" | "draft" = "active") => {
-    if (!portfolioName) {
+    if (!portfolioName || !portfolioName.trim()) {
+      setShowNameError(true);
       toast.error("Please provide a name for this questionnaire.");
       return;
     }
@@ -190,7 +192,7 @@ export function FormBuilderPage({ onClose, initialData }: FormBuilderPageProps) 
                </div>
                <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Questionnaire Name</Label>
+                    <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Questionnaire Name <span className="text-red-500">*</span></Label>
                     {initialData?.status && (
                       <Badge variant="outline" className={`text-[10px] font-semibold px-2 py-0.5 uppercase tracking-wide ${initialData.status === 'active' ? 'border-emerald-500/30 bg-emerald-500/5 text-emerald-500' : 'border-amber-500/30 bg-amber-500/5 text-amber-500'}`}>
                         {initialData.status}
@@ -199,10 +201,24 @@ export function FormBuilderPage({ onClose, initialData }: FormBuilderPageProps) 
                   </div>
                   <Input
                     value={portfolioName}
-                    onChange={e => setPortfolioName(e.target.value)}
+                    onChange={e => {
+                      setPortfolioName(e.target.value);
+                      if (e.target.value.trim()) {
+                        setShowNameError(false);
+                      }
+                    }}
                     placeholder="Enter questionnaire name..."
-                    className="bg-transparent border border-primary/15 text-xl font-bold focus-visible:ring-1 focus-visible:ring-primary/20 shadow-none px-3 h-10 rounded-lg placeholder:text-muted-foreground/40 text-foreground mt-1"
+                    className={`bg-transparent border text-xl font-bold focus-visible:ring-1 shadow-none px-3 h-10 rounded-lg placeholder:text-muted-foreground/40 text-foreground mt-1 ${
+                      showNameError 
+                        ? 'border-destructive focus-visible:ring-destructive/20' 
+                        : 'border-primary/15 focus-visible:ring-primary/20'
+                    }`}
                   />
+                  {showNameError && (
+                    <p className="text-xs text-destructive font-semibold mt-1">
+                      Questionnaire Name is mandatory.
+                    </p>
+                  )}
                </div>
             </div>
 
