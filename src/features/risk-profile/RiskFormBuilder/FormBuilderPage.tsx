@@ -65,7 +65,34 @@ export function FormBuilderPage({ onClose, initialData }: FormBuilderPageProps) 
   const [disclaimer, setDisclaimer] = useState(initialData?.disclaimer || "");
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
   const [disclaimerExpanded, setDisclaimerExpanded] = useState(false);
-  const [showNameError, setShowNameError] = useState(false);
+  const [existingQuestionnaires, setExistingQuestionnaires] = useState<any[]>([]);
+  const [nameError, setNameError] = useState<"required" | "duplicate" | null>(null);
+
+  useEffect(() => {
+    const fetchExisting = async () => {
+      try {
+        const data = await RiskProfileService.listQuestionnaires();
+        setExistingQuestionnaires(data || []);
+      } catch (err) {
+        console.error("Failed to load existing questionnaires for validation", err);
+      }
+    };
+    fetchExisting();
+  }, []);
+
+  const validateName = (name: string, list: any[]) => {
+    if (!name.trim()) {
+      return "required";
+    }
+    const isDuplicate = list.some(q => 
+      q.portfolio_name.toLowerCase().trim() === name.toLowerCase().trim() && 
+      q.id !== initialData?.id
+    );
+    if (isDuplicate) {
+      return "duplicate";
+    }
+    return null;
+  };
 
   const totalPossibleScore = questions.reduce((sum, q) => {
     const maxOptionScore = q.options.length > 0 ? Math.max(...q.options.map(o => o.score)) : 0;
@@ -145,9 +172,14 @@ export function FormBuilderPage({ onClose, initialData }: FormBuilderPageProps) 
   };
 
   const handleSave = async (status: "active" | "draft" = "active") => {
-    if (!portfolioName || !portfolioName.trim()) {
-      setShowNameError(true);
-      toast.error("Please provide a name for this questionnaire.");
+    const error = validateName(portfolioName, existingQuestionnaires);
+    if (error) {
+      setNameError(error);
+      if (error === "required") {
+        toast.error("Please provide a name for this questionnaire.");
+      } else if (error === "duplicate") {
+        toast.error("A questionnaire with this name already exists.");
+      }
       return;
     }
 
@@ -202,21 +234,26 @@ export function FormBuilderPage({ onClose, initialData }: FormBuilderPageProps) 
                   <Input
                     value={portfolioName}
                     onChange={e => {
-                      setPortfolioName(e.target.value);
-                      if (e.target.value.trim()) {
-                        setShowNameError(false);
-                      }
+                      const value = e.target.value;
+                      setPortfolioName(value);
+                      const error = validateName(value, existingQuestionnaires);
+                      setNameError(error);
                     }}
                     placeholder="Enter questionnaire name..."
                     className={`bg-transparent border text-xl font-bold focus-visible:ring-1 shadow-none px-3 h-10 rounded-lg placeholder:text-muted-foreground/40 text-foreground mt-1 ${
-                      showNameError 
+                      nameError 
                         ? 'border-destructive focus-visible:ring-destructive/20' 
                         : 'border-primary/15 focus-visible:ring-primary/20'
                     }`}
                   />
-                  {showNameError && (
+                  {nameError === "required" && (
                     <p className="text-xs text-destructive font-semibold mt-1">
                       Questionnaire Name is mandatory.
+                    </p>
+                  )}
+                  {nameError === "duplicate" && (
+                    <p className="text-xs text-destructive font-semibold mt-1">
+                      A questionnaire with this name already exists. Name must be unique.
                     </p>
                   )}
                </div>
