@@ -31,6 +31,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { AuthService } from "@/core/services/auth.service";
 import { useAppStore } from "@/store/useAppStore";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -58,6 +66,7 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("basic");
   const [iaNumberExists, setIaNumberExists] = useState(false);
+  const [isReasonModalOpen, setIsReasonModalOpen] = useState(false);
 
   const getFileName = (path: string | undefined) => {
     if (!path) return "";
@@ -139,6 +148,7 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
   const isNonPersonEntity = ["llp", "body", "partnership"].includes(formData.nature_of_entity);
   const showDOB = isSinglePersonEntity;
   const showDateOfFormation = isNonPersonEntity;
+  const isRealUpdate = !!(initialData && initialData.ia_registration_number && initialData.registered_address && initialData.bank_account_number);
 
   // Real-time validation: formation date must be before registration date
   const isFormationDateInvalid = showDateOfFormation && formData.date_of_birth && formData.date_of_registration
@@ -241,12 +251,24 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
       }
     }
 
-    const isRealUpdate = initialData && initialData.ia_registration_number && initialData.registered_address && initialData.bank_account_number;
-    if (isRealUpdate && (!formData.change_reason_text || formData.change_reason_text.length < 5)) {
+    if (isRealUpdate) {
+      setIsReasonModalOpen(true);
+    } else {
+      await executeSave();
+    }
+  };
+
+  const handleReasonSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.change_reason_text || formData.change_reason_text.trim().length < 5) {
       toast.error("Please provide a valid reason for this update (min 5 characters)");
       return;
     }
+    setIsReasonModalOpen(false);
+    await executeSave();
+  };
 
+  const executeSave = async () => {
     setLoading(true);
     try {
       const data = new FormData();
@@ -260,7 +282,6 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
       if (files.ia_certificate) data.append("ia_certificate", files.ia_certificate);
       if (files.ia_signature) data.append("ia_signature", files.ia_signature);
       if (files.ia_logo) data.append("ia_logo", files.ia_logo);
-
 
       if (initialData?.id) {
         await IAMasterService.update(initialData.id, data);
@@ -498,47 +519,7 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
                     </div>
                   </div>
 
-                  {/* ── Change Rationale (Required for Updates, not first-time setup) ── */}
-                  {initialData && initialData.ia_registration_number && initialData.registered_address && initialData.bank_account_number && (
-                    <div className="mt-8 p-6 rounded-xl border border-amber-200 bg-amber-50/30 dark:bg-amber-950/10 space-y-4 animate-in fade-in slide-in-from-top-2 duration-500">
-                      <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
-                        <ShieldCheck className="w-5 h-5" />
-                        <h3 className="font-bold text-sm uppercase tracking-wider">Change Rationale (Required for Regulatory Compliance)</h3>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                          <Label className="text-amber-700 dark:text-amber-300">Reason Category <span className="text-red-500">*</span></Label>
-                          <Select 
-                            name="change_reason_type" 
-                            value={formData.change_reason_type} 
-                            onValueChange={(value) => setFormData((prev) => ({ ...prev, change_reason_type: value }))}
-                          >
-                            <SelectTrigger className="w-full bg-background/50 border-amber-200/50">
-                              <SelectValue placeholder="Select Reason Type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="data_correction">Data Correction</SelectItem>
-                              <SelectItem value="assumption_change">Change Rationale / Review Adjustment</SelectItem>
-                              <SelectItem value="regulatory_compliance">Regulatory Compliance</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-amber-700 dark:text-amber-300">Detailed Explanation <span className="text-red-500">*</span></Label>
-                          <Input 
-                            name="change_reason_text" 
-                            value={formData.change_reason_text} 
-                            onChange={handleChange} 
-                            placeholder="e.g. Updated IA logo and BASL ID"
-                            className="bg-background/50 border-amber-200/50"
-                          />
-                        </div>
-                      </div>
-                      <p className="text-[10px] text-amber-600/70 italic">
-                        This reason will be permanently stored in the Regulatory-Safe audit trail and version history.
-                      </p>
-                    </div>
-                  )}
+                  {/* Change rationale section is now requested via a submission modal to support multi-tab editing flow. */}
                 </TabsContent>
 
                 <TabsContent value="bank" className="space-y-6 mt-0">
@@ -707,6 +688,66 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
           </form>
         </CardContent>
       </Card>
+
+      <Dialog open={isReasonModalOpen} onOpenChange={setIsReasonModalOpen}>
+        <DialogContent className="sm:max-w-[500px] border-primary/20 bg-card/95 backdrop-blur-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl flex items-center gap-2 text-amber-600 dark:text-amber-400">
+              <ShieldCheck className="w-6 h-6" />
+              Change Rationale Required
+            </DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground">
+              To remain compliant with SEBI-SAFE guidelines, please specify the reason for updating these details. This action will be permanently recorded in the audit trail.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleReasonSubmit} className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Reason Category <span className="text-red-500">*</span></Label>
+              <Select 
+                name="change_reason_type" 
+                value={formData.change_reason_type} 
+                onValueChange={(value) => setFormData((prev) => ({ ...prev, change_reason_type: value }))}
+                required
+              >
+                <SelectTrigger className="w-full bg-background/50 border-primary/10">
+                  <SelectValue placeholder="Select Reason Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="data_correction">Data Correction</SelectItem>
+                  <SelectItem value="assumption_change">Change Rationale / Review Adjustment</SelectItem>
+                  <SelectItem value="regulatory_compliance">Regulatory Compliance</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Detailed Explanation <span className="text-red-500">*</span></Label>
+              <Input 
+                name="change_reason_text" 
+                value={formData.change_reason_text} 
+                onChange={handleChange} 
+                placeholder="e.g. Corrected typo in Bank Account number"
+                className="bg-background/50 border-primary/10"
+                required
+              />
+              <p className="text-[10px] text-muted-foreground italic">
+                Min 5 characters. This explanation will be audit-logged.
+              </p>
+            </div>
+
+            <DialogFooter className="pt-4 border-t border-primary/5">
+              <Button type="button" variant="ghost" onClick={() => setIsReasonModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={loading} className="gap-2 px-6 bg-primary hover:bg-primary/90">
+                {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+                Confirm & Save
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
