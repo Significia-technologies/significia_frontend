@@ -518,7 +518,6 @@ export function IAMasterForm({ initialData }: IAMasterFormProps) {
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="data_correction">Data Correction</SelectItem>
-                              <SelectItem value="client_update">Client Update</SelectItem>
                               <SelectItem value="assumption_change">Change Rationale / Review Adjustment</SelectItem>
                               <SelectItem value="regulatory_compliance">Regulatory Compliance</SelectItem>
                             </SelectContent>
