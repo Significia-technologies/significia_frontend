@@ -580,7 +580,10 @@ export function RiskProfileForm({ clientId }: RiskProfileFormProps) {
                   <div className="flex items-center gap-8 animate-in zoom-in duration-500">
                     <div className="text-right">
                       <span className="text-[10px] font-bold uppercase tracking-widest opacity-60 block">Total Score</span>
-                      <div className="text-4xl font-black text-primary">{result.total_score}</div>
+                      <div className="text-4xl font-black text-primary">
+                        {result.total_score}
+                        <span className="text-lg font-normal text-muted-foreground ml-1">/ 100</span>
+                      </div>
                     </div>
                     <div className="h-12 w-[2px] bg-primary/20" />
                     <div>
