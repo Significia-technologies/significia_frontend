@@ -158,7 +158,7 @@ export function FormBuilderPage({ onClose, initialData }: FormBuilderPageProps) 
   };
 
   const addCategory = () => {
-    setCategories([...categories, { name: "New Risk Tier", min_score: 0, max_score: 0, color: "#D4AF37", description: "" }]);
+    setCategories([...categories, { name: "", min_score: 0, max_score: 0, color: "#D4AF37", description: "" }]);
   };
 
   const updateCategory = (index: number, field: keyof Category, value: any) => {
@@ -196,7 +196,11 @@ export function FormBuilderPage({ onClose, initialData }: FormBuilderPageProps) 
             score: typeof o.score === 'number' ? o.score : 0
           }))
         })),
-        categories,
+        categories: categories.map(c => ({
+          ...c,
+          min_score: typeof c.min_score === 'number' ? c.min_score : 0,
+          max_score: typeof c.max_score === 'number' ? c.max_score : 0
+        })),
         status: status,
         disclaimer,
         max_possible_score: totalPossibleScore
@@ -434,64 +438,103 @@ export function FormBuilderPage({ onClose, initialData }: FormBuilderPageProps) 
         {questions.length > 0 && (
           <div className="space-y-3 pt-4 border-t border-primary/10">
             <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-foreground/70 flex items-center gap-2">
-                  <PieChart className="w-4 h-4 text-primary/50" />
-                  Risk Score Categories
-                </h3>
-                <Button variant="outline" size="sm" onClick={addCategory} className="gap-1 border-primary/20 hover:bg-primary/5 text-xs font-medium h-7 px-3">
-                  <Plus className="w-3 h-3" /> Add Tier
+                <div className="space-y-0.5">
+                    <h3 className="text-sm font-semibold text-foreground/70 flex items-center gap-2">
+                      <PieChart className="w-4 h-4 text-primary/50" />
+                      Risk Score Tiers
+                    </h3>
+                    <p className="text-xs text-muted-foreground/50">
+                      Define category names, colors, and score ranges mapping to the client's final risk classification.
+                    </p>
+                </div>
+                <Button variant="outline" size="sm" onClick={addCategory} className="gap-1 border-primary/20 hover:bg-primary/5 text-xs font-medium h-8 px-3 rounded-lg shrink-0">
+                  <Plus className="w-3.5 h-3.5" /> Add Tier
                 </Button>
             </div>
 
-            <Card className="bg-card/20 border-primary/10 rounded-lg p-5 space-y-4">
-                <div className="h-3 w-full bg-muted/10 rounded-full overflow-hidden flex p-0.5 gap-0.5 border border-primary/5">
+            <Card className="bg-card/25 border-primary/10 rounded-xl p-5 space-y-5">
+                <div className="h-7 w-full bg-muted/5 rounded-xl overflow-hidden flex p-1 gap-1 border border-primary/10 shadow-inner">
                   {categories.map((cat, idx) => {
-                      const width = Math.max(5, ((cat.max_score - cat.min_score) / (totalPossibleScore || 100)) * 100);
+                      const min = typeof cat.min_score === 'number' ? cat.min_score : 0;
+                      const max = typeof cat.max_score === 'number' ? cat.max_score : 0;
+                      const width = Math.max(6, ((max - min) / (totalPossibleScore || 100)) * 100);
+                      const showLabel = width > 12;
                       return (
                         <div
                           key={idx}
-                          className="h-full rounded-full transition-all duration-500"
-                          style={{ width: `${width}%`, backgroundColor: cat.color + '25', border: `1px solid ${cat.color}50` }}
-                        />
+                          className="h-full rounded-lg transition-all duration-500 flex items-center justify-center text-[10px] font-bold uppercase tracking-wider px-1.5 truncate border"
+                          style={{ 
+                            width: `${width}%`, 
+                            backgroundColor: cat.color + '15', 
+                            borderColor: cat.color + '40',
+                            color: cat.color 
+                          }}
+                          title={`${cat.name || 'Unnamed'}: ${min} - ${max}`}
+                        >
+                          {showLabel && (
+                            <span className="truncate">
+                              {cat.name || 'New'} ({min}–{max})
+                            </span>
+                          )}
+                        </div>
                       )
                   })}
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {categories.map((cat, cIdx) => (
-                    <Card key={cIdx} className="bg-card/30 border-primary/10 shadow-none rounded-lg overflow-hidden transition-all hover:bg-card/40">
-                      <CardContent className="p-3 space-y-2.5 relative group">
-                          <Button variant="ghost" size="icon" onClick={() => removeCategory(cIdx)} className="absolute top-1.5 right-1.5 h-5 w-5 text-destructive/30 hover:text-destructive opacity-0 group-hover:opacity-100 transition-all">
-                            <Trash2 className="w-3 h-3" />
+                    <Card 
+                      key={cIdx} 
+                      className="bg-card/30 shadow-md border border-primary/10 rounded-xl overflow-hidden transition-all duration-300 hover:bg-card/40 hover:border-primary/20 relative group"
+                      style={{ borderLeft: `4px solid ${cat.color || '#D4AF37'}` }}
+                    >
+                      <CardContent className="p-4 space-y-3">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => removeCategory(cIdx)} 
+                            className="absolute top-2 right-2 h-6 w-6 text-muted-foreground/30 hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all rounded-md"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
                           </Button>
                           <div className="flex gap-2 items-center">
-                            <input
-                                type="color"
-                                value={cat.color}
-                                onChange={e => updateCategory(cIdx, "color", e.target.value)}
-                                className="w-4 h-4 rounded border-none bg-transparent cursor-pointer ring-1 ring-white/10 shrink-0"
-                            />
+                            <div className="relative w-6 h-6 rounded-full overflow-hidden border border-white/20 shadow-inner shrink-0 cursor-pointer" style={{ backgroundColor: cat.color }}>
+                              <input
+                                  type="color"
+                                  value={cat.color}
+                                  onChange={e => updateCategory(cIdx, "color", e.target.value)}
+                                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                              />
+                            </div>
                             <Input
                                 value={cat.name}
                                 onChange={e => updateCategory(cIdx, "name", e.target.value)}
-                                className="text-sm font-semibold border-none bg-transparent p-0 h-auto focus-visible:ring-0 shadow-none text-foreground/70 w-full"
-                                placeholder="Tier name..."
+                                className="text-sm font-semibold bg-transparent border-b border-dashed border-primary/10 focus-visible:border-primary focus-visible:ring-0 shadow-none rounded-none p-0 h-7 text-foreground placeholder:text-muted-foreground/30"
+                                placeholder="New Risk Tier"
                             />
                           </div>
-                          <div className="flex items-center gap-1.5">
-                            <Input
-                                type="number"
-                                value={cat.min_score}
-                                onChange={e => updateCategory(cIdx, "min_score", parseFloat(e.target.value))}
-                                className="h-7 text-xs border border-primary/10 bg-background/20 p-1 text-center rounded-md"
-                            />
-                            <span className="text-xs text-muted-foreground/40 shrink-0">–</span>
-                            <Input
-                                type="number"
-                                value={cat.max_score}
-                                onChange={e => updateCategory(cIdx, "max_score", parseFloat(e.target.value))}
-                                className="h-7 text-xs border border-primary/10 bg-background/20 p-1 text-center rounded-md"
-                            />
+                          <div className="space-y-1.5">
+                            <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider block">Score Range</span>
+                            <div className="grid grid-cols-2 gap-2 items-center">
+                              <div className="relative flex items-center">
+                                <span className="absolute left-2.5 text-[10px] font-medium text-muted-foreground/40 uppercase">Min</span>
+                                <Input
+                                    type="number"
+                                    value={cat.min_score}
+                                    onChange={e => updateCategory(cIdx, "min_score", e.target.value === "" ? "" : parseFloat(e.target.value))}
+                                    className="h-8 pl-9 pr-2 text-xs border border-primary/10 bg-black/20 focus-visible:ring-primary/20 rounded-lg text-center font-semibold text-foreground"
+                                />
+                              </div>
+                              <div className="relative flex items-center">
+                                <span className="absolute left-2.5 text-[10px] font-medium text-muted-foreground/40 uppercase">Max</span>
+                                <Input
+                                    type="number"
+                                    value={cat.max_score}
+                                    onChange={e => updateCategory(cIdx, "max_score", e.target.value === "" ? "" : parseFloat(e.target.value))}
+                                    className="h-8 pl-9 pr-2 text-xs border border-primary/10 bg-black/20 focus-visible:ring-primary/20 rounded-lg text-center font-semibold text-foreground"
+                                />
+                              </div>
+                            </div>
                           </div>
                       </CardContent>
                     </Card>
