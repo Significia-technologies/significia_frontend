@@ -160,7 +160,7 @@ export function RiskProfileForm({ clientId }: RiskProfileFormProps) {
 
   const [result, setResult] = useState<RiskAssessmentCalculateResponse | null>(null);
   const [discussionNotes, setDiscussionNotes] = useState(RISK_PROFILE_DISCUSSION_INIT);
-  const [disclaimer, setDisclaimer] = useState(RISK_PROFILE_DISCLAIMER);
+  const [additionalDisclaimer, setAdditionalDisclaimer] = useState("");
   
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [lastAssessmentId, setLastAssessmentId] = useState<string | null>(null);
@@ -239,12 +239,18 @@ export function RiskProfileForm({ clientId }: RiskProfileFormProps) {
       return;
     }
     setLoading(true);
+
+    // Concatenate standard disclaimer with custom disclaimer if present
+    const combinedDisclaimer = additionalDisclaimer.trim()
+      ? `${RISK_PROFILE_DISCLAIMER}\n\n${additionalDisclaimer.trim()}`
+      : RISK_PROFILE_DISCLAIMER;
+
     try {
       const saveResp = await RiskProfileService.save({
         client_code: clientInfo.code,
         answers,
         discussion_notes: discussionNotes,
-        disclaimer_text: disclaimer,
+        disclaimer_text: combinedDisclaimer,
         form_name: "Sample"
       });
       
@@ -530,13 +536,22 @@ export function RiskProfileForm({ clientId }: RiskProfileFormProps) {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <Label className="text-xs uppercase font-black tracking-widest opacity-50">Disclaimer to Risk Analysis (Sample only Editable)</Label>
-            <Textarea 
-              className="p-4 rounded-md border border-primary/10 bg-muted/5 text-sm leading-relaxed min-h-[120px] focus-visible:ring-primary/20"
-              value={disclaimer}
-              onChange={e => setDisclaimer(e.target.value)}
-            />
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-xs uppercase font-black tracking-widest opacity-50">Standard Disclaimer (Read-Only)</Label>
+              <div className="p-4 rounded-md border border-primary/10 bg-muted/20 text-xs leading-relaxed text-muted-foreground select-none max-h-[150px] overflow-y-auto">
+                {RISK_PROFILE_DISCLAIMER}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs uppercase font-black tracking-widest opacity-50">Additional Disclaimer (Optional)</Label>
+              <Textarea 
+                placeholder="Enter custom disclaimer text to append..."
+                className="p-4 rounded-md border border-primary/10 bg-muted/5 text-sm leading-relaxed min-h-[90px] focus-visible:ring-primary/20"
+                value={additionalDisclaimer}
+                onChange={e => setAdditionalDisclaimer(e.target.value)}
+              />
+            </div>
           </div>
           <div className="space-y-2">
             <Label className="text-xs uppercase font-black tracking-widest opacity-50">Discussion Notes (500 Words Max)</Label>
