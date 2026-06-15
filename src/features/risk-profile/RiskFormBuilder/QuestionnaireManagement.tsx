@@ -186,7 +186,7 @@ export function QuestionnaireManagement({ onEdit, onView, onAddNew, onBack }: Qu
                         <FileText className="w-4 h-4" />
                       </div>
                       <div>
-                        <p className="text-[13px] font-black uppercase tracking-tight text-white/90 group-hover:text-primary transition-colors">{q.portfolio_name}</p>
+                        <p className="text-[13px] font-black uppercase tracking-tight text-foreground/90 group-hover:text-primary transition-colors">{q.portfolio_name}</p>
                         <p className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-tighter">{q.is_system ? 'Immutable Protocol' : `System ID: ${q.id.substring(0, 8)}`}</p>
                       </div>
                     </div>
@@ -203,7 +203,7 @@ export function QuestionnaireManagement({ onEdit, onView, onAddNew, onBack }: Qu
                   <TableCell>
                     <div className="flex items-center gap-2">
                        <Clock className="w-3 h-3 text-muted-foreground/30" />
-                       <span className="text-[10px] font-bold text-white/60">{q.created_at ? format(new Date(q.created_at), 'MMM dd, yyyy') : 'N/A'}</span>
+                       <span className="text-[10px] font-bold text-foreground/60">{q.created_at ? format(new Date(q.created_at), 'MMM dd, yyyy') : 'N/A'}</span>
                     </div>
                   </TableCell>
                   <TableCell className="text-right pr-6">
@@ -215,7 +215,7 @@ export function QuestionnaireManagement({ onEdit, onView, onAddNew, onBack }: Qu
                         disabled={q.is_system}
                         className={`h-8 px-4 font-black uppercase text-[8px] tracking-widest transition-all shadow-sm ${
                           q.is_system 
-                          ? 'border-white/5 bg-white/5 text-white/20 cursor-not-allowed' 
+                          ? 'border-foreground/5 bg-foreground/5 text-foreground/25 cursor-not-allowed' 
                           : 'border-primary/30 bg-primary/10 hover:bg-primary text-primary hover:text-white'
                         }`}
                       >
@@ -224,7 +224,7 @@ export function QuestionnaireManagement({ onEdit, onView, onAddNew, onBack }: Qu
                       
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-white/40 hover:bg-primary/20 hover:text-primary rounded-lg transition-all">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/40 hover:bg-primary/20 hover:text-primary rounded-lg transition-all">
                             <MoreVertical className="w-4 h-4" />
                           </Button>
                         </DropdownMenuTrigger>
