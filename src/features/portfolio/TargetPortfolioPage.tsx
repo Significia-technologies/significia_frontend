@@ -104,10 +104,14 @@ function SuitabilityCell({ value }: { value: string | null | undefined }) {
 
 function formatIndianNumber(val: number | null | undefined): string {
   if (val === null || val === undefined) return "—";
-  return "Rs. " + val.toLocaleString("en-IN", {
+  const isNeg = val < 0;
+  const absVal = Math.abs(val);
+  const formatted = absVal.toLocaleString("en-IN", {
     maximumFractionDigits: 2,
-    minimumFractionDigits: val % 1 === 0 ? 0 : 2
+    minimumFractionDigits: absVal % 1 === 0 ? 0 : 2
   });
+  const res = "Rs. " + formatted;
+  return isNeg ? `(${res})` : res;
 }
 
 function formatTxType(type: string | null | undefined): string {
@@ -283,6 +287,7 @@ function AddEntryDialog({
   const [frequency, setFrequency] = useState("");
   const [noOfInstallments, setNoOfInstallments] = useState("");
   const [currentAccumulation, setCurrentAccumulation] = useState("");
+  const [action, setAction] = useState<"Buy" | "Sell">("Buy");
 
   const handleTransactionTypeChange = (val: string) => {
     setTransactionType(val);
@@ -301,10 +306,14 @@ function AddEntryDialog({
     } else {
       setFrequency("");
     }
-    // Reset installments and current accumulation when switching away from SIP
+    // Reset installments when switching away from SIP
     if (val !== "SIP") {
       setNoOfInstallments("");
+    }
+    // Reset current accumulation and action when switching away from SIP and LUMP_SUM
+    if (val !== "SIP" && val !== "LUMP_SUM") {
       setCurrentAccumulation("");
+      setAction("Buy");
     }
   };
 
@@ -351,14 +360,16 @@ function AddEntryDialog({
   const selectedSubAsset = getSelectedSubAssetDetails();
   const enteredAmount = parseFloat(suggestedAmount) || 0;
   const enteredCurrentAccumulation = parseFloat(currentAccumulation) || 0;
-  const totalEnteredAmount = enteredAmount + enteredCurrentAccumulation;
+  const totalEnteredAmount = action === "Sell"
+    ? (enteredCurrentAccumulation - enteredAmount)
+    : (enteredAmount + enteredCurrentAccumulation);
   const isOverTarget = selectedSubAsset && totalEnteredAmount > selectedSubAsset.targetAmt;
 
   const handleAmountChange = (val: string) => {
     setSuggestedAmount(val);
     const amt = parseFloat(val) || 0;
     const curAcc = parseFloat(currentAccumulation) || 0;
-    const totalAmt = amt + curAcc;
+    const totalAmt = action === "Sell" ? (curAcc - amt) : (amt + curAcc);
     if (selectedSubAsset && selectedSubAsset.targetAmt > 0) {
       if (val || currentAccumulation) {
         const computedPct = (totalAmt / selectedSubAsset.targetAmt) * 100;
@@ -373,7 +384,7 @@ function AddEntryDialog({
     setCurrentAccumulation(val);
     const curAcc = parseFloat(val) || 0;
     const amt = parseFloat(suggestedAmount) || 0;
-    const totalAmt = amt + curAcc;
+    const totalAmt = action === "Sell" ? (curAcc - amt) : (amt + curAcc);
     if (selectedSubAsset && selectedSubAsset.targetAmt > 0) {
       if (val || suggestedAmount) {
         const computedPct = (totalAmt / selectedSubAsset.targetAmt) * 100;
@@ -390,10 +401,33 @@ function AddEntryDialog({
     if (!isNaN(pctVal) && pctVal >= 0 && selectedSubAsset && selectedSubAsset.targetAmt > 0) {
       const computedTotalAmt = (pctVal / 100) * selectedSubAsset.targetAmt;
       const curAcc = parseFloat(currentAccumulation) || 0;
-      const computedSuggestedAmt = Math.max(0, computedTotalAmt - curAcc);
-      setSuggestedAmount((Math.round(computedSuggestedAmt * 100) / 100).toString());
+      if (action === "Sell") {
+        const computedSuggestedAmt = Math.max(0, curAcc - computedTotalAmt);
+        setSuggestedAmount((Math.round(computedSuggestedAmt * 100) / 100).toString());
+      } else {
+        const computedSuggestedAmt = Math.max(0, computedTotalAmt - curAcc);
+        setSuggestedAmount((Math.round(computedSuggestedAmt * 100) / 100).toString());
+      }
     } else if (!val) {
       setSuggestedAmount("");
+    }
+  };
+
+  const handleActionChange = (newAction: "Buy" | "Sell") => {
+    setAction(newAction);
+    const curAcc = parseFloat(currentAccumulation) || 0;
+    if (percentage && selectedSubAsset && selectedSubAsset.targetAmt > 0) {
+      const pctVal = parseFloat(percentage);
+      if (!isNaN(pctVal)) {
+        const computedTotalAmt = (pctVal / 100) * selectedSubAsset.targetAmt;
+        if (newAction === "Sell") {
+          const computedSuggestedAmt = Math.max(0, curAcc - computedTotalAmt);
+          setSuggestedAmount((Math.round(computedSuggestedAmt * 100) / 100).toString());
+        } else {
+          const computedSuggestedAmt = Math.max(0, computedTotalAmt - curAcc);
+          setSuggestedAmount((Math.round(computedSuggestedAmt * 100) / 100).toString());
+        }
+      }
     }
   };
 
@@ -404,11 +438,16 @@ function AddEntryDialog({
       if (!isNaN(pctVal)) {
         const computedTotalAmt = (pctVal / 100) * selectedSubAsset.targetAmt;
         const curAcc = parseFloat(currentAccumulation) || 0;
-        const computedSuggestedAmt = Math.max(0, computedTotalAmt - curAcc);
-        setSuggestedAmount((Math.round(computedSuggestedAmt * 100) / 100).toString());
+        if (action === "Sell") {
+          const computedSuggestedAmt = Math.max(0, curAcc - computedTotalAmt);
+          setSuggestedAmount((Math.round(computedSuggestedAmt * 100) / 100).toString());
+        } else {
+          const computedSuggestedAmt = Math.max(0, computedTotalAmt - curAcc);
+          setSuggestedAmount((Math.round(computedSuggestedAmt * 100) / 100).toString());
+        }
       }
     }
-  }, [productSubtype, nature, latestAllocation, totalPortfolioSize]);
+  }, [productSubtype, nature, latestAllocation, totalPortfolioSize, action]);
 
 
 
@@ -433,6 +472,7 @@ function AddEntryDialog({
 
     setNoOfInstallments("");
     setCurrentAccumulation("");
+    setAction("Buy");
 
     if (assetClass === "health_insurance") {
       setTransactionType("LUMP_SUM");
@@ -536,6 +576,11 @@ function AddEntryDialog({
       return toast.error("Enter a valid suggested investment amount.");
     }
 
+    const curAcc = parseFloat(currentAccumulation) || 0;
+    if (transactionType === "LUMP_SUM" && action === "Sell" && amt > curAcc) {
+      return toast.error("Suggested amount to sell cannot exceed current accumulation.");
+    }
+
     if (assetClass === "mf" && !productSubtype) {
       return toast.error("Select a Mutual Fund type.");
     }
@@ -581,7 +626,8 @@ function AddEntryDialog({
       transaction_type: transactionType || undefined,
       frequency: frequency || undefined,
       no_of_installments: transactionType === "SIP" && noOfInstallments ? parseInt(noOfInstallments) : undefined,
-      current_accumulation: transactionType === "SIP" && currentAccumulation ? parseFloat(currentAccumulation) : undefined,
+      current_accumulation: (transactionType === "SIP" || transactionType === "LUMP_SUM") && currentAccumulation ? parseFloat(currentAccumulation) : undefined,
+      action: transactionType === "LUMP_SUM" ? action : (transactionType === "SIP" ? "Buy" : undefined),
     };
 
     setSubmitting(true);
@@ -785,6 +831,35 @@ function AddEntryDialog({
                   placeholder="e.g. 12"
                   className="h-8 text-xs"
                 />
+              </div>
+            </div>
+          )}
+
+          {/* LUMP_SUM Fields: Current Accumulation & Action (Buy/Sell) */}
+          {transactionType === "LUMP_SUM" && (
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <Label className="text-xs">Current Accumulation</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={currentAccumulation}
+                  onChange={(e) => handleCurrentAccumulationChange(e.target.value)}
+                  placeholder="e.g. 50000"
+                  className="h-8 text-xs"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Action <span className="text-destructive">*</span></Label>
+                <Select value={action} onValueChange={(val: "Buy" | "Sell") => handleActionChange(val)}>
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue placeholder="Select Action" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Buy">Buy</SelectItem>
+                    <SelectItem value="Sell">Sell</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           )}
@@ -1147,15 +1222,21 @@ function AssetClassTab({
                       </span>
                     </TableCell>
                     <TableCell className="font-semibold">
-                      {e.transaction_type === "SIP" && e.current_accumulation !== null && e.current_accumulation !== undefined
+                      {(e.transaction_type === "SIP" || e.transaction_type === "LUMP_SUM") && e.current_accumulation !== null && e.current_accumulation !== undefined
                         ? formatIndianNumber(e.current_accumulation)
                         : <span className="text-muted-foreground">—</span>}
                     </TableCell>
                     <TableCell className="font-semibold">
-                      {formatIndianNumber(e.suggested_investment_amount)}
+                      {e.action === "Sell" && e.suggested_investment_amount !== null && e.suggested_investment_amount !== undefined
+                        ? `(${formatIndianNumber(e.suggested_investment_amount)})`
+                        : formatIndianNumber(e.suggested_investment_amount)}
                     </TableCell>
                     <TableCell>
-                      <span className="font-semibold">{formatTxType(e.transaction_type)}</span>
+                      <span className="font-semibold">
+                        {e.transaction_type === "LUMP_SUM" && e.action
+                          ? `Lumpsum (${e.action})`
+                          : formatTxType(e.transaction_type)}
+                      </span>
                       {e.frequency && e.frequency !== e.transaction_type && (
                         <span className="block text-[10px] text-muted-foreground">{formatFrequency(e.frequency)}</span>
                       )}
@@ -1249,7 +1330,7 @@ function AssetClassTab({
                     <span className="text-muted-foreground">{pctColLabel}</span>
                     <p className="font-semibold mt-0.5">{e.percentage.toFixed(1)}%</p>
                   </div>
-                  {e.transaction_type === "SIP" && e.current_accumulation !== null && e.current_accumulation !== undefined && (
+                  {(e.transaction_type === "SIP" || e.transaction_type === "LUMP_SUM") && e.current_accumulation !== null && e.current_accumulation !== undefined && (
                     <div>
                       <span className="text-muted-foreground">Current Accum.</span>
                       <p className="font-semibold mt-0.5">{formatIndianNumber(e.current_accumulation)}</p>
@@ -1257,11 +1338,19 @@ function AssetClassTab({
                   )}
                   <div>
                     <span className="text-muted-foreground">Suggested Amount</span>
-                    <p className="font-semibold mt-0.5">{formatIndianNumber(e.suggested_investment_amount)}</p>
+                    <p className="font-semibold mt-0.5">
+                      {e.action === "Sell" && e.suggested_investment_amount !== null && e.suggested_investment_amount !== undefined
+                        ? `(${formatIndianNumber(e.suggested_investment_amount)})`
+                        : formatIndianNumber(e.suggested_investment_amount)}
+                    </p>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Transaction Type</span>
-                    <p className="font-semibold mt-0.5">{formatTxType(e.transaction_type)}</p>
+                    <p className="font-semibold mt-0.5">
+                      {e.transaction_type === "LUMP_SUM" && e.action
+                        ? `Lumpsum (${e.action})`
+                        : formatTxType(e.transaction_type)}
+                    </p>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Frequency</span>

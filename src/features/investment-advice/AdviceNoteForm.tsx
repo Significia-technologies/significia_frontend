@@ -70,10 +70,13 @@ export const formatIndianNumber = (val: number | string | null | undefined): str
   const numVal = typeof val === 'number' ? val : parseFloat(val);
   if (isNaN(numVal)) return String(val);
 
-  return numVal.toLocaleString('en-IN', {
+  const isNeg = numVal < 0;
+  const absVal = Math.abs(numVal);
+  const formatted = absVal.toLocaleString('en-IN', {
     maximumFractionDigits: 2,
-    minimumFractionDigits: numVal % 1 === 0 ? 0 : 2
+    minimumFractionDigits: absVal % 1 === 0 ? 0 : 2
   });
+  return isNeg ? `(${formatted})` : formatted;
 };
 
 export const formatAmountUnits = (rec: Partial<InvestmentAdviceRecommendation>, productType?: string): string => {
