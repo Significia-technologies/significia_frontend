@@ -281,6 +281,7 @@ function AddEntryDialog({
   const [remarks, setRemarks] = useState("");
   const [transactionType, setTransactionType] = useState("");
   const [frequency, setFrequency] = useState("");
+  const [noOfInstallments, setNoOfInstallments] = useState("");
 
   const handleTransactionTypeChange = (val: string) => {
     setTransactionType(val);
@@ -298,6 +299,10 @@ function AddEntryDialog({
       setFrequency("ANNUAL");
     } else {
       setFrequency("");
+    }
+    // Reset installments when switching away from SIP
+    if (val !== "SIP") {
+      setNoOfInstallments("");
     }
   };
 
@@ -398,6 +403,8 @@ function AddEntryDialog({
     setLifeObjective("");
     setReason("");
     setRemarks("");
+
+    setNoOfInstallments("");
 
     if (assetClass === "health_insurance") {
       setTransactionType("LUMP_SUM");
@@ -545,6 +552,7 @@ function AddEntryDialog({
       remarks: remarks.trim() || undefined,
       transaction_type: transactionType || undefined,
       frequency: frequency || undefined,
+      no_of_installments: transactionType === "SIP" && noOfInstallments ? parseInt(noOfInstallments) : undefined,
     };
 
     setSubmitting(true);
@@ -722,6 +730,41 @@ function AddEntryDialog({
               </Select>
             </div>
           </div>
+
+          {/* No. of Installments + Anticipated Future Value (SIP only) */}
+          {transactionType === "SIP" && (
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <Label className="text-xs">No. of Installments</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={noOfInstallments}
+                  onChange={(e) => setNoOfInstallments(e.target.value)}
+                  placeholder="e.g. 12"
+                  className="h-8 text-xs"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Anticipated Future Value</Label>
+                <Input
+                  readOnly
+                  value={
+                    suggestedAmount && noOfInstallments
+                      ? formatIndianNumber(
+                          parseFloat(suggestedAmount) * parseInt(noOfInstallments)
+                        )
+                      : "—"
+                  }
+                  className="h-8 text-xs bg-muted text-muted-foreground"
+                />
+                <span className="text-[10px] text-muted-foreground">
+                  SIP Amt × Installments (not part of allocation)
+                </span>
+              </div>
+            </div>
+          )}
 
           {/* % Investment + Suggested Amount in 2-col grid */}
           <div className="grid grid-cols-2 gap-2">
@@ -1005,6 +1048,8 @@ function AssetClassTab({
                 <TableHead className="w-[80px]">{pctColLabel}</TableHead>
                 <TableHead className="w-[110px]">Suggested Amt</TableHead>
                 <TableHead className="w-[100px]">Tx / Freq</TableHead>
+                <TableHead className="w-[80px]">Installments</TableHead>
+                <TableHead className="w-[110px]">Anticipated Value</TableHead>
                 <TableHead className="w-[100px]">{objectiveColLabel}</TableHead>
                 <TableHead className="w-[110px]">Suitability</TableHead>
                 <TableHead className="w-[68px]">Status</TableHead>
@@ -1015,14 +1060,14 @@ function AssetClassTab({
               {loading ? (
                 Array.from({ length: 2 }).map((_, i) => (
                   <TableRow key={i}>
-                    {Array.from({ length: 8 }).map((_, j) => (
+                    {Array.from({ length: 10 }).map((_, j) => (
                       <TableCell key={j}><Skeleton className="h-3 w-full" /></TableCell>
                     ))}
                   </TableRow>
                 ))
               ) : entries.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                     No products added yet.
                   </TableCell>
                 </TableRow>
@@ -1053,6 +1098,16 @@ function AssetClassTab({
                       {e.frequency && e.frequency !== e.transaction_type && (
                         <span className="block text-[10px] text-muted-foreground">{formatFrequency(e.frequency)}</span>
                       )}
+                    </TableCell>
+                    <TableCell>
+                      {e.transaction_type === "SIP" && e.no_of_installments
+                        ? e.no_of_installments
+                        : <span className="text-muted-foreground">—</span>}
+                    </TableCell>
+                    <TableCell className="font-semibold">
+                      {e.transaction_type === "SIP" && e.no_of_installments && e.suggested_investment_amount
+                        ? formatIndianNumber(e.suggested_investment_amount * e.no_of_installments)
+                        : <span className="text-muted-foreground">—</span>}
                     </TableCell>
                     <TableCell>
                       {assetClass === "life_insurance" ? (
@@ -1145,6 +1200,22 @@ function AssetClassTab({
                     <span className="text-muted-foreground">Frequency</span>
                     <p className="font-semibold mt-0.5">{formatFrequency(e.frequency)}</p>
                   </div>
+                  {e.transaction_type === "SIP" && e.no_of_installments && (
+                    <>
+                      <div>
+                        <span className="text-muted-foreground">Installments</span>
+                        <p className="font-semibold mt-0.5">{e.no_of_installments}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Anticipated Value</span>
+                        <p className="font-semibold mt-0.5">
+                          {e.suggested_investment_amount
+                            ? formatIndianNumber(e.suggested_investment_amount * e.no_of_installments)
+                            : "—"}
+                        </p>
+                      </div>
+                    </>
+                  )}
                   <div className="col-span-2">
                     <span className="text-muted-foreground">{objectiveColLabel}</span>
                     {assetClass === "life_insurance" ? (

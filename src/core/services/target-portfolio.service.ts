@@ -19,6 +19,7 @@ export interface TargetPortfolioEntry {
   remarks: string | null;
   transaction_type?: string | null;
   frequency?: string | null;
+  no_of_installments?: number | null;
   is_active: boolean;
   created_at: string;
 }
@@ -49,6 +50,7 @@ export interface TargetPortfolioCreate {
   remarks?: string;
   transaction_type?: string;
   frequency?: string;
+  no_of_installments?: number;
 }
 
 export class TargetPortfolioService {
