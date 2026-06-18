@@ -1050,7 +1050,7 @@ function AssetClassTab({
     setTogglingId(entry.id);
     try {
       await TargetPortfolioService.toggleEntry(clientId, member.id, entry.id);
-      toast.success(`${entry.product_name} ${entry.is_active ? "deactivated" : "activated"}.`);
+      toast.success(`${entry.product_name} deactivated.`);
       fetch();
     } catch {
       toast.error("Failed to update status.");
@@ -1191,22 +1191,22 @@ function AssetClassTab({
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-7 w-7" disabled={togglingId === e.id}>
-                            {togglingId === e.id
-                              ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                              : <MoreHorizontal className="h-3.5 w-3.5" />}
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleToggle(e)}>
-                            {e.is_active
-                              ? <><ToggleLeft className="h-4 w-4 mr-2 text-muted-foreground" /> Deactivate</>
-                              : <><ToggleRight className="h-4 w-4 mr-2 text-green-600" /> Activate</>}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      {e.is_active && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" disabled={togglingId === e.id}>
+                              {togglingId === e.id
+                                ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                : <MoreHorizontal className="h-3.5 w-3.5" />}
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleToggle(e)}>
+                              <ToggleLeft className="h-4 w-4 mr-2 text-muted-foreground" /> Deactivate
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))
@@ -1305,25 +1305,25 @@ function AssetClassTab({
                     </div>
                   )}
                 </div>
-                <div className="border-t border-border pt-2">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm" className="w-full h-8 gap-1.5 text-xs" disabled={togglingId === e.id}>
-                        {togglingId === e.id
-                          ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          : <MoreHorizontal className="h-3.5 w-3.5" />}
-                        Actions
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleToggle(e)}>
-                        {e.is_active
-                          ? <><ToggleLeft className="h-4 w-4 mr-2 text-muted-foreground" /> Deactivate</>
-                          : <><ToggleRight className="h-4 w-4 mr-2 text-green-600" /> Activate</>}
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
+                {e.is_active && (
+                  <div className="border-t border-border pt-2">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" className="w-full h-8 gap-1.5 text-xs" disabled={togglingId === e.id}>
+                          {togglingId === e.id
+                            ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            : <MoreHorizontal className="h-3.5 w-3.5" />}
+                          Actions
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleToggle(e)}>
+                          <ToggleLeft className="h-4 w-4 mr-2 text-muted-foreground" /> Deactivate
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))
