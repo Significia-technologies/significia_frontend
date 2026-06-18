@@ -296,6 +296,8 @@ function AddEntryDialog({
   const [toFundType, setToFundType] = useState("");
   const [sumAssured, setSumAssured] = useState("");
   const [currentSumAssured, setCurrentSumAssured] = useState("");
+  const [suggestedSumInsured, setSuggestedSumInsured] = useState("");
+  const [currentSumInsured, setCurrentSumInsured] = useState("");
   const [stpTotalAmount, setStpTotalAmount] = useState("");
   const [stpAlreadyTransferred, setStpAlreadyTransferred] = useState("");
   const [stpTopUp, setStpTopUp] = useState("");
@@ -564,6 +566,8 @@ function AddEntryDialog({
     setToFundType("");
     setSumAssured("");
     setCurrentSumAssured("");
+    setSuggestedSumInsured("");
+    setCurrentSumInsured("");
     setStpTotalAmount("");
     setStpAlreadyTransferred("");
     setStpTopUp("");
@@ -714,6 +718,15 @@ function AddEntryDialog({
       }
     }
 
+    if (assetClass === "health_insurance") {
+      const si = parseFloat(suggestedSumInsured);
+      if (!suggestedSumInsured || isNaN(si) || si <= 0)
+        return toast.error("Enter a valid Suggested Sum Insured.");
+      const csi = parseFloat(currentSumInsured);
+      if (currentSumInsured === "" || isNaN(csi) || csi < 0)
+        return toast.error("Enter a valid Current Sum Insured.");
+    }
+
     if (assetClass === "life_insurance") {
       if (transactionType === "RECURRING" && (!noOfInstallments || parseInt(noOfInstallments) <= 0)) {
         return toast.error("Enter a valid number of installments for Recurring.");
@@ -756,6 +769,8 @@ function AddEntryDialog({
       no_of_installments: (transactionType === "SIP" || transactionType === "STP" || (assetClass === "life_insurance" && transactionType === "RECURRING")) && noOfInstallments ? parseInt(noOfInstallments) : undefined,
       sum_assured: assetClass === "life_insurance" ? parseFloat(sumAssured) : undefined,
       current_sum_assured: assetClass === "life_insurance" ? parseFloat(currentSumAssured) : undefined,
+      sum_insured: assetClass === "health_insurance" ? parseFloat(suggestedSumInsured) : undefined,
+      current_sum_insured: assetClass === "health_insurance" ? parseFloat(currentSumInsured) : undefined,
       current_accumulation: transactionType === "STP"
         ? (stpCurrentAccumulation ?? undefined)
         : (transactionType === "SIP" || transactionType === "LUMP_SUM") && currentAccumulation
@@ -1159,6 +1174,34 @@ function AddEntryDialog({
             </div>
           )}
 
+          {/* Health Insurance — Suggested Sum Insured & Current Sum Insured */}
+          {assetClass === "health_insurance" && (
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <Label className="text-xs">Suggested Sum Insured <span className="text-destructive">*</span></Label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={suggestedSumInsured}
+                  onChange={(e) => setSuggestedSumInsured(e.target.value)}
+                  placeholder="e.g. 500000"
+                  className="h-8 text-xs"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Current Sum Insured <span className="text-destructive">*</span></Label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={currentSumInsured}
+                  onChange={(e) => setCurrentSumInsured(e.target.value)}
+                  placeholder="e.g. 200000"
+                  className="h-8 text-xs"
+                />
+              </div>
+            </div>
+          )}
+
           {/* LUMP_SUM Fields: Current Accumulation & Action (Buy/Sell) */}
           {transactionType === "LUMP_SUM" && (
             <div className="grid grid-cols-2 gap-2">
@@ -1188,11 +1231,11 @@ function AddEntryDialog({
             </div>
           )}
 
-          {/* Suggested Amount + % Investment in 2-col grid */}
+          {/* Suggested Premium/Amt + % Investment in 2-col grid */}
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1">
               <Label className={cn("text-xs", hasAmtError && "text-destructive")}>
-                {(isSwitch || isTransfer) ? "Amount" : assetClass === "life_insurance" ? "Suggested Premium" : "Suggested Amt"}
+                {(isSwitch || isTransfer) ? "Amount" : (assetClass === "life_insurance" || assetClass === "health_insurance") ? "Suggested Premium" : "Suggested Amt"}
                 {transactionType !== "STP" && <span className="text-destructive"> *</span>}
               </Label>
               <Input
@@ -1488,7 +1531,11 @@ function AssetClassTab({
     : assetClass === "health_insurance"
     ? "% Health Covered"
     : "% Investment";
-  const accumColLabel = assetClass === "life_insurance" ? "Sum Assured" : "Current Accum.";
+  const accumColLabel = assetClass === "life_insurance"
+    ? "Sum Assured"
+    : assetClass === "health_insurance"
+    ? "Suggested Sum Insured"
+    : "Current Accum.";
   const objectiveColLabel = assetClass === "life_insurance" ? "Objective / Reason" : "Objective";
 
   return (
@@ -1527,10 +1574,11 @@ function AssetClassTab({
                 <TableHead className="w-[80px]">{pctColLabel}</TableHead>
                 <TableHead className="w-[110px]">{accumColLabel}</TableHead>
                 {assetClass === "life_insurance" && <TableHead className="w-[110px]">Curr. Sum Assured</TableHead>}
-                <TableHead className="w-[110px]">{assetClass === "life_insurance" ? "Suggested Premium" : "Suggested Amt"}</TableHead>
+                {assetClass === "health_insurance" && <TableHead className="w-[110px]">Curr. Sum Insured</TableHead>}
+                <TableHead className="w-[110px]">{(assetClass === "life_insurance" || assetClass === "health_insurance") ? "Suggested Premium" : "Suggested Amt"}</TableHead>
                 <TableHead className="w-[100px]">Tx / Freq</TableHead>
                 <TableHead className="w-[80px]">Installments</TableHead>
-                <TableHead className="w-[110px]">Anticipated Value</TableHead>
+                <TableHead className="w-[110px]">{assetClass === "health_insurance" ? "Anticipated Cover" : "Anticipated Value"}</TableHead>
                 <TableHead className="w-[100px]">{objectiveColLabel}</TableHead>
                 <TableHead className="w-[110px]">Suitability</TableHead>
                 <TableHead className="w-[68px]">Status</TableHead>
@@ -1589,6 +1637,10 @@ function AssetClassTab({
                         e.sum_assured !== null && e.sum_assured !== undefined
                           ? formatIndianNumber(e.sum_assured)
                           : <span className="text-muted-foreground">—</span>
+                      ) : e.asset_class === "health_insurance" ? (
+                        e.sum_insured !== null && e.sum_insured !== undefined
+                          ? formatIndianNumber(e.sum_insured)
+                          : <span className="text-muted-foreground">—</span>
                       ) : e.transaction_type === "STP" ? (
                         e.stp_total_amount !== null && e.stp_total_amount !== undefined ? (
                           <span>
@@ -1606,6 +1658,13 @@ function AssetClassTab({
                       <TableCell className="font-semibold">
                         {e.current_sum_assured !== null && e.current_sum_assured !== undefined
                           ? formatIndianNumber(e.current_sum_assured)
+                          : <span className="text-muted-foreground">—</span>}
+                      </TableCell>
+                    )}
+                    {assetClass === "health_insurance" && (
+                      <TableCell className="font-semibold">
+                        {e.current_sum_insured !== null && e.current_sum_insured !== undefined
+                          ? formatIndianNumber(e.current_sum_insured)
                           : <span className="text-muted-foreground">—</span>}
                       </TableCell>
                     )}
@@ -1733,6 +1792,11 @@ function AssetClassTab({
                       <span className="text-muted-foreground">Sum Assured</span>
                       <p className="font-semibold mt-0.5">{formatIndianNumber(e.sum_assured)}</p>
                     </div>
+                  ) : e.asset_class === "health_insurance" && e.sum_insured !== null && e.sum_insured !== undefined ? (
+                    <div>
+                      <span className="text-muted-foreground">Suggested Sum Insured</span>
+                      <p className="font-semibold mt-0.5">{formatIndianNumber(e.sum_insured)}</p>
+                    </div>
                   ) : e.transaction_type === "STP" && e.stp_total_amount !== null && e.stp_total_amount !== undefined ? (
                     <div>
                       <span className="text-muted-foreground">Current Accum.</span>
@@ -1753,8 +1817,14 @@ function AssetClassTab({
                       <p className="font-semibold mt-0.5">{formatIndianNumber(e.current_sum_assured)}</p>
                     </div>
                   )}
+                  {e.asset_class === "health_insurance" && e.current_sum_insured !== null && e.current_sum_insured !== undefined && (
+                    <div>
+                      <span className="text-muted-foreground">Curr. Sum Insured</span>
+                      <p className="font-semibold mt-0.5">{formatIndianNumber(e.current_sum_insured)}</p>
+                    </div>
+                  )}
                   <div>
-                    <span className="text-muted-foreground">{e.asset_class === "life_insurance" ? "Suggested Premium" : "Suggested Amount"}</span>
+                    <span className="text-muted-foreground">{(e.asset_class === "life_insurance" || e.asset_class === "health_insurance") ? "Suggested Premium" : "Suggested Amount"}</span>
                     <p className="font-semibold mt-0.5">
                       {e.action === "Sell" && e.suggested_investment_amount !== null && e.suggested_investment_amount !== undefined
                         ? `(${formatIndianNumber(e.suggested_investment_amount)})`
@@ -1780,7 +1850,7 @@ function AssetClassTab({
                         <p className="font-semibold mt-0.5">{e.no_of_installments}</p>
                       </div>
                       <div>
-                        <span className="text-muted-foreground">Anticipated Value</span>
+                        <span className="text-muted-foreground">{e.asset_class === "health_insurance" ? "Anticipated Cover" : "Anticipated Value"}</span>
                         <p className="font-semibold mt-0.5">
                           {e.suggested_investment_amount
                             ? formatIndianNumber(e.suggested_investment_amount * e.no_of_installments)

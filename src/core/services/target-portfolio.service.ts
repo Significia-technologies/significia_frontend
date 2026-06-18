@@ -31,6 +31,8 @@ export interface TargetPortfolioEntry {
   stp_top_up?: number | null;
   sum_assured?: number | null;
   current_sum_assured?: number | null;
+  sum_insured?: number | null;
+  current_sum_insured?: number | null;
   is_active: boolean;
   created_at: string;
 }
@@ -72,6 +74,8 @@ export interface TargetPortfolioCreate {
   stp_top_up?: number;
   sum_assured?: number;
   current_sum_assured?: number;
+  sum_insured?: number;
+  current_sum_insured?: number;
 }
 
 export class TargetPortfolioService {
