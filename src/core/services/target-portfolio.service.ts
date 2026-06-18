@@ -22,6 +22,13 @@ export interface TargetPortfolioEntry {
   no_of_installments?: number | null;
   current_accumulation?: number | null;
   action?: "Buy" | "Sell" | null;
+  stp_to_product_id?: string | null;
+  stp_to_product_name?: string | null;
+  stp_from_type?: string | null;
+  stp_to_fund_type?: string | null;
+  stp_total_amount?: number | null;
+  stp_already_transferred?: number | null;
+  stp_top_up?: number | null;
   is_active: boolean;
   created_at: string;
 }
@@ -55,6 +62,12 @@ export interface TargetPortfolioCreate {
   no_of_installments?: number;
   current_accumulation?: number;
   action?: "Buy" | "Sell";
+  stp_to_product_id?: string;
+  stp_from_type?: string;
+  stp_to_fund_type?: string;
+  stp_total_amount?: number;
+  stp_already_transferred?: number;
+  stp_top_up?: number;
 }
 
 export class TargetPortfolioService {

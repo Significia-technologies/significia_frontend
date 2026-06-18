@@ -288,6 +288,11 @@ function AddEntryDialog({
   const [noOfInstallments, setNoOfInstallments] = useState("");
   const [currentAccumulation, setCurrentAccumulation] = useState("");
   const [action, setAction] = useState<"Buy" | "Sell">("Buy");
+  const [toFundId, setToFundId] = useState("");
+  const [toFundType, setToFundType] = useState("");
+  const [stpTotalAmount, setStpTotalAmount] = useState("");
+  const [stpAlreadyTransferred, setStpAlreadyTransferred] = useState("");
+  const [stpTopUp, setStpTopUp] = useState("");
 
   const handleTransactionTypeChange = (val: string) => {
     setTransactionType(val);
@@ -306,14 +311,22 @@ function AddEntryDialog({
     } else {
       setFrequency("");
     }
-    // Reset installments when switching away from SIP
-    if (val !== "SIP") {
+    // Reset installments when switching away from SIP/STP
+    if (val !== "SIP" && val !== "STP") {
       setNoOfInstallments("");
     }
-    // Reset current accumulation and action when switching away from SIP and LUMP_SUM
-    if (val !== "SIP" && val !== "LUMP_SUM") {
+    // Reset current accumulation and action when switching away from SIP, STP, and LUMP_SUM
+    if (val !== "SIP" && val !== "STP" && val !== "LUMP_SUM") {
       setCurrentAccumulation("");
       setAction("Buy");
+    }
+    // Reset STP-specific fields when switching away from STP
+    if (val !== "STP") {
+      setToFundId("");
+      setToFundType("");
+      setStpTotalAmount("");
+      setStpAlreadyTransferred("");
+      setStpTopUp("");
     }
   };
 
@@ -360,13 +373,21 @@ function AddEntryDialog({
   const selectedSubAsset = getSelectedSubAssetDetails();
   const enteredAmount = parseFloat(suggestedAmount) || 0;
   const enteredCurrentAccumulation = parseFloat(currentAccumulation) || 0;
-  const totalEnteredAmount = action === "Sell"
+  const stpTotal = (parseFloat(stpTotalAmount) || 0) + (parseFloat(stpTopUp) || 0);
+  const stpCurrentAccumulation = transactionType === "STP"
+    ? Math.max(0, stpTotal - (parseFloat(stpAlreadyTransferred) || 0))
+    : null;
+  const totalEnteredAmount = transactionType === "STP"
+    ? stpTotal
+    : action === "Sell"
     ? (enteredCurrentAccumulation - enteredAmount)
     : (enteredAmount + enteredCurrentAccumulation);
   const isOverTarget = selectedSubAsset && totalEnteredAmount > selectedSubAsset.targetAmt;
 
   const handleAmountChange = (val: string) => {
     setSuggestedAmount(val);
+    // For STP, per-installment amount is independent of % — driven by stpTotalAmount instead
+    if (transactionType === "STP") return;
     const amt = parseFloat(val) || 0;
     const curAcc = parseFloat(currentAccumulation) || 0;
     const totalAmt = action === "Sell" ? (curAcc - amt) : (amt + curAcc);
@@ -376,6 +397,30 @@ function AddEntryDialog({
         setPercentage((Math.round(computedPct * 100) / 100).toString());
       } else {
         setPercentage("");
+      }
+    }
+  };
+
+  const handleStpTotalAmountChange = (val: string) => {
+    setStpTotalAmount(val);
+    const total = (parseFloat(val) || 0) + (parseFloat(stpTopUp) || 0);
+    if (selectedSubAsset && selectedSubAsset.targetAmt > 0) {
+      if (val || stpTopUp) {
+        const computedPct = (total / selectedSubAsset.targetAmt) * 100;
+        setPercentage((Math.round(computedPct * 100) / 100).toString());
+      } else {
+        setPercentage("");
+      }
+    }
+  };
+
+  const handleStpTopUpChange = (val: string) => {
+    setStpTopUp(val);
+    const total = (parseFloat(stpTotalAmount) || 0) + (parseFloat(val) || 0);
+    if (selectedSubAsset && selectedSubAsset.targetAmt > 0) {
+      if (stpTotalAmount || val) {
+        const computedPct = (total / selectedSubAsset.targetAmt) * 100;
+        setPercentage((Math.round(computedPct * 100) / 100).toString());
       }
     }
   };
@@ -399,17 +444,27 @@ function AddEntryDialog({
     setPercentage(val);
     const pctVal = parseFloat(val);
     if (!isNaN(pctVal) && pctVal >= 0 && selectedSubAsset && selectedSubAsset.targetAmt > 0) {
-      const computedTotalAmt = (pctVal / 100) * selectedSubAsset.targetAmt;
-      const curAcc = parseFloat(currentAccumulation) || 0;
-      if (action === "Sell") {
-        const computedSuggestedAmt = Math.max(0, curAcc - computedTotalAmt);
-        setSuggestedAmount((Math.round(computedSuggestedAmt * 100) / 100).toString());
+      if (transactionType === "STP") {
+        const computedTotal = (pctVal / 100) * selectedSubAsset.targetAmt;
+        const topUp = parseFloat(stpTopUp) || 0;
+        setStpTotalAmount((Math.round(Math.max(0, computedTotal - topUp) * 100) / 100).toString());
       } else {
-        const computedSuggestedAmt = Math.max(0, computedTotalAmt - curAcc);
-        setSuggestedAmount((Math.round(computedSuggestedAmt * 100) / 100).toString());
+        const computedTotalAmt = (pctVal / 100) * selectedSubAsset.targetAmt;
+        const curAcc = parseFloat(currentAccumulation) || 0;
+        if (action === "Sell") {
+          const computedSuggestedAmt = Math.max(0, curAcc - computedTotalAmt);
+          setSuggestedAmount((Math.round(computedSuggestedAmt * 100) / 100).toString());
+        } else {
+          const computedSuggestedAmt = Math.max(0, computedTotalAmt - curAcc);
+          setSuggestedAmount((Math.round(computedSuggestedAmt * 100) / 100).toString());
+        }
       }
     } else if (!val) {
-      setSuggestedAmount("");
+      if (transactionType === "STP") {
+        setStpTotalAmount("");
+      } else {
+        setSuggestedAmount("");
+      }
     }
   };
 
@@ -436,20 +491,36 @@ function AddEntryDialog({
     if (percentage && selectedSubAsset && selectedSubAsset.targetAmt > 0) {
       const pctVal = parseFloat(percentage);
       if (!isNaN(pctVal)) {
-        const computedTotalAmt = (pctVal / 100) * selectedSubAsset.targetAmt;
-        const curAcc = parseFloat(currentAccumulation) || 0;
-        if (action === "Sell") {
-          const computedSuggestedAmt = Math.max(0, curAcc - computedTotalAmt);
-          setSuggestedAmount((Math.round(computedSuggestedAmt * 100) / 100).toString());
+        if (transactionType === "STP") {
+          const computedTotal = (pctVal / 100) * selectedSubAsset.targetAmt;
+          const topUp = parseFloat(stpTopUp) || 0;
+          setStpTotalAmount((Math.round(Math.max(0, computedTotal - topUp) * 100) / 100).toString());
         } else {
-          const computedSuggestedAmt = Math.max(0, computedTotalAmt - curAcc);
-          setSuggestedAmount((Math.round(computedSuggestedAmt * 100) / 100).toString());
+          const computedTotalAmt = (pctVal / 100) * selectedSubAsset.targetAmt;
+          const curAcc = parseFloat(currentAccumulation) || 0;
+          if (action === "Sell") {
+            const computedSuggestedAmt = Math.max(0, curAcc - computedTotalAmt);
+            setSuggestedAmount((Math.round(computedSuggestedAmt * 100) / 100).toString());
+          } else {
+            const computedSuggestedAmt = Math.max(0, computedTotalAmt - curAcc);
+            setSuggestedAmount((Math.round(computedSuggestedAmt * 100) / 100).toString());
+          }
         }
       }
     }
-  }, [productSubtype, nature, latestAllocation, totalPortfolioSize, action]);
+  }, [productSubtype, nature, latestAllocation, totalPortfolioSize, action, transactionType]);
 
-
+  // STP: auto-calculate suggested amount per installment = Current Accumulation ÷ No. of Installments
+  useEffect(() => {
+    if (transactionType !== "STP") return;
+    const currentAcc = Math.max(0, (parseFloat(stpTotalAmount) || 0) + (parseFloat(stpTopUp) || 0) - (parseFloat(stpAlreadyTransferred) || 0));
+    const installments = parseInt(noOfInstallments) || 0;
+    if (currentAcc > 0 && installments > 0) {
+      setSuggestedAmount((Math.round((currentAcc / installments) * 100) / 100).toString());
+    } else {
+      setSuggestedAmount("");
+    }
+  }, [stpTotalAmount, stpTopUp, stpAlreadyTransferred, noOfInstallments, transactionType]);
 
   useEffect(() => {
     if (productSubtype !== "ULIP") {
@@ -473,6 +544,11 @@ function AddEntryDialog({
     setNoOfInstallments("");
     setCurrentAccumulation("");
     setAction("Buy");
+    setToFundId("");
+    setToFundType("");
+    setStpTotalAmount("");
+    setStpAlreadyTransferred("");
+    setStpTopUp("");
 
     if (assetClass === "health_insurance") {
       setTransactionType("LUMP_SUM");
@@ -581,6 +657,19 @@ function AddEntryDialog({
       return toast.error("Suggested amount to sell cannot exceed current accumulation.");
     }
 
+    if (transactionType === "STP" && !toFundId) {
+      return toast.error("Select a destination (To) fund for STP.");
+    }
+    if (transactionType === "STP" && toFundId === productId) {
+      return toast.error("From and To funds cannot be the same.");
+    }
+    if (transactionType === "STP" && !toFundType) {
+      return toast.error("Select the To Fund type (Equity / Debt / Hybrid).");
+    }
+    if (transactionType === "STP" && (!stpTotalAmount || (parseFloat(stpTotalAmount) || 0) <= 0)) {
+      return toast.error("Enter the total amount to transfer for STP.");
+    }
+
     if (assetClass === "mf" && !productSubtype) {
       return toast.error("Select a Mutual Fund type.");
     }
@@ -625,9 +714,19 @@ function AddEntryDialog({
       remarks: remarks.trim() || undefined,
       transaction_type: transactionType || undefined,
       frequency: frequency || undefined,
-      no_of_installments: transactionType === "SIP" && noOfInstallments ? parseInt(noOfInstallments) : undefined,
-      current_accumulation: (transactionType === "SIP" || transactionType === "LUMP_SUM") && currentAccumulation ? parseFloat(currentAccumulation) : undefined,
+      no_of_installments: (transactionType === "SIP" || transactionType === "STP") && noOfInstallments ? parseInt(noOfInstallments) : undefined,
+      current_accumulation: transactionType === "STP"
+        ? (stpCurrentAccumulation ?? undefined)
+        : (transactionType === "SIP" || transactionType === "LUMP_SUM") && currentAccumulation
+        ? parseFloat(currentAccumulation)
+        : undefined,
       action: transactionType === "LUMP_SUM" ? action : (transactionType === "SIP" ? "Buy" : undefined),
+      stp_to_product_id: transactionType === "STP" ? toFundId : undefined,
+      stp_from_type: transactionType === "STP" ? (productSubtype || undefined) : undefined,
+      stp_to_fund_type: transactionType === "STP" ? toFundType : undefined,
+      stp_total_amount: transactionType === "STP" && stpTotalAmount ? parseFloat(stpTotalAmount) : undefined,
+      stp_already_transferred: transactionType === "STP" && stpAlreadyTransferred ? parseFloat(stpAlreadyTransferred) : undefined,
+      stp_top_up: transactionType === "STP" && stpTopUp ? parseFloat(stpTopUp) : undefined,
     };
 
     setSubmitting(true);
@@ -661,9 +760,12 @@ function AddEntryDialog({
         </DialogHeader>
 
         <div className="space-y-3">
-          {/* Product */}
+          {/* Product / From Fund */}
           <div className="space-y-1">
-            <Label className="text-xs">Product <span className="text-destructive">*</span></Label>
+            <Label className="text-xs">
+              {transactionType === "STP" ? "From Fund" : "Product"}{" "}
+              <span className="text-destructive">*</span>
+            </Label>
             {!loadingProducts && products.length === 0 ? (
               <p className="text-xs text-muted-foreground border rounded-md px-3 py-2">
                 No active products in this basket.
@@ -679,19 +781,46 @@ function AddEntryDialog({
             )}
           </div>
 
-          {/* Mutual Fund Type */}
+          {/* Mutual Fund Type — splits into From/To for STP */}
           {assetClass === "mf" && (
-            <div className="space-y-1">
-              <Label className="text-xs">Type <span className="text-destructive">*</span></Label>
-              <Select value={productSubtype} onValueChange={setProductSubtype}>
-                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select type" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Equity">Equity</SelectItem>
-                  <SelectItem value="Debt">Debt</SelectItem>
-                  <SelectItem value="Hybrid">Hybrid</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            transactionType === "STP" ? (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label className="text-xs">From Type <span className="text-destructive">*</span></Label>
+                  <Select value={productSubtype} onValueChange={setProductSubtype}>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select type" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Equity">Equity</SelectItem>
+                      <SelectItem value="Debt">Debt</SelectItem>
+                      <SelectItem value="Hybrid">Hybrid</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">To Type <span className="text-destructive">*</span></Label>
+                  <Select value={toFundType} onValueChange={setToFundType}>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select type" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Equity">Equity</SelectItem>
+                      <SelectItem value="Debt">Debt</SelectItem>
+                      <SelectItem value="Hybrid">Hybrid</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-1">
+                <Label className="text-xs">Type <span className="text-destructive">*</span></Label>
+                <Select value={productSubtype} onValueChange={setProductSubtype}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select type" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Equity">Equity</SelectItem>
+                    <SelectItem value="Debt">Debt</SelectItem>
+                    <SelectItem value="Hybrid">Hybrid</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )
           )}
 
           {/* ETF Type */}
@@ -806,6 +935,30 @@ function AddEntryDialog({
             </div>
           </div>
 
+          {/* STP: To Fund picker */}
+          {transactionType === "STP" && (
+            <div className="space-y-1">
+              <Label className="text-xs">To Fund <span className="text-destructive">*</span></Label>
+              {!loadingProducts && products.length === 0 ? (
+                <p className="text-xs text-muted-foreground border rounded-md px-3 py-2">
+                  No active products in this basket.
+                </p>
+              ) : (
+                <ProductCombobox
+                  products={products.filter((p) => p.id !== productId)}
+                  value={toFundId}
+                  onChange={setToFundId}
+                  loading={loadingProducts}
+                  placeholder="Search destination fund…"
+                  renderLabel={productLabel}
+                />
+              )}
+              <p className="text-[10px] text-muted-foreground">
+                Amount will be periodically transferred from the above fund into this fund.
+              </p>
+            </div>
+          )}
+
           {/* SIP Fields: Current Accumulation & No. of Installments */}
           {transactionType === "SIP" && (
             <div className="grid grid-cols-2 gap-2">
@@ -819,6 +972,70 @@ function AddEntryDialog({
                   placeholder="e.g. 50000"
                   className="h-8 text-xs"
                 />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">No. of Installments</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={noOfInstallments}
+                  onChange={(e) => setNoOfInstallments(e.target.value)}
+                  placeholder="e.g. 12"
+                  className="h-8 text-xs"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* STP Amount Fields */}
+          {transactionType === "STP" && (
+            <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label className="text-xs">Total Amt to Transfer <span className="text-destructive">*</span></Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={stpTotalAmount}
+                    onChange={(e) => handleStpTotalAmountChange(e.target.value)}
+                    placeholder="e.g. 500000"
+                    className="h-8 text-xs"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Amt Already Transferred</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={stpAlreadyTransferred}
+                    onChange={(e) => setStpAlreadyTransferred(e.target.value)}
+                    placeholder="e.g. 50000"
+                    className="h-8 text-xs"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label className="text-xs">Additional Top-up</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={stpTopUp}
+                    onChange={(e) => handleStpTopUpChange(e.target.value)}
+                    placeholder="e.g. 100000"
+                    className="h-8 text-xs"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Current Accumulation</Label>
+                  <Input
+                    readOnly
+                    value={stpCurrentAccumulation !== null ? formatIndianNumber(stpCurrentAccumulation) : "—"}
+                    className="h-8 text-xs bg-muted text-muted-foreground"
+                  />
+                  <span className="text-[10px] text-muted-foreground">(Total + Top-up) − Transferred</span>
+                </div>
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">No. of Installments</Label>
@@ -868,20 +1085,26 @@ function AddEntryDialog({
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1">
               <Label className={cn("text-xs", hasAmtError && "text-destructive")}>
-                Suggested Amt <span className="text-destructive">*</span>
+                Suggested Amt{transactionType !== "STP" && <span className="text-destructive"> *</span>}
               </Label>
               <Input
-                type="number"
+                type={transactionType === "STP" ? "text" : "number"}
                 min="0"
-                value={suggestedAmount}
+                readOnly={transactionType === "STP"}
+                value={transactionType === "STP"
+                  ? (suggestedAmount ? formatIndianNumber(parseFloat(suggestedAmount)) : "—")
+                  : suggestedAmount}
                 onChange={(e) => handleAmountChange(e.target.value)}
                 placeholder="e.g. 50000"
                 className={cn(
                   "h-8 text-xs",
+                  transactionType === "STP" && "bg-muted text-muted-foreground",
                   hasAmtError && "border-destructive/60 focus-visible:ring-destructive/80 text-destructive bg-destructive/5"
                 )}
               />
-              {selectedSubAsset && (
+              {transactionType === "STP" ? (
+                <span className="text-[10px] text-muted-foreground">Current Accum. ÷ Installments</span>
+              ) : selectedSubAsset && (
                 <span className={cn(
                   "text-[10px] font-medium flex items-center gap-1",
                   hasAmtError ? "text-destructive" : "text-muted-foreground"
@@ -923,9 +1146,9 @@ function AddEntryDialog({
             </div>
           </div>
 
-          {/* Objective & Anticipated Future Value row (side-by-side for SIP, objective only otherwise) */}
+          {/* Objective & Anticipated Future Value row (side-by-side for SIP/STP, objective only otherwise) */}
           {!isInsurance && (
-            transactionType === "SIP" ? (
+            (transactionType === "SIP" || transactionType === "STP") ? (
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground">Anticipated Future Value</Label>
@@ -941,7 +1164,7 @@ function AddEntryDialog({
                     className="h-8 text-xs bg-muted text-muted-foreground"
                   />
                   <span className="text-[10px] text-muted-foreground">
-                    SIP Amt × Installments (not part of allocation)
+                    {transactionType === "STP" ? "Transfer Amt × Installments" : "SIP Amt × Installments"} (not part of allocation)
                   </span>
                 </div>
 
@@ -1207,9 +1430,22 @@ function AssetClassTab({
                   <TableRow key={e.id} className={!e.is_active ? "opacity-50" : ""}>
                     <TableCell className="font-medium">
                       <span className="line-clamp-2 leading-snug">{e.product_name}</span>
-                      {e.product_subtype && (
+                      {e.transaction_type === "STP" ? (
                         <span className="block mt-0.5 text-[10px] text-muted-foreground font-normal">
-                          {e.product_subtype}{e.nature ? ` — ${e.nature}` : ""}
+                          {e.stp_from_type || e.product_subtype || ""}
+                          {(e.stp_from_type || e.product_subtype) && e.stp_to_fund_type ? " → " : ""}
+                          {e.stp_to_fund_type || ""}
+                        </span>
+                      ) : (
+                        e.product_subtype && (
+                          <span className="block mt-0.5 text-[10px] text-muted-foreground font-normal">
+                            {e.product_subtype}{e.nature ? ` — ${e.nature}` : ""}
+                          </span>
+                        )
+                      )}
+                      {e.transaction_type === "STP" && e.stp_to_product_name && (
+                        <span className="block mt-0.5 text-[10px] text-primary font-normal">
+                          → {e.stp_to_product_name}
                         </span>
                       )}
                     </TableCell>
@@ -1222,7 +1458,16 @@ function AssetClassTab({
                       </span>
                     </TableCell>
                     <TableCell className="font-semibold">
-                      {(e.transaction_type === "SIP" || e.transaction_type === "LUMP_SUM") && e.current_accumulation !== null && e.current_accumulation !== undefined
+                      {e.transaction_type === "STP" ? (
+                        e.stp_total_amount !== null && e.stp_total_amount !== undefined ? (
+                          <span>
+                            {formatIndianNumber(e.current_accumulation ?? null)}
+                            <span className="block text-[10px] text-muted-foreground font-normal">
+                              {formatIndianNumber(e.stp_already_transferred ?? 0)} of {formatIndianNumber(e.stp_total_amount + (e.stp_top_up ?? 0))}
+                            </span>
+                          </span>
+                        ) : <span className="text-muted-foreground">—</span>
+                      ) : (e.transaction_type === "SIP" || e.transaction_type === "LUMP_SUM") && e.current_accumulation !== null && e.current_accumulation !== undefined
                         ? formatIndianNumber(e.current_accumulation)
                         : <span className="text-muted-foreground">—</span>}
                     </TableCell>
@@ -1242,12 +1487,12 @@ function AssetClassTab({
                       )}
                     </TableCell>
                     <TableCell>
-                      {e.transaction_type === "SIP" && e.no_of_installments
+                      {(e.transaction_type === "SIP" || e.transaction_type === "STP") && e.no_of_installments
                         ? e.no_of_installments
                         : <span className="text-muted-foreground">—</span>}
                     </TableCell>
                     <TableCell className="font-semibold">
-                      {e.transaction_type === "SIP" && e.no_of_installments && e.suggested_investment_amount
+                      {(e.transaction_type === "SIP" || e.transaction_type === "STP") && e.no_of_installments && e.suggested_investment_amount
                         ? formatIndianNumber(e.suggested_investment_amount * e.no_of_installments)
                         : <span className="text-muted-foreground">—</span>}
                     </TableCell>
@@ -1315,10 +1560,25 @@ function AssetClassTab({
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-sm leading-snug">{e.product_name}</p>
-                    {e.product_subtype && (
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {e.product_subtype}{e.nature ? ` — ${e.nature}` : ""}
-                      </p>
+                    {e.transaction_type === "STP" ? (
+                      <>
+                        {(e.stp_from_type || e.product_subtype || e.stp_to_fund_type) && (
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {e.stp_from_type || e.product_subtype || ""}
+                            {((e.stp_from_type || e.product_subtype) && e.stp_to_fund_type) ? " → " : ""}
+                            {e.stp_to_fund_type || ""}
+                          </p>
+                        )}
+                        {e.stp_to_product_name && (
+                          <p className="text-xs text-primary mt-0.5">→ {e.stp_to_product_name}</p>
+                        )}
+                      </>
+                    ) : (
+                      e.product_subtype && (
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {e.product_subtype}{e.nature ? ` — ${e.nature}` : ""}
+                        </p>
+                      )
                     )}
                   </div>
                   <Badge variant={e.is_active ? "default" : "secondary"} className="shrink-0 text-xs">
@@ -1330,12 +1590,20 @@ function AssetClassTab({
                     <span className="text-muted-foreground">{pctColLabel}</span>
                     <p className="font-semibold mt-0.5">{e.percentage.toFixed(1)}%</p>
                   </div>
-                  {(e.transaction_type === "SIP" || e.transaction_type === "LUMP_SUM") && e.current_accumulation !== null && e.current_accumulation !== undefined && (
+                  {e.transaction_type === "STP" && e.stp_total_amount !== null && e.stp_total_amount !== undefined ? (
+                    <div>
+                      <span className="text-muted-foreground">Current Accum.</span>
+                      <p className="font-semibold mt-0.5">{formatIndianNumber(e.current_accumulation ?? null)}</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {formatIndianNumber(e.stp_already_transferred ?? 0)} of {formatIndianNumber(e.stp_total_amount + (e.stp_top_up ?? 0))} transferred
+                      </p>
+                    </div>
+                  ) : (e.transaction_type === "SIP" || e.transaction_type === "LUMP_SUM") && e.current_accumulation !== null && e.current_accumulation !== undefined ? (
                     <div>
                       <span className="text-muted-foreground">Current Accum.</span>
                       <p className="font-semibold mt-0.5">{formatIndianNumber(e.current_accumulation)}</p>
                     </div>
-                  )}
+                  ) : null}
                   <div>
                     <span className="text-muted-foreground">Suggested Amount</span>
                     <p className="font-semibold mt-0.5">
@@ -1356,7 +1624,7 @@ function AssetClassTab({
                     <span className="text-muted-foreground">Frequency</span>
                     <p className="font-semibold mt-0.5">{formatFrequency(e.frequency)}</p>
                   </div>
-                  {e.transaction_type === "SIP" && e.no_of_installments && (
+                  {(e.transaction_type === "SIP" || e.transaction_type === "STP") && e.no_of_installments && (
                     <>
                       <div>
                         <span className="text-muted-foreground">Installments</span>
@@ -1371,6 +1639,12 @@ function AssetClassTab({
                         </p>
                       </div>
                     </>
+                  )}
+                  {e.transaction_type === "STP" && e.stp_to_product_name && (
+                    <div className="col-span-2">
+                      <span className="text-muted-foreground">To Fund</span>
+                      <p className="font-medium mt-0.5 text-primary">{e.stp_to_product_name}</p>
+                    </div>
                   )}
                   <div className="col-span-2">
                     <span className="text-muted-foreground">{objectiveColLabel}</span>
