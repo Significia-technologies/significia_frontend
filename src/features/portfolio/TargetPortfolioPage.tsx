@@ -282,6 +282,7 @@ function AddEntryDialog({
   const [transactionType, setTransactionType] = useState("");
   const [frequency, setFrequency] = useState("");
   const [noOfInstallments, setNoOfInstallments] = useState("");
+  const [currentAccumulation, setCurrentAccumulation] = useState("");
 
   const handleTransactionTypeChange = (val: string) => {
     setTransactionType(val);
@@ -300,9 +301,10 @@ function AddEntryDialog({
     } else {
       setFrequency("");
     }
-    // Reset installments when switching away from SIP
+    // Reset installments and current accumulation when switching away from SIP
     if (val !== "SIP") {
       setNoOfInstallments("");
+      setCurrentAccumulation("");
     }
   };
 
@@ -348,16 +350,37 @@ function AddEntryDialog({
 
   const selectedSubAsset = getSelectedSubAssetDetails();
   const enteredAmount = parseFloat(suggestedAmount) || 0;
-  const isOverTarget = selectedSubAsset && enteredAmount > selectedSubAsset.targetAmt;
+  const enteredCurrentAccumulation = parseFloat(currentAccumulation) || 0;
+  const totalEnteredAmount = enteredAmount + enteredCurrentAccumulation;
+  const isOverTarget = selectedSubAsset && totalEnteredAmount > selectedSubAsset.targetAmt;
 
   const handleAmountChange = (val: string) => {
     setSuggestedAmount(val);
-    const amt = parseFloat(val);
-    if (!isNaN(amt) && amt >= 0 && selectedSubAsset && selectedSubAsset.targetAmt > 0) {
-      const computedPct = (amt / selectedSubAsset.targetAmt) * 100;
-      setPercentage((Math.round(computedPct * 100) / 100).toString());
-    } else if (!val) {
-      setPercentage("");
+    const amt = parseFloat(val) || 0;
+    const curAcc = parseFloat(currentAccumulation) || 0;
+    const totalAmt = amt + curAcc;
+    if (selectedSubAsset && selectedSubAsset.targetAmt > 0) {
+      if (val || currentAccumulation) {
+        const computedPct = (totalAmt / selectedSubAsset.targetAmt) * 100;
+        setPercentage((Math.round(computedPct * 100) / 100).toString());
+      } else {
+        setPercentage("");
+      }
+    }
+  };
+
+  const handleCurrentAccumulationChange = (val: string) => {
+    setCurrentAccumulation(val);
+    const curAcc = parseFloat(val) || 0;
+    const amt = parseFloat(suggestedAmount) || 0;
+    const totalAmt = amt + curAcc;
+    if (selectedSubAsset && selectedSubAsset.targetAmt > 0) {
+      if (val || suggestedAmount) {
+        const computedPct = (totalAmt / selectedSubAsset.targetAmt) * 100;
+        setPercentage((Math.round(computedPct * 100) / 100).toString());
+      } else {
+        setPercentage("");
+      }
     }
   };
 
@@ -365,8 +388,10 @@ function AddEntryDialog({
     setPercentage(val);
     const pctVal = parseFloat(val);
     if (!isNaN(pctVal) && pctVal >= 0 && selectedSubAsset && selectedSubAsset.targetAmt > 0) {
-      const computedAmt = (pctVal / 100) * selectedSubAsset.targetAmt;
-      setSuggestedAmount((Math.round(computedAmt * 100) / 100).toString());
+      const computedTotalAmt = (pctVal / 100) * selectedSubAsset.targetAmt;
+      const curAcc = parseFloat(currentAccumulation) || 0;
+      const computedSuggestedAmt = Math.max(0, computedTotalAmt - curAcc);
+      setSuggestedAmount((Math.round(computedSuggestedAmt * 100) / 100).toString());
     } else if (!val) {
       setSuggestedAmount("");
     }
@@ -377,8 +402,10 @@ function AddEntryDialog({
     if (percentage && selectedSubAsset && selectedSubAsset.targetAmt > 0) {
       const pctVal = parseFloat(percentage);
       if (!isNaN(pctVal)) {
-        const computedAmt = (pctVal / 100) * selectedSubAsset.targetAmt;
-        setSuggestedAmount((Math.round(computedAmt * 100) / 100).toString());
+        const computedTotalAmt = (pctVal / 100) * selectedSubAsset.targetAmt;
+        const curAcc = parseFloat(currentAccumulation) || 0;
+        const computedSuggestedAmt = Math.max(0, computedTotalAmt - curAcc);
+        setSuggestedAmount((Math.round(computedSuggestedAmt * 100) / 100).toString());
       }
     }
   }, [productSubtype, nature, latestAllocation, totalPortfolioSize]);
@@ -405,6 +432,7 @@ function AddEntryDialog({
     setRemarks("");
 
     setNoOfInstallments("");
+    setCurrentAccumulation("");
 
     if (assetClass === "health_insurance") {
       setTransactionType("LUMP_SUM");
@@ -483,7 +511,7 @@ function AddEntryDialog({
   const remainingAmtVal = selectedSubAsset ? (selectedSubAsset.targetAmt - (activeSubAssetPct / 100) * selectedSubAsset.targetAmt) : 0;
 
   const currentRemainingPct = remainingPctVal - pct;
-  const currentRemainingAmt = remainingAmtVal - enteredAmount;
+  const currentRemainingAmt = remainingAmtVal - totalEnteredAmount;
 
   const hasPctError = pct > 100 || currentRemainingPct < -0.001;
   const hasAmtError = selectedSubAsset ? (currentRemainingAmt < -0.001) : false;
@@ -553,6 +581,7 @@ function AddEntryDialog({
       transaction_type: transactionType || undefined,
       frequency: frequency || undefined,
       no_of_installments: transactionType === "SIP" && noOfInstallments ? parseInt(noOfInstallments) : undefined,
+      current_accumulation: transactionType === "SIP" && currentAccumulation ? parseFloat(currentAccumulation) : undefined,
     };
 
     setSubmitting(true);
@@ -577,7 +606,7 @@ function AddEntryDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader className="pb-1">
           <DialogTitle className="text-base">
             Add to {TABS.find((t) => t.key === assetClass)?.label}{" "}
@@ -731,9 +760,20 @@ function AddEntryDialog({
             </div>
           </div>
 
-          {/* No. of Installments + Anticipated Future Value (SIP only) */}
+          {/* SIP Fields: Current Accumulation & No. of Installments */}
           {transactionType === "SIP" && (
             <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <Label className="text-xs">Current Accumulation</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={currentAccumulation}
+                  onChange={(e) => handleCurrentAccumulationChange(e.target.value)}
+                  placeholder="e.g. 50000"
+                  className="h-8 text-xs"
+                />
+              </div>
               <div className="space-y-1">
                 <Label className="text-xs">No. of Installments</Label>
                 <Input
@@ -746,56 +786,11 @@ function AddEntryDialog({
                   className="h-8 text-xs"
                 />
               </div>
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">Anticipated Future Value</Label>
-                <Input
-                  readOnly
-                  value={
-                    suggestedAmount && noOfInstallments
-                      ? formatIndianNumber(
-                          parseFloat(suggestedAmount) * parseInt(noOfInstallments)
-                        )
-                      : "—"
-                  }
-                  className="h-8 text-xs bg-muted text-muted-foreground"
-                />
-                <span className="text-[10px] text-muted-foreground">
-                  SIP Amt × Installments (not part of allocation)
-                </span>
-              </div>
             </div>
           )}
 
-          {/* % Investment + Suggested Amount in 2-col grid */}
+          {/* Suggested Amount + % Investment in 2-col grid */}
           <div className="grid grid-cols-2 gap-2">
-            <div className="space-y-1">
-              <Label className={cn("text-xs", hasPctError && "text-destructive")}>
-                {pctLabel} <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                type="number"
-                min="0"
-                max="100"
-                step="0.01"
-                value={percentage}
-                onChange={(e) => handlePercentageChange(e.target.value)}
-                placeholder="e.g. 25"
-                className={cn(
-                  "h-8 text-xs",
-                  hasPctError && "border-destructive/60 focus-visible:ring-destructive/80 text-destructive bg-destructive/5"
-                )}
-              />
-              <span className={cn(
-                "text-[10px] font-medium flex items-center gap-1",
-                hasPctError ? "text-destructive" : "text-muted-foreground"
-              )}>
-                {hasPctError && <AlertTriangle className="h-2.5 w-2.5 shrink-0" />}
-                {hasPctError
-                  ? `Exceeded by ${Math.abs(currentRemainingPct).toFixed(1)}%`
-                  : `${currentRemainingPct.toFixed(1)}% remaining`}
-              </span>
-            </div>
-
             <div className="space-y-1">
               <Label className={cn("text-xs", hasAmtError && "text-destructive")}>
                 Suggested Amt <span className="text-destructive">*</span>
@@ -823,19 +818,79 @@ function AddEntryDialog({
                 </span>
               )}
             </div>
+
+            <div className="space-y-1">
+              <Label className={cn("text-xs", hasPctError && "text-destructive")}>
+                {pctLabel} <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                type="number"
+                min="0"
+                max="100"
+                step="0.01"
+                value={percentage}
+                onChange={(e) => handlePercentageChange(e.target.value)}
+                placeholder="e.g. 25"
+                className={cn(
+                  "h-8 text-xs",
+                  hasPctError && "border-destructive/60 focus-visible:ring-destructive/80 text-destructive bg-destructive/5"
+                )}
+              />
+              <span className={cn(
+                "text-[10px] font-medium flex items-center gap-1",
+                hasPctError ? "text-destructive" : "text-muted-foreground"
+              )}>
+                {hasPctError && <AlertTriangle className="h-2.5 w-2.5 shrink-0" />}
+                {hasPctError
+                  ? `Exceeded by ${Math.abs(currentRemainingPct).toFixed(1)}%`
+                  : `${currentRemainingPct.toFixed(1)}% remaining`}
+              </span>
+            </div>
           </div>
 
-          {/* Objective (Shares / MF / ETF) */}
+          {/* Objective & Anticipated Future Value row (side-by-side for SIP, objective only otherwise) */}
           {!isInsurance && (
-            <div className="space-y-1">
-              <Label className="text-xs">Investment Objective <span className="text-destructive">*</span></Label>
-              <Select value={objective} onValueChange={setObjective}>
-                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select objective" /></SelectTrigger>
-                <SelectContent>
-                  {OBJECTIVES.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
+            transactionType === "SIP" ? (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Anticipated Future Value</Label>
+                  <Input
+                    readOnly
+                    value={
+                      suggestedAmount && noOfInstallments
+                        ? formatIndianNumber(
+                            parseFloat(suggestedAmount) * parseInt(noOfInstallments)
+                          )
+                        : "—"
+                    }
+                    className="h-8 text-xs bg-muted text-muted-foreground"
+                  />
+                  <span className="text-[10px] text-muted-foreground">
+                    SIP Amt × Installments (not part of allocation)
+                  </span>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-xs">Investment Objective <span className="text-destructive">*</span></Label>
+                  <Select value={objective} onValueChange={setObjective}>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select objective" /></SelectTrigger>
+                    <SelectContent>
+                      {OBJECTIVES.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-1">
+                <Label className="text-xs">Investment Objective <span className="text-destructive">*</span></Label>
+                <Select value={objective} onValueChange={setObjective}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select objective" /></SelectTrigger>
+                  <SelectContent>
+                    {OBJECTIVES.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            )
           )}
 
           {/* Objective + Reason (Life Insurance) — side by side */}
@@ -1046,6 +1101,7 @@ function AssetClassTab({
               <TableRow>
                 <TableHead className="min-w-[140px]">Product</TableHead>
                 <TableHead className="w-[80px]">{pctColLabel}</TableHead>
+                <TableHead className="w-[110px]">Current Accum.</TableHead>
                 <TableHead className="w-[110px]">Suggested Amt</TableHead>
                 <TableHead className="w-[100px]">Tx / Freq</TableHead>
                 <TableHead className="w-[80px]">Installments</TableHead>
@@ -1089,6 +1145,11 @@ function AssetClassTab({
                       )}>
                         {e.percentage.toFixed(1)}%
                       </span>
+                    </TableCell>
+                    <TableCell className="font-semibold">
+                      {e.transaction_type === "SIP" && e.current_accumulation !== null && e.current_accumulation !== undefined
+                        ? formatIndianNumber(e.current_accumulation)
+                        : <span className="text-muted-foreground">—</span>}
                     </TableCell>
                     <TableCell className="font-semibold">
                       {formatIndianNumber(e.suggested_investment_amount)}
@@ -1188,6 +1249,12 @@ function AssetClassTab({
                     <span className="text-muted-foreground">{pctColLabel}</span>
                     <p className="font-semibold mt-0.5">{e.percentage.toFixed(1)}%</p>
                   </div>
+                  {e.transaction_type === "SIP" && e.current_accumulation !== null && e.current_accumulation !== undefined && (
+                    <div>
+                      <span className="text-muted-foreground">Current Accum.</span>
+                      <p className="font-semibold mt-0.5">{formatIndianNumber(e.current_accumulation)}</p>
+                    </div>
+                  )}
                   <div>
                     <span className="text-muted-foreground">Suggested Amount</span>
                     <p className="font-semibold mt-0.5">{formatIndianNumber(e.suggested_investment_amount)}</p>

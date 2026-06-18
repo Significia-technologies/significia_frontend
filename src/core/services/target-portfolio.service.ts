@@ -20,6 +20,7 @@ export interface TargetPortfolioEntry {
   transaction_type?: string | null;
   frequency?: string | null;
   no_of_installments?: number | null;
+  current_accumulation?: number | null;
   is_active: boolean;
   created_at: string;
 }
@@ -51,6 +52,7 @@ export interface TargetPortfolioCreate {
   transaction_type?: string;
   frequency?: string;
   no_of_installments?: number;
+  current_accumulation?: number;
 }
 
 export class TargetPortfolioService {
