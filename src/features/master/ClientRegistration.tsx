@@ -545,7 +545,7 @@ export default function ClientRegistrationForm({
       if (!nom.dob) {
         return `Date of Birth for Nominee #${i + 1} is required.`;
       }
-      if (new Date(nom.dob) > new Date()) {
+      if (new Date(nom.dob + "T00:00:00") > new Date()) {
         return `Date of Birth for Nominee #${i + 1} cannot be in the future.`;
       }
       if (!nom.percentage || nom.percentage <= 0) {
@@ -581,15 +581,15 @@ export default function ClientRegistrationForm({
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        if (formData.client_date && new Date(formData.client_date) > today) {
+        if (formData.client_date && new Date(formData.client_date + "T00:00:00") > today) {
           toast.error("Client Onboarding Date cannot be a future date.");
           return;
         }
-        if (formData.agreement_date && new Date(formData.agreement_date) > today) {
+        if (formData.agreement_date && new Date(formData.agreement_date + "T00:00:00") > today) {
           toast.error("Agreement Date cannot be a future date.");
           return;
         }
-        if (formData.ipv_date && new Date(formData.ipv_date) > today) {
+        if (formData.ipv_date && new Date(formData.ipv_date + "T00:00:00") > today) {
           toast.error("IPV Date cannot be a future date.");
           return;
         }
@@ -635,17 +635,17 @@ export default function ClientRegistrationForm({
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    if (formData.client_date && new Date(formData.client_date) > today) {
+    if (formData.client_date && new Date(formData.client_date + "T00:00:00") > today) {
       toast.error("Client Onboarding Date cannot be a future date.");
       setActiveTab("compliance");
       return;
     }
-    if (formData.agreement_date && new Date(formData.agreement_date) > today) {
+    if (formData.agreement_date && new Date(formData.agreement_date + "T00:00:00") > today) {
       toast.error("Agreement Date cannot be a future date.");
       setActiveTab("compliance");
       return;
     }
-    if (formData.ipv_date && new Date(formData.ipv_date) > today) {
+    if (formData.ipv_date && new Date(formData.ipv_date + "T00:00:00") > today) {
       toast.error("IPV Date cannot be a future date.");
       setActiveTab("compliance");
       return;
