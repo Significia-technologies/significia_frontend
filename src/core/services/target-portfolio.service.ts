@@ -29,6 +29,8 @@ export interface TargetPortfolioEntry {
   stp_total_amount?: number | null;
   stp_already_transferred?: number | null;
   stp_top_up?: number | null;
+  sum_assured?: number | null;
+  current_sum_assured?: number | null;
   is_active: boolean;
   created_at: string;
 }
@@ -68,6 +70,8 @@ export interface TargetPortfolioCreate {
   stp_total_amount?: number;
   stp_already_transferred?: number;
   stp_top_up?: number;
+  sum_assured?: number;
+  current_sum_assured?: number;
 }
 
 export class TargetPortfolioService {

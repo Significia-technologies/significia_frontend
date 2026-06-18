@@ -118,6 +118,10 @@ function formatTxType(type: string | null | undefined): string {
   if (!type) return "—";
   if (type === "SIP" || type === "STP") return type;
   if (type === "LUMP_SUM") return "Lumpsum";
+  if (type === "SWITCH_IN") return "Switch In";
+  if (type === "SWITCH_OUT") return "Switch Out";
+  if (type === "TRANSFER_IN") return "Transfer In";
+  if (type === "TRANSFER_OUT") return "Transfer Out";
   return type.replace("_", " ").toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
 }
 
@@ -290,6 +294,8 @@ function AddEntryDialog({
   const [action, setAction] = useState<"Buy" | "Sell">("Buy");
   const [toFundId, setToFundId] = useState("");
   const [toFundType, setToFundType] = useState("");
+  const [sumAssured, setSumAssured] = useState("");
+  const [currentSumAssured, setCurrentSumAssured] = useState("");
   const [stpTotalAmount, setStpTotalAmount] = useState("");
   const [stpAlreadyTransferred, setStpAlreadyTransferred] = useState("");
   const [stpTopUp, setStpTopUp] = useState("");
@@ -309,6 +315,7 @@ function AddEntryDialog({
     } else if (val === "RECURRING") {
       setFrequency("ANNUAL");
     } else {
+      // SWITCH_IN, SWITCH_OUT, TRANSFER_IN, TRANSFER_OUT — no frequency
       setFrequency("");
     }
     // Reset installments when switching away from SIP/STP
@@ -320,10 +327,14 @@ function AddEntryDialog({
       setCurrentAccumulation("");
       setAction("Buy");
     }
-    // Reset STP-specific fields when switching away from STP
-    if (val !== "STP") {
+    // Reset to-fund fields when switching away from STP/Switch/Transfer types
+    const toFundTypes = ["STP", "SWITCH_IN", "SWITCH_OUT", "TRANSFER_IN", "TRANSFER_OUT"];
+    if (!toFundTypes.includes(val)) {
       setToFundId("");
       setToFundType("");
+    }
+    // Reset STP-only amount fields when switching away from STP
+    if (val !== "STP") {
       setStpTotalAmount("");
       setStpAlreadyTransferred("");
       setStpTopUp("");
@@ -337,8 +348,10 @@ function AddEntryDialog({
     if (assetClass === "shares") {
       key = "stocks_percentage";
     } else if (assetClass === "mf") {
-      if (productSubtype === "Equity") key = "mutual_fund_equity_percentage";
-      if (productSubtype === "Debt" || productSubtype === "Hybrid") key = "mutual_fund_debt_percentage";
+      const isSwitchOrTransfer = ["SWITCH_IN", "SWITCH_OUT", "TRANSFER_IN", "TRANSFER_OUT"].includes(transactionType);
+      const mfType = isSwitchOrTransfer ? toFundType : productSubtype;
+      if (mfType === "Equity") key = "mutual_fund_equity_percentage";
+      if (mfType === "Debt" || mfType === "Hybrid") key = "mutual_fund_debt_percentage";
     } else if (assetClass === "etf") {
       if (productSubtype === "Gold") key = "gold_etf_percentage";
       if (productSubtype === "Silver") key = "silver_etf_percentage";
@@ -369,6 +382,9 @@ function AddEntryDialog({
       targetAmt,
     };
   };
+
+  const isSwitch = transactionType === "SWITCH_IN" || transactionType === "SWITCH_OUT";
+  const isTransfer = transactionType === "TRANSFER_IN" || transactionType === "TRANSFER_OUT";
 
   const selectedSubAsset = getSelectedSubAssetDetails();
   const enteredAmount = parseFloat(suggestedAmount) || 0;
@@ -508,7 +524,7 @@ function AddEntryDialog({
         }
       }
     }
-  }, [productSubtype, nature, latestAllocation, totalPortfolioSize, action, transactionType]);
+  }, [productSubtype, toFundType, nature, latestAllocation, totalPortfolioSize, action, transactionType]);
 
   // STP: auto-calculate suggested amount per installment = Current Accumulation ÷ No. of Installments
   useEffect(() => {
@@ -546,6 +562,8 @@ function AddEntryDialog({
     setAction("Buy");
     setToFundId("");
     setToFundType("");
+    setSumAssured("");
+    setCurrentSumAssured("");
     setStpTotalAmount("");
     setStpAlreadyTransferred("");
     setStpTopUp("");
@@ -579,11 +597,13 @@ function AddEntryDialog({
       if (assetClass === "shares") {
         return e.asset_class === "shares";
       } else if (assetClass === "mf") {
-        const isDebtGroup = productSubtype === "Debt" || productSubtype === "Hybrid";
+        const isSwitchOrTransfer = ["SWITCH_IN", "SWITCH_OUT", "TRANSFER_IN", "TRANSFER_OUT"].includes(transactionType);
+        const mfType = isSwitchOrTransfer ? toFundType : productSubtype;
+        const isDebtGroup = mfType === "Debt" || mfType === "Hybrid";
         if (isDebtGroup) {
           return e.asset_class === "mf" && (e.product_subtype === "Debt" || e.product_subtype === "Hybrid");
         }
-        return e.asset_class === "mf" && e.product_subtype === productSubtype;
+        return e.asset_class === "mf" && e.product_subtype === mfType;
       } else if (assetClass === "etf") {
         return e.asset_class === "etf" && e.product_subtype === productSubtype;
       } else if (assetClass === "life_insurance") {
@@ -669,6 +689,15 @@ function AddEntryDialog({
     if (transactionType === "STP" && (!stpTotalAmount || (parseFloat(stpTotalAmount) || 0) <= 0)) {
       return toast.error("Enter the total amount to transfer for STP.");
     }
+    if ((isSwitch || isTransfer) && !toFundId) {
+      return toast.error(`Select a destination (To) fund for ${isSwitch ? "Switch" : "Transfer"}.`);
+    }
+    if ((isSwitch || isTransfer) && toFundId === productId) {
+      return toast.error("From and To funds cannot be the same.");
+    }
+    if (isSwitch && !toFundType) {
+      return toast.error("Select the To Fund type (Equity / Debt / Hybrid).");
+    }
 
     if (assetClass === "mf" && !productSubtype) {
       return toast.error("Select a Mutual Fund type.");
@@ -683,6 +712,16 @@ function AddEntryDialog({
       if (productSubtype === "ULIP" && !nature) {
         return toast.error("Select a ULIP nature.");
       }
+    }
+
+    if (assetClass === "life_insurance") {
+      if (transactionType === "RECURRING" && (!noOfInstallments || parseInt(noOfInstallments) <= 0)) {
+        return toast.error("Enter a valid number of installments for Recurring.");
+      }
+      const sa = parseFloat(sumAssured);
+      if (!sumAssured || isNaN(sa) || sa <= 0) return toast.error("Enter a valid Sum Assured.");
+      const csa = parseFloat(currentSumAssured);
+      if (currentSumAssured === "" || isNaN(csa) || csa < 0) return toast.error("Enter a valid Current Sum Assured.");
     }
 
     if (assetClass !== "life_insurance" && assetClass !== "health_insurance" && !objective)
@@ -714,16 +753,18 @@ function AddEntryDialog({
       remarks: remarks.trim() || undefined,
       transaction_type: transactionType || undefined,
       frequency: frequency || undefined,
-      no_of_installments: (transactionType === "SIP" || transactionType === "STP") && noOfInstallments ? parseInt(noOfInstallments) : undefined,
+      no_of_installments: (transactionType === "SIP" || transactionType === "STP" || (assetClass === "life_insurance" && transactionType === "RECURRING")) && noOfInstallments ? parseInt(noOfInstallments) : undefined,
+      sum_assured: assetClass === "life_insurance" ? parseFloat(sumAssured) : undefined,
+      current_sum_assured: assetClass === "life_insurance" ? parseFloat(currentSumAssured) : undefined,
       current_accumulation: transactionType === "STP"
         ? (stpCurrentAccumulation ?? undefined)
         : (transactionType === "SIP" || transactionType === "LUMP_SUM") && currentAccumulation
         ? parseFloat(currentAccumulation)
         : undefined,
       action: transactionType === "LUMP_SUM" ? action : (transactionType === "SIP" ? "Buy" : undefined),
-      stp_to_product_id: transactionType === "STP" ? toFundId : undefined,
-      stp_from_type: transactionType === "STP" ? (productSubtype || undefined) : undefined,
-      stp_to_fund_type: transactionType === "STP" ? toFundType : undefined,
+      stp_to_product_id: (transactionType === "STP" || isSwitch || isTransfer) ? toFundId : undefined,
+      stp_from_type: (transactionType === "STP" || isSwitch || isTransfer) ? (productSubtype || undefined) : undefined,
+      stp_to_fund_type: (transactionType === "STP" || isSwitch) ? toFundType : isTransfer ? (productSubtype || undefined) : undefined,
       stp_total_amount: transactionType === "STP" && stpTotalAmount ? parseFloat(stpTotalAmount) : undefined,
       stp_already_transferred: transactionType === "STP" && stpAlreadyTransferred ? parseFloat(stpAlreadyTransferred) : undefined,
       stp_top_up: transactionType === "STP" && stpTopUp ? parseFloat(stpTopUp) : undefined,
@@ -781,9 +822,9 @@ function AddEntryDialog({
             )}
           </div>
 
-          {/* Mutual Fund Type — splits into From/To for STP */}
+          {/* Mutual Fund Type — splits into From/To for STP & Switch; single for Transfer */}
           {assetClass === "mf" && (
-            transactionType === "STP" ? (
+            (transactionType === "STP" || isSwitch) ? (
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
                   <Label className="text-xs">From Type <span className="text-destructive">*</span></Label>
@@ -807,6 +848,18 @@ function AddEntryDialog({
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+            ) : isTransfer ? (
+              <div className="space-y-1">
+                <Label className="text-xs">Type <span className="text-destructive">*</span></Label>
+                <Select value={productSubtype} onValueChange={(val) => { setProductSubtype(val); setToFundType(val); }}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select type" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Equity">Equity</SelectItem>
+                    <SelectItem value="Debt">Debt</SelectItem>
+                    <SelectItem value="Hybrid">Hybrid</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             ) : (
               <div className="space-y-1">
@@ -870,8 +923,8 @@ function AddEntryDialog({
             </div>
           )}
 
-          {/* Transaction Type + Frequency in 2-col grid */}
-          <div className="grid grid-cols-2 gap-2">
+          {/* Transaction Type + Frequency in 2-col grid (frequency hidden for Switch/Transfer types) */}
+          <div className={cn("grid gap-2", (isSwitch || isTransfer) ? "grid-cols-1" : "grid-cols-2")}>
             <div className="space-y-1">
               <Label className="text-xs">Transaction Type <span className="text-destructive">*</span></Label>
               <Select value={transactionType} onValueChange={handleTransactionTypeChange}>
@@ -882,6 +935,10 @@ function AddEntryDialog({
                       <SelectItem value="LUMP_SUM">Lumpsum</SelectItem>
                       <SelectItem value="SIP">SIP</SelectItem>
                       {assetClass === "mf" && <SelectItem value="STP">STP</SelectItem>}
+                      {assetClass === "mf" && <SelectItem value="SWITCH_IN">Switch In</SelectItem>}
+                      {assetClass === "mf" && <SelectItem value="SWITCH_OUT">Switch Out</SelectItem>}
+                      {assetClass === "mf" && <SelectItem value="TRANSFER_IN">Transfer In</SelectItem>}
+                      {assetClass === "mf" && <SelectItem value="TRANSFER_OUT">Transfer Out</SelectItem>}
                     </>
                   )}
                   {assetClass === "health_insurance" && (
@@ -897,46 +954,48 @@ function AddEntryDialog({
               </Select>
             </div>
 
-            <div className="space-y-1">
-              <Label className="text-xs">Frequency <span className="text-destructive">*</span></Label>
-              <Select value={frequency} onValueChange={setFrequency}>
-                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select frequency" /></SelectTrigger>
-                <SelectContent>
-                  {transactionType === "LUMP_SUM" && assetClass !== "health_insurance" && (
-                    <SelectItem value="LUMP_SUM">Lumpsum</SelectItem>
-                  )}
-                  {transactionType === "LUMP_SUM" && assetClass === "health_insurance" && (
-                    <>
-                      <SelectItem value="ANNUAL">Annual</SelectItem>
-                      <SelectItem value="BI_YEARLY">Bi-yearly</SelectItem>
-                    </>
-                  )}
-                  {transactionType === "SINGLE_PAY" && (
-                    <SelectItem value="SINGLE_PAY">Single Pay</SelectItem>
-                  )}
-                  {(transactionType === "SIP" || transactionType === "STP") && (
-                    <>
-                      <SelectItem value="WEEKLY">Weekly</SelectItem>
-                      <SelectItem value="MONTHLY">Monthly</SelectItem>
-                      <SelectItem value="QUARTERLY">Quarterly</SelectItem>
-                      <SelectItem value="HALF_YEARLY">Half-yearly</SelectItem>
-                    </>
-                  )}
-                  {transactionType === "RECURRING" && (
-                    <>
-                      <SelectItem value="MONTHLY">Monthly</SelectItem>
-                      <SelectItem value="QUARTERLY">Quarterly</SelectItem>
-                      <SelectItem value="HALF_YEARLY">Half-yearly</SelectItem>
-                      <SelectItem value="ANNUALLY">Annually</SelectItem>
-                    </>
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
+            {!isSwitch && !isTransfer && (
+              <div className="space-y-1">
+                <Label className="text-xs">Frequency <span className="text-destructive">*</span></Label>
+                <Select value={frequency} onValueChange={setFrequency}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select frequency" /></SelectTrigger>
+                  <SelectContent>
+                    {transactionType === "LUMP_SUM" && assetClass !== "health_insurance" && (
+                      <SelectItem value="LUMP_SUM">Lumpsum</SelectItem>
+                    )}
+                    {transactionType === "LUMP_SUM" && assetClass === "health_insurance" && (
+                      <>
+                        <SelectItem value="ANNUAL">Annual</SelectItem>
+                        <SelectItem value="BI_YEARLY">Bi-yearly</SelectItem>
+                      </>
+                    )}
+                    {transactionType === "SINGLE_PAY" && (
+                      <SelectItem value="SINGLE_PAY">Single Pay</SelectItem>
+                    )}
+                    {(transactionType === "SIP" || transactionType === "STP") && (
+                      <>
+                        <SelectItem value="WEEKLY">Weekly</SelectItem>
+                        <SelectItem value="MONTHLY">Monthly</SelectItem>
+                        <SelectItem value="QUARTERLY">Quarterly</SelectItem>
+                        <SelectItem value="HALF_YEARLY">Half-yearly</SelectItem>
+                      </>
+                    )}
+                    {transactionType === "RECURRING" && (
+                      <>
+                        <SelectItem value="MONTHLY">Monthly</SelectItem>
+                        <SelectItem value="QUARTERLY">Quarterly</SelectItem>
+                        <SelectItem value="HALF_YEARLY">Half-yearly</SelectItem>
+                        <SelectItem value="ANNUALLY">Annually</SelectItem>
+                      </>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
 
-          {/* STP: To Fund picker */}
-          {transactionType === "STP" && (
+          {/* STP / Switch / Transfer: To Fund picker */}
+          {(transactionType === "STP" || isSwitch || isTransfer) && (
             <div className="space-y-1">
               <Label className="text-xs">To Fund <span className="text-destructive">*</span></Label>
               {!loadingProducts && products.length === 0 ? (
@@ -954,7 +1013,11 @@ function AddEntryDialog({
                 />
               )}
               <p className="text-[10px] text-muted-foreground">
-                Amount will be periodically transferred from the above fund into this fund.
+                {transactionType === "STP"
+                  ? "Amount will be periodically transferred from the above fund into this fund."
+                  : isSwitch
+                  ? "Units will be switched from the above fund into this fund (cross-type allowed)."
+                  : "Units will be transferred from the above fund into this fund (same type)."}
               </p>
             </div>
           )}
@@ -1052,6 +1115,50 @@ function AddEntryDialog({
             </div>
           )}
 
+          {/* Life Insurance — No. of Installments (Recurring only) */}
+          {assetClass === "life_insurance" && transactionType === "RECURRING" && (
+            <div className="space-y-1">
+              <Label className="text-xs">No. of Installments <span className="text-destructive">*</span></Label>
+              <Input
+                type="number"
+                min="1"
+                step="1"
+                value={noOfInstallments}
+                onChange={(e) => setNoOfInstallments(e.target.value)}
+                placeholder="e.g. 12"
+                className="h-8 text-xs"
+              />
+            </div>
+          )}
+
+          {/* Life Insurance — Sum Assured & Current Sum Assured */}
+          {assetClass === "life_insurance" && (
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <Label className="text-xs">Sum Assured <span className="text-destructive">*</span></Label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={sumAssured}
+                  onChange={(e) => setSumAssured(e.target.value)}
+                  placeholder="e.g. 5000000"
+                  className="h-8 text-xs"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Current Sum Assured <span className="text-destructive">*</span></Label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={currentSumAssured}
+                  onChange={(e) => setCurrentSumAssured(e.target.value)}
+                  placeholder="e.g. 2000000"
+                  className="h-8 text-xs"
+                />
+              </div>
+            </div>
+          )}
+
           {/* LUMP_SUM Fields: Current Accumulation & Action (Buy/Sell) */}
           {transactionType === "LUMP_SUM" && (
             <div className="grid grid-cols-2 gap-2">
@@ -1085,7 +1192,8 @@ function AddEntryDialog({
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1">
               <Label className={cn("text-xs", hasAmtError && "text-destructive")}>
-                Suggested Amt{transactionType !== "STP" && <span className="text-destructive"> *</span>}
+                {(isSwitch || isTransfer) ? "Amount" : assetClass === "life_insurance" ? "Suggested Premium" : "Suggested Amt"}
+                {transactionType !== "STP" && <span className="text-destructive"> *</span>}
               </Label>
               <Input
                 type={transactionType === "STP" ? "text" : "number"}
@@ -1189,6 +1297,23 @@ function AddEntryDialog({
                 </Select>
               </div>
             )
+          )}
+
+          {/* Life Insurance Recurring — Anticipated Value */}
+          {assetClass === "life_insurance" && transactionType === "RECURRING" && (
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">Anticipated Value</Label>
+              <Input
+                readOnly
+                value={
+                  suggestedAmount && noOfInstallments
+                    ? formatIndianNumber(parseFloat(suggestedAmount) * parseInt(noOfInstallments))
+                    : "—"
+                }
+                className="h-8 text-xs bg-muted text-muted-foreground"
+              />
+              <span className="text-[10px] text-muted-foreground">Premium × Installments (not part of allocation)</span>
+            </div>
           )}
 
           {/* Objective + Reason (Life Insurance) — side by side */}
@@ -1363,6 +1488,7 @@ function AssetClassTab({
     : assetClass === "health_insurance"
     ? "% Health Covered"
     : "% Investment";
+  const accumColLabel = assetClass === "life_insurance" ? "Sum Assured" : "Current Accum.";
   const objectiveColLabel = assetClass === "life_insurance" ? "Objective / Reason" : "Objective";
 
   return (
@@ -1399,8 +1525,9 @@ function AssetClassTab({
               <TableRow>
                 <TableHead className="min-w-[140px]">Product</TableHead>
                 <TableHead className="w-[80px]">{pctColLabel}</TableHead>
-                <TableHead className="w-[110px]">Current Accum.</TableHead>
-                <TableHead className="w-[110px]">Suggested Amt</TableHead>
+                <TableHead className="w-[110px]">{accumColLabel}</TableHead>
+                {assetClass === "life_insurance" && <TableHead className="w-[110px]">Curr. Sum Assured</TableHead>}
+                <TableHead className="w-[110px]">{assetClass === "life_insurance" ? "Suggested Premium" : "Suggested Amt"}</TableHead>
                 <TableHead className="w-[100px]">Tx / Freq</TableHead>
                 <TableHead className="w-[80px]">Installments</TableHead>
                 <TableHead className="w-[110px]">Anticipated Value</TableHead>
@@ -1430,7 +1557,7 @@ function AssetClassTab({
                   <TableRow key={e.id} className={!e.is_active ? "opacity-50" : ""}>
                     <TableCell className="font-medium">
                       <span className="line-clamp-2 leading-snug">{e.product_name}</span>
-                      {e.transaction_type === "STP" ? (
+                      {(["STP", "SWITCH_IN", "SWITCH_OUT", "TRANSFER_IN", "TRANSFER_OUT"].includes(e.transaction_type ?? "")) ? (
                         <span className="block mt-0.5 text-[10px] text-muted-foreground font-normal">
                           {e.stp_from_type || e.product_subtype || ""}
                           {(e.stp_from_type || e.product_subtype) && e.stp_to_fund_type ? " → " : ""}
@@ -1443,7 +1570,7 @@ function AssetClassTab({
                           </span>
                         )
                       )}
-                      {e.transaction_type === "STP" && e.stp_to_product_name && (
+                      {(["STP", "SWITCH_IN", "SWITCH_OUT", "TRANSFER_IN", "TRANSFER_OUT"].includes(e.transaction_type ?? "")) && e.stp_to_product_name && (
                         <span className="block mt-0.5 text-[10px] text-primary font-normal">
                           → {e.stp_to_product_name}
                         </span>
@@ -1458,7 +1585,11 @@ function AssetClassTab({
                       </span>
                     </TableCell>
                     <TableCell className="font-semibold">
-                      {e.transaction_type === "STP" ? (
+                      {e.asset_class === "life_insurance" ? (
+                        e.sum_assured !== null && e.sum_assured !== undefined
+                          ? formatIndianNumber(e.sum_assured)
+                          : <span className="text-muted-foreground">—</span>
+                      ) : e.transaction_type === "STP" ? (
                         e.stp_total_amount !== null && e.stp_total_amount !== undefined ? (
                           <span>
                             {formatIndianNumber(e.current_accumulation ?? null)}
@@ -1471,6 +1602,13 @@ function AssetClassTab({
                         ? formatIndianNumber(e.current_accumulation)
                         : <span className="text-muted-foreground">—</span>}
                     </TableCell>
+                    {assetClass === "life_insurance" && (
+                      <TableCell className="font-semibold">
+                        {e.current_sum_assured !== null && e.current_sum_assured !== undefined
+                          ? formatIndianNumber(e.current_sum_assured)
+                          : <span className="text-muted-foreground">—</span>}
+                      </TableCell>
+                    )}
                     <TableCell className="font-semibold">
                       {e.action === "Sell" && e.suggested_investment_amount !== null && e.suggested_investment_amount !== undefined
                         ? `(${formatIndianNumber(e.suggested_investment_amount)})`
@@ -1487,12 +1625,12 @@ function AssetClassTab({
                       )}
                     </TableCell>
                     <TableCell>
-                      {(e.transaction_type === "SIP" || e.transaction_type === "STP") && e.no_of_installments
+                      {(e.transaction_type === "SIP" || e.transaction_type === "STP" || e.transaction_type === "RECURRING") && e.no_of_installments
                         ? e.no_of_installments
                         : <span className="text-muted-foreground">—</span>}
                     </TableCell>
                     <TableCell className="font-semibold">
-                      {(e.transaction_type === "SIP" || e.transaction_type === "STP") && e.no_of_installments && e.suggested_investment_amount
+                      {(e.transaction_type === "SIP" || e.transaction_type === "STP" || e.transaction_type === "RECURRING") && e.no_of_installments && e.suggested_investment_amount
                         ? formatIndianNumber(e.suggested_investment_amount * e.no_of_installments)
                         : <span className="text-muted-foreground">—</span>}
                     </TableCell>
@@ -1560,7 +1698,7 @@ function AssetClassTab({
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-sm leading-snug">{e.product_name}</p>
-                    {e.transaction_type === "STP" ? (
+                    {(["STP", "SWITCH_IN", "SWITCH_OUT", "TRANSFER_IN", "TRANSFER_OUT"].includes(e.transaction_type ?? "")) ? (
                       <>
                         {(e.stp_from_type || e.product_subtype || e.stp_to_fund_type) && (
                           <p className="text-xs text-muted-foreground mt-0.5">
@@ -1590,7 +1728,12 @@ function AssetClassTab({
                     <span className="text-muted-foreground">{pctColLabel}</span>
                     <p className="font-semibold mt-0.5">{e.percentage.toFixed(1)}%</p>
                   </div>
-                  {e.transaction_type === "STP" && e.stp_total_amount !== null && e.stp_total_amount !== undefined ? (
+                  {e.asset_class === "life_insurance" && e.sum_assured !== null && e.sum_assured !== undefined ? (
+                    <div>
+                      <span className="text-muted-foreground">Sum Assured</span>
+                      <p className="font-semibold mt-0.5">{formatIndianNumber(e.sum_assured)}</p>
+                    </div>
+                  ) : e.transaction_type === "STP" && e.stp_total_amount !== null && e.stp_total_amount !== undefined ? (
                     <div>
                       <span className="text-muted-foreground">Current Accum.</span>
                       <p className="font-semibold mt-0.5">{formatIndianNumber(e.current_accumulation ?? null)}</p>
@@ -1604,8 +1747,14 @@ function AssetClassTab({
                       <p className="font-semibold mt-0.5">{formatIndianNumber(e.current_accumulation)}</p>
                     </div>
                   ) : null}
+                  {e.asset_class === "life_insurance" && e.current_sum_assured !== null && e.current_sum_assured !== undefined && (
+                    <div>
+                      <span className="text-muted-foreground">Curr. Sum Assured</span>
+                      <p className="font-semibold mt-0.5">{formatIndianNumber(e.current_sum_assured)}</p>
+                    </div>
+                  )}
                   <div>
-                    <span className="text-muted-foreground">Suggested Amount</span>
+                    <span className="text-muted-foreground">{e.asset_class === "life_insurance" ? "Suggested Premium" : "Suggested Amount"}</span>
                     <p className="font-semibold mt-0.5">
                       {e.action === "Sell" && e.suggested_investment_amount !== null && e.suggested_investment_amount !== undefined
                         ? `(${formatIndianNumber(e.suggested_investment_amount)})`
@@ -1624,7 +1773,7 @@ function AssetClassTab({
                     <span className="text-muted-foreground">Frequency</span>
                     <p className="font-semibold mt-0.5">{formatFrequency(e.frequency)}</p>
                   </div>
-                  {(e.transaction_type === "SIP" || e.transaction_type === "STP") && e.no_of_installments && (
+                  {(e.transaction_type === "SIP" || e.transaction_type === "STP" || e.transaction_type === "RECURRING") && e.no_of_installments && (
                     <>
                       <div>
                         <span className="text-muted-foreground">Installments</span>
@@ -1640,7 +1789,7 @@ function AssetClassTab({
                       </div>
                     </>
                   )}
-                  {e.transaction_type === "STP" && e.stp_to_product_name && (
+                  {(["STP", "SWITCH_IN", "SWITCH_OUT", "TRANSFER_IN", "TRANSFER_OUT"].includes(e.transaction_type ?? "")) && e.stp_to_product_name && (
                     <div className="col-span-2">
                       <span className="text-muted-foreground">To Fund</span>
                       <p className="font-medium mt-0.5 text-primary">{e.stp_to_product_name}</p>
