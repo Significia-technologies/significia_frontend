@@ -280,6 +280,22 @@ export const API_ENDPOINTS = {
       `${API_BASE}/portfolio/target-portfolio/${clientId}/${memberId}/report/pdf`,
     REPORT_PDF_CLIENT: (clientId: string) =>
       `${API_BASE}/portfolio/target-portfolio/${clientId}/report/pdf`,
+    // Portfolio version endpoints
+    PORTFOLIOS: (clientId: string, memberId: string) =>
+      `${API_BASE}/portfolio/target-portfolio/${clientId}/${memberId}/portfolios`,
+    PORTFOLIO: (portfolioId: string) =>
+      `${API_BASE}/portfolio/target-portfolio/portfolio/${portfolioId}`,
+    PORTFOLIO_FUND_AMOUNT: (portfolioId: string) =>
+      `${API_BASE}/portfolio/target-portfolio/portfolio/${portfolioId}/fund-amount`,
+    PORTFOLIO_SAVE: (portfolioId: string) =>
+      `${API_BASE}/portfolio/target-portfolio/portfolio/${portfolioId}/save`,
+    PORTFOLIO_FORK: (portfolioId: string) =>
+      `${API_BASE}/portfolio/target-portfolio/portfolio/${portfolioId}/fork`,
+    PORTFOLIO_PRODUCTS: (portfolioId: string) =>
+      `${API_BASE}/portfolio/target-portfolio/portfolio/${portfolioId}/products`,
+    PORTFOLIO_PRODUCT: (portfolioId: string, entryId: string) =>
+      `${API_BASE}/portfolio/target-portfolio/portfolio/${portfolioId}/products/${entryId}`,
+    AUA_SUMMARY: `${API_BASE}/portfolio/target-portfolio/aua-summary`,
   },
 
   // ── Investor IPS Documents (Portfolio) ───────────────────────────

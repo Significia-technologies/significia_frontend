@@ -35,6 +35,7 @@ export interface TargetPortfolioEntry {
   current_sum_insured?: number | null;
   is_active: boolean;
   created_at: string;
+  forked_from_entry_id: string | null;
 }
 
 export interface AvailableProduct {
@@ -78,15 +79,137 @@ export interface TargetPortfolioCreate {
   current_sum_insured?: number;
 }
 
+export interface TargetPortfolio {
+  id: string;
+  client_id: string;
+  member_id: string;
+  fund_amount: number;
+  version_number: number;
+  is_current: boolean;
+  is_saved: boolean;
+  notes: string | null;
+  created_by: string | null;
+  created_at: string;
+  saved_at: string | null;
+  product_count?: number;
+}
+
+export interface TargetPortfolioWithProducts extends TargetPortfolio {
+  products: TargetPortfolioEntry[];
+}
+
+export interface AddProductResult extends TargetPortfolioEntry {
+  warn: boolean;
+  existing_entry_id?: string;
+  message?: string;
+}
+
 export class TargetPortfolioService {
+  // ── Portfolio version management ────────────────────────────────
+
+  static async getAUASummary(
+    clientIds?: string[]
+  ): Promise<{ summary: { client_id: string; total_aua: number; member_count: number }[] }> {
+    const params: any = {};
+    if (clientIds?.length) params.client_ids = clientIds.join(",");
+    const res = await httpClient.get(
+      API_ENDPOINTS.TARGET_PORTFOLIO.AUA_SUMMARY,
+      { params }
+    );
+    return res.data;
+  }
+
+  static async listPortfolios(
+    clientId: string,
+    memberId: string
+  ): Promise<{ portfolios: TargetPortfolio[] }> {
+    const res = await httpClient.get(API_ENDPOINTS.TARGET_PORTFOLIO.PORTFOLIOS(clientId, memberId));
+    return res.data;
+  }
+
+  static async createPortfolio(
+    clientId: string,
+    memberId: string,
+    fundAmount: number,
+    notes?: string
+  ): Promise<TargetPortfolio> {
+    const res = await httpClient.post(
+      API_ENDPOINTS.TARGET_PORTFOLIO.PORTFOLIOS(clientId, memberId),
+      { fund_amount: fundAmount, notes }
+    );
+    return res.data;
+  }
+
+  static async getPortfolio(portfolioId: string): Promise<TargetPortfolioWithProducts> {
+    const res = await httpClient.get(API_ENDPOINTS.TARGET_PORTFOLIO.PORTFOLIO(portfolioId));
+    return res.data;
+  }
+
+  static async updateFundAmount(portfolioId: string, fundAmount: number): Promise<TargetPortfolio> {
+    const res = await httpClient.patch(
+      API_ENDPOINTS.TARGET_PORTFOLIO.PORTFOLIO_FUND_AMOUNT(portfolioId),
+      { fund_amount: fundAmount }
+    );
+    return res.data;
+  }
+
+  static async savePortfolio(portfolioId: string): Promise<TargetPortfolio> {
+    const res = await httpClient.post(API_ENDPOINTS.TARGET_PORTFOLIO.PORTFOLIO_SAVE(portfolioId), {});
+    return res.data;
+  }
+
+  static async forkPortfolio(portfolioId: string, notes?: string): Promise<TargetPortfolio> {
+    const res = await httpClient.post(
+      API_ENDPOINTS.TARGET_PORTFOLIO.PORTFOLIO_FORK(portfolioId),
+      { notes }
+    );
+    return res.data;
+  }
+
+  // ── Portfolio-scoped product management ─────────────────────────
+
+  static async addProduct(
+    portfolioId: string,
+    data: TargetPortfolioCreate & { force?: boolean }
+  ): Promise<AddProductResult> {
+    const res = await httpClient.post(
+      API_ENDPOINTS.TARGET_PORTFOLIO.PORTFOLIO_PRODUCTS(portfolioId),
+      data
+    );
+    return res.data;
+  }
+
+  static async updateProduct(
+    portfolioId: string,
+    entryId: string,
+    data: Partial<TargetPortfolioCreate>
+  ): Promise<TargetPortfolioEntry> {
+    const res = await httpClient.put(
+      API_ENDPOINTS.TARGET_PORTFOLIO.PORTFOLIO_PRODUCT(portfolioId, entryId),
+      data
+    );
+    return res.data;
+  }
+
+  static async removeProduct(portfolioId: string, entryId: string): Promise<{ deleted: boolean }> {
+    const res = await httpClient.delete(
+      API_ENDPOINTS.TARGET_PORTFOLIO.PORTFOLIO_PRODUCT(portfolioId, entryId)
+    );
+    return res.data;
+  }
+
+
   static async listEntries(
     clientId: string,
     memberId: string,
-    assetClass: AssetClass
+    assetClass: AssetClass,
+    portfolioId?: string
   ): Promise<{ entries: TargetPortfolioEntry[]; total: number; total_percentage: number }> {
+    const params: any = { asset_class: assetClass };
+    if (portfolioId) params.portfolio_id = portfolioId;
     const res = await httpClient.get(
       API_ENDPOINTS.TARGET_PORTFOLIO.LIST(clientId, memberId),
-      { params: { asset_class: assetClass } }
+      { params }
     );
     return res.data;
   }

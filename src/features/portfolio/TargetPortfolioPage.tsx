@@ -5,6 +5,7 @@ import {
   Plus, Loader2, MoreHorizontal, ToggleLeft, ToggleRight,
   AlertTriangle, TrendingUp, Check, ChevronsUpDown, Download,
   ChevronDown, ChevronUp, ChevronRight, Calculator,
+  Save, GitFork, History, PlusCircle, Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +18,10 @@ import {
 import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -35,6 +40,7 @@ import {
   TargetPortfolioService,
   TargetPortfolioEntry,
   TargetPortfolioCreate,
+  TargetPortfolio,
   AssetClass,
   AvailableProduct,
 } from "@/core/services/target-portfolio.service";
@@ -262,6 +268,7 @@ function ProductCombobox({
 function AddEntryDialog({
   open, onClose, onAdded,
   clientId, member, assetClass, currentTotalPct, totalPortfolioSize, latestAllocation, existingEntries,
+  portfolioId,
 }: {
   open: boolean;
   onClose: () => void;
@@ -273,10 +280,12 @@ function AddEntryDialog({
   totalPortfolioSize: number;
   latestAllocation: any | null;
   existingEntries: TargetPortfolioEntry[];
+  portfolioId?: string;
 }) {
   const [products, setProducts] = useState<AvailableProduct[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [duplicateWarn, setDuplicateWarn] = useState<{ existingEntryId: string; message: string } | null>(null);
 
   const [productId, setProductId] = useState("");
   const [percentage, setPercentage] = useState("");
@@ -528,7 +537,7 @@ function AddEntryDialog({
     }
   }, [productSubtype, toFundType, nature, latestAllocation, totalPortfolioSize, action, transactionType]);
 
-  // STP: auto-calculate suggested amount per installment = Current Accumulation ÷ No. of Installments
+  // STP: auto-calculate suggested amount per installment = Existing Investment ÷ No. of Installments
   useEffect(() => {
     if (transactionType !== "STP") return;
     const currentAcc = Math.max(0, (parseFloat(stpTotalAmount) || 0) + (parseFloat(stpTopUp) || 0) - (parseFloat(stpAlreadyTransferred) || 0));
@@ -666,6 +675,8 @@ function AddEntryDialog({
     return p.product_name;
   };
 
+  const [pendingPayload, setPendingPayload] = useState<TargetPortfolioCreate | null>(null);
+
   const handleSubmit = async () => {
     if (!productId) return toast.error("Select a product.");
     if (!percentage || isNaN(pct) || pct <= 0) return toast.error("Enter a valid percentage.");
@@ -787,12 +798,55 @@ function AddEntryDialog({
 
     setSubmitting(true);
     try {
-      await TargetPortfolioService.createEntry(clientId, member.id, payload);
+      if (portfolioId) {
+        const result = await TargetPortfolioService.addProduct(portfolioId, payload);
+        if (result.warn) {
+          setPendingPayload(payload);
+          setDuplicateWarn({ existingEntryId: result.existing_entry_id!, message: result.message! });
+          return;
+        }
+      } else {
+        await TargetPortfolioService.createEntry(clientId, member.id, payload);
+      }
       toast.success("Product added to target portfolio.");
       onAdded();
       onClose();
     } catch (err: any) {
       toast.error(err?.response?.data?.detail || "Failed to add entry.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleForceAdd = async () => {
+    if (!portfolioId || !pendingPayload) return;
+    setSubmitting(true);
+    try {
+      await TargetPortfolioService.addProduct(portfolioId, { ...pendingPayload, force: true });
+      toast.success("Product added as a separate entry.");
+      setDuplicateWarn(null);
+      setPendingPayload(null);
+      onAdded();
+      onClose();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.detail || "Failed to add entry.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleUpdateExisting = async () => {
+    if (!portfolioId || !pendingPayload || !duplicateWarn?.existingEntryId) return;
+    setSubmitting(true);
+    try {
+      await TargetPortfolioService.updateProduct(portfolioId, duplicateWarn.existingEntryId, pendingPayload);
+      toast.success("Existing entry updated.");
+      setDuplicateWarn(null);
+      setPendingPayload(null);
+      onAdded();
+      onClose();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.detail || "Failed to update entry.");
     } finally {
       setSubmitting(false);
     }
@@ -806,6 +860,7 @@ function AddEntryDialog({
     : "% of Investment";
 
   return (
+    <>
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader className="pb-1">
@@ -1037,11 +1092,11 @@ function AddEntryDialog({
             </div>
           )}
 
-          {/* SIP Fields: Current Accumulation & No. of Installments */}
+          {/* SIP Fields: Existing Investment & No. of Installments */}
           {transactionType === "SIP" && (
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
-                <Label className="text-xs">Current Accumulation</Label>
+                <Label className="text-xs">Existing Investment</Label>
                 <Input
                   type="number"
                   min="0"
@@ -1106,7 +1161,7 @@ function AddEntryDialog({
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Current Accumulation</Label>
+                  <Label className="text-xs text-muted-foreground">Existing Investment</Label>
                   <Input
                     readOnly
                     value={stpCurrentAccumulation !== null ? formatIndianNumber(stpCurrentAccumulation) : "—"}
@@ -1202,11 +1257,11 @@ function AddEntryDialog({
             </div>
           )}
 
-          {/* LUMP_SUM Fields: Current Accumulation & Action (Buy/Sell) */}
+          {/* LUMP_SUM Fields: Existing Investment & Action (Buy/Sell) */}
           {transactionType === "LUMP_SUM" && (
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
-                <Label className="text-xs">Current Accumulation</Label>
+                <Label className="text-xs">Existing Investment</Label>
                 <Input
                   type="number"
                   min="0"
@@ -1254,7 +1309,7 @@ function AddEntryDialog({
                 )}
               />
               {transactionType === "STP" ? (
-                <span className="text-[10px] text-muted-foreground">Current Accum. ÷ Installments</span>
+                <span className="text-[10px] text-muted-foreground">Existing Investment ÷ Installments</span>
               ) : selectedSubAsset && (
                 <span className={cn(
                   "text-[10px] font-medium flex items-center gap-1",
@@ -1418,30 +1473,66 @@ function AddEntryDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <AlertDialog open={!!duplicateWarn} onOpenChange={(o) => !o && setDuplicateWarn(null)}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2 text-amber-600">
+            <AlertTriangle className="h-5 w-5" /> Duplicate Product Detected
+          </AlertDialogTitle>
+          <AlertDialogDescription>{duplicateWarn?.message}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+          <AlertDialogCancel onClick={() => setDuplicateWarn(null)}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            className="bg-primary hover:bg-primary/90 text-white"
+            onClick={handleUpdateExisting}
+            disabled={submitting}
+          >
+            {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+            Update Existing Entry
+          </AlertDialogAction>
+          <AlertDialogAction
+            className="bg-amber-600 hover:bg-amber-700 text-white"
+            onClick={handleForceAdd}
+            disabled={submitting}
+          >
+            {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+            Add as Separate Entry
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
 
 // ── Asset Class Tab Content ─────────────────────────────────────────
 
 function AssetClassTab({
-  clientId, member, assetClass, totalPortfolioSize, latestAllocation,
+  clientId, member, assetClass, totalPortfolioSize, latestAllocation, portfolioId, isSaved,
 }: {
   clientId: string;
   member: InvestorMember;
   assetClass: AssetClass;
   totalPortfolioSize: number;
   latestAllocation: any | null;
+  portfolioId?: string;
+  isSaved?: boolean;
 }) {
   const [entries, setEntries] = useState<TargetPortfolioEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalPct, setTotalPct] = useState(0);
   const [showAdd, setShowAdd] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [removingId, setRemovingId] = useState<string | null>(null);
+  const [confirmDeactivate, setConfirmDeactivate] = useState<TargetPortfolioEntry | null>(null);
+  const [confirmRemove, setConfirmRemove] = useState<TargetPortfolioEntry | null>(null);
 
   const fetch = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await TargetPortfolioService.listEntries(clientId, member.id, assetClass);
+      const res = await TargetPortfolioService.listEntries(clientId, member.id, assetClass, portfolioId);
       setEntries(res.entries);
       setTotalPct(res.total_percentage);
     } catch {
@@ -1449,7 +1540,7 @@ function AssetClassTab({
     } finally {
       setLoading(false);
     }
-  }, [clientId, member.id, assetClass]);
+  }, [clientId, member.id, assetClass, portfolioId]);
 
   useEffect(() => { fetch(); }, [fetch]);
 
@@ -1525,6 +1616,21 @@ function AssetClassTab({
     }
   };
 
+  const handleRemove = async (entry: TargetPortfolioEntry) => {
+    if (!portfolioId) return;
+    setRemovingId(entry.id);
+    try {
+      await TargetPortfolioService.removeProduct(portfolioId, entry.id);
+      toast.success(`${entry.product_name} removed.`);
+      setConfirmRemove(null);
+      fetch();
+    } catch {
+      toast.error("Failed to remove entry.");
+    } finally {
+      setRemovingId(null);
+    }
+  };
+
   const isInsurance = assetClass === "life_insurance" || assetClass === "health_insurance";
   const pctColLabel = assetClass === "life_insurance"
     ? "% HLV Covered"
@@ -1535,7 +1641,7 @@ function AssetClassTab({
     ? "Sum Assured"
     : assetClass === "health_insurance"
     ? "Suggested Sum Insured"
-    : "Current Accum.";
+    : "Existing Investment";
   const objectiveColLabel = assetClass === "life_insurance" ? "Objective / Reason" : "Objective";
 
   return (
@@ -1559,9 +1665,11 @@ function AssetClassTab({
             </span>
           )}
         </div>
-        <Button size="sm" onClick={() => setShowAdd(true)}>
-          <Plus className="h-4 w-4 mr-1.5" /> Add Product
-        </Button>
+        {!isSaved && (
+          <Button size="sm" onClick={() => setShowAdd(true)}>
+            <Plus className="h-4 w-4 mr-1.5" /> Add Product
+          </Button>
+        )}
       </div>
 
       {/* Desktop table */}
@@ -1576,13 +1684,13 @@ function AssetClassTab({
                 {assetClass === "life_insurance" && <TableHead className="w-[110px]">Curr. Sum Assured</TableHead>}
                 {assetClass === "health_insurance" && <TableHead className="w-[110px]">Curr. Sum Insured</TableHead>}
                 <TableHead className="w-[110px]">{(assetClass === "life_insurance" || assetClass === "health_insurance") ? "Suggested Premium" : "Suggested Amt"}</TableHead>
+                <TableHead className="w-[110px]">Balance Amt</TableHead>
                 <TableHead className="w-[100px]">Tx / Freq</TableHead>
                 <TableHead className="w-[80px]">Installments</TableHead>
                 <TableHead className="w-[110px]">{assetClass === "health_insurance" ? "Anticipated Cover" : "Anticipated Value"}</TableHead>
                 <TableHead className="w-[100px]">{objectiveColLabel}</TableHead>
                 <TableHead className="w-[110px]">Suitability</TableHead>
-                <TableHead className="w-[68px]">Status</TableHead>
-                <TableHead className="w-[48px] text-right">Action</TableHead>
+                <TableHead className="w-[110px] text-right">Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -1670,14 +1778,31 @@ function AssetClassTab({
                     )}
                     <TableCell className="font-semibold">
                       {e.action === "Sell" && e.suggested_investment_amount !== null && e.suggested_investment_amount !== undefined
-                        ? `(${formatIndianNumber(e.suggested_investment_amount)})`
+                        ? formatIndianNumber(e.suggested_investment_amount)
                         : formatIndianNumber(e.suggested_investment_amount)}
+                    </TableCell>
+                    <TableCell className="font-semibold">
+                      {e.transaction_type === "LUMP_SUM" && e.suggested_investment_amount != null ? (() => {
+                        const existing = e.current_accumulation ?? 0;
+                        const suggested = e.suggested_investment_amount;
+                        const balance = e.action === "Sell" ? existing - suggested : existing + suggested;
+                        return (
+                          <div>
+                            <span className={balance < 0 ? "text-destructive" : ""}>
+                              {formatIndianNumber(balance)}
+                            </span>
+                            {e.action && (
+                              <span className={`block text-[10px] font-semibold ${e.action === "Sell" ? "text-red-500" : "text-emerald-500"}`}>
+                                {e.action}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })() : <span className="text-muted-foreground">—</span>}
                     </TableCell>
                     <TableCell>
                       <span className="font-semibold">
-                        {e.transaction_type === "LUMP_SUM" && e.action
-                          ? `Lumpsum (${e.action})`
-                          : formatTxType(e.transaction_type)}
+                        {formatTxType(e.transaction_type)}
                       </span>
                       {e.frequency && e.frequency !== e.transaction_type && (
                         <span className="block text-[10px] text-muted-foreground">{formatFrequency(e.frequency)}</span>
@@ -1708,28 +1833,34 @@ function AssetClassTab({
                     <TableCell className="text-muted-foreground">
                       <SuitabilityCell value={e.remarks} />
                     </TableCell>
-                    <TableCell>
-                      <Badge variant={e.is_active ? "default" : "secondary"} className="text-[10px] px-1.5 py-0">
-                        {e.is_active ? "Active" : "Inactive"}
-                      </Badge>
-                    </TableCell>
                     <TableCell className="text-right">
-                      {e.is_active && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7" disabled={togglingId === e.id}>
-                              {togglingId === e.id
-                                ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                : <MoreHorizontal className="h-3.5 w-3.5" />}
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleToggle(e)}>
-                              <ToggleLeft className="h-4 w-4 mr-2 text-muted-foreground" /> Deactivate
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      )}
+                      <div className="flex items-center justify-end gap-1.5">
+                        <Badge variant={e.is_active ? "default" : "secondary"} className="text-[10px] px-1.5 py-0">
+                          {e.is_active ? "Active" : "Inactive"}
+                        </Badge>
+                        {e.is_active && !isSaved && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-7 w-7" disabled={togglingId === e.id || removingId === e.id}>
+                                {(togglingId === e.id || removingId === e.id)
+                                  ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                  : <MoreHorizontal className="h-3.5 w-3.5" />}
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              {e.forked_from_entry_id ? (
+                                <DropdownMenuItem onClick={() => setConfirmDeactivate(e)}>
+                                  <ToggleLeft className="h-4 w-4 mr-2 text-muted-foreground" /> Deactivate
+                                </DropdownMenuItem>
+                              ) : (
+                                <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setConfirmRemove(e)}>
+                                  <Trash2 className="h-4 w-4 mr-2" /> Remove
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -1799,7 +1930,7 @@ function AssetClassTab({
                     </div>
                   ) : e.transaction_type === "STP" && e.stp_total_amount !== null && e.stp_total_amount !== undefined ? (
                     <div>
-                      <span className="text-muted-foreground">Current Accum.</span>
+                      <span className="text-muted-foreground">Existing Investment</span>
                       <p className="font-semibold mt-0.5">{formatIndianNumber(e.current_accumulation ?? null)}</p>
                       <p className="text-[10px] text-muted-foreground">
                         {formatIndianNumber(e.stp_already_transferred ?? 0)} of {formatIndianNumber(e.stp_total_amount + (e.stp_top_up ?? 0))} transferred
@@ -1807,7 +1938,7 @@ function AssetClassTab({
                     </div>
                   ) : (e.transaction_type === "SIP" || e.transaction_type === "LUMP_SUM") && e.current_accumulation !== null && e.current_accumulation !== undefined ? (
                     <div>
-                      <span className="text-muted-foreground">Current Accum.</span>
+                      <span className="text-muted-foreground">Existing Investment</span>
                       <p className="font-semibold mt-0.5">{formatIndianNumber(e.current_accumulation)}</p>
                     </div>
                   ) : null}
@@ -1827,7 +1958,7 @@ function AssetClassTab({
                     <span className="text-muted-foreground">{(e.asset_class === "life_insurance" || e.asset_class === "health_insurance") ? "Suggested Premium" : "Suggested Amount"}</span>
                     <p className="font-semibold mt-0.5">
                       {e.action === "Sell" && e.suggested_investment_amount !== null && e.suggested_investment_amount !== undefined
-                        ? `(${formatIndianNumber(e.suggested_investment_amount)})`
+                        ? formatIndianNumber(e.suggested_investment_amount)
                         : formatIndianNumber(e.suggested_investment_amount)}
                     </p>
                   </div>
@@ -1887,21 +2018,27 @@ function AssetClassTab({
                     </div>
                   )}
                 </div>
-                {e.is_active && (
+                {e.is_active && !isSaved && (
                   <div className="border-t border-border pt-2">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm" className="w-full h-8 gap-1.5 text-xs" disabled={togglingId === e.id}>
-                          {togglingId === e.id
+                        <Button variant="outline" size="sm" className="w-full h-8 gap-1.5 text-xs" disabled={togglingId === e.id || removingId === e.id}>
+                          {(togglingId === e.id || removingId === e.id)
                             ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
                             : <MoreHorizontal className="h-3.5 w-3.5" />}
                           Actions
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleToggle(e)}>
-                          <ToggleLeft className="h-4 w-4 mr-2 text-muted-foreground" /> Deactivate
-                        </DropdownMenuItem>
+                        {(e.forked_from_entry_id || !portfolioId) ? (
+                          <DropdownMenuItem onClick={() => setConfirmDeactivate(e)}>
+                            <ToggleLeft className="h-4 w-4 mr-2 text-muted-foreground" /> Deactivate
+                          </DropdownMenuItem>
+                        ) : (
+                          <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setConfirmRemove(e)}>
+                            <Trash2 className="h-4 w-4 mr-2" /> Remove
+                          </DropdownMenuItem>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
@@ -1911,6 +2048,60 @@ function AssetClassTab({
           ))
         )}
       </div>
+
+      <AlertDialog open={!!confirmDeactivate} onOpenChange={(o) => !o && setConfirmDeactivate(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-amber-600">
+              <AlertTriangle className="h-5 w-5" /> Deactivate Product?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <span className="block">
+                You are about to deactivate <strong>{confirmDeactivate?.product_name}</strong>.
+              </span>
+              <span className="block font-semibold text-destructive">
+                This action is irreversible — the product cannot be reactivated once deactivated.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setConfirmDeactivate(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-amber-600 hover:bg-amber-700 text-white"
+              onClick={() => { if (confirmDeactivate) { handleToggle(confirmDeactivate); setConfirmDeactivate(null); } }}
+              disabled={!!togglingId}
+            >
+              {togglingId ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+              Yes, Deactivate
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!confirmRemove} onOpenChange={(o) => !o && setConfirmRemove(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <Trash2 className="h-5 w-5" /> Remove Product Entry
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Remove <strong>{confirmRemove?.product_name}</strong> from this draft?
+              This entry was added in the current version and has not been saved yet.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setConfirmRemove(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive hover:bg-destructive/90"
+              onClick={() => confirmRemove && handleRemove(confirmRemove)}
+              disabled={!!removingId}
+            >
+              {removingId ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {showAdd && (
         <AddEntryDialog
@@ -1924,8 +2115,10 @@ function AssetClassTab({
           totalPortfolioSize={totalPortfolioSize}
           latestAllocation={latestAllocation}
           existingEntries={entries}
+          portfolioId={portfolioId}
         />
       )}
+
     </div>
   );
 }
@@ -2148,7 +2341,6 @@ export function TargetPortfolioPage({
 
   const [latestAllocation, setLatestAllocation] = useState<any | null>(null);
   const [loadingAllocation, setLoadingAllocation] = useState(false);
-  const [totalPortfolioSize, setTotalPortfolioSize] = useState<string>("");
   const [isCalculatorCollapsed, setIsCalculatorCollapsed] = useState<boolean>(false);
   const [expandedBreakdown, setExpandedBreakdown] = useState<Record<string, boolean>>({
     Equities: false,
@@ -2156,10 +2348,108 @@ export function TargetPortfolioPage({
     Commodities: false,
   });
 
+  // ── Portfolio version state ──────────────────────────────────────
+  const [portfolios, setPortfolios] = useState<TargetPortfolio[]>([]);
+  const [currentPortfolio, setCurrentPortfolio] = useState<TargetPortfolio | null>(null);
+  const [loadingPortfolios, setLoadingPortfolios] = useState(false);
+  const [showCreatePortfolio, setShowCreatePortfolio] = useState(false);
+  const [newFundAmount, setNewFundAmount] = useState("");
+  const [creatingPortfolio, setCreatingPortfolio] = useState(false);
+  const [savingPortfolio, setSavingPortfolio] = useState(false);
+  const [forkingPortfolio, setForkingPortfolio] = useState(false);
+  const [showForkDialog, setShowForkDialog] = useState(false);
+  const [forkReason, setForkReason] = useState("");
+  const [showVersionHistory, setShowVersionHistory] = useState(false);
+  const [fundAmountInput, setFundAmountInput] = useState<string>("");
+  const fundAmountDebounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const loadPortfolios = useCallback(async () => {
+    if (!selectedMemberId) return;
+    setLoadingPortfolios(true);
+    try {
+      const res = await TargetPortfolioService.listPortfolios(clientId, selectedMemberId);
+      setPortfolios(res.portfolios);
+      // Auto-select: prefer current saved, then latest draft
+      const current = res.portfolios.find((p) => p.is_current && p.is_saved)
+        ?? res.portfolios.find((p) => !p.is_saved)
+        ?? res.portfolios[0]
+        ?? null;
+      setCurrentPortfolio(current);
+      setFundAmountInput(current ? String(current.fund_amount) : "");
+    } catch {
+      toast.error("Failed to load portfolios.");
+    } finally {
+      setLoadingPortfolios(false);
+    }
+  }, [clientId, selectedMemberId]);
+
+  useEffect(() => { loadPortfolios(); }, [loadPortfolios]);
+
+  const handleCreatePortfolio = async () => {
+    const amt = parseFloat(newFundAmount);
+    if (!amt || amt <= 0) return toast.error("Enter a valid fund amount.");
+    setCreatingPortfolio(true);
+    try {
+      await TargetPortfolioService.createPortfolio(clientId, selectedMemberId, amt);
+      setShowCreatePortfolio(false);
+      setNewFundAmount("");
+      await loadPortfolios();
+      toast.success("Portfolio draft created.");
+    } catch {
+      toast.error("Failed to create portfolio.");
+    } finally {
+      setCreatingPortfolio(false);
+    }
+  };
+
+  const handleSavePortfolio = async () => {
+    if (!currentPortfolio) return;
+    setSavingPortfolio(true);
+    try {
+      await TargetPortfolioService.savePortfolio(currentPortfolio.id);
+      await loadPortfolios();
+      toast.success("Portfolio saved and marked as current.");
+    } catch {
+      toast.error("Failed to save portfolio.");
+    } finally {
+      setSavingPortfolio(false);
+    }
+  };
+
+  const handleForkPortfolio = async () => {
+    if (!currentPortfolio || !forkReason.trim()) return;
+    setForkingPortfolio(true);
+    try {
+      await TargetPortfolioService.forkPortfolio(currentPortfolio.id, forkReason.trim());
+      setShowForkDialog(false);
+      setForkReason("");
+      await loadPortfolios();
+      toast.success("New draft version created. Edit and save when ready.");
+    } catch {
+      toast.error("Failed to create new version.");
+    } finally {
+      setForkingPortfolio(false);
+    }
+  };
+
+  const handleFundAmountChange = (val: string) => {
+    setFundAmountInput(val);
+    if (!currentPortfolio || currentPortfolio.is_saved) return;
+    if (fundAmountDebounceRef.current) clearTimeout(fundAmountDebounceRef.current);
+    fundAmountDebounceRef.current = setTimeout(async () => {
+      const amt = parseFloat(val);
+      if (!amt || amt <= 0) return;
+      try {
+        const updated = await TargetPortfolioService.updateFundAmount(currentPortfolio.id, amt);
+        setCurrentPortfolio(updated);
+      } catch {
+        toast.error("Failed to update fund amount.");
+      }
+    }, 800);
+  };
+
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const savedSize = localStorage.getItem(`target_portfolio_size_${clientId}_${selectedMemberId}`) || "";
-      setTotalPortfolioSize(savedSize);
       const savedCollapsed = localStorage.getItem(`target_portfolio_calculator_collapsed_${clientId}_${selectedMemberId}`) === "true";
       setIsCalculatorCollapsed(savedCollapsed);
     }
@@ -2250,8 +2540,182 @@ export function TargetPortfolioPage({
         </CardContent>
       </Card>
 
-      {/* Target Allocation Calculator Card */}
+      {/* Portfolio Version Banner */}
       {selectedMember && (
+        <Card className="border-primary/20">
+          <CardContent className="p-4">
+            {loadingPortfolios ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" /> Loading portfolios...
+              </div>
+            ) : !currentPortfolio ? (
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <p className="font-semibold text-sm">No portfolio yet for this member.</p>
+                  <p className="text-xs text-muted-foreground">Create a portfolio to start adding products.</p>
+                </div>
+                <Button size="sm" onClick={() => setShowCreatePortfolio(true)}>
+                  <PlusCircle className="h-4 w-4 mr-1.5" /> Create Portfolio
+                </Button>
+              </div>
+            ) : (
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    {currentPortfolio.is_saved ? (
+                      <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[10px] uppercase tracking-wider">
+                        <Save className="h-2.5 w-2.5 mr-1" /> Saved
+                      </Badge>
+                    ) : (
+                      <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-[10px] uppercase tracking-wider">
+                        Draft
+                      </Badge>
+                    )}
+                    <span className="text-sm font-semibold">Version {currentPortfolio.version_number}</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(currentPortfolio.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+                  </span>
+                  {portfolios.length > 1 && (
+                    <Button variant="ghost" size="sm" className="h-6 text-xs gap-1" onClick={() => setShowVersionHistory(true)}>
+                      <History className="h-3 w-3" /> {portfolios.length} versions
+                    </Button>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {!currentPortfolio.is_saved && (
+                    <Button size="sm" onClick={handleSavePortfolio} disabled={savingPortfolio} className="gap-1.5">
+                      {savingPortfolio ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                      Save Portfolio
+                    </Button>
+                  )}
+                  {currentPortfolio.is_saved && (
+                    <Button size="sm" variant="outline" onClick={() => { setForkReason(""); setShowForkDialog(true); }} className="gap-1.5">
+                      <GitFork className="h-3.5 w-3.5" />
+                      Edit (New Version)
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Create Portfolio Dialog */}
+      <Dialog open={showCreatePortfolio} onOpenChange={(o) => !o && setShowCreatePortfolio(false)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Create Portfolio</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <Label className="text-xs font-semibold uppercase text-muted-foreground">Asset Allocation Fund Amount (Rs.)</Label>
+            <div className="relative">
+              <Input
+                type="number"
+                min="0"
+                placeholder="e.g. 1000000"
+                value={newFundAmount}
+                onChange={(e) => setNewFundAmount(e.target.value)}
+                className="pr-16"
+                autoFocus
+              />
+              <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-xs text-muted-foreground font-semibold">INR</div>
+            </div>
+            {newFundAmount && parseFloat(newFundAmount) > 0 && (
+              <p className="text-xs text-green-600">{formatIndianNumber(parseFloat(newFundAmount))}</p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreatePortfolio(false)}>Cancel</Button>
+            <Button onClick={handleCreatePortfolio} disabled={creatingPortfolio}>
+              {creatingPortfolio ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+              Create Draft
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Fork / Edit Reason Dialog */}
+      <Dialog open={showForkDialog} onOpenChange={(o) => { if (!o) { setShowForkDialog(false); setForkReason(""); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <GitFork className="h-4 w-4" /> Create New Version
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-muted-foreground">
+              A new editable draft will be created from the current saved version. You can modify products and save it as the new current version.
+            </p>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold uppercase text-muted-foreground">
+                Reason for Edit <span className="text-destructive">*</span>
+              </Label>
+              <textarea
+                className="w-full min-h-[90px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
+                placeholder="e.g. Client's risk appetite changed, increasing equity allocation..."
+                value={forkReason}
+                onChange={(e) => setForkReason(e.target.value)}
+                maxLength={500}
+              />
+              <p className="text-xs text-muted-foreground text-right">{forkReason.length}/500</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setShowForkDialog(false); setForkReason(""); }}>Cancel</Button>
+            <Button onClick={handleForkPortfolio} disabled={!forkReason.trim() || forkingPortfolio}>
+              {forkingPortfolio ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+              Create Draft
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Version History Dialog */}
+      <Dialog open={showVersionHistory} onOpenChange={(o) => !o && setShowVersionHistory(false)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><History className="h-4 w-4" /> Portfolio Versions</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 max-h-80 overflow-y-auto">
+            {portfolios.map((p) => (
+              <div
+                key={p.id}
+                className={cn(
+                  "flex items-center justify-between p-3 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors",
+                  currentPortfolio?.id === p.id && "border-primary bg-primary/5"
+                )}
+                onClick={() => { setCurrentPortfolio(p); setFundAmountInput(String(p.fund_amount)); setShowVersionHistory(false); }}
+              >
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-sm">Version {p.version_number}</span>
+                    {p.is_saved ? (
+                      <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[9px]">Saved</Badge>
+                    ) : (
+                      <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-[9px]">Draft</Badge>
+                    )}
+                    {p.is_current && <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/20 text-[9px]">Current</Badge>}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Fund: {formatIndianNumber(p.fund_amount)} &middot; {new Date(p.created_at).toLocaleDateString("en-IN")}
+                  </p>
+                  {p.notes && (
+                    <p className="text-xs text-muted-foreground/70 italic mt-0.5 line-clamp-1">"{p.notes}"</p>
+                  )}
+                </div>
+                {p.product_count !== undefined && (
+                  <span className="text-xs text-muted-foreground">{p.product_count} products</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Target Allocation Calculator Card */}
+      {selectedMember && currentPortfolio && (
         <Card className="shadow-md border-primary/30 bg-gradient-to-r from-primary/[0.01] to-primary/[0.03] dark:from-primary/[0.03] dark:to-primary/[0.06] transition-all duration-300 hover:border-primary/50 relative overflow-hidden">
           <CardHeader 
             className="flex flex-row items-center justify-between space-y-0 pb-3 cursor-pointer select-none hover:bg-muted/5 transition-colors"
@@ -2289,7 +2753,7 @@ export function TargetPortfolioPage({
             <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between pb-2 border-b border-border">
               <div className="space-y-1.5 flex-1 max-w-sm">
                 <Label htmlFor="total_portfolio_size" className="text-xs font-semibold uppercase text-muted-foreground">
-                  Total Portfolio Size (Rs.)
+                  Asset Allocation Fund Amount (Rs.)
                 </Label>
                 <div className="relative">
                   <Input
@@ -2297,26 +2761,26 @@ export function TargetPortfolioPage({
                     type="number"
                     min="0"
                     placeholder="e.g. 1000000"
-                    value={totalPortfolioSize}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setTotalPortfolioSize(val);
-                      localStorage.setItem(`target_portfolio_size_${clientId}_${selectedMemberId}`, val);
-                    }}
+                    value={fundAmountInput}
+                    onChange={(e) => handleFundAmountChange(e.target.value)}
+                    disabled={!currentPortfolio || currentPortfolio.is_saved}
                     className="pr-16"
                   />
                   <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-xs text-muted-foreground font-semibold">
                     INR
                   </div>
                 </div>
-                {totalPortfolioSize && parseFloat(totalPortfolioSize) > 0 && (
+                {fundAmountInput && parseFloat(fundAmountInput) > 0 && (
                   <p className="text-xs text-green-600 font-medium mt-1">
-                    Value: {formatIndianNumber(parseFloat(totalPortfolioSize))}
+                    Value: {formatIndianNumber(parseFloat(fundAmountInput))}
                   </p>
+                )}
+                {currentPortfolio?.is_saved && (
+                  <p className="text-xs text-amber-600 mt-1">Saved portfolio — fork to edit fund amount.</p>
                 )}
               </div>
 
-              {totalPortfolioSize && parseFloat(totalPortfolioSize) > 0 && latestAllocation && (
+              {fundAmountInput && parseFloat(fundAmountInput) > 0 && latestAllocation && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -2325,7 +2789,7 @@ export function TargetPortfolioPage({
                       await TargetPortfolioService.downloadAllocationTargetPDF(
                         clientId,
                         selectedMember.id,
-                        parseFloat(totalPortfolioSize),
+                        parseFloat(fundAmountInput),
                         clientName,
                         clientCode,
                         selectedMember.full_name,
@@ -2359,9 +2823,9 @@ export function TargetPortfolioPage({
                   </p>
                 </div>
               </div>
-            ) : !totalPortfolioSize || parseFloat(totalPortfolioSize) <= 0 ? (
+            ) : !fundAmountInput || parseFloat(fundAmountInput) <= 0 ? (
               <div className="py-6 text-center text-sm text-muted-foreground border border-dashed rounded-md">
-                Enter a Total Portfolio Size above to calculate investment target amounts for each asset class.
+                Enter an Asset Allocation Fund Amount above to calculate investment target amounts for each asset class.
               </div>
             ) : (
               <div className="border rounded-md overflow-hidden">
@@ -2406,7 +2870,7 @@ export function TargetPortfolioPage({
                       }
                     ].map((cat) => {
                       const catPct = parseFloat(latestAllocation[cat.pctKey]) || 0;
-                      const catAmt = (catPct / 100) * parseFloat(totalPortfolioSize);
+                      const catAmt = (catPct / 100) * parseFloat(fundAmountInput);
 
                       return (
                         <React.Fragment key={cat.label}>
@@ -2452,7 +2916,7 @@ export function TargetPortfolioPage({
       )}
 
       {/* Tabs */}
-      {selectedMember ? (
+      {selectedMember && currentPortfolio ? (
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as AssetClass)}>
           <TabsList className="w-full sm:w-auto flex flex-wrap h-auto gap-1 p-1">
             {TABS.map((t) => (
@@ -2465,12 +2929,14 @@ export function TargetPortfolioPage({
           {TABS.map((t) => (
             <TabsContent key={t.key} value={t.key} className="mt-4">
               <AssetClassTab
-                key={`${selectedMember.id}-${t.key}`}
+                key={`${selectedMember.id}-${t.key}-${currentPortfolio?.id ?? "none"}`}
                 clientId={clientId}
                 member={selectedMember}
                 assetClass={t.key}
-                totalPortfolioSize={totalPortfolioSize ? parseFloat(totalPortfolioSize) : 0}
+                totalPortfolioSize={fundAmountInput ? parseFloat(fundAmountInput) : 0}
                 latestAllocation={latestAllocation}
+                portfolioId={currentPortfolio?.id}
+                isSaved={currentPortfolio?.is_saved}
               />
             </TabsContent>
           ))}
