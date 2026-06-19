@@ -93,11 +93,15 @@ const NAV_ITEMS: NavItem[] = [
     icon: ShieldCheck,
   },
   {
+    label: "Investor Master",
+    href: "/investor-master",
+    icon: Users,
+  },
+  {
     label: "Portfolio",
     href: "/portfolio",
     icon: TrendingUp,
     children: [
-      { label: "Investor Master", href: "/portfolio/investor-master" },
       { label: "Target Portfolio", href: "/portfolio/target-portfolio" },
     ],
   },
@@ -105,6 +109,10 @@ const NAV_ITEMS: NavItem[] = [
     label: "Investment Advice",
     href: "/investment-advice",
     icon: FileText,
+    children: [
+      { label: "Target Investment Advice", href: "/investment-advice/target" },
+      { label: "Regular Investment Advice", href: "/investment-advice/regular" },
+    ],
   },
   {
     label: "Team",

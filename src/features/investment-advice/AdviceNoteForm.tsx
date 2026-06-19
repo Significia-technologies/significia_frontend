@@ -346,25 +346,22 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
         const allEntries: TargetPortfolioEntry[] = [];
         const assetClasses: AssetClass[] = ["shares", "mf", "etf", "life_insurance", "health_insurance"];
         
-        const promises = members.flatMap(member =>
-          assetClasses.map(async (ac) => {
-            try {
-              const res = await TargetPortfolioService.listEntries(client.id!, member.id, ac);
-              return (res.entries || []).map(entry => ({
-                ...entry,
-                member_name: member.full_name
-              }));
-            } catch (e) {
-              console.error(`Error fetching target portfolio for member ${member.id} and asset class ${ac}`, e);
-              return [];
-            }
-          })
-        );
-        
-        const results = await Promise.all(promises);
-        results.forEach(entries => {
-          allEntries.push(...entries);
-        });
+        for (const member of members) {
+          const results = await Promise.all(
+            assetClasses.map(async (ac) => {
+              try {
+                const res = await TargetPortfolioService.listEntries(client.id!, member.id, ac);
+                return (res.entries || []).map(entry => ({
+                  ...entry,
+                  member_name: member.full_name
+                }));
+              } catch {
+                return [];
+              }
+            })
+          );
+          results.forEach(entries => allEntries.push(...entries));
+        }
         
         const activeEntries = allEntries.filter(entry => entry.is_active !== false);
         setTargetPortfolioEntries(activeEntries);
