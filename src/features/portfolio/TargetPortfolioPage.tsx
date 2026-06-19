@@ -2142,7 +2142,7 @@ const PRODUCT_CATEGORIES = [
 
 function ExportReportDialog({
   open, onClose,
-  clientId, memberId, clientName, clientCode,
+  clientId, memberId, clientName, clientCode, portfolioId,
 }: {
   open: boolean;
   onClose: () => void;
@@ -2150,6 +2150,7 @@ function ExportReportDialog({
   memberId: string;
   clientName: string;
   clientCode: string;
+  portfolioId?: string;
 }) {
   const [exportBasis, setExportBasis] = useState<"objective" | "product" | "investor">("objective");
   const [selectedObjective, setSelectedObjective] = useState("");
@@ -2175,6 +2176,7 @@ function ExportReportDialog({
           exportBasis,
           objective: exportBasis === "objective" ? selectedObjective : undefined,
           assetClasses: exportBasis === "product" ? selectedAssetClasses : undefined,
+          portfolioId,
         }
       );
       onClose();
@@ -2338,6 +2340,7 @@ export function TargetPortfolioPage({
   );
   const [activeTab, setActiveTab] = useState<AssetClass>("shares");
   const [showExport, setShowExport] = useState(false);
+  const [exportPortfolioId, setExportPortfolioId] = useState<string | undefined>(undefined);
 
   const selectedMember = activeMembers.find((m) => m.id === selectedMemberId) ?? null;
 
@@ -2535,11 +2538,12 @@ export function TargetPortfolioPage({
       {showExport && selectedMember && (
         <ExportReportDialog
           open={showExport}
-          onClose={() => setShowExport(false)}
+          onClose={() => { setShowExport(false); setExportPortfolioId(undefined); }}
           clientId={clientId}
           memberId={selectedMember.id}
           clientName={clientName}
           clientCode={clientCode}
+          portfolioId={exportPortfolioId}
         />
       )}
 
@@ -2706,9 +2710,19 @@ export function TargetPortfolioPage({
                     <p className="text-xs text-muted-foreground/70 italic mt-0.5 line-clamp-1">"{p.notes}"</p>
                   )}
                 </div>
-                {p.product_count !== undefined && (
-                  <span className="text-xs text-muted-foreground">{p.product_count} products</span>
-                )}
+                <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                  {p.product_count !== undefined && (
+                    <span className="text-xs text-muted-foreground">{p.product_count} products</span>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0"
+                    onClick={() => { setExportPortfolioId(p.id); setShowExport(true); setShowVersionHistory(false); }}
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
               </div>
             ))}
           </div>

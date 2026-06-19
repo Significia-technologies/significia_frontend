@@ -258,6 +258,7 @@ export class TargetPortfolioService {
       exportBasis: "objective" | "product" | "investor";
       objective?: string;
       assetClasses?: string[];
+      portfolioId?: string;
     }
   ): Promise<void> {
     const params: any = {
@@ -269,6 +270,9 @@ export class TargetPortfolioService {
       params.objective = options.objective;
     } else if (options.exportBasis === "product") {
       params.asset_classes = options.assetClasses?.join(",");
+    }
+    if (options.portfolioId) {
+      params.portfolio_id = options.portfolioId;
     }
 
     const endpoint = options.exportBasis === "investor"
