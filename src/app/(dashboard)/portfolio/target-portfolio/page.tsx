@@ -14,7 +14,7 @@ import { MasterDataService, Client } from "@/core/services/master.service";
 import { TargetPortfolioService } from "@/core/services/target-portfolio.service";
 import { toast } from "sonner";
 
-interface AUARow { client_id: string; total_aua: number; member_count: number; }
+interface AUARow { client_id: string; total_aua: number; member_count: number; latest_version: number; }
 
 export default function TargetPortfolioRoute() {
   const router = useRouter();
@@ -81,6 +81,7 @@ export default function TargetPortfolioRoute() {
                 <TableHead className="text-[10px] font-black uppercase tracking-widest text-primary/60">Client</TableHead>
                 <TableHead className="text-[10px] font-black uppercase tracking-widest text-primary/60">Contact</TableHead>
                 <TableHead className="text-[10px] font-black uppercase tracking-widest text-primary/60 text-right">Members</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest text-primary/60 text-right">Version</TableHead>
                 <TableHead className="text-[10px] font-black uppercase tracking-widest text-primary/60 text-right">Total AUA</TableHead>
                 <TableHead className="text-[10px] font-black uppercase tracking-widest text-primary/60 text-right">Action</TableHead>
               </TableRow>
@@ -89,12 +90,12 @@ export default function TargetPortfolioRoute() {
               {loadingClients ? (
                 Array.from({ length: 6 }).map((_, i) => (
                   <TableRow key={i} className="animate-pulse border-primary/5">
-                    <TableCell colSpan={5} className="h-14 bg-muted/10" />
+                    <TableCell colSpan={6} className="h-14 bg-muted/10" />
                   </TableRow>
                 ))
               ) : filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-40 text-center">
+                  <TableCell colSpan={6} className="h-40 text-center">
                     <div className="flex flex-col items-center gap-2 text-muted-foreground">
                       <Users className="h-8 w-8 opacity-30" />
                       <p className="text-xs font-medium uppercase tracking-widest">No clients found</p>
@@ -134,6 +135,17 @@ export default function TargetPortfolioRoute() {
                         ) : aua ? (
                           <Badge className="bg-blue-500/10 text-blue-500 border-blue-500/20 text-[10px] font-black ml-auto">
                             {aua.member_count}
+                          </Badge>
+                        ) : (
+                          <span className="text-xs text-muted-foreground/40">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {loadingAua ? (
+                          <Loader2 className="h-3 w-3 animate-spin ml-auto text-muted-foreground/40" />
+                        ) : aua ? (
+                          <Badge className="bg-primary/10 text-primary border-primary/20 text-[10px] font-black ml-auto">
+                            v{aua.latest_version}
                           </Badge>
                         ) : (
                           <span className="text-xs text-muted-foreground/40">—</span>

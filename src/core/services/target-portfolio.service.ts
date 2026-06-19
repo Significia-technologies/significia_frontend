@@ -109,7 +109,7 @@ export class TargetPortfolioService {
 
   static async getAUASummary(
     clientIds?: string[]
-  ): Promise<{ summary: { client_id: string; total_aua: number; member_count: number }[] }> {
+  ): Promise<{ summary: { client_id: string; total_aua: number; member_count: number; latest_version: number }[] }> {
     const params: any = {};
     if (clientIds?.length) params.client_ids = clientIds.join(",");
     const res = await httpClient.get(
