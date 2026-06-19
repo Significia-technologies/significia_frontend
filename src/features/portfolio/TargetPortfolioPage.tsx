@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useRouter } from "next/navigation";
 import {
   Plus, Loader2, MoreHorizontal, ToggleLeft, ToggleRight,
   AlertTriangle, TrendingUp, Check, ChevronsUpDown, Download,
   ChevronDown, ChevronUp, ChevronRight, Calculator,
-  Save, GitFork, History, PlusCircle, Trash2,
+  Save, GitFork, History, PlusCircle, Trash2, ArrowLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -2330,6 +2331,7 @@ interface TargetPortfolioPageProps {
 export function TargetPortfolioPage({
   clientId, clientCode, clientName, members,
 }: TargetPortfolioPageProps) {
+  const router = useRouter();
   const activeMembers = members.filter((m) => m.is_active);
   const [selectedMemberId, setSelectedMemberId] = useState<string>(
     activeMembers[0]?.id ?? ""
@@ -2481,21 +2483,53 @@ export function TargetPortfolioPage({
   }, [clientId]);
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-xl font-semibold flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            Target Portfolio
-          </h2>
-          <p className="text-sm text-muted-foreground">{clientName} &mdash; {clientCode}</p>
+    <div className="space-y-3">
+      {/* Compact Header */}
+      <div className="space-y-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => router.push("/portfolio/target-portfolio")}
+          className="gap-1.5 text-xs uppercase font-bold tracking-widest -ml-2 h-7"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" /> Back to client list
+        </Button>
+
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-xl font-semibold flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Target Portfolio
+            </h2>
+            <p className="text-sm text-muted-foreground">{clientName} &mdash; {clientCode}</p>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <Select value={selectedMemberId} onValueChange={setSelectedMemberId}>
+              <SelectTrigger className="h-8 text-sm w-auto min-w-[180px]">
+                <SelectValue placeholder="Select investor" />
+              </SelectTrigger>
+              <SelectContent>
+                {activeMembers.map((m) => (
+                  <SelectItem key={m.id} value={m.id}>
+                    <span className="font-mono font-semibold">{m.investor_code}</span>
+                    <span className="ml-2 text-muted-foreground">— {m.relation}</span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {selectedMember && (
+              <span className="text-sm font-semibold">{selectedMember.full_name}</span>
+            )}
+
+            {selectedMember && (
+              <Button variant="outline" size="sm" onClick={() => setShowExport(true)}>
+                <Download className="h-4 w-4 mr-2" /> Export Report
+              </Button>
+            )}
+          </div>
         </div>
-        {selectedMember && (
-          <Button variant="outline" size="sm" onClick={() => setShowExport(true)}>
-            <Download className="h-4 w-4 mr-2" /> Export Report
-          </Button>
-        )}
       </div>
 
       {showExport && selectedMember && (
@@ -2509,97 +2543,64 @@ export function TargetPortfolioPage({
         />
       )}
 
-      {/* Investor Selector */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row gap-4 sm:items-end">
-            <div className="space-y-1.5 flex-1 max-w-xs">
-              <Label className="text-xs text-muted-foreground uppercase tracking-wide">Investor Sub-code</Label>
-              <Select value={selectedMemberId} onValueChange={setSelectedMemberId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select investor" />
-                </SelectTrigger>
-                <SelectContent>
-                  {activeMembers.map((m) => (
-                    <SelectItem key={m.id} value={m.id}>
-                      <span className="font-mono font-semibold">{m.investor_code}</span>
-                      <span className="ml-2 text-muted-foreground">— {m.relation}</span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {selectedMember && (
-              <div className="space-y-1">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide">Investor Name</p>
-                <p className="font-semibold">{selectedMember.full_name}</p>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Portfolio Version Banner */}
       {selectedMember && (
-        <Card className="border-primary/20">
-          <CardContent className="p-4">
-            {loadingPortfolios ? (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" /> Loading portfolios...
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-3 py-2 rounded-lg border border-primary/20 bg-primary/[0.02]">
+          {loadingPortfolios ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> Loading portfolios...
+            </div>
+          ) : !currentPortfolio ? (
+            <>
+              <div>
+                <p className="font-semibold text-sm">No portfolio yet for this member.</p>
+                <p className="text-xs text-muted-foreground">Create a portfolio to start adding products.</p>
               </div>
-            ) : !currentPortfolio ? (
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <p className="font-semibold text-sm">No portfolio yet for this member.</p>
-                  <p className="text-xs text-muted-foreground">Create a portfolio to start adding products.</p>
-                </div>
-                <Button size="sm" onClick={() => setShowCreatePortfolio(true)}>
-                  <PlusCircle className="h-4 w-4 mr-1.5" /> Create Portfolio
-                </Button>
-              </div>
-            ) : (
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-3 flex-wrap">
-                  <div className="flex items-center gap-2">
-                    {currentPortfolio.is_saved ? (
-                      <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[10px] uppercase tracking-wider">
-                        <Save className="h-2.5 w-2.5 mr-1" /> Saved
-                      </Badge>
-                    ) : (
-                      <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-[10px] uppercase tracking-wider">
-                        Draft
-                      </Badge>
-                    )}
-                    <span className="text-sm font-semibold">Version {currentPortfolio.version_number}</span>
-                  </div>
-                  <span className="text-xs text-muted-foreground">
-                    {new Date(currentPortfolio.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
-                  </span>
-                  {portfolios.length > 1 && (
-                    <Button variant="ghost" size="sm" className="h-6 text-xs gap-1" onClick={() => setShowVersionHistory(true)}>
-                      <History className="h-3 w-3" /> {portfolios.length} versions
-                    </Button>
-                  )}
-                </div>
+              <Button size="sm" onClick={() => setShowCreatePortfolio(true)}>
+                <PlusCircle className="h-4 w-4 mr-1.5" /> Create Portfolio
+              </Button>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center gap-3 flex-wrap">
                 <div className="flex items-center gap-2">
-                  {!currentPortfolio.is_saved && (
-                    <Button size="sm" onClick={handleSavePortfolio} disabled={savingPortfolio} className="gap-1.5">
-                      {savingPortfolio ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-                      Save Portfolio
-                    </Button>
+                  {currentPortfolio.is_saved ? (
+                    <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[10px] uppercase tracking-wider">
+                      <Save className="h-2.5 w-2.5 mr-1" /> Saved
+                    </Badge>
+                  ) : (
+                    <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-[10px] uppercase tracking-wider">
+                      Draft
+                    </Badge>
                   )}
-                  {currentPortfolio.is_saved && (
-                    <Button size="sm" variant="outline" onClick={() => { setForkReason(""); setShowForkDialog(true); }} className="gap-1.5">
-                      <GitFork className="h-3.5 w-3.5" />
-                      Edit (New Version)
-                    </Button>
-                  )}
+                  <span className="text-sm font-semibold">Version {currentPortfolio.version_number}</span>
                 </div>
+                <span className="text-xs text-muted-foreground">
+                  {new Date(currentPortfolio.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+                </span>
+                {portfolios.length > 1 && (
+                  <Button variant="ghost" size="sm" className="h-6 text-xs gap-1" onClick={() => setShowVersionHistory(true)}>
+                    <History className="h-3 w-3" /> {portfolios.length} versions
+                  </Button>
+                )}
               </div>
-            )}
-          </CardContent>
-        </Card>
+              <div className="flex items-center gap-2">
+                {!currentPortfolio.is_saved && (
+                  <Button size="sm" onClick={handleSavePortfolio} disabled={savingPortfolio} className="gap-1.5">
+                    {savingPortfolio ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                    Save Portfolio
+                  </Button>
+                )}
+                {currentPortfolio.is_saved && (
+                  <Button size="sm" variant="outline" onClick={() => { setForkReason(""); setShowForkDialog(true); }} className="gap-1.5">
+                    <GitFork className="h-3.5 w-3.5" />
+                    Edit (New Version)
+                  </Button>
+                )}
+              </div>
+            </>
+          )}
+        </div>
       )}
 
       {/* Create Portfolio Dialog */}

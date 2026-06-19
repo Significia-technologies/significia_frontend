@@ -54,15 +54,7 @@ export default function TargetPortfolioClientPage() {
   }
 
   return (
-    <div className="p-6 space-y-4">
-      <Button
-        variant="ghost"
-        onClick={() => router.push("/portfolio/target-portfolio")}
-        className="gap-2 text-xs uppercase font-bold tracking-widest"
-      >
-        <ArrowLeft className="w-4 h-4" /> Back to client list
-      </Button>
-
+    <div className="p-4">
       <TargetPortfolioPage
         clientId={client.id}
         clientCode={client.client_code}
