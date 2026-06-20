@@ -2568,7 +2568,7 @@ export function TargetPortfolioPage({
             )}
 
             {selectedMember && (
-              <Button variant="outline" size="sm" onClick={() => setShowExport(true)}>
+              <Button variant="outline" size="sm" onClick={() => { setExportPortfolioId(currentPortfolio?.id); setShowExport(true); }}>
                 <Download className="h-4 w-4 mr-2" /> Export Report
               </Button>
             )}
