@@ -21,7 +21,7 @@ export interface TargetPortfolioEntry {
   frequency?: string | null;
   no_of_installments?: number | null;
   current_accumulation?: number | null;
-  action?: "Buy" | "Sell" | null;
+  action?: "Buy" | "Sell" | "Hold" | null;
   stp_to_product_id?: string | null;
   stp_to_product_name?: string | null;
   stp_from_type?: string | null;
@@ -66,7 +66,7 @@ export interface TargetPortfolioCreate {
   frequency?: string;
   no_of_installments?: number;
   current_accumulation?: number;
-  action?: "Buy" | "Sell";
+  action?: "Buy" | "Sell" | "Hold";
   stp_to_product_id?: string;
   stp_from_type?: string;
   stp_to_fund_type?: string;

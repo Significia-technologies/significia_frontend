@@ -301,7 +301,7 @@ function AddEntryDialog({
   const [frequency, setFrequency] = useState("");
   const [noOfInstallments, setNoOfInstallments] = useState("");
   const [currentAccumulation, setCurrentAccumulation] = useState("");
-  const [action, setAction] = useState<"Buy" | "Sell">("Buy");
+  const [action, setAction] = useState<"Buy" | "Sell" | "Hold">("Buy");
   const [toFundId, setToFundId] = useState("");
   const [toFundType, setToFundType] = useState("");
   const [sumAssured, setSumAssured] = useState("");
@@ -397,6 +397,7 @@ function AddEntryDialog({
 
   const isSwitch = transactionType === "SWITCH_IN" || transactionType === "SWITCH_OUT";
   const isTransfer = transactionType === "TRANSFER_IN" || transactionType === "TRANSFER_OUT";
+  const isHold = action === "Hold";
 
   const selectedSubAsset = getSelectedSubAssetDetails();
   const enteredAmount = parseFloat(suggestedAmount) || 0;
@@ -456,14 +457,23 @@ function AddEntryDialog({
   const handleCurrentAccumulationChange = (val: string) => {
     setCurrentAccumulation(val);
     const curAcc = parseFloat(val) || 0;
-    const amt = parseFloat(suggestedAmount) || 0;
-    const totalAmt = action === "Sell" ? (curAcc - amt) : (amt + curAcc);
     if (selectedSubAsset && selectedSubAsset.targetAmt > 0) {
-      if (val || suggestedAmount) {
-        const computedPct = (totalAmt / selectedSubAsset.targetAmt) * 100;
-        setPercentage((Math.round(computedPct * 100) / 100).toString());
+      if (transactionType === "HOLD") {
+        // For HOLD, existing investment IS the total — percentage derived directly from it
+        if (val) {
+          setPercentage((Math.round((curAcc / selectedSubAsset.targetAmt) * 10000) / 100).toString());
+        } else {
+          setPercentage("");
+        }
       } else {
-        setPercentage("");
+        const amt = parseFloat(suggestedAmount) || 0;
+        const totalAmt = action === "Sell" ? (curAcc - amt) : (amt + curAcc);
+        if (val || suggestedAmount) {
+          const computedPct = (totalAmt / selectedSubAsset.targetAmt) * 100;
+          setPercentage((Math.round(computedPct * 100) / 100).toString());
+        } else {
+          setPercentage("");
+        }
       }
     }
   };
@@ -472,7 +482,11 @@ function AddEntryDialog({
     setPercentage(val);
     const pctVal = parseFloat(val);
     if (!isNaN(pctVal) && pctVal >= 0 && selectedSubAsset && selectedSubAsset.targetAmt > 0) {
-      if (transactionType === "STP") {
+      if (transactionType === "HOLD") {
+        // For HOLD, percentage drives existing investment amount
+        const computedAmt = (pctVal / 100) * selectedSubAsset.targetAmt;
+        setCurrentAccumulation(Math.round(computedAmt).toString());
+      } else if (transactionType === "STP") {
         const computedTotal = (pctVal / 100) * selectedSubAsset.targetAmt;
         const topUp = parseFloat(stpTopUp) || 0;
         setStpTotalAmount((Math.round(Math.max(0, computedTotal - topUp) * 100) / 100).toString());
@@ -488,7 +502,9 @@ function AddEntryDialog({
         }
       }
     } else if (!val) {
-      if (transactionType === "STP") {
+      if (transactionType === "HOLD") {
+        setCurrentAccumulation("");
+      } else if (transactionType === "STP") {
         setStpTotalAmount("");
       } else {
         setSuggestedAmount("");
@@ -496,8 +512,12 @@ function AddEntryDialog({
     }
   };
 
-  const handleActionChange = (newAction: "Buy" | "Sell") => {
+  const handleActionChange = (newAction: "Buy" | "Sell" | "Hold") => {
     setAction(newAction);
+    if (newAction === "Hold") {
+      setSuggestedAmount("");
+      return;
+    }
     const curAcc = parseFloat(currentAccumulation) || 0;
     if (percentage && selectedSubAsset && selectedSubAsset.targetAmt > 0) {
       const pctVal = parseFloat(percentage);
@@ -517,7 +537,14 @@ function AddEntryDialog({
   // Recalculate amount if sub-asset category changes and percentage is already filled
   useEffect(() => {
     if (selectedSubAsset && selectedSubAsset.targetAmt > 0) {
-      if (transactionType === "STP") {
+      if (transactionType === "HOLD") {
+        // For HOLD, currentAccumulation is the primary input
+        const curAcc = parseFloat(currentAccumulation) || 0;
+        if (curAcc > 0) {
+          const computedPct = (curAcc / selectedSubAsset.targetAmt) * 100;
+          setPercentage((Math.round(computedPct * 100) / 100).toString());
+        }
+      } else if (transactionType === "STP") {
         // stpTotalAmount is the primary input — recompute percentage from it, not the other way
         const total = (parseFloat(stpTotalAmount) || 0) + (parseFloat(stpTopUp) || 0);
         if (total > 0) {
@@ -685,11 +712,14 @@ function AddEntryDialog({
     }
 
     const amt = parseFloat(suggestedAmount);
-    if (!suggestedAmount || isNaN(amt) || amt <= 0) {
+    if (!isHold && (!suggestedAmount || isNaN(amt) || amt <= 0)) {
       return toast.error("Enter a valid suggested investment amount.");
     }
 
     const curAcc = parseFloat(currentAccumulation) || 0;
+    if (isHold && curAcc <= 0) {
+      return toast.error("Enter the existing investment amount for Hold.");
+    }
     if (transactionType === "LUMP_SUM" && action === "Sell" && amt > curAcc) {
       return toast.error("Suggested amount to sell cannot exceed current accumulation.");
     }
@@ -767,7 +797,7 @@ function AddEntryDialog({
       asset_class: assetClass,
       product_id: productId,
       percentage: isTransfer ? 0 : pct,
-      suggested_investment_amount: amt,
+      suggested_investment_amount: isHold ? undefined : amt,
       product_subtype: productSubtype || undefined,
       nature: nature || undefined,
       objective: assetClass === "health_insurance"
@@ -786,7 +816,7 @@ function AddEntryDialog({
       current_sum_insured: assetClass === "health_insurance" ? parseFloat(currentSumInsured) : undefined,
       current_accumulation: transactionType === "STP"
         ? (stpCurrentAccumulation ?? undefined)
-        : (transactionType === "SIP" || transactionType === "LUMP_SUM") && currentAccumulation
+        : (transactionType === "SIP" || transactionType === "LUMP_SUM" || isHold) && currentAccumulation
         ? parseFloat(currentAccumulation)
         : undefined,
       action: transactionType === "LUMP_SUM" ? action : (transactionType === "SIP" ? "Buy" : undefined),
@@ -1259,7 +1289,7 @@ function AddEntryDialog({
             </div>
           )}
 
-          {/* LUMP_SUM Fields: Existing Investment & Action (Buy/Sell) */}
+          {/* LUMP_SUM Fields: Existing Investment & Action (Buy/Sell/Hold) */}
           {transactionType === "LUMP_SUM" && (
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
@@ -1275,13 +1305,14 @@ function AddEntryDialog({
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Action <span className="text-destructive">*</span></Label>
-                <Select value={action} onValueChange={(val: "Buy" | "Sell") => handleActionChange(val)}>
+                <Select value={action} onValueChange={(val) => handleActionChange(val as "Buy" | "Sell" | "Hold")}>
                   <SelectTrigger className="h-8 text-xs">
                     <SelectValue placeholder="Select Action" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Buy">Buy</SelectItem>
                     <SelectItem value="Sell">Sell</SelectItem>
+                    <SelectItem value="Hold">Hold</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1289,41 +1320,43 @@ function AddEntryDialog({
           )}
 
           {/* Suggested Premium/Amt + % Investment in 2-col grid */}
-          <div className={cn("grid gap-2", isTransfer ? "grid-cols-1" : "grid-cols-2")}>
-            <div className="space-y-1">
-              <Label className={cn("text-xs", hasAmtError && "text-destructive")}>
-                {(isSwitch || isTransfer) ? "Amount" : (assetClass === "life_insurance" || assetClass === "health_insurance") ? "Suggested Premium" : "Suggested Amt"}
-                {transactionType !== "STP" && <span className="text-destructive"> *</span>}
-              </Label>
-              <Input
-                type={transactionType === "STP" ? "text" : "number"}
-                min="0"
-                readOnly={transactionType === "STP"}
-                value={transactionType === "STP"
-                  ? (suggestedAmount ? formatIndianNumber(parseFloat(suggestedAmount)) : "—")
-                  : suggestedAmount}
-                onChange={(e) => handleAmountChange(e.target.value)}
-                placeholder="e.g. 50000"
-                className={cn(
-                  "h-8 text-xs",
-                  transactionType === "STP" && "bg-muted text-muted-foreground",
-                  hasAmtError && "border-destructive/60 focus-visible:ring-destructive/80 text-destructive bg-destructive/5"
+          <div className={cn("grid gap-2", (isTransfer || isHold) ? "grid-cols-1" : "grid-cols-2")}>
+            {!isHold && (
+              <div className="space-y-1">
+                <Label className={cn("text-xs", hasAmtError && "text-destructive")}>
+                  {(isSwitch || isTransfer) ? "Amount" : (assetClass === "life_insurance" || assetClass === "health_insurance") ? "Suggested Premium" : "Suggested Amt"}
+                  {transactionType !== "STP" && <span className="text-destructive"> *</span>}
+                </Label>
+                <Input
+                  type={transactionType === "STP" ? "text" : "number"}
+                  min="0"
+                  readOnly={transactionType === "STP"}
+                  value={transactionType === "STP"
+                    ? (suggestedAmount ? formatIndianNumber(parseFloat(suggestedAmount)) : "—")
+                    : suggestedAmount}
+                  onChange={(e) => handleAmountChange(e.target.value)}
+                  placeholder="e.g. 50000"
+                  className={cn(
+                    "h-8 text-xs",
+                    transactionType === "STP" && "bg-muted text-muted-foreground",
+                    hasAmtError && "border-destructive/60 focus-visible:ring-destructive/80 text-destructive bg-destructive/5"
+                  )}
+                />
+                {transactionType === "STP" ? (
+                  <span className="text-[10px] text-muted-foreground">Existing Investment ÷ Installments</span>
+                ) : selectedSubAsset && (
+                  <span className={cn(
+                    "text-[10px] font-medium flex items-center gap-1",
+                    hasAmtError ? "text-destructive" : "text-muted-foreground"
+                  )}>
+                    {hasAmtError && <AlertTriangle className="h-2.5 w-2.5 shrink-0" />}
+                    {hasAmtError
+                      ? `Exceeded by ${formatIndianNumber(Math.abs(currentRemainingAmt))}`
+                      : `${formatIndianNumber(currentRemainingAmt)} remaining`}
+                  </span>
                 )}
-              />
-              {transactionType === "STP" ? (
-                <span className="text-[10px] text-muted-foreground">Existing Investment ÷ Installments</span>
-              ) : selectedSubAsset && (
-                <span className={cn(
-                  "text-[10px] font-medium flex items-center gap-1",
-                  hasAmtError ? "text-destructive" : "text-muted-foreground"
-                )}>
-                  {hasAmtError && <AlertTriangle className="h-2.5 w-2.5 shrink-0" />}
-                  {hasAmtError
-                    ? `Exceeded by ${formatIndianNumber(Math.abs(currentRemainingAmt))}`
-                    : `${formatIndianNumber(currentRemainingAmt)} remaining`}
-                </span>
-              )}
-            </div>
+              </div>
+            )}
 
             {!isTransfer && (
               <div className="space-y-1">
