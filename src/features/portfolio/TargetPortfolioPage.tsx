@@ -516,14 +516,17 @@ function AddEntryDialog({
 
   // Recalculate amount if sub-asset category changes and percentage is already filled
   useEffect(() => {
-    if (percentage && selectedSubAsset && selectedSubAsset.targetAmt > 0) {
-      const pctVal = parseFloat(percentage);
-      if (!isNaN(pctVal)) {
-        if (transactionType === "STP") {
-          const computedTotal = (pctVal / 100) * selectedSubAsset.targetAmt;
-          const topUp = parseFloat(stpTopUp) || 0;
-          setStpTotalAmount((Math.round(Math.max(0, computedTotal - topUp) * 100) / 100).toString());
-        } else {
+    if (selectedSubAsset && selectedSubAsset.targetAmt > 0) {
+      if (transactionType === "STP") {
+        // stpTotalAmount is the primary input — recompute percentage from it, not the other way
+        const total = (parseFloat(stpTotalAmount) || 0) + (parseFloat(stpTopUp) || 0);
+        if (total > 0) {
+          const computedPct = (total / selectedSubAsset.targetAmt) * 100;
+          setPercentage((Math.round(computedPct * 100) / 100).toString());
+        }
+      } else if (percentage) {
+        const pctVal = parseFloat(percentage);
+        if (!isNaN(pctVal)) {
           const computedTotalAmt = (pctVal / 100) * selectedSubAsset.targetAmt;
           const curAcc = parseFloat(currentAccumulation) || 0;
           if (action === "Sell") {
