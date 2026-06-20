@@ -680,8 +680,10 @@ function AddEntryDialog({
 
   const handleSubmit = async () => {
     if (!productId) return toast.error("Select a product.");
-    if (!percentage || isNaN(pct) || pct <= 0) return toast.error("Enter a valid percentage.");
-    if (pct > 100) return toast.error("Percentage cannot exceed 100.");
+    if (!isTransfer) {
+      if (!percentage || isNaN(pct) || pct <= 0) return toast.error("Enter a valid percentage.");
+      if (pct > 100) return toast.error("Percentage cannot exceed 100.");
+    }
 
     const amt = parseFloat(suggestedAmount);
     if (!suggestedAmount || isNaN(amt) || amt <= 0) {
@@ -756,7 +758,7 @@ function AddEntryDialog({
     if (assetClass === "life_insurance" && !reason)
       return toast.error("Select reason for investment.");
 
-    if (activeSubAssetPct + pct > 100.001) {
+    if (!isTransfer && activeSubAssetPct + pct > 100.001) {
       return toast.error(
         `Total allocation for ${getSubAssetName()} cannot exceed 100% (currently at ${activeSubAssetPct.toFixed(1)}%).`
       );
@@ -765,7 +767,7 @@ function AddEntryDialog({
     const payload: TargetPortfolioCreate = {
       asset_class: assetClass,
       product_id: productId,
-      percentage: pct,
+      percentage: isTransfer ? 0 : pct,
       suggested_investment_amount: amt,
       product_subtype: productSubtype || undefined,
       nature: nature || undefined,
@@ -1288,7 +1290,7 @@ function AddEntryDialog({
           )}
 
           {/* Suggested Premium/Amt + % Investment in 2-col grid */}
-          <div className="grid grid-cols-2 gap-2">
+          <div className={cn("grid gap-2", isTransfer ? "grid-cols-1" : "grid-cols-2")}>
             <div className="space-y-1">
               <Label className={cn("text-xs", hasAmtError && "text-destructive")}>
                 {(isSwitch || isTransfer) ? "Amount" : (assetClass === "life_insurance" || assetClass === "health_insurance") ? "Suggested Premium" : "Suggested Amt"}
@@ -1324,33 +1326,35 @@ function AddEntryDialog({
               )}
             </div>
 
-            <div className="space-y-1">
-              <Label className={cn("text-xs", hasPctError && "text-destructive")}>
-                {pctLabel} <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                type="number"
-                min="0"
-                max="100"
-                step="0.01"
-                value={percentage}
-                onChange={(e) => handlePercentageChange(e.target.value)}
-                placeholder="e.g. 25"
-                className={cn(
-                  "h-8 text-xs",
-                  hasPctError && "border-destructive/60 focus-visible:ring-destructive/80 text-destructive bg-destructive/5"
-                )}
-              />
-              <span className={cn(
-                "text-[10px] font-medium flex items-center gap-1",
-                hasPctError ? "text-destructive" : "text-muted-foreground"
-              )}>
-                {hasPctError && <AlertTriangle className="h-2.5 w-2.5 shrink-0" />}
-                {hasPctError
-                  ? `Exceeded by ${Math.abs(currentRemainingPct).toFixed(1)}%`
-                  : `${currentRemainingPct.toFixed(1)}% remaining`}
-              </span>
-            </div>
+            {!isTransfer && (
+              <div className="space-y-1">
+                <Label className={cn("text-xs", hasPctError && "text-destructive")}>
+                  {pctLabel} <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  value={percentage}
+                  onChange={(e) => handlePercentageChange(e.target.value)}
+                  placeholder="e.g. 25"
+                  className={cn(
+                    "h-8 text-xs",
+                    hasPctError && "border-destructive/60 focus-visible:ring-destructive/80 text-destructive bg-destructive/5"
+                  )}
+                />
+                <span className={cn(
+                  "text-[10px] font-medium flex items-center gap-1",
+                  hasPctError ? "text-destructive" : "text-muted-foreground"
+                )}>
+                  {hasPctError && <AlertTriangle className="h-2.5 w-2.5 shrink-0" />}
+                  {hasPctError
+                    ? `Exceeded by ${Math.abs(currentRemainingPct).toFixed(1)}%`
+                    : `${currentRemainingPct.toFixed(1)}% remaining`}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Objective & Anticipated Future Value row (side-by-side for SIP/STP, objective only otherwise) */}
