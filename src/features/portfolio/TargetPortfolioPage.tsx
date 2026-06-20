@@ -1128,7 +1128,7 @@ function AddEntryDialog({
             <div className="space-y-2">
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
-                  <Label className="text-xs">Total Amt to Transfer <span className="text-destructive">*</span></Label>
+                  <Label className="text-xs">Existing Amount to Transfer <span className="text-destructive">*</span></Label>
                   <Input
                     type="number"
                     min="0"
@@ -1163,7 +1163,7 @@ function AddEntryDialog({
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Existing Investment</Label>
+                  <Label className="text-xs text-muted-foreground">Current Total Amount To Transfer</Label>
                   <Input
                     readOnly
                     value={stpCurrentAccumulation !== null ? formatIndianNumber(stpCurrentAccumulation) : "—"}
