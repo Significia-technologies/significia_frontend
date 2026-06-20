@@ -524,18 +524,14 @@ function AddEntryDialog({
           const computedPct = (total / selectedSubAsset.targetAmt) * 100;
           setPercentage((Math.round(computedPct * 100) / 100).toString());
         }
-      } else if (percentage) {
-        const pctVal = parseFloat(percentage);
-        if (!isNaN(pctVal)) {
-          const computedTotalAmt = (pctVal / 100) * selectedSubAsset.targetAmt;
-          const curAcc = parseFloat(currentAccumulation) || 0;
-          if (action === "Sell") {
-            const computedSuggestedAmt = Math.max(0, curAcc - computedTotalAmt);
-            setSuggestedAmount((Math.round(computedSuggestedAmt * 100) / 100).toString());
-          } else {
-            const computedSuggestedAmt = Math.max(0, computedTotalAmt - curAcc);
-            setSuggestedAmount((Math.round(computedSuggestedAmt * 100) / 100).toString());
-          }
+      } else if (suggestedAmount) {
+        // suggestedAmount is the primary input — recompute percentage from it
+        const amt = parseFloat(suggestedAmount) || 0;
+        const curAcc = parseFloat(currentAccumulation) || 0;
+        const totalAmt = action === "Sell" ? curAcc - amt : curAcc + amt;
+        if (totalAmt > 0) {
+          const computedPct = (totalAmt / selectedSubAsset.targetAmt) * 100;
+          setPercentage((Math.round(computedPct * 100) / 100).toString());
         }
       }
     }
