@@ -544,7 +544,7 @@ function AddEntryDialog({
     const currentAcc = Math.max(0, (parseFloat(stpTotalAmount) || 0) + (parseFloat(stpTopUp) || 0) - (parseFloat(stpAlreadyTransferred) || 0));
     const installments = parseInt(noOfInstallments) || 0;
     if (currentAcc > 0 && installments > 0) {
-      setSuggestedAmount((Math.round((currentAcc / installments) * 100) / 100).toString());
+      setSuggestedAmount(Math.round(currentAcc / installments).toString());
     } else {
       setSuggestedAmount("");
     }
