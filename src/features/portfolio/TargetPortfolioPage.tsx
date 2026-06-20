@@ -1819,7 +1819,12 @@ function AssetClassTab({
                         : formatIndianNumber(e.suggested_investment_amount)}
                     </TableCell>
                     <TableCell className="font-semibold">
-                      {e.transaction_type === "LUMP_SUM" && e.suggested_investment_amount != null ? (() => {
+                      {e.transaction_type === "LUMP_SUM" && e.action === "Hold" ? (
+                        <div>
+                          <span>{formatIndianNumber(e.current_accumulation ?? null)}</span>
+                          <span className="block text-[10px] font-semibold text-amber-500">Hold</span>
+                        </div>
+                      ) : e.transaction_type === "LUMP_SUM" && e.suggested_investment_amount != null ? (() => {
                         const existing = e.current_accumulation ?? 0;
                         const suggested = e.suggested_investment_amount;
                         const balance = e.action === "Sell" ? existing - suggested : existing + suggested;
