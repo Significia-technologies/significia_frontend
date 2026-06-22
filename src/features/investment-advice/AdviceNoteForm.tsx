@@ -237,6 +237,8 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
   const [recAdviceValidity, setRecAdviceValidity] = useState<string>("30");
   const [recAdviceCustomDays, setRecAdviceCustomDays] = useState<string>("7");
   const [recInstallments, setRecInstallments] = useState<string>("");
+  const [recSwpWithdrawalAmount, setRecSwpWithdrawalAmount] = useState<string>("");
+  const [recSwpWithdrawalPercent, setRecSwpWithdrawalPercent] = useState<string>("");
 
   const selectedEntry = targetPortfolioEntries.find(e => e.id === selectedTargetPortfolioEntryId);
   let mappedType: 'SIP' | 'STP' | 'SWP' | 'LUMP_SUM' | 'HOLDING' | 'TEXT_ONLY' | 'SWITCH_IN' | 'SWITCH_OUT' | 'TRANSFER_IN' | 'TRANSFER_OUT' | null = null;
@@ -604,6 +606,8 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
     setRecAdviceValidity("30");
     setRecAdviceCustomDays("7");
     setRecInstallments("");
+    setRecSwpWithdrawalAmount("");
+    setRecSwpWithdrawalPercent("");
     toast.success("Recommendation added to draft table.");
   };
 
@@ -1443,6 +1447,8 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                       <Select value={recTransactionType} onValueChange={(val: any) => {
                         setRecTransactionType(val);
                         setRecInstallments("");
+                        setRecSwpWithdrawalAmount("");
+                        setRecSwpWithdrawalPercent("");
                       }}>
                         <SelectTrigger>
                           <SelectValue />
@@ -1459,7 +1465,6 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                           recTransactionType === 'SIP' ? 'SIP' :
                           recTransactionType === 'STP' ? 'STP' :
                           recTransactionType === 'SWP' ? 'SWP' :
-                          recTransactionType === 'LUMP_SUM' ? 'Lump Sum' :
                           recTransactionType === 'HOLDING' ? 'Hold' :
                           recTransactionType === 'TEXT_ONLY' ? 'Custom Note' :
                           recTransactionType === 'SWITCH_IN' ? 'Switch In' :
@@ -1547,9 +1552,57 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                   </div>
                 </div>
 
-                {/* Installments — shown for SWP */}
+                {/* SWP — % / Amount to be withdrawn + Installments */}
                 {recTransactionType === 'SWP' && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-in fade-in duration-200">
+                    <div className="space-y-1.5">
+                      <Label>% to be Withdrawn</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.01"
+                        value={recSwpWithdrawalPercent}
+                        onChange={(e) => {
+                          const pct = e.target.value;
+                          setRecSwpWithdrawalPercent(pct);
+                          const total = parseFloat(recAmount);
+                          if (!isNaN(total) && total > 0 && pct !== "") {
+                            const amt = Math.floor((parseFloat(pct) / 100) * total);
+                            setRecSwpWithdrawalAmount(String(amt));
+                            if (amt > 0) setRecInstallments(String(Math.floor(total / amt)));
+                          } else {
+                            setRecSwpWithdrawalAmount("");
+                            setRecInstallments("");
+                          }
+                        }}
+                        placeholder="e.g. 10"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Amount to be Withdrawn (Rs.)</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={recSwpWithdrawalAmount}
+                        onChange={(e) => {
+                          const raw = e.target.value;
+                          const amt = Math.floor(parseFloat(raw));
+                          const amtStr = isNaN(amt) ? "" : String(amt);
+                          setRecSwpWithdrawalAmount(amtStr);
+                          const total = parseFloat(recAmount);
+                          if (!isNaN(total) && total > 0 && amtStr !== "") {
+                            setRecSwpWithdrawalPercent(((amt / total) * 100).toFixed(2));
+                            setRecInstallments(String(Math.floor(total / amt)));
+                          } else {
+                            setRecSwpWithdrawalPercent("");
+                            setRecInstallments("");
+                          }
+                        }}
+                        placeholder="e.g. 5000"
+                      />
+                    </div>
                     <div className="space-y-1.5">
                       <Label>No. of Installments</Label>
                       <Input
@@ -1557,7 +1610,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                         min="1"
                         value={recInstallments}
                         onChange={(e) => setRecInstallments(e.target.value)}
-                        placeholder="e.g. 12"
+                        placeholder="Auto-calculated"
                       />
                     </div>
                   </div>
