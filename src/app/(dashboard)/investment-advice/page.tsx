@@ -10,9 +10,10 @@ import { AdviceNoteForm } from "@/features/investment-advice/AdviceNoteForm";
 import { AllAdviceNotesList } from "@/features/investment-advice/AllAdviceNotesList";
 import { AdviceNoteDetail } from "@/features/investment-advice/AdviceNoteDetail";
 import { MasterDataService, ClientCreate } from "@/core/services/master.service";
+import { InvestmentAdviceService } from "@/core/services/investment-advice.service";
 import type { ClientValidateResponse } from "@/core/services/asset-allocation.service";
 
-type ViewType = "LIST" | "VALIDATE_CLIENT" | "CREATE_FORM" | "DETAIL";
+type ViewType = "LIST" | "VALIDATE_CLIENT" | "CREATE_FORM" | "EDIT_FORM" | "DETAIL";
 
 export default function InvestmentAdviceDashboardPage() {
   const [view, setView] = useState<ViewType>("LIST");
@@ -49,11 +50,29 @@ export default function InvestmentAdviceDashboardPage() {
     setClientInfo(null);
   };
 
+  const handleEditDraft = async (noteId: string) => {
+    setLoadingClient(true);
+    setSelectedNoteId(noteId);
+    try {
+      const note = await InvestmentAdviceService.get(noteId);
+      const clientCode = note.client_snapshot?.client_code || (note as any).client_code;
+      if (!clientCode) throw new Error("No client code on note");
+      const fullClient = await MasterDataService.getClientByCode(clientCode);
+      setClientInfo(fullClient);
+      setView("EDIT_FORM");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to load client profile for editing.");
+    } finally {
+      setLoadingClient(false);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto py-4 px-4 space-y-6">
       
-      {/* Header for Creation / Validation Views */}
-      {(view === "VALIDATE_CLIENT" || view === "CREATE_FORM") && (
+      {/* Header for Creation / Validation / Edit Views */}
+      {(view === "VALIDATE_CLIENT" || view === "CREATE_FORM" || view === "EDIT_FORM") && (
         <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-primary/10 pb-6 gap-4 animate-in fade-in duration-500">
           <div className="flex items-center gap-4">
             <div className="p-2 rounded-xl bg-primary/10">
@@ -63,10 +82,12 @@ export default function InvestmentAdviceDashboardPage() {
               <h1 className="text-xl font-black tracking-tight text-foreground uppercase">
                 {view === "VALIDATE_CLIENT" && "Prepare Advice Note — Step 1"}
                 {view === "CREATE_FORM" && "Prepare Advice Note — Step 2"}
+                {view === "EDIT_FORM" && "Edit Draft Advice Note"}
               </h1>
               <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40">
                 {view === "VALIDATE_CLIENT" && "Validate and verify client identity"}
                 {view === "CREATE_FORM" && `Client: ${clientInfo?.client_name ?? ""} (${clientInfo?.client_code ?? ""}) • Configure advice & products`}
+                {view === "EDIT_FORM" && `Client: ${clientInfo?.client_name ?? ""} (${clientInfo?.client_code ?? ""}) • Editing draft`}
               </p>
             </div>
           </div>
@@ -83,12 +104,13 @@ export default function InvestmentAdviceDashboardPage() {
       {/* Main View rendering */}
       <div className="animate-in fade-in duration-400">
         {view === "LIST" && (
-          <AllAdviceNotesList 
+          <AllAdviceNotesList
             onCreateNew={handleStartNew}
             onSelectNote={(noteId) => {
               setSelectedNoteId(noteId);
               setView("DETAIL");
             }}
+            onEditDraft={handleEditDraft}
           />
         )}
 
@@ -104,17 +126,30 @@ export default function InvestmentAdviceDashboardPage() {
         )}
 
         {view === "CREATE_FORM" && clientInfo && (
-          <AdviceNoteForm 
+          <AdviceNoteForm
             client={clientInfo}
             onSuccess={handleSaved}
             onCancel={handleCancel}
           />
         )}
 
+        {view === "EDIT_FORM" && clientInfo && selectedNoteId && (
+          <AdviceNoteForm
+            client={clientInfo}
+            noteId={selectedNoteId}
+            onSuccess={handleSaved}
+            onCancel={() => {
+              setSelectedNoteId(null);
+              setView("LIST");
+            }}
+          />
+        )}
+
         {view === "DETAIL" && selectedNoteId && (
-          <AdviceNoteDetail 
+          <AdviceNoteDetail
             noteId={selectedNoteId}
             onBack={handleCancel}
+            onEdit={() => handleEditDraft(selectedNoteId)}
           />
         )}
       </div>

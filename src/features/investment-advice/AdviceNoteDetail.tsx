@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { 
-  ArrowLeft, 
-  FileText, 
-  Download, 
-  Lock, 
+import {
+  ArrowLeft,
+  FileText,
+  Download,
+  Lock,
   Unlock,
   Calendar,
   AlertTriangle,
@@ -15,7 +15,8 @@ import {
   User,
   ShieldCheck,
   Building2,
-  FileCheck2
+  FileCheck2,
+  Pencil
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -48,9 +49,10 @@ import { formatAmountUnits } from "./AdviceNoteForm";
 interface AdviceNoteDetailProps {
   noteId: string;
   onBack: () => void;
+  onEdit?: () => void;
 }
 
-export function AdviceNoteDetail({ noteId, onBack }: AdviceNoteDetailProps) {
+export function AdviceNoteDetail({ noteId, onBack, onEdit }: AdviceNoteDetailProps) {
   const [note, setNote] = useState<InvestmentAdviceNote | null>(null);
   const [iaData, setIaData] = useState<IAMaster | null>(null);
   const [loading, setLoading] = useState(true);
@@ -250,8 +252,20 @@ export function AdviceNoteDetail({ noteId, onBack }: AdviceNoteDetailProps) {
             <span>Export PDF</span>
           </Button>
 
+          {!note.is_locked && onEdit && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-primary/20 text-primary hover:bg-primary/10 h-9 text-xs gap-1.5"
+              onClick={onEdit}
+            >
+              <Pencil className="w-3.5 h-3.5" />
+              <span>Edit Draft</span>
+            </Button>
+          )}
+
           {!note.is_locked && (
-            <Button 
+            <Button
               size="sm"
               className="bg-amber-600 hover:bg-amber-700 text-white font-bold h-9 text-xs gap-1.5 shadow-lg shadow-amber-600/10"
               onClick={() => setShowLockDialog(true)}

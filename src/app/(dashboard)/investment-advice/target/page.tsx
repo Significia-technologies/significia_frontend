@@ -11,6 +11,7 @@ export default function TargetInvestmentAdvicePage() {
       <AllAdviceNotesList
         onCreateNew={() => router.push("/investment-advice/target/new")}
         onSelectNote={(noteId) => router.push(`/investment-advice/target/${noteId}`)}
+        onEditDraft={(noteId) => router.push(`/investment-advice/target/${noteId}/edit`)}
       />
     </div>
   );

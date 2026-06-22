@@ -11,7 +11,11 @@ export default function TargetAdviceNoteDetailPage() {
 
   return (
     <div className="max-w-7xl mx-auto py-4 px-4 space-y-6">
-      <AdviceNoteDetail noteId={noteId} onBack={handleBack} />
+      <AdviceNoteDetail
+        noteId={noteId}
+        onBack={handleBack}
+        onEdit={() => router.push(`/investment-advice/target/${noteId}/edit`)}
+      />
     </div>
   );
 }

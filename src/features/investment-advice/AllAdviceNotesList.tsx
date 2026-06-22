@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { 
-  PlusCircle, 
-  Search, 
-  FileText, 
-  Eye, 
-  Download, 
-  Lock, 
+import {
+  PlusCircle,
+  Search,
+  FileText,
+  Eye,
+  Download,
+  Lock,
   Unlock,
   Calendar,
   MoreHorizontal,
@@ -16,7 +16,8 @@ import {
   History,
   CheckCircle2,
   Database,
-  User
+  User,
+  Pencil
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -55,9 +56,10 @@ import { format } from "date-fns";
 interface AllAdviceNotesListProps {
   onCreateNew: () => void;
   onSelectNote: (noteId: string) => void;
+  onEditDraft?: (noteId: string) => void;
 }
 
-export function AllAdviceNotesList({ onCreateNew, onSelectNote }: AllAdviceNotesListProps) {
+export function AllAdviceNotesList({ onCreateNew, onSelectNote, onEditDraft }: AllAdviceNotesListProps) {
   const [notes, setNotes] = useState<InvestmentAdviceNote[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -265,8 +267,17 @@ export function AllAdviceNotesList({ onCreateNew, onSelectNote }: AllAdviceNotes
                                 {!isLocked && (
                                   <>
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuItem 
-                                      className="gap-2 text-emerald-600 focus:text-emerald-600 focus:bg-emerald-50 cursor-pointer font-semibold" 
+                                    {onEditDraft && (
+                                      <DropdownMenuItem
+                                        className="gap-2 cursor-pointer"
+                                        onClick={() => onEditDraft(note.id)}
+                                      >
+                                        <Pencil className="w-4 h-4 text-primary" />
+                                        Edit Draft
+                                      </DropdownMenuItem>
+                                    )}
+                                    <DropdownMenuItem
+                                      className="gap-2 text-emerald-600 focus:text-emerald-600 focus:bg-emerald-50 cursor-pointer font-semibold"
                                       onClick={() => setLockingNote(note)}
                                     >
                                       <Lock className="w-4 h-4" />

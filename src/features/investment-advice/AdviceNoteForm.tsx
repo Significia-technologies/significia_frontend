@@ -54,6 +54,7 @@ const FINANCIAL_GOAL_OPTIONS = ["HLV", "Retirement", "Child Education", "Child M
 
 interface AdviceNoteFormProps {
   client: ClientCreate;
+  noteId?: string;
   onSuccess: (noteId: string) => void;
   onCancel: () => void;
 }
@@ -132,7 +133,7 @@ export const formatAmountUnits = (rec: Partial<InvestmentAdviceRecommendation>, 
   return rec.amount_units || '';
 };
 
-export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormProps) {
+export function AdviceNoteForm({ client, noteId, onSuccess, onCancel }: AdviceNoteFormProps) {
   const [step, setStep] = useState(1);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loadingEmployees, setLoadingEmployees] = useState(true);
@@ -275,7 +276,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
         // Filter advisory staff if flagged
         const advisoryList = list.filter(e => e.employee_type === 'advisory' || !e.employee_type);
         setEmployees(advisoryList);
-        if (advisoryList.length > 0) {
+        if (!noteId && advisoryList.length > 0) {
           setPrincipalOfficerId(advisoryList[0].id || "");
         }
       } catch (error) {
@@ -359,10 +360,12 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
         const iaMaster = await IAMasterService.getLatest();
         if (iaMaster) {
           setNatureOfEntity(iaMaster.nature_of_entity || "");
-          const name = iaMaster.name_of_entity || iaMaster.name_of_ia || "";
-          setConflictText(
-            `${name} is a fee-only SEBI Registered Investment Adviser. We receive no commissions, brokerage or trail fees from any product manufacturer, distributor or intermediary. There is no material conflict of interest in this advice note.`
-          );
+          if (!noteId) {
+            const name = iaMaster.name_of_entity || iaMaster.name_of_ia || "";
+            setConflictText(
+              `${name} is a fee-only SEBI Registered Investment Adviser. We receive no commissions, brokerage or trail fees from any product manufacturer, distributor or intermediary. There is no material conflict of interest in this advice note.`
+            );
+          }
         }
       } catch (error) {
         console.error("Failed to fetch IA Master details", error);
@@ -449,13 +452,83 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
       }
     };
 
+    // 7. When editing a draft, load existing note data into form state
+    const fetchDraftNote = async () => {
+      if (!noteId) return;
+      try {
+        const note = await InvestmentAdviceService.get(noteId);
+
+        setDateOfIssue(note.date_of_issue);
+
+        const validityOptions = ["30", "45", "60", "90", "120"];
+        if (validityOptions.includes(String(note.advice_validity_days))) {
+          setAdviceValidity(String(note.advice_validity_days));
+        } else {
+          setAdviceValidity("custom");
+          setCustomValidityDays(String(note.advice_validity_days));
+        }
+
+        if (note.principal_officer_id) setPrincipalOfficerId(note.principal_officer_id);
+        setAdviceCategory(note.advice_category);
+        setAnnualIncomeBand(note.annual_income_band || "");
+        setAssetsUnderAdvice(String(note.assets_under_advice));
+        setPrimaryFinancialGoal(note.primary_financial_goal || "");
+        setFeeMode(note.fee_mode);
+        setFeeAmount(String(note.fee_amount));
+        if (note.date_of_allocation) setDateOfAllocation(note.date_of_allocation.split('T')[0]);
+
+        const alloc = note.recommended_asset_allocation;
+        if (alloc && typeof alloc === 'object') {
+          setRecEquity(String(alloc.Equity ?? 0));
+          setRecDebt(String(alloc.Debt ?? 0));
+          setRecCommodities(String(alloc.Commodities ?? 0));
+          const sub = alloc.sub_assets;
+          if (sub) {
+            setSubStocks(String(sub.stocks_percentage ?? 0));
+            setSubMfEquity(String(sub.mutual_fund_equity_percentage ?? 0));
+            setSubUlipEquity(String(sub.ulip_equity_percentage ?? 0));
+            setSubEtfEquity(String(sub.etf_equity_percentage ?? 0));
+            setSubFdBonds(String(sub.fixed_deposits_bonds_percentage ?? 0));
+            setSubMfDebt(String(sub.mutual_fund_debt_percentage ?? 0));
+            setSubUlipDebt(String(sub.ulip_debt_percentage ?? 0));
+            setSubEtfDebt(String(sub.etf_debt_percentage ?? 0));
+            setSubGoldEtf(String(sub.gold_etf_percentage ?? 0));
+            setSubSilverEtf(String(sub.silver_etf_percentage ?? 0));
+            setSubEtfCommodity(String(sub.etf_commodity_percentage ?? 0));
+          }
+        }
+
+        const suitabilityText = note.suitability_assessment || "";
+        setSuitabilityChoice(suitabilityText.startsWith("YES") ? "YES" : "NO");
+        setSuitabilityBasis(note.suitability_basis || "");
+        setInvestorAdvice(note.investor_advice || "");
+        setOriginalInvestorAdvice(note.investor_advice || "");
+
+        if (note.conflict_of_interest_text) setConflictText(note.conflict_of_interest_text);
+        if (note.no_execution_text) setNoExecutionText(note.no_execution_text);
+        if (note.ai_usage_text) setAiUsageText(note.ai_usage_text);
+
+        if (note.recommendations && note.recommendations.length > 0) {
+          setRecommendations(note.recommendations);
+        }
+      } catch (error) {
+        console.error("Failed to fetch draft note", error);
+        toast.error("Failed to load draft note for editing.");
+      }
+    };
+
     fetchEmployees();
-    fetchAnalysisGoal();
-    fetchLatestAllocation();
     fetchIAMaster();
     fetchTargetPortfolio();
-    fetchTotalAUA();
     fetchExistingAdviceAmounts();
+
+    if (noteId) {
+      fetchDraftNote();
+    } else {
+      fetchAnalysisGoal();
+      fetchLatestAllocation();
+      fetchTotalAUA();
+    }
   }, [client]);
 
   const handleSelectTargetPortfolioEntry = async (entry: TargetPortfolioEntry) => {
@@ -801,9 +874,15 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
         recommendations: recommendations
       };
 
-      const result = await InvestmentAdviceService.create(client.id!, payload);
-      toast.success("Investment Advice Note Draft created successfully!");
-      onSuccess(result.id);
+      if (noteId) {
+        await InvestmentAdviceService.update(noteId, payload);
+        toast.success("Investment Advice Note Draft updated successfully!");
+        onSuccess(noteId);
+      } else {
+        const result = await InvestmentAdviceService.create(client.id!, payload);
+        toast.success("Investment Advice Note Draft created successfully!");
+        onSuccess(result.id);
+      }
     } catch (error) {
       console.error("Create advice note failed", error);
       toast.error("Failed to create Investment Advice Note. Check required fields.");
@@ -1882,7 +1961,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
               </>
             ) : (
               <>
-                <Save className="w-4 h-4" /> Create Draft Note
+                <Save className="w-4 h-4" /> {noteId ? "Update Draft Note" : "Create Draft Note"}
               </>
             )}
           </Button>

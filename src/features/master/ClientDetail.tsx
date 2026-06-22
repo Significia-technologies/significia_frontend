@@ -657,32 +657,47 @@ function AdviceTabContent({ clientId, client }: { clientId: string, client: Clie
   return (
     <div className="space-y-6">
       {view === "LIST" && (
-        <AdviceNoteList 
+        <AdviceNoteList
           clientId={clientId}
           clientName={client.client_name}
           onSelectNote={(noteId) => {
             setSelectedNoteId(noteId);
             setView("DETAIL");
           }}
-          onCreateNew={() => setView("FORM")}
+          onCreateNew={() => {
+            setSelectedNoteId(null);
+            setView("FORM");
+          }}
+          onEditDraft={(noteId) => {
+            setSelectedNoteId(noteId);
+            setView("FORM");
+          }}
         />
       )}
 
       {view === "FORM" && (
-        <AdviceNoteForm 
+        <AdviceNoteForm
           client={client}
+          noteId={selectedNoteId ?? undefined}
           onSuccess={(noteId) => {
             setSelectedNoteId(noteId);
             setView("DETAIL");
           }}
-          onCancel={() => setView("LIST")}
+          onCancel={() => {
+            if (selectedNoteId) {
+              setView("DETAIL");
+            } else {
+              setView("LIST");
+            }
+          }}
         />
       )}
 
       {view === "DETAIL" && selectedNoteId && (
-        <AdviceNoteDetail 
+        <AdviceNoteDetail
           noteId={selectedNoteId}
           onBack={() => setView("LIST")}
+          onEdit={() => setView("FORM")}
         />
       )}
     </div>
