@@ -139,6 +139,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
   const [adviceValidity, setAdviceValidity] = useState<string>("60"); // 30, 45, 60, 90, 120, custom
   const [customValidityDays, setCustomValidityDays] = useState<string>("30");
   const [principalOfficerId, setPrincipalOfficerId] = useState<string>("");
+  const [natureOfEntity, setNatureOfEntity] = useState<string>("");
   const [adviceCategory, setAdviceCategory] = useState<string>("Comprehensive Advisory");
   
   const [annualIncomeBand, setAnnualIncomeBand] = useState<string>(mapIncomeToBand(client.annual_income || 0));
@@ -327,6 +328,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
       try {
         const iaMaster = await IAMasterService.getLatest();
         if (iaMaster) {
+          setNatureOfEntity(iaMaster.nature_of_entity || "");
           const name = iaMaster.name_of_entity || iaMaster.name_of_ia || "";
           setConflictText(
             `${name} is a fee-only SEBI Registered Investment Adviser. We receive no commissions, brokerage or trail fees from any product manufacturer, distributor or intermediary. There is no material conflict of interest in this advice note.`
@@ -705,6 +707,9 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
   const enteredRecAmount = parseFloat(recAmount) || 0;
   const isPriceExceeded = selectedSuggestedAmount !== null && enteredRecAmount > selectedSuggestedAmount;
 
+  const isBodyCorporate = natureOfEntity?.toLowerCase().includes("body") || 
+                          natureOfEntity?.toLowerCase().includes("corporate");
+
   return (
     <div className="max-w-4xl mx-auto py-4">
       {/* Wizard Header */}
@@ -777,13 +782,13 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="principal_officer">Principal Officer</Label>
+                  <Label htmlFor="principal_officer">{isBodyCorporate ? "Principal Officer" : "Investment Adviser"}</Label>
                   {loadingEmployees ? (
                     <div className="h-10 bg-muted animate-pulse rounded" />
                   ) : (
                     <Select value={principalOfficerId} onValueChange={setPrincipalOfficerId}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select Principal Officer" />
+                        <SelectValue placeholder={isBodyCorporate ? "Select Principal Officer" : "Select Investment Adviser"} />
                       </SelectTrigger>
                       <SelectContent>
                         {employees.map(emp => (
