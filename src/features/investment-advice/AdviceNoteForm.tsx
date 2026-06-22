@@ -213,10 +213,6 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                             (parseFloat(subSilverEtf) || 0) + 
                             (parseFloat(subEtfCommodity) || 0);
 
-  // Section D Advice Validity
-  const [sectionDValidity, setSectionDValidity] = useState<string>("30");
-  const [sectionDCustomDays, setSectionDCustomDays] = useState<string>("7");
-
   // Recommendations
   const [recommendations, setRecommendations] = useState<InvestmentAdviceRecommendation[]>([]);
 
@@ -238,6 +234,8 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
   const [recRationale, setRecRationale] = useState<string>("");
   const [recFromFund, setRecFromFund] = useState<string>("");
   const [recToFund, setRecToFund] = useState<string>("");
+  const [recAdviceValidity, setRecAdviceValidity] = useState<string>("30");
+  const [recAdviceCustomDays, setRecAdviceCustomDays] = useState<string>("7");
 
   const selectedEntry = targetPortfolioEntries.find(e => e.id === selectedTargetPortfolioEntryId);
   let mappedType: 'SIP' | 'STP' | 'SWP' | 'LUMP_SUM' | 'HOLDING' | 'TEXT_ONLY' | 'SWITCH_IN' | 'SWITCH_OUT' | 'TRANSFER_IN' | 'TRANSFER_OUT' | null = null;
@@ -563,6 +561,12 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
       custom_instruction: customInst
     };
 
+    const adviceValidityText = recAdviceValidity === "Immediate"
+      ? "Immediate"
+      : recAdviceValidity === "custom"
+        ? `${recAdviceCustomDays || "—"} Days`
+        : `${recAdviceValidity} Days`;
+
     const newRec: InvestmentAdviceRecommendation = {
       product_type: recProductType,
       product_id: selectedProduct?.id,
@@ -573,6 +577,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
       frequency: freq,
       amount: amountVal,
       custom_instruction: customInst,
+      advice_validity_text: adviceValidityText,
       amount_units: formatAmountUnits(tempRec, recProductType),
       indicative_price_nav: recPriceNav ? parseFloat(recPriceNav) : null,
       rationale: recRationale || "Recommended as suitable according to client's risk profile."
@@ -594,6 +599,8 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
     setRecRationale("");
     setRecFromFund("");
     setRecToFund("");
+    setRecAdviceValidity("30");
+    setRecAdviceCustomDays("7");
     toast.success("Recommendation added to draft table.");
   };
 
@@ -708,13 +715,9 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
       const poName = selectedPO ? (selectedPO.full_name || selectedPO.name || selectedPO.name_of_employee || "") : "";
       const poReg = selectedPO ? (selectedPO.ia_registration_number || "") : "";
 
-      // 2. Resolve validity days and text (Section D overrides Section A)
-      const valDays = sectionDValidity === "Immediate"
-        ? 0
-        : sectionDValidity === "custom"
-          ? parseInt(sectionDCustomDays) || 0
-          : parseInt(sectionDValidity) || (adviceValidity === "custom" ? parseInt(customValidityDays) : parseInt(adviceValidity));
-      const valText = valDays === 0 ? "Immediate" : `${valDays} calendar days from date of issue`;
+      // 2. Resolve validity days and text
+      const valDays = adviceValidity === "custom" ? parseInt(customValidityDays) : parseInt(adviceValidity);
+      const valText = `${valDays} calendar days from date of issue`;
 
       // 3. Asset Allocation dict
       const recAlloc = {
@@ -1297,43 +1300,6 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                 <h3 className="font-bold text-lg text-primary">Section D — Product Recommendations</h3>
               </div>
 
-              {/* Advice Validity */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <Label>Advice Validity</Label>
-                  <Select value={sectionDValidity} onValueChange={setSectionDValidity}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Immediate">Immediate</SelectItem>
-                      <SelectItem value="7">7 Days</SelectItem>
-                      <SelectItem value="15">15 Days</SelectItem>
-                      <SelectItem value="30">30 Days</SelectItem>
-                      <SelectItem value="90">90 Days</SelectItem>
-                      <SelectItem value="180">180 Days</SelectItem>
-                      <SelectItem value="365">365 Days</SelectItem>
-                      <SelectItem value="custom">Custom</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                {sectionDValidity === "custom" && (
-                  <div className="space-y-1.5">
-                    <Label>No. of Days</Label>
-                    <Input
-                      type="number"
-                      min="1"
-                      value={sectionDCustomDays}
-                      onChange={(e) => setSectionDCustomDays(e.target.value)}
-                      placeholder="e.g. 45"
-                    />
-                  </div>
-                )}
-              </div>
-              <div className="bg-primary/5 border border-primary/10 p-3 rounded-lg text-xs font-semibold text-primary/80">
-                Validity: {sectionDValidity === "Immediate" ? "Immediate" : `${sectionDValidity === "custom" ? (sectionDCustomDays || "—") : sectionDValidity} calendar days from date of issue`}
-              </div>
-
               {/* Inline Recommendation Adder */}
               <div className="bg-primary/[0.02] border border-primary/10 rounded-xl p-4 sm:p-6 space-y-4">
                 <h4 className="font-bold text-sm text-primary flex items-center gap-1.5">
@@ -1585,14 +1551,44 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label>Adviser Rationale (Section E)</Label>
-                    <Input 
+                    <Input
                       value={recRationale}
                       onChange={(e) => setRecRationale(e.target.value)}
                       placeholder="e.g. Stock has corrected 12% offering attractive entry point..."
                     />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Advice Validity</Label>
+                    <div className="flex gap-2">
+                      <Select value={recAdviceValidity} onValueChange={setRecAdviceValidity}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Immediate">Immediate</SelectItem>
+                          <SelectItem value="7">7 Days</SelectItem>
+                          <SelectItem value="15">15 Days</SelectItem>
+                          <SelectItem value="30">30 Days</SelectItem>
+                          <SelectItem value="90">90 Days</SelectItem>
+                          <SelectItem value="180">180 Days</SelectItem>
+                          <SelectItem value="365">365 Days</SelectItem>
+                          <SelectItem value="custom">Custom</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {recAdviceValidity === "custom" && (
+                        <Input
+                          type="number"
+                          min="1"
+                          className="w-24"
+                          value={recAdviceCustomDays}
+                          onChange={(e) => setRecAdviceCustomDays(e.target.value)}
+                          placeholder="Days"
+                        />
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -1620,6 +1616,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                         <TableHead>Type</TableHead>
                         <TableHead>Action</TableHead>
                         <TableHead>Amount</TableHead>
+                        <TableHead>Validity</TableHead>
                         <TableHead>Price/NAV</TableHead>
                         <TableHead className="w-12 text-right">Remove</TableHead>
                       </TableRow>
@@ -1627,7 +1624,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                     <TableBody>
                       {recommendations.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={7} className="h-24 text-center text-muted-foreground text-xs italic">
+                          <TableCell colSpan={8} className="h-24 text-center text-muted-foreground text-xs italic">
                             No recommendations added yet. Add at least one above.
                           </TableCell>
                         </TableRow>
@@ -1646,6 +1643,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                               </Badge>
                             </TableCell>
                             <TableCell className="text-xs">{rec.amount_units}</TableCell>
+                            <TableCell className="text-xs">{rec.advice_validity_text || "—"}</TableCell>
                             <TableCell className="text-xs font-mono">₹{rec.indicative_price_nav || "N/A"}</TableCell>
                             <TableCell className="text-right">
                               <Button 

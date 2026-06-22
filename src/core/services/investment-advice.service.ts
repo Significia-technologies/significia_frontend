@@ -14,6 +14,7 @@ export interface InvestmentAdviceRecommendation {
   frequency?: 'MONTHLY' | 'QUARTERLY' | 'HALF_YEARLY' | 'YEARLY' | null;
   amount?: number | null;
   custom_instruction?: string | null;
+  advice_validity_text?: string | null;
   indicative_price_nav?: number | null;
   rationale: string;
 }
