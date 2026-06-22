@@ -748,18 +748,6 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
 
   return (
     <div className="max-w-4xl mx-auto py-4">
-      {/* Wizard Header */}
-      <div className="flex items-center gap-4 mb-6">
-        <Button variant="ghost" size="icon" onClick={onCancel} className="rounded-full">
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Create Investment Advice Note</h1>
-          <p className="text-sm text-muted-foreground">
-            Client: {client.client_name} ({client.client_code})
-          </p>
-        </div>
-      </div>
 
       {/* Stepper Progress */}
       <div className="flex items-center justify-between mb-8 px-2 max-w-xl mx-auto">

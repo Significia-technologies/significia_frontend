@@ -205,16 +205,19 @@ export function AdviceNoteDetail({ noteId, onBack }: AdviceNoteDetailProps) {
   return (
     <div className="space-y-6 max-w-4xl mx-auto py-2">
       {/* Top Header Panel */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-primary/10 pb-4">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-primary/10 pb-6">
+        <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={onBack} className="rounded-full shrink-0">
             <ArrowLeft className="w-5 h-5" />
           </Button>
+          <div className="p-2 rounded-xl bg-primary/10">
+            <FileText className="w-6 h-6 text-primary" />
+          </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-lg font-black tracking-tight text-foreground truncate max-w-[250px] sm:max-w-md">
+              <h1 className="text-xl font-black tracking-tight text-foreground uppercase">
                 {note.advice_note_no}
-              </h2>
+              </h1>
               {note.is_locked ? (
                 <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 text-[8px] uppercase tracking-widest gap-0.5 font-black shrink-0 h-4">
                   <Lock className="w-2.5 h-2.5" /> Locked
@@ -225,7 +228,7 @@ export function AdviceNoteDetail({ noteId, onBack }: AdviceNoteDetailProps) {
                 </Badge>
               )}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40">
               Client: {client.client_name || "N/A"} ({client.client_code || "N/A"}) • Version {note.version_number}
             </p>
           </div>

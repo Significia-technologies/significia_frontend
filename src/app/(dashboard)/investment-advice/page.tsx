@@ -53,7 +53,7 @@ export default function InvestmentAdviceDashboardPage() {
     <div className="max-w-7xl mx-auto py-4 px-4 space-y-6">
       
       {/* Header for Creation / Validation Views */}
-      {view !== "LIST" && (
+      {(view === "VALIDATE_CLIENT" || view === "CREATE_FORM") && (
         <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-primary/10 pb-6 gap-4 animate-in fade-in duration-500">
           <div className="flex items-center gap-4">
             <div className="p-2 rounded-xl bg-primary/10">
@@ -63,12 +63,10 @@ export default function InvestmentAdviceDashboardPage() {
               <h1 className="text-xl font-black tracking-tight text-foreground uppercase">
                 {view === "VALIDATE_CLIENT" && "Prepare Advice Note — Step 1"}
                 {view === "CREATE_FORM" && "Prepare Advice Note — Step 2"}
-                {view === "DETAIL" && "View Investment Advice Note"}
               </h1>
               <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40">
                 {view === "VALIDATE_CLIENT" && "Validate and verify client identity"}
-                {view === "CREATE_FORM" && `Configure advice and products for ${clientInfo?.client_name}`}
-                {view === "DETAIL" && "SEBI compliance audit document"}
+                {view === "CREATE_FORM" && `Client: ${clientInfo?.client_name ?? ""} (${clientInfo?.client_code ?? ""}) • Configure advice & products`}
               </p>
             </div>
           </div>
