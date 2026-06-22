@@ -102,7 +102,7 @@ export function AdviceNoteDetail({ noteId, onBack }: AdviceNoteDetailProps) {
     setIsLocking(true);
     try {
       await InvestmentAdviceService.lock(note.id);
-      toast.success("Advice Note successfully locked and registered for SEBI compliance.");
+      toast.success("Advice Note successfully locked and registered for compliance.");
       setShowLockDialog(false);
       fetchDetail();
     } catch (error) {
@@ -117,7 +117,7 @@ export function AdviceNoteDetail({ noteId, onBack }: AdviceNoteDetailProps) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-4">
         <Loader2 className="w-10 h-10 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground">Loading SEBI compliance report...</p>
+        <p className="text-sm text-muted-foreground">Loading compliance report...</p>
       </div>
     );
   }
@@ -294,12 +294,12 @@ export function AdviceNoteDetail({ noteId, onBack }: AdviceNoteDetailProps) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1">
                 <GridRow label="IA / Firm Name" value={iaData?.name_of_entity || iaData?.name_of_ia} />
                 <GridRow label="Advice Note No" value={note.advice_note_no} />
-                <GridRow label="SEBI Reg No" value={iaData?.ia_registration_number} />
+                <GridRow label="IA Reg No" value={iaData?.ia_registration_number} />
                 <GridRow label="Date of Issue" value={format(new Date(note.date_of_issue), "dd MMMM yyyy")} />
                 <GridRow label="IAASB" value={iaData?.basl_membership_id ? `BSE Limited (IAASB) - ${iaData.basl_membership_id}` : "BSE Limited (IAASB)"} />
                 <GridRow label="Advice Validity" value={note.advice_validity_custom_text} />
-                <GridRow label="Principal Officer" value={note.principal_officer_name} />
-                <GridRow label="PO Registration No" value={note.principal_officer_reg_no} />
+                <GridRow label={iaData?.nature_of_entity?.toLowerCase() === "body corporate" ? "Principal Officer" : "Investment Adviser"} value={note.principal_officer_name} />
+                <GridRow label={iaData?.nature_of_entity?.toLowerCase() === "body corporate" ? "PO Registration No" : "IA Registration No"} value={note.principal_officer_reg_no} />
                 <GridRow label="Website" value={iaData?.website ? (
                   <a href={`https://${iaData.website.replace(/^(https?:\/\/)?(www\.)?/, "")}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-bold">
                     {iaData.website}
