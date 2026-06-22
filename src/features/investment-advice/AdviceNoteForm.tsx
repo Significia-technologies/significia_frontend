@@ -542,7 +542,11 @@ export function AdviceNoteForm({ client, noteId, onSuccess, onCancel }: AdviceNo
   const handleSelectTargetPortfolioEntry = async (entry: TargetPortfolioEntry) => {
     setRecProductName(entry.product_name);
 
-    const previouslyAdvised = existingAdviceAmounts[entry.product_id] || 0;
+    const previouslyAdvisedFromHistory = existingAdviceAmounts[entry.product_id] || 0;
+    const previouslyAdvisedInSession = recommendations
+      .filter(r => r.product_id === entry.product_id)
+      .reduce((sum, r) => sum + (r.amount || 0), 0);
+    const previouslyAdvised = previouslyAdvisedFromHistory + previouslyAdvisedInSession;
     setRecPreviouslyAdvised(previouslyAdvised);
     const target = entry.suggested_investment_amount ?? null;
     setRecBalance(target !== null ? Math.max(0, target - previouslyAdvised) : null);
@@ -658,7 +662,10 @@ export function AdviceNoteForm({ client, noteId, onSuccess, onCancel }: AdviceNo
     if (amountVal !== null && !isNaN(amountVal)) {
       const entry = targetPortfolioEntries.find(e => e.id === selectedTargetPortfolioEntryId);
       if (entry && entry.suggested_investment_amount !== null && entry.suggested_investment_amount !== undefined) {
-        const previouslyAdvisedForProduct = existingAdviceAmounts[entry.product_id] || 0;
+        const previouslyAdvisedInSession = recommendations
+          .filter(r => r.product_id === entry.product_id)
+          .reduce((sum, r) => sum + (r.amount || 0), 0);
+        const previouslyAdvisedForProduct = (existingAdviceAmounts[entry.product_id] || 0) + previouslyAdvisedInSession;
         const remainingBalance = Math.max(0, entry.suggested_investment_amount - previouslyAdvisedForProduct);
         if (amountVal > remainingBalance) {
           const balanceLabel = previouslyAdvisedForProduct > 0
