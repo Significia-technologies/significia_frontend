@@ -239,6 +239,9 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
   const [recInstallments, setRecInstallments] = useState<string>("");
   const [recSwpWithdrawalAmount, setRecSwpWithdrawalAmount] = useState<string>("");
   const [recSwpWithdrawalPercent, setRecSwpWithdrawalPercent] = useState<string>("");
+  const [existingAdviceAmounts, setExistingAdviceAmounts] = useState<Record<string, number>>({});
+  const [recPreviouslyAdvised, setRecPreviouslyAdvised] = useState<number>(0);
+  const [recBalance, setRecBalance] = useState<number | null>(null);
 
   const selectedEntry = targetPortfolioEntries.find(e => e.id === selectedTargetPortfolioEntryId);
   let mappedType: 'SIP' | 'STP' | 'SWP' | 'LUMP_SUM' | 'HOLDING' | 'TEXT_ONLY' | 'SWITCH_IN' | 'SWITCH_OUT' | 'TRANSFER_IN' | 'TRANSFER_OUT' | null = null;
@@ -428,17 +431,41 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
       }
     };
 
+    const fetchExistingAdviceAmounts = async () => {
+      if (!client.id) return;
+      try {
+        const notes = await InvestmentAdviceService.list(client.id);
+        const map: Record<string, number> = {};
+        for (const note of notes) {
+          for (const rec of note.recommendations || []) {
+            if (rec.product_id && rec.amount) {
+              map[rec.product_id] = (map[rec.product_id] || 0) + rec.amount;
+            }
+          }
+        }
+        setExistingAdviceAmounts(map);
+      } catch {
+        // non-critical
+      }
+    };
+
     fetchEmployees();
     fetchAnalysisGoal();
     fetchLatestAllocation();
     fetchIAMaster();
     fetchTargetPortfolio();
     fetchTotalAUA();
+    fetchExistingAdviceAmounts();
   }, [client]);
 
   const handleSelectTargetPortfolioEntry = async (entry: TargetPortfolioEntry) => {
     setRecProductName(entry.product_name);
-    
+
+    const previouslyAdvised = existingAdviceAmounts[entry.product_id] || 0;
+    setRecPreviouslyAdvised(previouslyAdvised);
+    const target = entry.suggested_investment_amount ?? null;
+    setRecBalance(target !== null ? Math.max(0, target - previouslyAdvised) : null);
+
     // Set a dummy/partial selectedProduct object so that selectedProduct.id is populated
     setSelectedProduct({
       id: entry.product_id,
@@ -606,8 +633,8 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
     setRecAdviceValidity("30");
     setRecAdviceCustomDays("7");
     setRecInstallments("");
-    setRecSwpWithdrawalAmount("");
-    setRecSwpWithdrawalPercent("");
+    setRecPreviouslyAdvised(0);
+    setRecBalance(null);
     toast.success("Recommendation added to draft table.");
   };
 
@@ -799,6 +826,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
   const selectedSuggestedAmount = selectedEntry?.suggested_investment_amount ?? null;
   const enteredRecAmount = parseFloat(recAmount) || 0;
   const isPriceExceeded = selectedSuggestedAmount !== null && enteredRecAmount > selectedSuggestedAmount;
+  const isBalanceExceeded = !isPriceExceeded && recBalance !== null && recPreviouslyAdvised > 0 && enteredRecAmount > recBalance;
 
   const isBodyCorporate = natureOfEntity?.toLowerCase().includes("body") || 
                           natureOfEntity?.toLowerCase().includes("corporate");
@@ -1326,6 +1354,8 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                       setRecAmount("");
                       setRecFromFund("");
                       setRecToFund("");
+                      setRecPreviouslyAdvised(0);
+                      setRecBalance(null);
                     }}>
                       <SelectTrigger className="w-full max-w-full">
                         <SelectValue />
@@ -1447,8 +1477,6 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                       <Select value={recTransactionType} onValueChange={(val: any) => {
                         setRecTransactionType(val);
                         setRecInstallments("");
-                        setRecSwpWithdrawalAmount("");
-                        setRecSwpWithdrawalPercent("");
                       }}>
                         <SelectTrigger>
                           <SelectValue />
@@ -1510,16 +1538,16 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
 
                   {/* Conditional Amount/Instruction Input */}
                   <div className={`${['SIP', 'STP', 'SWP'].includes(recTransactionType) ? 'md:col-span-6' : 'md:col-span-9'} space-y-1.5`}>
-                    <Label className={isPriceExceeded ? "text-destructive" : ""}>
+                    <Label className={isPriceExceeded ? "text-destructive" : isBalanceExceeded ? "text-amber-600" : ""}>
                       {recTransactionType === 'HOLDING' ? 'Amount / Description' : recTransactionType === 'TEXT_ONLY' ? 'Custom Note Text' : 'Amount'}
                     </Label>
-                    
+
                     {['SIP', 'STP', 'SWP', 'LUMP_SUM', 'SWITCH_IN', 'SWITCH_OUT', 'TRANSFER_IN', 'TRANSFER_OUT'].includes(recTransactionType) && (
                       <div className="relative animate-in fade-in duration-200">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground">Rs.</span>
-                        <Input 
+                        <Input
                           type="number"
-                          className={`pl-9 ${isPriceExceeded ? 'border-destructive focus-visible:ring-destructive text-destructive bg-destructive/5 placeholder:text-destructive/40' : ''}`}
+                          className={`pl-9 ${isPriceExceeded ? 'border-destructive focus-visible:ring-destructive text-destructive bg-destructive/5 placeholder:text-destructive/40' : isBalanceExceeded ? 'border-amber-500 focus-visible:ring-amber-500 text-amber-700' : ''}`}
                           value={recAmount}
                           onChange={(e) => setRecAmount(e.target.value)}
                           placeholder="e.g. 10000"
@@ -1527,9 +1555,27 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                       </div>
                     )}
 
+                    {['SIP', 'STP', 'SWP', 'LUMP_SUM', 'SWITCH_IN', 'SWITCH_OUT', 'TRANSFER_IN', 'TRANSFER_OUT'].includes(recTransactionType) && recBalance !== null && recPreviouslyAdvised > 0 && (
+                      <div className="text-[11px] mt-1 space-x-2 text-muted-foreground animate-in fade-in duration-200">
+                        <span>Max: Rs. {formatIndianNumber(selectedSuggestedAmount)}</span>
+                        <span>|</span>
+                        <span>Advised: Rs. {formatIndianNumber(recPreviouslyAdvised)}</span>
+                        <span>|</span>
+                        <span className={`font-semibold ${recBalance <= 0 ? 'text-destructive' : 'text-primary'}`}>
+                          Balance: Rs. {formatIndianNumber(recBalance)}
+                        </span>
+                      </div>
+                    )}
+
                     {['SIP', 'STP', 'SWP', 'LUMP_SUM', 'SWITCH_IN', 'SWITCH_OUT', 'TRANSFER_IN', 'TRANSFER_OUT'].includes(recTransactionType) && isPriceExceeded && selectedSuggestedAmount !== null && (
                       <p className="text-xs text-destructive mt-1.5 flex items-center gap-1.5 animate-in fade-in duration-200">
                         <AlertTriangle className="w-3.5 h-3.5 shrink-0" /> Exceeds target portfolio suggested amount of Rs. {selectedSuggestedAmount.toLocaleString('en-IN')}
+                      </p>
+                    )}
+
+                    {isBalanceExceeded && recBalance !== null && (
+                      <p className="text-xs text-amber-600 mt-1.5 flex items-center gap-1.5 animate-in fade-in duration-200">
+                        <AlertTriangle className="w-3.5 h-3.5 shrink-0" /> Exceeds remaining balance of Rs. {formatIndianNumber(recBalance)} — up to Rs. {formatIndianNumber(selectedSuggestedAmount)} allowed
                       </p>
                     )}
 
@@ -1552,57 +1598,9 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                   </div>
                 </div>
 
-                {/* SWP — % / Amount to be withdrawn + Installments */}
+                {/* Installments — shown for SWP */}
                 {recTransactionType === 'SWP' && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-in fade-in duration-200">
-                    <div className="space-y-1.5">
-                      <Label>% to be Withdrawn</Label>
-                      <Input
-                        type="number"
-                        min="0"
-                        max="100"
-                        step="0.01"
-                        value={recSwpWithdrawalPercent}
-                        onChange={(e) => {
-                          const pct = e.target.value;
-                          setRecSwpWithdrawalPercent(pct);
-                          const total = parseFloat(recAmount);
-                          if (!isNaN(total) && total > 0 && pct !== "") {
-                            const amt = Math.floor((parseFloat(pct) / 100) * total);
-                            setRecSwpWithdrawalAmount(String(amt));
-                            if (amt > 0) setRecInstallments(String(Math.floor(total / amt)));
-                          } else {
-                            setRecSwpWithdrawalAmount("");
-                            setRecInstallments("");
-                          }
-                        }}
-                        placeholder="e.g. 10"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>Amount to be Withdrawn (Rs.)</Label>
-                      <Input
-                        type="number"
-                        min="0"
-                        step="1"
-                        value={recSwpWithdrawalAmount}
-                        onChange={(e) => {
-                          const raw = e.target.value;
-                          const amt = Math.floor(parseFloat(raw));
-                          const amtStr = isNaN(amt) ? "" : String(amt);
-                          setRecSwpWithdrawalAmount(amtStr);
-                          const total = parseFloat(recAmount);
-                          if (!isNaN(total) && total > 0 && amtStr !== "") {
-                            setRecSwpWithdrawalPercent(((amt / total) * 100).toFixed(2));
-                            setRecInstallments(String(Math.floor(total / amt)));
-                          } else {
-                            setRecSwpWithdrawalPercent("");
-                            setRecInstallments("");
-                          }
-                        }}
-                        placeholder="e.g. 5000"
-                      />
-                    </div>
                     <div className="space-y-1.5">
                       <Label>No. of Installments</Label>
                       <Input
@@ -1610,7 +1608,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                         min="1"
                         value={recInstallments}
                         onChange={(e) => setRecInstallments(e.target.value)}
-                        placeholder="Auto-calculated"
+                        placeholder="e.g. 12"
                       />
                     </div>
                   </div>
