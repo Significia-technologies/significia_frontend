@@ -344,6 +344,5 @@ export const API_ENDPOINTS = {
     DELETE_REC: (noteId: string, recId: string) => `${API_BASE}/advisory/investment-advice-note/${noteId}/recommendations/${recId}`,
     NEXT_SERIAL: (noteId: string) => `${API_BASE}/advisory/investment-advice-note/${noteId}/next-serial`,
     PDF: (noteId: string) => `${API_BASE}/advisory/investment-advice-note/${noteId}/export/pdf`,
-    DOCX: (noteId: string) => `${API_BASE}/advisory/investment-advice-note/${noteId}/export/docx`,
   },
 };

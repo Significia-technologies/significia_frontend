@@ -82,14 +82,10 @@ export function AllAdviceNotesList({ onCreateNew, onSelectNote }: AllAdviceNotes
     fetchNotes();
   }, []);
 
-  const handleDownload = async (noteId: string, adviceNoteNo: string, formatType: 'pdf' | 'docx') => {
+  const handleDownload = async (noteId: string, adviceNoteNo: string, formatType: 'pdf') => {
     setDownloading(`${noteId}-${formatType}`);
     try {
-      if (formatType === 'pdf') {
-        await InvestmentAdviceService.downloadPDF(noteId, adviceNoteNo);
-      } else {
-        await InvestmentAdviceService.downloadDOCX(noteId, adviceNoteNo);
-      }
+      await InvestmentAdviceService.downloadPDF(noteId, adviceNoteNo);
       toast.success(`${formatType.toUpperCase()} generated successfully.`);
     } catch (error) {
       console.error("Failed to export note", error);
@@ -265,20 +261,6 @@ export function AllAdviceNotesList({ onCreateNew, onSelectNote }: AllAdviceNotes
                                   )}
                                   Download PDF
                                 </DropdownMenuItem>
-                                {/*
-                                <DropdownMenuItem 
-                                  className="gap-2 cursor-pointer" 
-                                  onClick={() => handleDownload(note.id, note.advice_note_no, 'docx')}
-                                  disabled={downloading === `${note.id}-docx`}
-                                >
-                                  {downloading === `${note.id}-docx` ? (
-                                    <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-                                  ) : (
-                                    <FileText className="w-4 h-4 text-blue-500" />
-                                  )}
-                                  Download Word (.docx)
-                                </DropdownMenuItem>
-                                */}
                                 
                                 {!isLocked && (
                                   <>

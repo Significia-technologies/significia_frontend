@@ -134,23 +134,4 @@ export class InvestmentAdviceService {
     link.remove();
     setTimeout(() => window.URL.revokeObjectURL(url), 10_000);
   }
-
-  static async downloadDOCX(noteId: string, adviceNoteNo: string): Promise<void> {
-    const res = await httpClient.get(API_ENDPOINTS.ADVISORY.DOCX(noteId), {
-      responseType: "blob",
-    });
-    const url = window.URL.createObjectURL(
-      new Blob([res.data], {
-        type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      })
-    );
-    const link = document.createElement("a");
-    link.href = url;
-    const safeName = adviceNoteNo.replace(/[^a-zA-Z0-9-_]/g, "_");
-    link.setAttribute("download", `InvestmentAdviceNote_${safeName}.docx`);
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    setTimeout(() => window.URL.revokeObjectURL(url), 10_000);
-  }
 }

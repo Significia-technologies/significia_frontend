@@ -192,9 +192,6 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
   const [subSilverEtf, setSubSilverEtf] = useState<string>("0");
   const [subEtfCommodity, setSubEtfCommodity] = useState<string>("0");
 
-  const [currentAssetAllocation, setCurrentAssetAllocation] = useState<string>("");
-  const [rebalancingRationale, setRebalancingRationale] = useState<string>("");
-  
   const [suitabilityChoice, setSuitabilityChoice] = useState<string>("YES");
   const [suitabilityBasis, setSuitabilityBasis] = useState<string>(
     "Financial Goals, Risk profile, income, liabilities, Asset Allocation, Target Portfolio, existing portfolio and investment horizon reviewed"
@@ -709,8 +706,6 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
         fee_amount: feeAmount ? parseFloat(feeAmount) : 0,
         recommended_asset_allocation: recAlloc,
         date_of_allocation: dateOfAllocation,
-        current_asset_allocation: currentAssetAllocation,
-        rebalancing_rationale: rebalancingRationale,
         suitability_assessment: suitabilityChoice === "YES" 
           ? "YES — Advice is suitable to the client's risk profile, financial goals and overall financial situation"
           : "NO",
@@ -1254,28 +1249,6 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                     value={dateOfAllocation}
                     onChange={(e) => setDateOfAllocation(e.target.value)}
                     disabled
-                  />
-                </div>
-
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="current_allocation">Current Asset Allocation (For comparison table)</Label>
-                  <Textarea 
-                    id="current_allocation"
-                    className="min-h-16"
-                    placeholder="e.g. Equity 72%, Debt 23%, Gold 5%"
-                    value={currentAssetAllocation}
-                    onChange={(e) => setCurrentAssetAllocation(e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="rebalancing">Rebalancing Rationale</Label>
-                  <Textarea 
-                    id="rebalancing"
-                    className="min-h-16"
-                    placeholder="e.g. Reduce equity overweight; increase gold allocation for portfolio stability."
-                    value={rebalancingRationale}
-                    onChange={(e) => setRebalancingRationale(e.target.value)}
                   />
                 </div>
               </div>

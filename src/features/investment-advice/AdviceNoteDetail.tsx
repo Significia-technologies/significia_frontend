@@ -79,15 +79,11 @@ export function AdviceNoteDetail({ noteId, onBack }: AdviceNoteDetailProps) {
     fetchDetail();
   }, [noteId]);
 
-  const handleDownload = async (formatType: 'pdf' | 'docx') => {
+  const handleDownload = async (formatType: 'pdf') => {
     if (!note) return;
     setDownloading(formatType);
     try {
-      if (formatType === 'pdf') {
-        await InvestmentAdviceService.downloadPDF(note.id, note.advice_note_no);
-      } else {
-        await InvestmentAdviceService.downloadDOCX(note.id, note.advice_note_no);
-      }
+      await InvestmentAdviceService.downloadPDF(note.id, note.advice_note_no);
       toast.success(`${formatType.toUpperCase()} exported successfully.`);
     } catch (error) {
       console.error("Failed to export report", error);
@@ -251,23 +247,6 @@ export function AdviceNoteDetail({ noteId, onBack }: AdviceNoteDetailProps) {
             <span>Export PDF</span>
           </Button>
 
-          {/*
-          <Button 
-            variant="outline" 
-            size="sm"
-            className="border-blue-500/20 text-blue-600 hover:bg-blue-500/10 h-9 text-xs gap-1.5"
-            onClick={() => handleDownload('docx')}
-            disabled={downloading !== null}
-          >
-            {downloading === 'docx' ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <FileCheck2 className="w-3.5 h-3.5" />
-            )}
-            <span>Export DOCX</span>
-          </Button>
-          */}
-
           {!note.is_locked && (
             <Button 
               size="sm"
@@ -343,17 +322,6 @@ export function AdviceNoteDetail({ noteId, onBack }: AdviceNoteDetailProps) {
                   <GridRow label="Advice Suitable?" value={note.suitability_assessment} />
                   <GridRow label="Suitability Basis" value={note.suitability_basis} />
                   <GridRow label="Investor Advice" value={note.investor_advice} />
-                </div>
-                <div className="p-4 bg-muted/30 rounded-xl space-y-3">
-                  <div>
-                    <h5 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Current Asset Allocation</h5>
-                    <p className="text-sm font-medium mt-1 whitespace-pre-line">{note.current_asset_allocation || "N/A"}</p>
-                  </div>
-                  <hr className="border-primary/5" />
-                  <div>
-                    <h5 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Rebalancing Rationale</h5>
-                    <p className="text-sm font-medium mt-1 whitespace-pre-line">{note.rebalancing_rationale || "N/A"}</p>
-                  </div>
                 </div>
               </div>
             </div>
