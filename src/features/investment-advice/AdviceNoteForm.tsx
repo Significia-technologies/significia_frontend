@@ -225,7 +225,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
   
   const [recProductName, setRecProductName] = useState<string>("");
   const [recIsin, setRecIsin] = useState<string>("");
-  const [recAction, setRecAction] = useState<"BUY" | "HOLD" | "SELL" | "REVIEW">("BUY");
+  const [recAction, setRecAction] = useState<"BUY" | "HOLD" | "SELL">("BUY");
   const [recTransactionType, setRecTransactionType] = useState<'SIP' | 'STP' | 'SWP' | 'LUMP_SUM' | 'HOLDING' | 'TEXT_ONLY' | 'SWITCH_IN' | 'SWITCH_OUT' | 'TRANSFER_IN' | 'TRANSFER_OUT'>("SIP");
   const [recFrequency, setRecFrequency] = useState<'MONTHLY' | 'QUARTERLY' | 'HALF_YEARLY' | 'YEARLY'>("MONTHLY");
   const [recAmount, setRecAmount] = useState<string>("");
@@ -1382,7 +1382,6 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                         <SelectItem value="BUY">BUY</SelectItem>
                         <SelectItem value="HOLD">HOLD</SelectItem>
                         <SelectItem value="SELL">SELL</SelectItem>
-                        <SelectItem value="REVIEW">REVIEW</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
