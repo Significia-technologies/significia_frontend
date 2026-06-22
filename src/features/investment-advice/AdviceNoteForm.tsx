@@ -213,9 +213,13 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                             (parseFloat(subSilverEtf) || 0) + 
                             (parseFloat(subEtfCommodity) || 0);
 
+  // Section D Advice Validity
+  const [sectionDValidity, setSectionDValidity] = useState<string>("30");
+  const [sectionDCustomDays, setSectionDCustomDays] = useState<string>("7");
+
   // Recommendations
   const [recommendations, setRecommendations] = useState<InvestmentAdviceRecommendation[]>([]);
-  
+
   // Recommendations editor row state
   const [recProductType, setRecProductType] = useState<string>("shares");
   const [targetPortfolioEntries, setTargetPortfolioEntries] = useState<TargetPortfolioEntry[]>([]);
@@ -704,9 +708,13 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
       const poName = selectedPO ? (selectedPO.full_name || selectedPO.name || selectedPO.name_of_employee || "") : "";
       const poReg = selectedPO ? (selectedPO.ia_registration_number || "") : "";
 
-      // 2. Resolve validity days and text
-      const valDays = adviceValidity === "custom" ? parseInt(customValidityDays) : parseInt(adviceValidity);
-      const valText = `${valDays} calendar days from date of issue`;
+      // 2. Resolve validity days and text (Section D overrides Section A)
+      const valDays = sectionDValidity === "Immediate"
+        ? 0
+        : sectionDValidity === "custom"
+          ? parseInt(sectionDCustomDays) || 0
+          : parseInt(sectionDValidity) || (adviceValidity === "custom" ? parseInt(customValidityDays) : parseInt(adviceValidity));
+      const valText = valDays === 0 ? "Immediate" : `${valDays} calendar days from date of issue`;
 
       // 3. Asset Allocation dict
       const recAlloc = {
@@ -1287,6 +1295,43 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
             <div className="space-y-6 animate-in fade-in duration-300">
               <div className="border-b border-primary/5 pb-2 mb-4">
                 <h3 className="font-bold text-lg text-primary">Section D — Product Recommendations</h3>
+              </div>
+
+              {/* Advice Validity */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label>Advice Validity</Label>
+                  <Select value={sectionDValidity} onValueChange={setSectionDValidity}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Immediate">Immediate</SelectItem>
+                      <SelectItem value="7">7 Days</SelectItem>
+                      <SelectItem value="15">15 Days</SelectItem>
+                      <SelectItem value="30">30 Days</SelectItem>
+                      <SelectItem value="90">90 Days</SelectItem>
+                      <SelectItem value="180">180 Days</SelectItem>
+                      <SelectItem value="365">365 Days</SelectItem>
+                      <SelectItem value="custom">Custom</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {sectionDValidity === "custom" && (
+                  <div className="space-y-1.5">
+                    <Label>No. of Days</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={sectionDCustomDays}
+                      onChange={(e) => setSectionDCustomDays(e.target.value)}
+                      placeholder="e.g. 45"
+                    />
+                  </div>
+                )}
+              </div>
+              <div className="bg-primary/5 border border-primary/10 p-3 rounded-lg text-xs font-semibold text-primary/80">
+                Validity: {sectionDValidity === "Immediate" ? "Immediate" : `${sectionDValidity === "custom" ? (sectionDCustomDays || "—") : sectionDValidity} calendar days from date of issue`}
               </div>
 
               {/* Inline Recommendation Adder */}
