@@ -236,6 +236,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
   const [recToFund, setRecToFund] = useState<string>("");
   const [recAdviceValidity, setRecAdviceValidity] = useState<string>("30");
   const [recAdviceCustomDays, setRecAdviceCustomDays] = useState<string>("7");
+  const [recInstallments, setRecInstallments] = useState<string>("");
 
   const selectedEntry = targetPortfolioEntries.find(e => e.id === selectedTargetPortfolioEntryId);
   let mappedType: 'SIP' | 'STP' | 'SWP' | 'LUMP_SUM' | 'HOLDING' | 'TEXT_ONLY' | 'SWITCH_IN' | 'SWITCH_OUT' | 'TRANSFER_IN' | 'TRANSFER_OUT' | null = null;
@@ -578,6 +579,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
       amount: amountVal,
       custom_instruction: customInst,
       advice_validity_text: adviceValidityText,
+      no_of_installments: recTransactionType === 'SWP' && recInstallments ? parseInt(recInstallments) : null,
       amount_units: formatAmountUnits(tempRec, recProductType),
       indicative_price_nav: recPriceNav ? parseFloat(recPriceNav) : null,
       rationale: recRationale || "Recommended as suitable according to client's risk profile."
@@ -601,6 +603,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
     setRecToFund("");
     setRecAdviceValidity("30");
     setRecAdviceCustomDays("7");
+    setRecInstallments("");
     toast.success("Recommendation added to draft table.");
   };
 
@@ -1433,25 +1436,40 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-                  {/* Action Type (read-only, set from target portfolio) */}
+                  {/* Action Type — editable only for Lump Sum (can switch to SWP) */}
                   <div className="md:col-span-3 space-y-1.5">
                     <Label>Action Type</Label>
-                    <Input
-                      disabled
-                      value={
-                        recTransactionType === 'SIP' ? 'SIP' :
-                        recTransactionType === 'STP' ? 'STP' :
-                        recTransactionType === 'SWP' ? 'SWP' :
-                        recTransactionType === 'LUMP_SUM' ? 'Lump Sum' :
-                        recTransactionType === 'HOLDING' ? 'Hold' :
-                        recTransactionType === 'TEXT_ONLY' ? 'Custom Note' :
-                        recTransactionType === 'SWITCH_IN' ? 'Switch In' :
-                        recTransactionType === 'SWITCH_OUT' ? 'Switch Out' :
-                        recTransactionType === 'TRANSFER_IN' ? 'Transfer In' :
-                        recTransactionType === 'TRANSFER_OUT' ? 'Transfer Out' :
-                        recTransactionType
-                      }
-                    />
+                    {recTransactionType === 'LUMP_SUM' || recTransactionType === 'SWP' && mappedType === 'LUMP_SUM' ? (
+                      <Select value={recTransactionType} onValueChange={(val: any) => {
+                        setRecTransactionType(val);
+                        setRecInstallments("");
+                      }}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="LUMP_SUM">Lump Sum</SelectItem>
+                          <SelectItem value="SWP">SWP</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Input
+                        disabled
+                        value={
+                          recTransactionType === 'SIP' ? 'SIP' :
+                          recTransactionType === 'STP' ? 'STP' :
+                          recTransactionType === 'SWP' ? 'SWP' :
+                          recTransactionType === 'LUMP_SUM' ? 'Lump Sum' :
+                          recTransactionType === 'HOLDING' ? 'Hold' :
+                          recTransactionType === 'TEXT_ONLY' ? 'Custom Note' :
+                          recTransactionType === 'SWITCH_IN' ? 'Switch In' :
+                          recTransactionType === 'SWITCH_OUT' ? 'Switch Out' :
+                          recTransactionType === 'TRANSFER_IN' ? 'Transfer In' :
+                          recTransactionType === 'TRANSFER_OUT' ? 'Transfer Out' :
+                          recTransactionType
+                        }
+                      />
+                    )}
                   </div>
 
                   {/* Conditional Frequency */}
@@ -1528,6 +1546,22 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                     )}
                   </div>
                 </div>
+
+                {/* Installments — shown for SWP */}
+                {recTransactionType === 'SWP' && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-in fade-in duration-200">
+                    <div className="space-y-1.5">
+                      <Label>No. of Installments</Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={recInstallments}
+                        onChange={(e) => setRecInstallments(e.target.value)}
+                        placeholder="e.g. 12"
+                      />
+                    </div>
+                  </div>
+                )}
 
                 {/* From / To fields for transfer-type transactions (auto-populated from target portfolio) */}
                 {['STP', 'SWITCH_IN', 'SWITCH_OUT', 'TRANSFER_IN', 'TRANSFER_OUT'].includes(recTransactionType) && (

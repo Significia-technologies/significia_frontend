@@ -15,6 +15,7 @@ export interface InvestmentAdviceRecommendation {
   amount?: number | null;
   custom_instruction?: string | null;
   advice_validity_text?: string | null;
+  no_of_installments?: number | null;
   indicative_price_nav?: number | null;
   rationale: string;
 }
