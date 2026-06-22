@@ -18,6 +18,9 @@ export interface InvestmentAdviceRecommendation {
   no_of_installments?: number | null;
   indicative_price_nav?: number | null;
   rationale: string;
+  folio_no?: string | null;
+  from_folio_no?: string | null;
+  to_folio_no?: string | null;
 }
 
 export interface InvestmentAdviceNote {

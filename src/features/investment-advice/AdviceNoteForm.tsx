@@ -240,6 +240,9 @@ export function AdviceNoteForm({ client, noteId, onSuccess, onCancel }: AdviceNo
   const [recInstallments, setRecInstallments] = useState<string>("");
   const [recSwpWithdrawalAmount, setRecSwpWithdrawalAmount] = useState<string>("");
   const [recSwpWithdrawalPercent, setRecSwpWithdrawalPercent] = useState<string>("");
+  const [recFolioNo, setRecFolioNo] = useState<string>("");
+  const [recFromFolioNo, setRecFromFolioNo] = useState<string>("");
+  const [recToFolioNo, setRecToFolioNo] = useState<string>("");
   const [existingAdviceAmounts, setExistingAdviceAmounts] = useState<Record<string, number>>({});
   const [recPreviouslyAdvised, setRecPreviouslyAdvised] = useState<number>(0);
   const [recBalance, setRecBalance] = useState<number | null>(null);
@@ -649,6 +652,26 @@ export function AdviceNoteForm({ client, noteId, onSuccess, onCancel }: AdviceNo
       return;
     }
 
+    const isMutualFund = recProductType === "mutual-funds";
+    const isTransferSwitch = ['SWITCH_IN', 'SWITCH_OUT', 'TRANSFER_IN', 'TRANSFER_OUT'].includes(recTransactionType);
+
+    if (isMutualFund && (recAction === 'SELL' || recAction === 'HOLD') && !isTransferSwitch) {
+      if (!recFolioNo.trim()) {
+        toast.error("Folio No is mandatory for SELL or HOLD on Mutual Funds.");
+        return;
+      }
+    }
+    if (isTransferSwitch) {
+      if (!recFromFolioNo.trim()) {
+        toast.error("From Folio No is mandatory for Switch/Transfer transactions.");
+        return;
+      }
+      if (!recToFolioNo.trim()) {
+        toast.error("To Folio No is mandatory for Switch/Transfer transactions.");
+        return;
+      }
+    }
+
     const ttype = recTransactionType;
     const freq = ['SIP', 'STP', 'SWP'].includes(ttype) ? recFrequency : null;
     const amountVal = ['SIP', 'STP', 'SWP', 'LUMP_SUM', 'SWITCH_IN', 'SWITCH_OUT', 'TRANSFER_IN', 'TRANSFER_OUT'].includes(ttype) ? (recAmount ? parseFloat(recAmount) : null) : null;
@@ -704,7 +727,10 @@ export function AdviceNoteForm({ client, noteId, onSuccess, onCancel }: AdviceNo
       no_of_installments: recTransactionType === 'SWP' && recInstallments ? parseInt(recInstallments) : null,
       amount_units: formatAmountUnits(tempRec, recProductType),
       indicative_price_nav: recPriceNav ? parseFloat(recPriceNav) : null,
-      rationale: recRationale || "Recommended as suitable according to client's risk profile."
+      rationale: recRationale || "Recommended as suitable according to client's risk profile.",
+      folio_no: (recProductType === "mutual-funds" && (recAction === 'SELL' || recAction === 'HOLD') && !isTransferSwitch) ? recFolioNo || null : null,
+      from_folio_no: isTransferSwitch ? recFromFolioNo || null : null,
+      to_folio_no: isTransferSwitch ? recToFolioNo || null : null,
     };
 
     setRecommendations([...recommendations, newRec]);
@@ -726,6 +752,9 @@ export function AdviceNoteForm({ client, noteId, onSuccess, onCancel }: AdviceNo
     setRecAdviceValidity("30");
     setRecAdviceCustomDays("7");
     setRecInstallments("");
+    setRecFolioNo("");
+    setRecFromFolioNo("");
+    setRecToFolioNo("");
     setRecPreviouslyAdvised(0);
     setRecBalance(null);
     toast.success("Recommendation added to draft table.");
@@ -1783,6 +1812,47 @@ export function AdviceNoteForm({ client, noteId, onSuccess, onCancel }: AdviceNo
                   </div>
                 )}
 
+                {/* Folio No — Mutual Fund SELL/HOLD */}
+                {recProductType === "mutual-funds" && (recAction === 'SELL' || recAction === 'HOLD') && !['SWITCH_IN', 'SWITCH_OUT', 'TRANSFER_IN', 'TRANSFER_OUT'].includes(recTransactionType) && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in duration-200">
+                    <div className="space-y-1.5">
+                      <Label className="text-destructive font-semibold">Folio No <span className="text-destructive">*</span></Label>
+                      <Input
+                        value={recFolioNo}
+                        onChange={(e) => setRecFolioNo(e.target.value)}
+                        placeholder="e.g. 1234567890"
+                        className={!recFolioNo.trim() ? "border-destructive/50 focus-visible:ring-destructive/50" : ""}
+                      />
+                      <p className="text-[10px] text-destructive/80">Required for SELL / HOLD on Mutual Funds</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* From / To Folio No — Switch & Transfer transactions */}
+                {['SWITCH_IN', 'SWITCH_OUT', 'TRANSFER_IN', 'TRANSFER_OUT'].includes(recTransactionType) && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in duration-200">
+                    <div className="space-y-1.5">
+                      <Label className="text-destructive font-semibold">From Folio No <span className="text-destructive">*</span></Label>
+                      <Input
+                        value={recFromFolioNo}
+                        onChange={(e) => setRecFromFolioNo(e.target.value)}
+                        placeholder="e.g. 1234567890"
+                        className={!recFromFolioNo.trim() ? "border-destructive/50 focus-visible:ring-destructive/50" : ""}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-destructive font-semibold">To Folio No <span className="text-destructive">*</span></Label>
+                      <Input
+                        value={recToFolioNo}
+                        onChange={(e) => setRecToFolioNo(e.target.value)}
+                        placeholder="e.g. 0987654321"
+                        className={!recToFolioNo.trim() ? "border-destructive/50 focus-visible:ring-destructive/50" : ""}
+                      />
+                    </div>
+                    <p className="text-[10px] text-destructive/80 md:col-span-2">Both folio numbers are required for Switch / Transfer transactions</p>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label>Adviser Rationale (Section E)</Label>
@@ -1867,6 +1937,9 @@ export function AdviceNoteForm({ client, noteId, onSuccess, onCancel }: AdviceNo
                             <TableCell className="text-xs">
                               <div className="font-bold">{rec.product_name}</div>
                               <div className="text-[10px] text-muted-foreground">{rec.isin_code_scheme_code_uin}</div>
+                              {rec.folio_no && <div className="text-[10px] text-muted-foreground">Folio: {rec.folio_no}</div>}
+                              {rec.from_folio_no && <div className="text-[10px] text-muted-foreground">From Folio: {rec.from_folio_no}</div>}
+                              {rec.to_folio_no && <div className="text-[10px] text-muted-foreground">To Folio: {rec.to_folio_no}</div>}
                             </TableCell>
                             <TableCell className="text-xs capitalize">{rec.product_type.replace("-", " ")}</TableCell>
                             <TableCell className="text-xs">
