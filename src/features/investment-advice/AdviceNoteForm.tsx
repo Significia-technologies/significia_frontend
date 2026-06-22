@@ -232,6 +232,8 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
   const [recCustomInstruction, setRecCustomInstruction] = useState<string>("");
   const [recPriceNav, setRecPriceNav] = useState<string>("");
   const [recRationale, setRecRationale] = useState<string>("");
+  const [recFromFund, setRecFromFund] = useState<string>("");
+  const [recToFund, setRecToFund] = useState<string>("");
 
   const selectedEntry = targetPortfolioEntries.find(e => e.id === selectedTargetPortfolioEntryId);
   let mappedType: 'SIP' | 'STP' | 'SWP' | 'LUMP_SUM' | 'HOLDING' | 'TEXT_ONLY' | 'SWITCH_IN' | 'SWITCH_OUT' | 'TRANSFER_IN' | 'TRANSFER_OUT' | null = null;
@@ -359,7 +361,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
       }
     };
 
-    // 5. Fetch Target Portfolio Entries
+    // 5. Fetch Target Portfolio Entries (current portfolio version only)
     const fetchTargetPortfolio = async () => {
       if (!client.id) return;
       setLoadingTargetPortfolio(true);
@@ -367,12 +369,22 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
         const { members } = await InvestorMasterService.listMembers(client.id, "active");
         const allEntries: TargetPortfolioEntry[] = [];
         const assetClasses: AssetClass[] = ["shares", "mf", "etf", "life_insurance", "health_insurance"];
-        
+
         for (const member of members) {
+          // Get the current portfolio version for this member
+          let currentPortfolioId: string | undefined;
+          try {
+            const { portfolios } = await TargetPortfolioService.listPortfolios(client.id!, member.id);
+            const current = portfolios.find(p => p.is_current) || portfolios[0];
+            currentPortfolioId = current?.id;
+          } catch {
+            currentPortfolioId = undefined;
+          }
+
           const results = await Promise.all(
             assetClasses.map(async (ac) => {
               try {
-                const res = await TargetPortfolioService.listEntries(client.id!, member.id, ac);
+                const res = await TargetPortfolioService.listEntries(client.id!, member.id, ac, currentPortfolioId);
                 return (res.entries || []).map(entry => ({
                   ...entry,
                   member_name: member.full_name
@@ -384,7 +396,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
           );
           results.forEach(entries => allEntries.push(...entries));
         }
-        
+
         const activeEntries = allEntries.filter(entry => entry.is_active !== false);
         setTargetPortfolioEntries(activeEntries);
       } catch (error) {
@@ -434,14 +446,34 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
       setRecAmount("");
     }
 
+    let resolvedTType: typeof recTransactionType = recTransactionType;
     if (entry.transaction_type) {
       if (entry.transaction_type === "SINGLE_PAY") {
-        setRecTransactionType("LUMP_SUM");
+        resolvedTType = "LUMP_SUM";
       } else if (entry.transaction_type === "RECURRING") {
-        setRecTransactionType("SIP");
+        resolvedTType = "SIP";
       } else {
-        setRecTransactionType(entry.transaction_type as any);
+        resolvedTType = entry.transaction_type as any;
       }
+      setRecTransactionType(resolvedTType);
+    }
+
+    // Auto-populate From / To for transfer-type transactions
+    if (resolvedTType === "STP") {
+      setRecFromFund(entry.product_name);
+      const stpToName = entry.stp_to_product_name
+        || targetPortfolioEntries.find(e => e.product_id === entry.stp_to_product_id)?.product_name
+        || "";
+      setRecToFund(stpToName);
+    } else if (resolvedTType === "SWITCH_OUT" || resolvedTType === "TRANSFER_OUT") {
+      setRecFromFund(entry.product_name);
+      setRecToFund("");
+    } else if (resolvedTType === "SWITCH_IN" || resolvedTType === "TRANSFER_IN") {
+      setRecFromFund("");
+      setRecToFund(entry.product_name);
+    } else {
+      setRecFromFund("");
+      setRecToFund("");
     }
 
     if (entry.frequency) {
@@ -503,7 +535,12 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
     const ttype = recTransactionType;
     const freq = ['SIP', 'STP', 'SWP'].includes(ttype) ? recFrequency : null;
     const amountVal = ['SIP', 'STP', 'SWP', 'LUMP_SUM', 'SWITCH_IN', 'SWITCH_OUT', 'TRANSFER_IN', 'TRANSFER_OUT'].includes(ttype) ? (recAmount ? parseFloat(recAmount) : null) : null;
-    const customInst = ttype === 'TEXT_ONLY' ? recCustomInstruction : null;
+    const fromToTypes = ['STP', 'SWITCH_IN', 'SWITCH_OUT', 'TRANSFER_IN', 'TRANSFER_OUT'];
+    const customInst = ttype === 'TEXT_ONLY'
+      ? recCustomInstruction
+      : fromToTypes.includes(ttype) && (recFromFund || recToFund)
+        ? `From: ${recFromFund || '—'} | To: ${recToFund || '—'}`
+        : null;
 
     if (amountVal !== null && !isNaN(amountVal)) {
       const entry = targetPortfolioEntries.find(e => e.id === selectedTargetPortfolioEntryId);
@@ -551,6 +588,8 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
     setRecCustomInstruction("");
     setRecPriceNav("");
     setRecRationale("");
+    setRecFromFund("");
+    setRecToFund("");
     toast.success("Recommendation added to draft table.");
   };
 
@@ -1267,6 +1306,8 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                       setRecIsin("");
                       setRecPriceNav("");
                       setRecAmount("");
+                      setRecFromFund("");
+                      setRecToFund("");
                     }}>
                       <SelectTrigger className="w-full max-w-full">
                         <SelectValue />
@@ -1382,88 +1423,55 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-                  {/* Action Type Select */}
+                  {/* Action Type (read-only, set from target portfolio) */}
                   <div className="md:col-span-3 space-y-1.5">
                     <Label>Action Type</Label>
-                    <Select 
-                      value={recTransactionType} 
-                      onValueChange={(val: any) => {
-                        setRecTransactionType(val);
-                        if (val === 'HOLDING') {
-                          setRecAmount("");
-                          setRecCustomInstruction("");
-                        }
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {recProductType === "mutual-funds" ? (
-                          // Mutual Fund options: show mapped + SWP + Hold + Custom Note + Switch In/Out + Transfer In/Out
-                          selectedEntry ? (
-                            <>
-                              {mappedType === "SIP" && <SelectItem value="SIP">SIP</SelectItem>}
-                              {mappedType === "STP" && <SelectItem value="STP">STP</SelectItem>}
-                              {mappedType === "LUMP_SUM" && <SelectItem value="LUMP_SUM">Lump Sum</SelectItem>}
-                              <SelectItem value="SWP">SWP</SelectItem>
-                              <SelectItem value="HOLDING">Hold</SelectItem>
-                              <SelectItem value="TEXT_ONLY">Custom Note</SelectItem>
-                              <SelectItem value="SWITCH_IN">Switch In</SelectItem>
-                              <SelectItem value="SWITCH_OUT">Switch Out</SelectItem>
-                              <SelectItem value="TRANSFER_IN">Transfer In</SelectItem>
-                              <SelectItem value="TRANSFER_OUT">Transfer Out</SelectItem>
-                            </>
-                          ) : (
-                            <>
-                              <SelectItem value="SIP">SIP</SelectItem>
-                              <SelectItem value="STP">STP</SelectItem>
-                              <SelectItem value="SWP">SWP</SelectItem>
-                              <SelectItem value="LUMP_SUM">Lump Sum</SelectItem>
-                              <SelectItem value="HOLDING">Hold</SelectItem>
-                              <SelectItem value="TEXT_ONLY">Custom Note</SelectItem>
-                              <SelectItem value="SWITCH_IN">Switch In</SelectItem>
-                              <SelectItem value="SWITCH_OUT">Switch Out</SelectItem>
-                              <SelectItem value="TRANSFER_IN">Transfer In</SelectItem>
-                              <SelectItem value="TRANSFER_OUT">Transfer Out</SelectItem>
-                            </>
-                          )
-                        ) : (
-                          // Other products: show ONLY mappedType (when selected), or standard options (when not selected)
-                          selectedEntry ? (
-                            <>
-                              {mappedType === "SIP" && <SelectItem value="SIP">SIP</SelectItem>}
-                              {mappedType === "LUMP_SUM" && <SelectItem value="LUMP_SUM">Lump Sum</SelectItem>}
-                            </>
-                          ) : (
-                            <>
-                              {recProductType !== "health-insurance" && <SelectItem value="SIP">SIP</SelectItem>}
-                              <SelectItem value="LUMP_SUM">Lump Sum</SelectItem>
-                            </>
-                          )
-                        )}
-                      </SelectContent>
-                    </Select>
+                    <Input
+                      disabled
+                      value={
+                        recTransactionType === 'SIP' ? 'SIP' :
+                        recTransactionType === 'STP' ? 'STP' :
+                        recTransactionType === 'SWP' ? 'SWP' :
+                        recTransactionType === 'LUMP_SUM' ? 'Lump Sum' :
+                        recTransactionType === 'HOLDING' ? 'Hold' :
+                        recTransactionType === 'TEXT_ONLY' ? 'Custom Note' :
+                        recTransactionType === 'SWITCH_IN' ? 'Switch In' :
+                        recTransactionType === 'SWITCH_OUT' ? 'Switch Out' :
+                        recTransactionType === 'TRANSFER_IN' ? 'Transfer In' :
+                        recTransactionType === 'TRANSFER_OUT' ? 'Transfer Out' :
+                        recTransactionType
+                      }
+                    />
                   </div>
 
-                  {/* Conditional Frequency Select */}
+                  {/* Conditional Frequency */}
                   {['SIP', 'STP', 'SWP'].includes(recTransactionType) && (
                     <div className="md:col-span-3 space-y-1.5 animate-in fade-in duration-200">
                       <Label>Frequency</Label>
-                      <Select 
-                        value={recFrequency} 
-                        onValueChange={(val: any) => setRecFrequency(val)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="MONTHLY">Monthly</SelectItem>
-                          <SelectItem value="QUARTERLY">Quarterly</SelectItem>
-                          <SelectItem value="HALF_YEARLY">Half-Yearly</SelectItem>
-                          <SelectItem value="YEARLY">Yearly</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      {recTransactionType === 'SWP' ? (
+                        <Select value={recFrequency} onValueChange={(val: any) => setRecFrequency(val)}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="MONTHLY">Monthly</SelectItem>
+                            <SelectItem value="QUARTERLY">Quarterly</SelectItem>
+                            <SelectItem value="HALF_YEARLY">Half-Yearly</SelectItem>
+                            <SelectItem value="YEARLY">Yearly</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Input
+                          disabled
+                          value={
+                            recFrequency === 'MONTHLY' ? 'Monthly' :
+                            recFrequency === 'QUARTERLY' ? 'Quarterly' :
+                            recFrequency === 'HALF_YEARLY' ? 'Half-Yearly' :
+                            recFrequency === 'YEARLY' ? 'Yearly' :
+                            recFrequency
+                          }
+                        />
+                      )}
                     </div>
                   )}
 
@@ -1510,6 +1518,28 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                     )}
                   </div>
                 </div>
+
+                {/* From / To fields for transfer-type transactions (auto-populated from target portfolio) */}
+                {['STP', 'SWITCH_IN', 'SWITCH_OUT', 'TRANSFER_IN', 'TRANSFER_OUT'].includes(recTransactionType) && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in duration-200">
+                    <div className="space-y-1.5">
+                      <Label>From (Fund / Scheme)</Label>
+                      <Input
+                        disabled
+                        value={recFromFund}
+                        placeholder="—"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>To (Fund / Scheme)</Label>
+                      <Input
+                        disabled
+                        value={recToFund}
+                        placeholder="—"
+                      />
+                    </div>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 gap-4">
                   <div className="space-y-1.5">
