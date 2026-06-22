@@ -438,8 +438,16 @@ export function AdviceNoteForm({ client, noteId, onSuccess, onCancel }: AdviceNo
       if (!client.id) return;
       try {
         const notes = await InvestmentAdviceService.list(client.id);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
         const map: Record<string, number> = {};
         for (const note of notes) {
+          if (!note.is_locked) continue;
+          if (noteId && note.id === noteId) continue;
+          const issueDate = new Date(note.date_of_issue);
+          const expiryDate = new Date(issueDate);
+          expiryDate.setDate(expiryDate.getDate() + note.advice_validity_days);
+          if (expiryDate < today) continue;
           for (const rec of note.recommendations || []) {
             if (rec.product_id && rec.amount) {
               map[rec.product_id] = (map[rec.product_id] || 0) + rec.amount;
@@ -650,8 +658,13 @@ export function AdviceNoteForm({ client, noteId, onSuccess, onCancel }: AdviceNo
     if (amountVal !== null && !isNaN(amountVal)) {
       const entry = targetPortfolioEntries.find(e => e.id === selectedTargetPortfolioEntryId);
       if (entry && entry.suggested_investment_amount !== null && entry.suggested_investment_amount !== undefined) {
-        if (amountVal > entry.suggested_investment_amount) {
-          toast.error(`Amount Exceeded: Recommended amount of Rs. ${amountVal.toLocaleString('en-IN')} exceeds the target portfolio suggested amount of Rs. ${entry.suggested_investment_amount.toLocaleString('en-IN')} for "${entry.product_name}".`);
+        const previouslyAdvisedForProduct = existingAdviceAmounts[entry.product_id] || 0;
+        const remainingBalance = Math.max(0, entry.suggested_investment_amount - previouslyAdvisedForProduct);
+        if (amountVal > remainingBalance) {
+          const balanceLabel = previouslyAdvisedForProduct > 0
+            ? `remaining balance of Rs. ${remainingBalance.toLocaleString('en-IN')} (Target: Rs. ${entry.suggested_investment_amount.toLocaleString('en-IN')}, Already Advised: Rs. ${previouslyAdvisedForProduct.toLocaleString('en-IN')})`
+            : `target portfolio suggested amount of Rs. ${entry.suggested_investment_amount.toLocaleString('en-IN')}`;
+          toast.error(`Amount Exceeded: Rs. ${amountVal.toLocaleString('en-IN')} exceeds the ${balanceLabel} for "${entry.product_name}".`);
           return;
         }
       }
