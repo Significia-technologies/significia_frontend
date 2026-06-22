@@ -374,11 +374,29 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
       }
     };
 
+    // 6. Fetch Target Portfolio Total AUA for Assets Under Advice
+    const fetchTotalAUA = async () => {
+      if (!client.id) return;
+      try {
+        const res = await TargetPortfolioService.getAUASummary([client.id]);
+        if (res.summary && res.summary.length > 0) {
+          const totalAua = res.summary[0].total_aua || 0;
+          setAssetsUnderAdvice(String(totalAua));
+        } else {
+          setAssetsUnderAdvice("0");
+        }
+      } catch (error) {
+        console.error("Failed to fetch target portfolio total AUA", error);
+        setAssetsUnderAdvice("0");
+      }
+    };
+
     fetchEmployees();
     fetchAnalysisGoal();
     fetchLatestAllocation();
     fetchIAMaster();
     fetchTargetPortfolio();
+    fetchTotalAUA();
   }, [client]);
 
   const handleSelectTargetPortfolioEntry = async (entry: TargetPortfolioEntry) => {
@@ -866,7 +884,7 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
                     id="aua"
                     type="number"
                     value={assetsUnderAdvice}
-                    onChange={(e) => setAssetsUnderAdvice(e.target.value)}
+                    disabled
                     placeholder="e.g. 3850000"
                   />
                 </div>
