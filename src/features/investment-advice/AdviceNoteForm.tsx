@@ -47,6 +47,10 @@ import { AssetAllocationService } from "@/core/services/asset-allocation.service
 import { InvestorMasterService } from "@/core/services/investor-master.service";
 import { TargetPortfolioService, TargetPortfolioEntry, AssetClass } from "@/core/services/target-portfolio.service";
 import { toast } from "sonner";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CustomCheckbox } from "@/components/ui/CustomCheckbox";
+
+const FINANCIAL_GOAL_OPTIONS = ["HLV", "Retirement", "Child Education", "Child Marriage", "General"];
 
 interface AdviceNoteFormProps {
   client: ClientCreate;
@@ -145,7 +149,26 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
   const [annualIncomeBand, setAnnualIncomeBand] = useState<string>(mapIncomeToBand(client.annual_income || 0));
   const [assetsUnderAdvice, setAssetsUnderAdvice] = useState<string>("");
   const [primaryFinancialGoal, setPrimaryFinancialGoal] = useState<string>("");
+  const [goalPopoverOpen, setGoalPopoverOpen] = useState(false);
   const [feeMode, setFeeMode] = useState<string>("FIXED_FEE"); // FIXED_FEE, PERCENTAGE_AUA
+
+  const getSelectedGoals = (value: string): string[] => {
+    if (!value) return [];
+    return value.split(",").map(g => g.trim()).filter(Boolean);
+  };
+
+  const handleGoalToggle = (goal: string) => {
+    const current = getSelectedGoals(primaryFinancialGoal);
+    let updated: string[];
+    if (current.includes(goal)) {
+      updated = current.filter(g => g !== goal);
+    } else {
+      updated = [...current, goal];
+    }
+    // Keep order consistent with the options list
+    const orderedUpdated = FINANCIAL_GOAL_OPTIONS.filter(opt => updated.includes(opt));
+    setPrimaryFinancialGoal(orderedUpdated.join(", "));
+  };
   const [feeAmount, setFeeAmount] = useState<string>("");
   const [dateOfAllocation, setDateOfAllocation] = useState<string>(new Date().toISOString().split('T')[0]);
   
@@ -916,12 +939,41 @@ export function AdviceNoteForm({ client, onSuccess, onCancel }: AdviceNoteFormPr
 
                 <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="goal">Primary Financial Goal</Label>
-                  <Input 
-                    id="goal"
-                    value={primaryFinancialGoal}
-                    onChange={(e) => setPrimaryFinancialGoal(e.target.value)}
-                    placeholder="e.g. Retirement Corpus & Child Education"
-                  />
+                  <Popover open={goalPopoverOpen} onOpenChange={setGoalPopoverOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        id="goal"
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={goalPopoverOpen}
+                        className="w-full justify-between text-left font-normal bg-background border-input hover:bg-background hover:text-foreground h-10 rounded-xl"
+                      >
+                        <span className="truncate">
+                          {primaryFinancialGoal || "Select financial goals..."}
+                        </span>
+                        <span className="ml-2 shrink-0 opacity-50">▼</span>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[--radix-popover-trigger-width] p-2 z-[200] bg-popover border border-border shadow-md rounded-md" align="start">
+                      <div className="space-y-1">
+                        {FINANCIAL_GOAL_OPTIONS.map((goal) => {
+                          const isSelected = getSelectedGoals(primaryFinancialGoal).includes(goal);
+                          return (
+                            <label
+                              key={goal}
+                              className="flex items-center space-x-2 p-2 hover:bg-accent hover:text-accent-foreground rounded-md cursor-pointer transition-colors text-sm"
+                            >
+                              <CustomCheckbox
+                                checked={isSelected}
+                                onCheckedChange={() => handleGoalToggle(goal)}
+                              />
+                              <span>{goal}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
             </div>
