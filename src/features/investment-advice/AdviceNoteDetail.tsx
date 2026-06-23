@@ -56,6 +56,7 @@ import {
 import { cn } from "@/lib/utils";
 import { InvestmentAdviceService, InvestmentAdviceNote, InvestmentAdviceRecommendation } from "@/core/services/investment-advice.service";
 import { IAMasterService, IAMaster } from "@/core/services/ia-master.service";
+import { InvestorMasterService, InvestorMember } from "@/core/services/investor-master.service";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { formatAmountUnits } from "./AdviceNoteForm";
@@ -102,6 +103,8 @@ export function AdviceNoteDetail({ noteId, onBack, onEdit }: AdviceNoteDetailPro
   const [showRecordActionsPage, setShowRecordActionsPage] = useState(false);
   const [actionTakenUpdates, setActionTakenUpdates] = useState<Record<string, 'Yes' | 'Partial' | 'No'>>({});
   const [savingActions, setSavingActions] = useState(false);
+  const [members, setMembers] = useState<InvestorMember[]>([]);
+  const [selectedMemberFilter, setSelectedMemberFilter] = useState<string>("all");
 
   const fetchDetail = async () => {
     setLoading(true);
@@ -121,6 +124,13 @@ export function AdviceNoteDetail({ noteId, onBack, onEdit }: AdviceNoteDetailPro
         }
       });
       setActionTakenUpdates(initialUpdates);
+
+      try {
+        const { members: memberList } = await InvestorMasterService.listMembers(noteData.client_id, "active");
+        setMembers(memberList);
+      } catch (err) {
+        console.error("Failed to load family members", err);
+      }
     } catch (error) {
       console.error("Failed to fetch advice note detail", error);
       toast.error("Failed to load advice note details");
@@ -156,12 +166,13 @@ export function AdviceNoteDetail({ noteId, onBack, onEdit }: AdviceNoteDetailPro
   const handleDownload = async (
     formatType: 'pdf', 
     validityType: 'all' | 'valid' | 'expired' = 'all',
-    exportType: 'full' | 'execution_log' = 'full'
+    exportType: 'full' | 'execution_log' = 'full',
+    memberFilter: string = 'all'
   ) => {
     if (!note) return;
     setDownloading(validityType);
     try {
-      await InvestmentAdviceService.downloadPDF(note.id, note.advice_note_no, validityType, exportType);
+      await InvestmentAdviceService.downloadPDF(note.id, note.advice_note_no, validityType, exportType, memberFilter);
       toast.success(`${formatType.toUpperCase()} exported successfully.`);
     } catch (error) {
       console.error("Failed to export report", error);
@@ -319,6 +330,20 @@ export function AdviceNoteDetail({ noteId, onBack, onEdit }: AdviceNoteDetailPro
               </p>
             </div>
           </div>          <div className="flex items-center gap-2">
+            <Select value={selectedMemberFilter} onValueChange={setSelectedMemberFilter}>
+              <SelectTrigger className="h-8 w-40 text-xs font-semibold border-primary/20">
+                <SelectValue placeholder="All Family Members" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Family Members</SelectItem>
+                {members.map(member => (
+                  <SelectItem key={member.id} value={member.full_name}>
+                    {member.full_name} ({member.relation === 'Self' ? 'Self' : member.relation})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button 
@@ -336,13 +361,13 @@ export function AdviceNoteDetail({ noteId, onBack, onEdit }: AdviceNoteDetailPro
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="bg-background/95 backdrop-blur-md border-primary/10">
-                <DropdownMenuItem onClick={() => handleDownload('pdf', 'all', 'execution_log')} className="text-xs font-semibold cursor-pointer">
+                <DropdownMenuItem onClick={() => handleDownload('pdf', 'all', 'execution_log', selectedMemberFilter)} className="text-xs font-semibold cursor-pointer">
                   All Execution
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleDownload('pdf', 'valid', 'execution_log')} className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 cursor-pointer">
+                <DropdownMenuItem onClick={() => handleDownload('pdf', 'valid', 'execution_log', selectedMemberFilter)} className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 cursor-pointer">
                   Valid Only
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleDownload('pdf', 'expired', 'execution_log')} className="text-xs font-semibold text-red-500 hover:text-red-600 cursor-pointer">
+                <DropdownMenuItem onClick={() => handleDownload('pdf', 'expired', 'execution_log', selectedMemberFilter)} className="text-xs font-semibold text-red-500 hover:text-red-600 cursor-pointer">
                   Expired Only
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -388,14 +413,20 @@ export function AdviceNoteDetail({ noteId, onBack, onEdit }: AdviceNoteDetailPro
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {recs.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="h-20 text-center text-muted-foreground text-sm italic">
-                        No product recommendations registered in this advice note.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    recs.map((rec, i) => {
+                  {(() => {
+                    const filteredRecs = recs.filter(
+                      (rec) => selectedMemberFilter === "all" || rec.member_name === selectedMemberFilter
+                    );
+                    if (filteredRecs.length === 0) {
+                      return (
+                        <TableRow>
+                          <TableCell colSpan={6} className="h-20 text-center text-muted-foreground text-sm italic">
+                            No product recommendations found for this filter.
+                          </TableCell>
+                        </TableRow>
+                      );
+                    }
+                    return filteredRecs.map((rec, i) => {
                       const validity = calculateValidity(note.date_of_issue, rec.advice_validity_text || `${note.advice_validity_days} Days`);
                       const currentVal = actionTakenUpdates[rec.id || ""] || rec.action_taken || "No";
                       return (
@@ -446,8 +477,8 @@ export function AdviceNoteDetail({ noteId, onBack, onEdit }: AdviceNoteDetailPro
                           </TableCell>
                         </TableRow>
                       );
-                    })
-                  )}
+                    });
+                  })()}
                 </TableBody>
               </Table>
             </div>
@@ -493,20 +524,37 @@ export function AdviceNoteDetail({ noteId, onBack, onEdit }: AdviceNoteDetailPro
         </div>
 
         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
-          <Button 
-            variant="outline" 
-            size="sm"
-            className="border-red-500/20 text-red-500 hover:bg-red-500/10 h-9 text-xs gap-1.5 cursor-pointer"
-            onClick={() => handleDownload('pdf', 'all', 'full')}
-            disabled={downloading !== null}
-          >
-            {downloading !== null ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <FileText className="w-3.5 h-3.5" />
-            )}
-            <span>Export PDF</span>
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="border-red-500/20 text-red-500 hover:bg-red-500/10 h-9 text-xs gap-1.5 cursor-pointer"
+                disabled={downloading !== null}
+              >
+                {downloading !== null ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <FileText className="w-3.5 h-3.5" />
+                )}
+                <span>Export PDF</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-background/95 backdrop-blur-md border-primary/10 w-56">
+              <DropdownMenuItem onClick={() => handleDownload('pdf', 'all', 'full', 'all')} className="text-xs font-semibold cursor-pointer">
+                All Family Members
+              </DropdownMenuItem>
+              {members.map(member => (
+                <DropdownMenuItem 
+                  key={member.id} 
+                  onClick={() => handleDownload('pdf', 'all', 'full', member.full_name)}
+                  className="text-xs cursor-pointer"
+                >
+                  {member.full_name} ({member.relation === 'Self' ? 'Self' : member.relation})
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {!note.is_locked && onEdit && (
             <Button

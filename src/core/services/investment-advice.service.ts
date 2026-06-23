@@ -131,12 +131,14 @@ export class InvestmentAdviceService {
     noteId: string, 
     adviceNoteNo: string, 
     validityType: 'all' | 'valid' | 'expired' = 'all',
-    exportType: 'full' | 'execution_log' = 'full'
+    exportType: 'full' | 'execution_log' = 'full',
+    memberFilter: string = 'all'
   ): Promise<void> {
     const res = await httpClient.get(API_ENDPOINTS.ADVISORY.PDF(noteId), {
       params: { 
         validity_type: validityType,
-        export_type: exportType
+        export_type: exportType,
+        member_filter: memberFilter
       },
       responseType: "blob",
     });
@@ -151,6 +153,10 @@ export class InvestmentAdviceService {
     }
     if (validityType !== 'all') {
       suffixParts.push(validityType);
+    }
+    if (memberFilter !== 'all') {
+      const safeMember = memberFilter.replace(/[^a-zA-Z0-9-_]/g, "_");
+      suffixParts.push(safeMember);
     }
     const suffix = suffixParts.length > 0 ? `_${suffixParts.join('_')}` : '';
     
