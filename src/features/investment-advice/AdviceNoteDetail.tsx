@@ -47,6 +47,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { InvestmentAdviceService, InvestmentAdviceNote, InvestmentAdviceRecommendation } from "@/core/services/investment-advice.service";
 import { IAMasterService, IAMaster } from "@/core/services/ia-master.service";
@@ -147,11 +153,15 @@ export function AdviceNoteDetail({ noteId, onBack, onEdit }: AdviceNoteDetailPro
     fetchDetail();
   }, [noteId]);
 
-  const handleDownload = async (formatType: 'pdf') => {
+  const handleDownload = async (
+    formatType: 'pdf', 
+    validityType: 'all' | 'valid' | 'expired' = 'all',
+    exportType: 'full' | 'execution_log' = 'full'
+  ) => {
     if (!note) return;
-    setDownloading(formatType);
+    setDownloading(validityType);
     try {
-      await InvestmentAdviceService.downloadPDF(note.id, note.advice_note_no);
+      await InvestmentAdviceService.downloadPDF(note.id, note.advice_note_no, validityType, exportType);
       toast.success(`${formatType.toUpperCase()} exported successfully.`);
     } catch (error) {
       console.error("Failed to export report", error);
@@ -308,9 +318,36 @@ export function AdviceNoteDetail({ noteId, onBack, onEdit }: AdviceNoteDetailPro
                 Note: {note.advice_note_no} • Client: {client.client_name || "N/A"}
               </p>
             </div>
-          </div>
+          </div>          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="border-red-500/20 text-red-500 hover:bg-red-500/10 h-8 text-xs gap-1.5 cursor-pointer"
+                  disabled={downloading !== null}
+                >
+                  {downloading !== null ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <FileText className="w-3.5 h-3.5" />
+                  )}
+                  <span>Export Logs</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-background/95 backdrop-blur-md border-primary/10">
+                <DropdownMenuItem onClick={() => handleDownload('pdf', 'all', 'execution_log')} className="text-xs font-semibold cursor-pointer">
+                  All Execution
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleDownload('pdf', 'valid', 'execution_log')} className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 cursor-pointer">
+                  Valid Only
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleDownload('pdf', 'expired', 'execution_log')} className="text-xs font-semibold text-red-500 hover:text-red-600 cursor-pointer">
+                  Expired Only
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-          <div className="flex items-center gap-2">
             <Button 
               variant="outline" 
               size="sm"
@@ -322,7 +359,7 @@ export function AdviceNoteDetail({ noteId, onBack, onEdit }: AdviceNoteDetailPro
             <Button 
               onClick={handleSaveActions} 
               disabled={savingActions}
-              className="bg-primary text-background font-bold h-8 text-xs shadow-md shadow-primary/10 px-4"
+              className="bg-primary text-background font-bold h-8 text-xs shadow-lg shadow-primary/10 px-4"
             >
               {savingActions ? (
                 <span className="flex items-center gap-1.5">
@@ -454,11 +491,11 @@ export function AdviceNoteDetail({ noteId, onBack, onEdit }: AdviceNoteDetailPro
           <Button 
             variant="outline" 
             size="sm"
-            className="border-red-500/20 text-red-500 hover:bg-red-500/10 h-9 text-xs gap-1.5"
-            onClick={() => handleDownload('pdf')}
+            className="border-red-500/20 text-red-500 hover:bg-red-500/10 h-9 text-xs gap-1.5 cursor-pointer"
+            onClick={() => handleDownload('pdf', 'all', 'full')}
             disabled={downloading !== null}
           >
-            {downloading === 'pdf' ? (
+            {downloading !== null ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
             ) : (
               <FileText className="w-3.5 h-3.5" />

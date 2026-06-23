@@ -126,15 +126,34 @@ export class InvestmentAdviceService {
     return res.data;
   }
 
-  static async downloadPDF(noteId: string, adviceNoteNo: string): Promise<void> {
+  static async downloadPDF(
+    noteId: string, 
+    adviceNoteNo: string, 
+    validityType: 'all' | 'valid' | 'expired' = 'all',
+    exportType: 'full' | 'execution_log' = 'full'
+  ): Promise<void> {
     const res = await httpClient.get(API_ENDPOINTS.ADVISORY.PDF(noteId), {
+      params: { 
+        validity_type: validityType,
+        export_type: exportType
+      },
       responseType: "blob",
     });
     const url = window.URL.createObjectURL(new Blob([res.data], { type: "application/pdf" }));
     const link = document.createElement("a");
     link.href = url;
     const safeName = adviceNoteNo.replace(/[^a-zA-Z0-9-_]/g, "_");
-    link.setAttribute("download", `InvestmentAdviceNote_${safeName}.pdf`);
+    
+    const suffixParts = [];
+    if (exportType === 'execution_log') {
+      suffixParts.push('actions_log');
+    }
+    if (validityType !== 'all') {
+      suffixParts.push(validityType);
+    }
+    const suffix = suffixParts.length > 0 ? `_${suffixParts.join('_')}` : '';
+    
+    link.setAttribute("download", `InvestmentAdviceNote_${safeName}${suffix}.pdf`);
     document.body.appendChild(link);
     link.click();
     link.remove();
