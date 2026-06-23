@@ -368,6 +368,8 @@ function AddEntryDialog({
       if (productSubtype === "Gold") key = "gold_etf_percentage";
       if (productSubtype === "Silver") key = "silver_etf_percentage";
       if (productSubtype === "Other ETF") key = "etf_commodity_percentage";
+      if (productSubtype === "Equity ETF" || productSubtype === "Equity Hybrid ETF") key = "etf_equity_percentage";
+      if (productSubtype === "Debt ETF" || productSubtype === "Debt Hybrid ETF") key = "etf_debt_percentage";
     } else if (assetClass === "life_insurance" && productSubtype === "ULIP") {
       if (nature === "Equity") key = "ulip_equity_percentage";
       if (nature === "Debt" || nature === "Hybrid") key = "ulip_debt_percentage";
@@ -645,6 +647,10 @@ function AddEntryDialog({
         }
         return e.asset_class === "mf" && e.product_subtype === mfType;
       } else if (assetClass === "etf") {
+        const isEquityGroup = productSubtype === "Equity ETF" || productSubtype === "Equity Hybrid ETF";
+        const isDebtGroup = productSubtype === "Debt ETF" || productSubtype === "Debt Hybrid ETF";
+        if (isEquityGroup) return e.asset_class === "etf" && (e.product_subtype === "Equity ETF" || e.product_subtype === "Equity Hybrid ETF");
+        if (isDebtGroup) return e.asset_class === "etf" && (e.product_subtype === "Debt ETF" || e.product_subtype === "Debt Hybrid ETF");
         return e.asset_class === "etf" && e.product_subtype === productSubtype;
       } else if (assetClass === "life_insurance") {
         if (productSubtype === "ULIP") {
@@ -988,6 +994,10 @@ function AddEntryDialog({
                   <SelectItem value="Gold">Gold</SelectItem>
                   <SelectItem value="Silver">Silver</SelectItem>
                   <SelectItem value="Other ETF">Other ETF</SelectItem>
+                  <SelectItem value="Equity ETF">Equity ETF</SelectItem>
+                  <SelectItem value="Equity Hybrid ETF">Equity Hybrid ETF</SelectItem>
+                  <SelectItem value="Debt ETF">Debt ETF</SelectItem>
+                  <SelectItem value="Debt Hybrid ETF">Debt Hybrid ETF</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1603,10 +1613,24 @@ function AssetClassTab({
           );
         }
       } else if (assetClass === "etf") {
-        subAssetName = `ETF (${entry.product_subtype})`;
-        matchingEntries = matchingEntries.filter(
-          (e) => e.asset_class === "etf" && e.product_subtype === entry.product_subtype
-        );
+        const isEquityGroup = entry.product_subtype === "Equity ETF" || entry.product_subtype === "Equity Hybrid ETF";
+        const isDebtGroup = entry.product_subtype === "Debt ETF" || entry.product_subtype === "Debt Hybrid ETF";
+        if (isEquityGroup) {
+          subAssetName = "ETF (Equity)";
+          matchingEntries = matchingEntries.filter(
+            (e) => e.asset_class === "etf" && (e.product_subtype === "Equity ETF" || e.product_subtype === "Equity Hybrid ETF")
+          );
+        } else if (isDebtGroup) {
+          subAssetName = "ETF (Debt)";
+          matchingEntries = matchingEntries.filter(
+            (e) => e.asset_class === "etf" && (e.product_subtype === "Debt ETF" || e.product_subtype === "Debt Hybrid ETF")
+          );
+        } else {
+          subAssetName = `ETF (${entry.product_subtype})`;
+          matchingEntries = matchingEntries.filter(
+            (e) => e.asset_class === "etf" && e.product_subtype === entry.product_subtype
+          );
+        }
       } else if (assetClass === "life_insurance") {
         if (entry.product_subtype === "ULIP") {
           const isDebtGroup = entry.nature === "Debt" || entry.nature === "Hybrid";
