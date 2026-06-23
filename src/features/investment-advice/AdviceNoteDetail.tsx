@@ -403,6 +403,11 @@ export function AdviceNoteDetail({ noteId, onBack, onEdit }: AdviceNoteDetailPro
                           <TableCell className="text-xs py-2">{i + 1}</TableCell>
                           <TableCell className="text-xs font-bold text-foreground py-2">
                             <div>{rec.product_name}</div>
+                            {rec.member_name && (
+                              <div className="text-[10px] text-primary/80 font-medium mt-0.5">
+                                Allotted to: {rec.member_name}
+                              </div>
+                            )}
                             <div className="text-[10px] text-muted-foreground font-mono mt-0.5 font-normal">{rec.isin_code_scheme_code_uin}</div>
                           </TableCell>
                           <TableCell className="text-xs py-2">
@@ -649,7 +654,14 @@ export function AdviceNoteDetail({ noteId, onBack, onEdit }: AdviceNoteDetailPro
                     recs.map((rec, i) => (
                       <TableRow key={rec.id || i} className="hover:bg-primary/5 transition-colors">
                         <TableCell className="text-xs">{i + 1}</TableCell>
-                        <TableCell className="text-xs font-bold text-foreground">{rec.product_name}</TableCell>
+                        <TableCell className="text-xs font-bold text-foreground">
+                          <div>{rec.product_name}</div>
+                          {rec.member_name && (
+                            <div className="text-[10px] text-primary/80 font-medium mt-0.5">
+                              Allotted to: {rec.member_name}
+                            </div>
+                          )}
+                        </TableCell>
                         <TableCell className="text-xs font-mono">{rec.isin_code_scheme_code_uin}</TableCell>
                         <TableCell className="text-xs capitalize">{rec.product_type.replace("-", " ")}</TableCell>
                         <TableCell className="text-xs">

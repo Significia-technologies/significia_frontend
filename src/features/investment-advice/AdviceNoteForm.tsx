@@ -713,6 +713,9 @@ export function AdviceNoteForm({ client, noteId, onSuccess, onCancel }: AdviceNo
         ? `${recAdviceCustomDays || "—"} Days`
         : `${recAdviceValidity} Days`;
 
+    const entry = targetPortfolioEntries.find(e => e.id === selectedTargetPortfolioEntryId);
+    const memberName = entry ? (entry as any).member_name : null;
+
     const newRec: InvestmentAdviceRecommendation = {
       product_type: recProductType,
       product_id: selectedProduct?.id,
@@ -731,6 +734,7 @@ export function AdviceNoteForm({ client, noteId, onSuccess, onCancel }: AdviceNo
       folio_no: (recProductType === "mutual-funds" && (recAction === 'SELL' || recAction === 'HOLD') && !isTransferSwitch) ? recFolioNo || null : null,
       from_folio_no: isTransferSwitch ? recFromFolioNo || null : null,
       to_folio_no: isTransferSwitch ? recToFolioNo || null : null,
+      member_name: memberName || null,
     };
 
     setRecommendations([...recommendations, newRec]);
@@ -1934,8 +1938,13 @@ export function AdviceNoteForm({ client, noteId, onSuccess, onCancel }: AdviceNo
                         recommendations.map((rec, i) => (
                           <TableRow key={i} className="hover:bg-primary/5 transition-colors">
                             <TableCell className="text-xs">{i + 1}</TableCell>
-                            <TableCell className="text-xs">
+                             <TableCell className="text-xs">
                               <div className="font-bold">{rec.product_name}</div>
+                              {rec.member_name && (
+                                <div className="text-[10px] text-primary/80 font-medium mt-0.5">
+                                  Allotted to: {rec.member_name}
+                                </div>
+                              )}
                               <div className="text-[10px] text-muted-foreground">{rec.isin_code_scheme_code_uin}</div>
                               {rec.folio_no && <div className="text-[10px] text-muted-foreground">Folio: {rec.folio_no}</div>}
                               {rec.from_folio_no && <div className="text-[10px] text-muted-foreground">From Folio: {rec.from_folio_no}</div>}

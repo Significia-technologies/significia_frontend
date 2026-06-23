@@ -22,6 +22,7 @@ export interface InvestmentAdviceRecommendation {
   from_folio_no?: string | null;
   to_folio_no?: string | null;
   action_taken?: 'Yes' | 'Partial' | 'No';
+  member_name?: string | null;
 }
 
 export interface InvestmentAdviceNote {
