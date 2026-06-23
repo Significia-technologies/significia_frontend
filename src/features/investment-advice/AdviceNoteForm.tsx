@@ -1,25 +1,20 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { 
-  ArrowLeft, 
-  ArrowRight, 
-  Save, 
-  Plus, 
-  Trash2, 
-  Search, 
-  FileText,
-  User, 
-  TrendingUp, 
-  ShieldCheck, 
-  Info,
+import {
+  ArrowLeft,
+  ArrowRight,
+  Save,
+  Plus,
+  Trash2,
+  ShieldCheck,
   Loader2,
   Calendar,
   AlertTriangle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -140,8 +135,6 @@ export function AdviceNoteForm({ client, noteId, onSuccess, onCancel }: AdviceNo
 
   // Form Fields State
   const [dateOfIssue, setDateOfIssue] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [adviceValidity, setAdviceValidity] = useState<string>("60"); // 30, 45, 60, 90, 120, custom
-  const [customValidityDays, setCustomValidityDays] = useState<string>("30");
   const [principalOfficerId, setPrincipalOfficerId] = useState<string>("");
   const [natureOfEntity, setNatureOfEntity] = useState<string>("");
   const [adviceCategory, setAdviceCategory] = useState<string>("Comprehensive Advisory");
@@ -419,7 +412,7 @@ export function AdviceNoteForm({ client, noteId, onSuccess, onCancel }: AdviceNo
           const expiryDate = new Date(issueDate);
           expiryDate.setDate(expiryDate.getDate() + note.advice_validity_days);
           if (expiryDate < today) continue;
-          for (const rec of note.recommendations || []) {
+          for (const rec of (note as any).recommendations || []) {
             if (rec.product_id && rec.amount) {
               map[rec.product_id] = (map[rec.product_id] || 0) + rec.amount;
             }
@@ -438,14 +431,6 @@ export function AdviceNoteForm({ client, noteId, onSuccess, onCancel }: AdviceNo
         const note = await InvestmentAdviceService.get(noteId);
 
         setDateOfIssue(note.date_of_issue);
-
-        const validityOptions = ["30", "45", "60", "90", "120"];
-        if (validityOptions.includes(String(note.advice_validity_days))) {
-          setAdviceValidity(String(note.advice_validity_days));
-        } else {
-          setAdviceValidity("custom");
-          setCustomValidityDays(String(note.advice_validity_days));
-        }
 
         if (note.principal_officer_id) setPrincipalOfficerId(note.principal_officer_id);
         setAdviceCategory(note.advice_category);
@@ -843,9 +828,6 @@ export function AdviceNoteForm({ client, noteId, onSuccess, onCancel }: AdviceNo
       const poName = selectedPO ? (selectedPO.full_name || selectedPO.name || selectedPO.name_of_employee || "") : "";
       const poReg = selectedPO ? (selectedPO.ia_registration_number || "") : "";
 
-      // 2. Resolve validity days and text
-      const valDays = adviceValidity === "custom" ? parseInt(customValidityDays) : parseInt(adviceValidity);
-      const valText = `${valDays} calendar days from date of issue`;
 
       // 3. Asset Allocation dict
       const recAlloc = {
@@ -871,8 +853,8 @@ export function AdviceNoteForm({ client, noteId, onSuccess, onCancel }: AdviceNo
 
       const payload = {
         date_of_issue: dateOfIssue,
-        advice_validity_days: valDays,
-        advice_validity_custom_text: valText,
+        advice_validity_days: 0,
+        advice_validity_custom_text: "",
         principal_officer_id: principalOfficerId || null,
         principal_officer_name: poName,
         principal_officer_reg_no: poReg,
@@ -972,7 +954,7 @@ export function AdviceNoteForm({ client, noteId, onSuccess, onCancel }: AdviceNo
           {step === 1 && (
             <div className="space-y-6 animate-in fade-in duration-300">
               <div className="border-b border-primary/5 pb-2 mb-4">
-                <h3 className="font-bold text-lg text-primary">Section A — Investment Adviser & Validity</h3>
+                <h3 className="font-bold text-lg text-primary">Section A — Investment Adviser</h3>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1015,42 +997,6 @@ export function AdviceNoteForm({ client, noteId, onSuccess, onCancel }: AdviceNo
                   <Input value={adviceCategory} onChange={(e) => setAdviceCategory(e.target.value)} />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="validity">Advice Validity</Label>
-                    <Select value={adviceValidity} onValueChange={setAdviceValidity}>
-                      <SelectTrigger id="validity">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="30">30 Days</SelectItem>
-                        <SelectItem value="45">45 Days</SelectItem>
-                        <SelectItem value="60">60 Days</SelectItem>
-                        <SelectItem value="90">90 Days</SelectItem>
-                        <SelectItem value="120">120 Days</SelectItem>
-                        <SelectItem value="custom">Custom Days</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {adviceValidity === "custom" && (
-                    <div className="space-y-2">
-                      <Label htmlFor="custom_days">Custom Days</Label>
-                      <Input 
-                        id="custom_days"
-                        type="number"
-                        min="1"
-                        value={customValidityDays}
-                        onChange={(e) => setCustomValidityDays(e.target.value)}
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Display validity preview text */}
-              <div className="bg-primary/5 border border-primary/10 p-3 rounded-lg text-xs font-semibold text-primary/80">
-                Advice Validity Statement: "{adviceValidity === "custom" ? customValidityDays : adviceValidity} calendar days from date of issue"
               </div>
 
               <div className="border-b border-primary/5 pb-2 mt-8 mb-4">
