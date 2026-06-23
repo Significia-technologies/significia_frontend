@@ -64,6 +64,18 @@ export interface InvestmentAdviceNote {
   client_code?: string;
 }
 
+export interface InvestmentAdviceNoteSummary {
+  id: string;
+  advice_note_no: string;
+  date_of_issue: string;
+  advice_validity_days: number;
+  advice_validity_custom_text?: string | null;
+  principal_officer_name: string;
+  advice_category: string;
+  is_locked: boolean;
+  created_at: string;
+}
+
 export class InvestmentAdviceService {
   static async listAll(): Promise<InvestmentAdviceNote[]> {
     const res = await httpClient.get<{ notes: InvestmentAdviceNote[]; total: number }>(
@@ -72,8 +84,8 @@ export class InvestmentAdviceService {
     return res.data.notes || [];
   }
 
-  static async list(clientId: string): Promise<InvestmentAdviceNote[]> {
-    const res = await httpClient.get<{ notes: InvestmentAdviceNote[]; total: number }>(
+  static async list(clientId: string): Promise<InvestmentAdviceNoteSummary[]> {
+    const res = await httpClient.get<{ notes: InvestmentAdviceNoteSummary[]; total: number }>(
       API_ENDPOINTS.ADVISORY.LIST(clientId)
     );
     return res.data.notes || [];

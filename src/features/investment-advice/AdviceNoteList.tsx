@@ -46,7 +46,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { InvestmentAdviceService, InvestmentAdviceNote } from "@/core/services/investment-advice.service";
+import { InvestmentAdviceService, InvestmentAdviceNoteSummary } from "@/core/services/investment-advice.service";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -59,10 +59,10 @@ interface AdviceNoteListProps {
 }
 
 export function AdviceNoteList({ clientId, clientName, onSelectNote, onCreateNew, onEditDraft }: AdviceNoteListProps) {
-  const [notes, setNotes] = useState<InvestmentAdviceNote[]>([]);
+  const [notes, setNotes] = useState<InvestmentAdviceNoteSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState<string | null>(null);
-  const [lockingNote, setLockingNote] = useState<InvestmentAdviceNote | null>(null);
+  const [lockingNote, setLockingNote] = useState<InvestmentAdviceNoteSummary | null>(null);
   const [isLocking, setIsLocking] = useState(false);
 
   const fetchNotes = async () => {
