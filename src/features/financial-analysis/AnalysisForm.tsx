@@ -23,7 +23,8 @@ import {
   Wallet,
   Flag,
   Check,
-  Target
+  Target,
+  RotateCcw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -153,6 +154,38 @@ export function AnalysisForm({ clientId, copyFromProfileId, onSuccess, onCancel 
     iaName: "",
     iaReg: ""
   });
+
+  const DRAFT_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+  const draftKey = formData.client_id ? `financial_goals_draft_${formData.client_id}` : null;
+
+  // Restore draft on mount (only when not editing an existing profile)
+  useEffect(() => {
+    if (!draftKey || copyFromProfileId) return;
+    try {
+      const raw = localStorage.getItem(draftKey);
+      if (!raw) return;
+      const { savedAt, formData: savedForm, step: savedStep } = JSON.parse(raw);
+      if (Date.now() - savedAt > DRAFT_TTL_MS) {
+        localStorage.removeItem(draftKey);
+        return;
+      }
+      setFormData(savedForm);
+      setStep(savedStep);
+    } catch {
+      // ignore malformed data
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draftKey]);
+
+  // Save draft whenever formData or step changes
+  useEffect(() => {
+    if (!draftKey) return;
+    try {
+      localStorage.setItem(draftKey, JSON.stringify({ savedAt: Date.now(), formData, step }));
+    } catch {
+      // ignore storage errors
+    }
+  }, [formData, step, draftKey]);
 
   // Load initial data with correct precedence: Client Master -> Historical Profile
   useEffect(() => {
@@ -396,6 +429,7 @@ export function AnalysisForm({ clientId, copyFromProfileId, onSuccess, onCancel 
         disclaimer_text: `${FINANCIAL_GOAL_ANALYSIS_DISCLAIMER}\n\n${formData.disclaimer_text}`.trim()
       };
       const result = await FinancialAnalysisService.create(submissionData);
+      if (draftKey) localStorage.removeItem(draftKey);
       toast.success("Analysis saved and calculated successfully!");
       onSuccess(result.id);
     } catch (error) {
@@ -1229,9 +1263,23 @@ export function AnalysisForm({ clientId, copyFromProfileId, onSuccess, onCancel 
         </CardContent>
 
         <CardFooter className="bg-primary/10 backdrop-blur-md p-4 sm:p-8 flex flex-col sm:flex-row justify-between border-t border-primary/20 gap-6">
-          <Button variant="ghost" onClick={onCancel} className="font-bold hover:bg-destructive/10 hover:text-destructive w-full sm:w-auto">
-            CANCEL AND EXIT
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <Button variant="ghost" onClick={onCancel} className="font-bold hover:bg-destructive/10 hover:text-destructive w-full sm:w-auto">
+              CANCEL AND EXIT
+            </Button>
+            {draftKey && (
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  localStorage.removeItem(draftKey);
+                  toast.success("Draft cleared.");
+                }}
+                className="gap-2 font-bold hover:bg-orange-500/10 hover:text-orange-500 w-full sm:w-auto"
+              >
+                <RotateCcw className="w-4 h-4" /> RESET DRAFT
+              </Button>
+            )}
+          </div>
           
           <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
             {step > 1 && (
