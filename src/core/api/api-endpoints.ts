@@ -296,6 +296,8 @@ export const API_ENDPOINTS = {
     PORTFOLIO_PRODUCT: (portfolioId: string, entryId: string) =>
       `${API_BASE}/portfolio/target-portfolio/portfolio/${portfolioId}/products/${entryId}`,
     AUA_SUMMARY: `${API_BASE}/portfolio/target-portfolio/aua-summary`,
+    ALL_MEMBER_ENTRIES: (clientId: string) =>
+      `${API_BASE}/portfolio/target-portfolio/${clientId}/advice-entries`,
   },
 
   // ── Investor IPS Documents (Portfolio) ───────────────────────────

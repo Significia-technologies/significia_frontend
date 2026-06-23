@@ -199,13 +199,21 @@ export class TargetPortfolioService {
   }
 
 
+  static async listAllMemberEntries(
+    clientId: string
+  ): Promise<{ entries: (TargetPortfolioEntry & { member_name: string })[]; total: number }> {
+    const res = await httpClient.get(API_ENDPOINTS.TARGET_PORTFOLIO.ALL_MEMBER_ENTRIES(clientId));
+    return res.data;
+  }
+
   static async listEntries(
     clientId: string,
     memberId: string,
-    assetClass: AssetClass,
+    assetClass?: AssetClass,
     portfolioId?: string
   ): Promise<{ entries: TargetPortfolioEntry[]; total: number; total_percentage: number }> {
-    const params: any = { asset_class: assetClass };
+    const params: any = {};
+    if (assetClass) params.asset_class = assetClass;
     if (portfolioId) params.portfolio_id = portfolioId;
     const res = await httpClient.get(
       API_ENDPOINTS.TARGET_PORTFOLIO.LIST(clientId, memberId),

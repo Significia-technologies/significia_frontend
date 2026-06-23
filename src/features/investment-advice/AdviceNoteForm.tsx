@@ -44,8 +44,7 @@ import { ProductMasterService, AnyProduct } from "@/core/services/product-master
 import { FinancialAnalysisService } from "@/core/services/financial-analysis.service";
 import { InvestmentAdviceService, InvestmentAdviceRecommendation } from "@/core/services/investment-advice.service";
 import { AssetAllocationService } from "@/core/services/asset-allocation.service";
-import { InvestorMasterService } from "@/core/services/investor-master.service";
-import { TargetPortfolioService, TargetPortfolioEntry, AssetClass } from "@/core/services/target-portfolio.service";
+import { TargetPortfolioService, TargetPortfolioEntry } from "@/core/services/target-portfolio.service";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CustomCheckbox } from "@/components/ui/CustomCheckbox";
@@ -375,44 +374,13 @@ export function AdviceNoteForm({ client, noteId, onSuccess, onCancel }: AdviceNo
       }
     };
 
-    // 5. Fetch Target Portfolio Entries (current portfolio version only)
+    // 5. Fetch Target Portfolio Entries (all active members, current version, single query)
     const fetchTargetPortfolio = async () => {
       if (!client.id) return;
       setLoadingTargetPortfolio(true);
       try {
-        const { members } = await InvestorMasterService.listMembers(client.id, "active");
-        const allEntries: TargetPortfolioEntry[] = [];
-        const assetClasses: AssetClass[] = ["shares", "mf", "etf", "life_insurance", "health_insurance"];
-
-        for (const member of members) {
-          // Get the current portfolio version for this member
-          let currentPortfolioId: string | undefined;
-          try {
-            const { portfolios } = await TargetPortfolioService.listPortfolios(client.id!, member.id);
-            const current = portfolios.find(p => p.is_current) || portfolios[0];
-            currentPortfolioId = current?.id;
-          } catch {
-            currentPortfolioId = undefined;
-          }
-
-          const results = await Promise.all(
-            assetClasses.map(async (ac) => {
-              try {
-                const res = await TargetPortfolioService.listEntries(client.id!, member.id, ac, currentPortfolioId);
-                return (res.entries || []).map(entry => ({
-                  ...entry,
-                  member_name: member.full_name
-                }));
-              } catch {
-                return [];
-              }
-            })
-          );
-          results.forEach(entries => allEntries.push(...entries));
-        }
-
-        const activeEntries = allEntries.filter(entry => entry.is_active !== false);
-        setTargetPortfolioEntries(activeEntries);
+        const { entries } = await TargetPortfolioService.listAllMemberEntries(client.id);
+        setTargetPortfolioEntries(entries);
       } catch (error) {
         console.error("Failed to load target portfolio", error);
       } finally {
