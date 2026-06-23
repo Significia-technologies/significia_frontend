@@ -133,14 +133,27 @@ function DialogTitle({
 
 function DialogDescription({
   className,
+  asChild = false,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Description>) {
+  if (asChild) {
+    return (
+      <DialogPrimitive.Description
+        data-slot="dialog-description"
+        className={cn("text-sm text-muted-foreground", className)}
+        asChild
+        {...props}
+      />
+    )
+  }
   return (
     <DialogPrimitive.Description
       data-slot="dialog-description"
       className={cn("text-sm text-muted-foreground", className)}
-      {...props}
-    />
+      asChild
+    >
+      <div {...props} />
+    </DialogPrimitive.Description>
   )
 }
 

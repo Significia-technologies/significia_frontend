@@ -120,14 +120,27 @@ function SheetTitle({
 
 function SheetDescription({
   className,
+  asChild = false,
   ...props
 }: React.ComponentProps<typeof SheetPrimitive.Description>) {
+  if (asChild) {
+    return (
+      <SheetPrimitive.Description
+        data-slot="sheet-description"
+        className={cn("text-sm text-muted-foreground", className)}
+        asChild
+        {...props}
+      />
+    )
+  }
   return (
     <SheetPrimitive.Description
       data-slot="sheet-description"
       className={cn("text-sm text-muted-foreground", className)}
-      {...props}
-    />
+      asChild
+    >
+      <div {...props} />
+    </SheetPrimitive.Description>
   )
 }
 

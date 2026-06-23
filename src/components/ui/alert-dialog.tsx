@@ -117,14 +117,27 @@ function AlertDialogTitle({
 
 function AlertDialogDescription({
   className,
+  asChild = false,
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Description>) {
+  if (asChild) {
+    return (
+      <AlertDialogPrimitive.Description
+        data-slot="alert-dialog-description"
+        className={cn("text-sm text-muted-foreground", className)}
+        asChild
+        {...props}
+      />
+    )
+  }
   return (
     <AlertDialogPrimitive.Description
       data-slot="alert-dialog-description"
       className={cn("text-sm text-muted-foreground", className)}
-      {...props}
-    />
+      asChild
+    >
+      <div {...props} />
+    </AlertDialogPrimitive.Description>
   )
 }
 
