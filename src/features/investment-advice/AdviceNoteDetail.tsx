@@ -40,11 +40,45 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { InvestmentAdviceService, InvestmentAdviceNote } from "@/core/services/investment-advice.service";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+import { InvestmentAdviceService, InvestmentAdviceNote, InvestmentAdviceRecommendation } from "@/core/services/investment-advice.service";
 import { IAMasterService, IAMaster } from "@/core/services/ia-master.service";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { formatAmountUnits } from "./AdviceNoteForm";
+
+export function calculateValidity(dateOfIssue: string, validityText: string): "Valid" | "Expired" {
+  try {
+    const issueDate = new Date(dateOfIssue);
+    issueDate.setHours(0, 0, 0, 0);
+    
+    let days = 60; // default fallback
+    const match = validityText.match(/(\d+)\s*Day/i);
+    if (match) {
+      days = parseInt(match[1]);
+    } else if (validityText.toLowerCase().includes("immediate")) {
+      days = 1;
+    }
+    
+    const expiryDate = new Date(issueDate);
+    expiryDate.setDate(expiryDate.getDate() + days);
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    return expiryDate >= today ? "Valid" : "Expired";
+  } catch (error) {
+    return "Valid";
+  }
+}
+
 
 interface AdviceNoteDetailProps {
   noteId: string;
@@ -59,6 +93,9 @@ export function AdviceNoteDetail({ noteId, onBack, onEdit }: AdviceNoteDetailPro
   const [downloading, setDownloading] = useState<string | null>(null);
   const [showLockDialog, setShowLockDialog] = useState(false);
   const [isLocking, setIsLocking] = useState(false);
+  const [showRecordActionsPage, setShowRecordActionsPage] = useState(false);
+  const [actionTakenUpdates, setActionTakenUpdates] = useState<Record<string, 'Yes' | 'Partial' | 'No'>>({});
+  const [savingActions, setSavingActions] = useState(false);
 
   const fetchDetail = async () => {
     setLoading(true);
@@ -69,11 +106,40 @@ export function AdviceNoteDetail({ noteId, onBack, onEdit }: AdviceNoteDetailPro
       ]);
       setNote(noteData);
       setIaData(masterData);
+
+      // Initialize action taken updates
+      const initialUpdates: Record<string, 'Yes' | 'Partial' | 'No'> = {};
+      (noteData.recommendations || []).forEach(rec => {
+        if (rec.id) {
+          initialUpdates[rec.id] = rec.action_taken || 'No';
+        }
+      });
+      setActionTakenUpdates(initialUpdates);
     } catch (error) {
       console.error("Failed to fetch advice note detail", error);
       toast.error("Failed to load advice note details");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveActions = async () => {
+    if (!note) return;
+    setSavingActions(true);
+    try {
+      const updates = Object.entries(actionTakenUpdates).map(([id, val]) => ({
+        id,
+        action_taken: val,
+      }));
+      await InvestmentAdviceService.updateRecommendationsAction(note.id, updates);
+      toast.success("Execution actions updated successfully.");
+      await fetchDetail();
+      setShowRecordActionsPage(false);
+    } catch (error) {
+      console.error("Failed to update actions", error);
+      toast.error("Failed to update execution actions.");
+    } finally {
+      setSavingActions(false);
     }
   };
 
@@ -204,6 +270,154 @@ export function AdviceNoteDetail({ noteId, onBack, onEdit }: AdviceNoteDetailPro
     );
   };
 
+  if (showRecordActionsPage) {
+    const handleCancel = () => {
+      const resetUpdates: Record<string, 'Yes' | 'Partial' | 'No'> = {};
+      (note.recommendations || []).forEach(rec => {
+        if (rec.id) {
+          resetUpdates[rec.id] = rec.action_taken || 'No';
+        }
+      });
+      setActionTakenUpdates(resetUpdates);
+      setShowRecordActionsPage(false);
+    };
+
+    return (
+      <div className="space-y-4 max-w-4xl mx-auto py-1 animate-in fade-in duration-200">
+        {/* Top Header Panel */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-primary/10 pb-4">
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleCancel} 
+              className="rounded-full shrink-0 w-8 h-8 hover:bg-primary/10"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-lg font-bold tracking-tight text-foreground uppercase">
+                  Record Execution Actions
+                </h1>
+                <Badge className="bg-primary/10 text-primary border-primary/20 text-[9px] uppercase font-bold shrink-0 py-0 px-1.5 h-4">
+                  Logging
+                </Badge>
+              </div>
+              <p className="text-[10px] text-muted-foreground font-mono mt-0.5 opacity-60">
+                Note: {note.advice_note_no} • Client: {client.client_name || "N/A"}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleCancel}
+              className="h-8 text-xs px-3"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSaveActions} 
+              disabled={savingActions}
+              className="bg-primary text-background font-bold h-8 text-xs shadow-md shadow-primary/10 px-4"
+            >
+              {savingActions ? (
+                <span className="flex items-center gap-1.5">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving...
+                </span>
+              ) : (
+                "Save Execution Logs"
+              )}
+            </Button>
+          </div>
+        </div>
+
+        {/* Recording Table Panel */}
+        <Card className="border-primary/10 shadow-lg bg-card/40 backdrop-blur-sm">
+          <CardContent className="p-4">
+            <div className="border border-primary/10 rounded-xl overflow-x-auto">
+              <Table className="w-full min-w-[700px]">
+                <TableHeader className="bg-primary/5">
+                  <TableRow>
+                    <TableHead className="w-8 py-2">#</TableHead>
+                    <TableHead className="w-[45%] py-2">Product / Scheme Name</TableHead>
+                    <TableHead className="w-[10%] py-2">Action</TableHead>
+                    <TableHead className="w-[20%] py-2">Amount / Units</TableHead>
+                    <TableHead className="w-[12%] py-2">Validity Status</TableHead>
+                    <TableHead className="w-[13%] py-2">Action Taken</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {recs.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="h-20 text-center text-muted-foreground text-sm italic">
+                        No product recommendations registered in this advice note.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    recs.map((rec, i) => {
+                      const validity = calculateValidity(note.date_of_issue, rec.advice_validity_text || `${note.advice_validity_days} Days`);
+                      const currentVal = actionTakenUpdates[rec.id || ""] || rec.action_taken || "No";
+                      return (
+                        <TableRow key={rec.id || i} className="hover:bg-primary/5 transition-colors">
+                          <TableCell className="text-xs py-2">{i + 1}</TableCell>
+                          <TableCell className="text-xs font-bold text-foreground py-2">
+                            <div>{rec.product_name}</div>
+                            <div className="text-[10px] text-muted-foreground font-mono mt-0.5 font-normal">{rec.isin_code_scheme_code_uin}</div>
+                          </TableCell>
+                          <TableCell className="text-xs py-2">
+                            <Badge variant={rec.action === 'BUY' ? 'default' : 'secondary'} className="text-[9px] font-bold px-1.5 py-0">
+                              {rec.action}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-xs py-2">{formatAmountUnits(rec, rec.product_type)}</TableCell>
+                          <TableCell className="text-xs py-2">
+                            <Badge className={cn(
+                              "text-[9px] font-bold px-1.5 py-0 border",
+                              validity === "Valid" ? "bg-green-500/10 text-green-500 border-green-500/20" : "bg-red-500/10 text-red-500 border-red-500/20"
+                            )}>
+                              {validity}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-xs py-2">
+                            <Select 
+                              value={currentVal} 
+                              onValueChange={(val: 'Yes' | 'Partial' | 'No') => {
+                                setActionTakenUpdates(prev => ({
+                                  ...prev,
+                                  [rec.id || ""]: val
+                                }));
+                              }}
+                            >
+                              <SelectTrigger className="h-8 py-0 w-24 text-xs font-semibold border-primary/20">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Yes">Yes</SelectItem>
+                                <SelectItem value="Partial">Partial</SelectItem>
+                                <SelectItem value="No">No</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-3 italic">
+              * Record the implementation status for compliance verification and audit logs.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 max-w-4xl mx-auto py-2">
       {/* Top Header Panel */}
@@ -261,6 +475,28 @@ export function AdviceNoteDetail({ noteId, onBack, onEdit }: AdviceNoteDetailPro
             >
               <Pencil className="w-3.5 h-3.5" />
               <span>Edit Draft</span>
+            </Button>
+          )}
+
+          {note.is_locked && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-emerald-500/20 text-emerald-600 hover:bg-emerald-500/10 h-9 text-xs gap-1.5"
+              onClick={() => {
+                // Sync updates state with latest recommendations values
+                const currentUpdates: Record<string, 'Yes' | 'Partial' | 'No'> = {};
+                (note.recommendations || []).forEach(rec => {
+                  if (rec.id) {
+                    currentUpdates[rec.id] = rec.action_taken || 'No';
+                  }
+                });
+                setActionTakenUpdates(currentUpdates);
+                setShowRecordActionsPage(true);
+              }}
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Record Actions</span>
             </Button>
           )}
 
@@ -361,6 +597,8 @@ export function AdviceNoteDetail({ noteId, onBack, onEdit }: AdviceNoteDetailPro
                     <TableHead>Action</TableHead>
                     <TableHead>Amount / Units</TableHead>
                     <TableHead>Price / NAV</TableHead>
+                    <TableHead>Validity</TableHead>
+                    <TableHead>Action Taken</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -384,6 +622,27 @@ export function AdviceNoteDetail({ noteId, onBack, onEdit }: AdviceNoteDetailPro
                         </TableCell>
                         <TableCell className="text-xs">{formatAmountUnits(rec, rec.product_type)}</TableCell>
                         <TableCell className="text-xs font-mono">₹{rec.indicative_price_nav || "N/A"}</TableCell>
+                        <TableCell className="text-xs">
+                          {(() => {
+                            const valText = rec.advice_validity_text || `${note.advice_validity_days} Days`;
+                            const validity = calculateValidity(note.date_of_issue, valText);
+                            return (
+                              <Badge className={validity === "Valid" ? "bg-green-500/10 text-green-500 border-green-500/20 text-[9px] px-1.5 py-0 font-bold" : "bg-red-500/10 text-red-500 border-red-500/20 text-[9px] px-1.5 py-0 font-bold"}>
+                                {validity}
+                              </Badge>
+                            );
+                          })()}
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          <Badge variant="outline" className={cn(
+                            "text-[9px] font-bold px-1.5 py-0",
+                            rec.action_taken === "Yes" && "border-green-500/30 bg-green-500/10 text-green-600 hover:bg-green-500/10",
+                            rec.action_taken === "Partial" && "border-amber-500/30 bg-amber-500/10 text-amber-600 hover:bg-amber-500/10",
+                            (!rec.action_taken || rec.action_taken === "No") && "border-gray-500/30 bg-gray-500/10 text-gray-500 hover:bg-gray-500/10"
+                          )}>
+                            {rec.action_taken || "No"}
+                          </Badge>
+                        </TableCell>
                       </TableRow>
                     ))
                   )}
@@ -509,6 +768,8 @@ export function AdviceNoteDetail({ noteId, onBack, onEdit }: AdviceNoteDetailPro
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+
     </div>
   );
 }

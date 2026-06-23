@@ -21,6 +21,7 @@ export interface InvestmentAdviceRecommendation {
   folio_no?: string | null;
   from_folio_no?: string | null;
   to_folio_no?: string | null;
+  action_taken?: 'Yes' | 'Partial' | 'No';
 }
 
 export interface InvestmentAdviceNote {
@@ -138,5 +139,16 @@ export class InvestmentAdviceService {
     link.click();
     link.remove();
     setTimeout(() => window.URL.revokeObjectURL(url), 10_000);
+  }
+
+  static async updateRecommendationsAction(
+    noteId: string,
+    updates: { id: string; action_taken: string }[]
+  ): Promise<any> {
+    const res = await httpClient.patch<any>(
+      API_ENDPOINTS.ADVISORY.ACTION_TAKEN(noteId),
+      updates
+    );
+    return res.data;
   }
 }
