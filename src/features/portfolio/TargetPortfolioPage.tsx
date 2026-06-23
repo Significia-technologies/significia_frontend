@@ -362,8 +362,8 @@ function AddEntryDialog({
     } else if (assetClass === "mf") {
       const isSwitchOrTransfer = ["SWITCH_IN", "SWITCH_OUT", "TRANSFER_IN", "TRANSFER_OUT"].includes(transactionType);
       const mfType = isSwitchOrTransfer ? toFundType : productSubtype;
-      if (mfType === "Equity") key = "mutual_fund_equity_percentage";
-      if (mfType === "Debt" || mfType === "Hybrid") key = "mutual_fund_debt_percentage";
+      if (mfType === "Equity" || mfType === "Equity Hybrid MF") key = "mutual_fund_equity_percentage";
+      if (mfType === "Debt" || mfType === "Debt Hybrid MF") key = "mutual_fund_debt_percentage";
     } else if (assetClass === "etf") {
       if (productSubtype === "Gold") key = "gold_etf_percentage";
       if (productSubtype === "Silver") key = "silver_etf_percentage";
@@ -641,10 +641,10 @@ function AddEntryDialog({
       } else if (assetClass === "mf") {
         const isSwitchOrTransfer = ["SWITCH_IN", "SWITCH_OUT", "TRANSFER_IN", "TRANSFER_OUT"].includes(transactionType);
         const mfType = isSwitchOrTransfer ? toFundType : productSubtype;
-        const isDebtGroup = mfType === "Debt" || mfType === "Hybrid";
-        if (isDebtGroup) {
-          return e.asset_class === "mf" && (e.product_subtype === "Debt" || e.product_subtype === "Hybrid");
-        }
+        const isEquityGroup = mfType === "Equity" || mfType === "Equity Hybrid MF";
+        const isDebtGroup = mfType === "Debt" || mfType === "Debt Hybrid MF";
+        if (isEquityGroup) return e.asset_class === "mf" && (e.product_subtype === "Equity" || e.product_subtype === "Equity Hybrid MF");
+        if (isDebtGroup) return e.asset_class === "mf" && (e.product_subtype === "Debt" || e.product_subtype === "Debt Hybrid MF");
         return e.asset_class === "mf" && e.product_subtype === mfType;
       } else if (assetClass === "etf") {
         const isEquityGroup = productSubtype === "Equity ETF" || productSubtype === "Equity Hybrid ETF";
@@ -672,7 +672,8 @@ function AddEntryDialog({
   const getSubAssetName = () => {
     if (assetClass === "shares") return "Stocks / Shares";
     if (assetClass === "mf") {
-      if (productSubtype === "Debt" || productSubtype === "Hybrid") return "Mutual Fund (Debt/Hybrid)";
+      if (productSubtype === "Equity" || productSubtype === "Equity Hybrid MF") return "Mutual Fund (Equity)";
+      if (productSubtype === "Debt" || productSubtype === "Debt Hybrid MF") return "Mutual Fund (Debt)";
       return `Mutual Fund (${productSubtype || "Select type"})`;
     }
     if (assetClass === "etf") return `ETF (${productSubtype || "Select type"})`;
@@ -737,7 +738,7 @@ function AddEntryDialog({
       return toast.error("From and To funds cannot be the same.");
     }
     if (transactionType === "STP" && !toFundType) {
-      return toast.error("Select the To Fund type (Equity / Debt / Hybrid).");
+      return toast.error("Select the To Fund type (Equity / Equity Hybrid MF / Debt / Debt Hybrid MF).");
     }
     if (transactionType === "STP" && (!stpTotalAmount || (parseFloat(stpTotalAmount) || 0) <= 0)) {
       return toast.error("Enter the total amount to transfer for STP.");
@@ -749,7 +750,7 @@ function AddEntryDialog({
       return toast.error("From and To funds cannot be the same.");
     }
     if (isSwitch && !toFundType) {
-      return toast.error("Select the To Fund type (Equity / Debt / Hybrid).");
+      return toast.error("Select the To Fund type (Equity / Equity Hybrid MF / Debt / Debt Hybrid MF).");
     }
 
     if (assetClass === "mf" && !productSubtype) {
@@ -940,8 +941,9 @@ function AddEntryDialog({
                     <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select type" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Equity">Equity</SelectItem>
+                      <SelectItem value="Equity Hybrid MF">Equity Hybrid MF</SelectItem>
                       <SelectItem value="Debt">Debt</SelectItem>
-                      <SelectItem value="Hybrid">Hybrid</SelectItem>
+                      <SelectItem value="Debt Hybrid MF">Debt Hybrid MF</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -951,8 +953,9 @@ function AddEntryDialog({
                     <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select type" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Equity">Equity</SelectItem>
+                      <SelectItem value="Equity Hybrid MF">Equity Hybrid MF</SelectItem>
                       <SelectItem value="Debt">Debt</SelectItem>
-                      <SelectItem value="Hybrid">Hybrid</SelectItem>
+                      <SelectItem value="Debt Hybrid MF">Debt Hybrid MF</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -964,8 +967,9 @@ function AddEntryDialog({
                   <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select type" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Equity">Equity</SelectItem>
+                    <SelectItem value="Equity Hybrid MF">Equity Hybrid MF</SelectItem>
                     <SelectItem value="Debt">Debt</SelectItem>
-                    <SelectItem value="Hybrid">Hybrid</SelectItem>
+                    <SelectItem value="Debt Hybrid MF">Debt Hybrid MF</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -976,8 +980,9 @@ function AddEntryDialog({
                   <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select type" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Equity">Equity</SelectItem>
+                    <SelectItem value="Equity Hybrid MF">Equity Hybrid MF</SelectItem>
                     <SelectItem value="Debt">Debt</SelectItem>
-                    <SelectItem value="Hybrid">Hybrid</SelectItem>
+                    <SelectItem value="Debt Hybrid MF">Debt Hybrid MF</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1600,11 +1605,17 @@ function AssetClassTab({
         subAssetName = "Stocks / Shares";
         matchingEntries = matchingEntries.filter((e) => e.asset_class === "shares");
       } else if (assetClass === "mf") {
-        const isDebtGroup = entry.product_subtype === "Debt" || entry.product_subtype === "Hybrid";
-        if (isDebtGroup) {
-          subAssetName = "Mutual Fund (Debt/Hybrid)";
+        const isEquityGroup = entry.product_subtype === "Equity" || entry.product_subtype === "Equity Hybrid MF";
+        const isDebtGroup = entry.product_subtype === "Debt" || entry.product_subtype === "Debt Hybrid MF";
+        if (isEquityGroup) {
+          subAssetName = "Mutual Fund (Equity)";
           matchingEntries = matchingEntries.filter(
-            (e) => e.asset_class === "mf" && (e.product_subtype === "Debt" || e.product_subtype === "Hybrid")
+            (e) => e.asset_class === "mf" && (e.product_subtype === "Equity" || e.product_subtype === "Equity Hybrid MF")
+          );
+        } else if (isDebtGroup) {
+          subAssetName = "Mutual Fund (Debt)";
+          matchingEntries = matchingEntries.filter(
+            (e) => e.asset_class === "mf" && (e.product_subtype === "Debt" || e.product_subtype === "Debt Hybrid MF")
           );
         } else {
           subAssetName = `Mutual Fund (${entry.product_subtype})`;
