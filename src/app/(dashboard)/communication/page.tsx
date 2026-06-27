@@ -19,6 +19,9 @@ import {
   Building2,
   Clock,
   CheckCheck,
+  Paperclip,
+  X,
+  FileText,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -143,6 +146,8 @@ export default function CommunicationPage() {
   const [senderType, setSenderType] = useState<SenderType>("IA");
   const [isInternalNote, setIsInternalNote] = useState(false);
   const [sendingMessage, setSendingMessage] = useState(false);
+  const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // New thread dialog
   const [newThreadOpen, setNewThreadOpen] = useState(false);
@@ -248,19 +253,25 @@ export default function CommunicationPage() {
     setMessageBody("");
     setSenderType("IA");
     setIsInternalNote(false);
+    setAttachedFiles([]);
   };
 
   const handleSendMessage = async () => {
-    if (!selectedThreadId || !messageBody.trim()) return;
+    if (!selectedThreadId || (!messageBody.trim() && attachedFiles.length === 0)) return;
     setSendingMessage(true);
     try {
-      await CommunicationService.addMessage(selectedThreadId, {
-        body: messageBody.trim(),
-        sender_type: senderType,
-        source: senderType === "CLIENT" ? "MANUALLY_LOGGED" : "COMPOSED",
-        is_internal_note: isInternalNote,
-      });
+      await CommunicationService.addMessage(
+        selectedThreadId,
+        {
+          body: messageBody.trim() || "(attachment)",
+          sender_type: senderType,
+          source: senderType === "CLIENT" ? "MANUALLY_LOGGED" : "COMPOSED",
+          is_internal_note: isInternalNote,
+        },
+        attachedFiles.length > 0 ? attachedFiles : undefined
+      );
       setMessageBody("");
+      setAttachedFiles([]);
       setIsInternalNote(false);
       setSenderType("IA");
       await loadThreadDetail(selectedThreadId);
@@ -750,19 +761,71 @@ export default function CommunicationPage() {
                       }
                     }}
                   />
-                  <Button
-                    className="self-end"
-                    size="sm"
-                    onClick={handleSendMessage}
-                    disabled={!messageBody.trim() || sendingMessage}
-                  >
-                    {sendingMessage ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Send className="h-4 w-4" />
-                    )}
-                  </Button>
+                  <div className="flex flex-col gap-1.5 self-end">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="px-2.5"
+                      onClick={() => fileInputRef.current?.click()}
+                      title="Attach files"
+                    >
+                      <Paperclip className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={handleSendMessage}
+                      disabled={(!messageBody.trim() && attachedFiles.length === 0) || sendingMessage}
+                    >
+                      {sendingMessage ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Send className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
                 </div>
+
+                {/* Attached files */}
+                {attachedFiles.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {attachedFiles.map((file, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center gap-1.5 text-[11px] bg-muted rounded px-2 py-1 border border-border"
+                      >
+                        <FileText className="h-3 w-3 text-muted-foreground shrink-0" />
+                        <span className="max-w-[160px] truncate">{file.name}</span>
+                        <span className="text-muted-foreground">
+                          {file.size < 1024 * 1024
+                            ? `${Math.round(file.size / 1024)}KB`
+                            : `${(file.size / (1024 * 1024)).toFixed(1)}MB`}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setAttachedFiles((prev) => prev.filter((_, j) => j !== i))}
+                          className="text-muted-foreground hover:text-destructive transition-colors ml-0.5"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Hidden file input */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => {
+                    const selected = Array.from(e.target.files ?? []);
+                    setAttachedFiles((prev) => [...prev, ...selected]);
+                    e.target.value = "";
+                  }}
+                />
+
                 <p className="text-[10px] text-muted-foreground/50">Ctrl+Enter to send</p>
               </div>
             ) : (

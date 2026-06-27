@@ -113,7 +113,23 @@ export class CommunicationService {
     return res.data;
   }
 
-  static async addMessage(threadId: string, payload: AddMessagePayload): Promise<{ message_id: string }> {
+  static async addMessage(
+    threadId: string,
+    payload: AddMessagePayload,
+    files?: File[]
+  ): Promise<{ message_id: string }> {
+    if (files && files.length > 0) {
+      const formData = new FormData();
+      formData.append("body", payload.body);
+      formData.append("sender_type", payload.sender_type ?? "IA");
+      formData.append("source", payload.source ?? "COMPOSED");
+      formData.append("is_internal_note", String(payload.is_internal_note ?? false));
+      files.forEach((f) => formData.append("files", f));
+      const res = await httpClient.post(API_ENDPOINTS.COMMUNICATION.MESSAGES(threadId), formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return res.data;
+    }
     const res = await httpClient.post(API_ENDPOINTS.COMMUNICATION.MESSAGES(threadId), payload);
     return res.data;
   }
