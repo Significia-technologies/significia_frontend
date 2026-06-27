@@ -69,6 +69,7 @@ import {
   CreateThreadPayload,
 } from "@/core/services/communication.service";
 import { EmailService, type EmailTemplate } from "@/core/services/email.service";
+import { IAMasterService, type IAMaster } from "@/core/services/ia-master.service";
 import httpClient from "@/core/api/http-client";
 import { API_ENDPOINTS } from "@/core/api/api-endpoints";
 import { EmailSmtpSettings } from "./components/EmailSmtpSettings";
@@ -180,6 +181,9 @@ export default function CommunicationPage() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // IA Master (for template placeholder substitution)
+  const [iaMaster, setIaMaster] = useState<IAMaster | null>(null);
+
   // Templates (lazy-loaded, shared by both features)
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [loadingTemplates, setLoadingTemplates] = useState(false);
@@ -257,6 +261,7 @@ export default function CommunicationPage() {
   useEffect(() => {
     loadStats();
     loadThreads();
+    IAMasterService.getLatest().then((data) => setIaMaster(data)).catch(() => {});
   }, [loadStats, loadThreads]);
 
   useEffect(() => {
@@ -386,12 +391,21 @@ export default function CommunicationPage() {
   }, [templates.length]);
 
   const renderPreview = (html: string) => {
-    if (!threadDetail) return html;
     return html.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, key: string) => {
+      const contactDetails = [
+        iaMaster?.registered_contact_number,
+        iaMaster?.office_contact_number,
+        iaMaster?.registered_email_id,
+      ].filter(Boolean).join(" | ");
+
       const vars: Record<string, string> = {
-        client_name: threadDetail.client_name ?? "",
-        client_email: threadDetail.client_email ?? "",
-        subject: threadDetail.subject ?? "",
+        client_name: threadDetail?.client_name ?? "",
+        client_email: threadDetail?.client_email ?? "",
+        subject: threadDetail?.subject ?? "",
+        ia_name: iaMaster?.name_of_ia ?? "",
+        ia_reg_no: iaMaster?.ia_registration_number ?? "",
+        ia_firm_name: iaMaster?.name_of_entity ?? iaMaster?.name_of_ia ?? "",
+        ia_contact_details: contactDetails,
       };
       return vars[key] ?? `{{ ${key} }}`;
     });
@@ -879,7 +893,11 @@ export default function CommunicationPage() {
                           templates.map((tpl) => (
                             <DropdownMenuItem
                               key={tpl.id}
-                              onClick={() => setMessageBody(tpl.body_html)}
+                              onClick={() => {
+                                const div = document.createElement("div");
+                                div.innerHTML = renderPreview(tpl.body_html);
+                                setMessageBody(div.innerText || div.textContent || tpl.body_html);
+                              }}
                               className="flex flex-col items-start gap-0.5 py-2"
                             >
                               <span className="text-xs font-medium">{tpl.template_name}</span>
