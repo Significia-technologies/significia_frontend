@@ -125,12 +125,22 @@ export class CommunicationService {
       formData.append("source", payload.source ?? "COMPOSED");
       formData.append("is_internal_note", String(payload.is_internal_note ?? false));
       files.forEach((f) => formData.append("files", f));
-      const res = await httpClient.post(
-        API_ENDPOINTS.COMMUNICATION.MESSAGES(threadId) + "/upload",
-        formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
-      );
-      return res.data;
+
+      // Use native fetch so the browser sets Content-Type: multipart/form-data; boundary=...
+      // axios rewrites Content-Type for FormData which breaks multipart parsing on the backend.
+      const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+      const tenantSlug = typeof window !== "undefined" ? localStorage.getItem("simulatedTenantSlug") : null;
+      const headers: Record<string, string> = {};
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      if (tenantSlug) headers["X-Tenant-Slug"] = tenantSlug;
+
+      const uploadUrl = `${httpClient.defaults.baseURL}${API_ENDPOINTS.COMMUNICATION.MESSAGES(threadId)}/upload`.replace(/([^:])\/\//g, "$1/");
+      const fetchRes = await fetch(uploadUrl, { method: "POST", headers, body: formData, credentials: "include" });
+      if (!fetchRes.ok) {
+        const err = await fetchRes.json().catch(() => ({}));
+        throw { response: { data: err } };
+      }
+      return fetchRes.json();
     }
 
     const res = await httpClient.post(API_ENDPOINTS.COMMUNICATION.MESSAGES(threadId), {
