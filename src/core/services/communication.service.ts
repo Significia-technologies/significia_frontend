@@ -126,8 +126,13 @@ export class CommunicationService {
     if (files && files.length > 0) {
       files.forEach((f) => formData.append("files", f));
     }
+    // axios 1.x converts FormData→JSON when Content-Type is application/json (the httpClient default).
+    // transformRequest bypasses that: delete the header so the browser sets multipart/form-data with boundary.
     const res = await httpClient.post(API_ENDPOINTS.COMMUNICATION.MESSAGES(threadId), formData, {
-      headers: { "Content-Type": "multipart/form-data" },
+      transformRequest: [(data: FormData, headers: Record<string, unknown>) => {
+        delete headers["Content-Type"];
+        return data;
+      }],
     });
     return res.data;
   }
