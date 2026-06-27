@@ -348,4 +348,15 @@ export const API_ENDPOINTS = {
     PDF: (noteId: string) => `${API_BASE}/advisory/investment-advice-note/${noteId}/export/pdf`,
     ACTION_TAKEN: (noteId: string) => `${API_BASE}/advisory/investment-advice-note/${noteId}/recommendations/action-taken`,
   },
+
+  // ── IA–Investor Communication ────────────────────────────────
+  COMMUNICATION: {
+    STATS: `${API_BASE}/communication/stats`,
+    THREADS: `${API_BASE}/communication/threads`,
+    THREAD: (id: string) => `${API_BASE}/communication/threads/${id}`,
+    MESSAGES: (threadId: string) => `${API_BASE}/communication/threads/${threadId}/messages`,
+    STATUS: (threadId: string) => `${API_BASE}/communication/threads/${threadId}/status`,
+    READ: (threadId: string) => `${API_BASE}/communication/threads/${threadId}/read`,
+    EXPORT: (threadId: string) => `${API_BASE}/communication/threads/${threadId}/export`,
+  },
 };

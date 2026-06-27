@@ -23,6 +23,7 @@ import {
   ChevronRight,
   ChevronDown,
   FileText,
+  MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -119,6 +120,11 @@ const NAV_ITEMS: NavItem[] = [
     href: "/team",
     icon: Users,
     minRole: "admin",
+  },
+  {
+    label: "Communication",
+    href: "/communication",
+    icon: MessageSquare,
   },
   {
     label: "Data Rectification",

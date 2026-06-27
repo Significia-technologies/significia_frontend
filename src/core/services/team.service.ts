@@ -58,7 +58,8 @@ export const APP_MODULES = [
   "Product Basket",
   "Target Portfolio",
   "Investor Master",
-  "Investment Advice"
+  "Investment Advice",
+  "Communication"
 ];
 
 export const TeamService = {
