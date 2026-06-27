@@ -824,6 +824,44 @@ export default function CommunicationPage() {
                         )}
                       >
                         <p className="whitespace-pre-wrap">{msg.body}</p>
+                        {(() => {
+                          let attachments: { name: string; key: string; content_type: string; size: number }[] = [];
+                          try { attachments = msg.attachments_info ? JSON.parse(msg.attachments_info as string) : []; } catch { /* ignore */ }
+                          if (!attachments.length) return null;
+                          return (
+                            <div className="mt-2 space-y-1.5 pt-2 border-t border-current/10">
+                              {attachments.map((att, i) => (
+                                <button
+                                  key={i}
+                                  type="button"
+                                  onClick={async () => {
+                                    try {
+                                      const url = await CommunicationService.getAttachmentUrl(att.key);
+                                      window.open(url, "_blank");
+                                    } catch { /* ignore */ }
+                                  }}
+                                  className={cn(
+                                    "flex items-center gap-2 w-full rounded-lg px-2.5 py-2 text-left transition-colors",
+                                    isIA
+                                      ? "bg-white/10 hover:bg-white/20 text-primary-foreground"
+                                      : "bg-background/60 hover:bg-background/80 text-foreground border border-border/50"
+                                  )}
+                                >
+                                  <FileText className="h-4 w-4 shrink-0 opacity-70" />
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-[11px] font-medium truncate">{att.name}</p>
+                                    <p className="text-[10px] opacity-60">
+                                      {att.size < 1024 * 1024
+                                        ? `${Math.round(att.size / 1024)} KB`
+                                        : `${(att.size / (1024 * 1024)).toFixed(1)} MB`}
+                                    </p>
+                                  </div>
+                                  <Download className="h-3.5 w-3.5 shrink-0 opacity-60" />
+                                </button>
+                              ))}
+                            </div>
+                          );
+                        })()}
                       </div>
 
                       {/* Timestamp */}

@@ -355,8 +355,12 @@ export const API_ENDPOINTS = {
     THREADS: `${API_BASE}/communication/threads`,
     THREAD: (id: string) => `${API_BASE}/communication/threads/${id}`,
     MESSAGES: (threadId: string) => `${API_BASE}/communication/threads/${threadId}/messages`,
+    ATTACHMENTS: (threadId: string) => `${API_BASE}/communication/threads/${threadId}/attachments`,
     STATUS: (threadId: string) => `${API_BASE}/communication/threads/${threadId}/status`,
     READ: (threadId: string) => `${API_BASE}/communication/threads/${threadId}/read`,
     EXPORT: (threadId: string) => `${API_BASE}/communication/threads/${threadId}/export`,
+  },
+  STORAGE: {
+    URL: `${API_BASE}/storage/url`,
   },
 };

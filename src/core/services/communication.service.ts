@@ -113,34 +113,34 @@ export class CommunicationService {
     return res.data;
   }
 
+  static async uploadAttachments(threadId: string, files: File[]): Promise<{ name: string; key: string; content_type: string; size: number }[]> {
+    const formData = new FormData();
+    files.forEach((f) => formData.append("files", f));
+
+    const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+    const tenantSlug = typeof window !== "undefined" ? localStorage.getItem("simulatedTenantSlug") : null;
+    const headers: Record<string, string> = {};
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+    if (tenantSlug) headers["X-Tenant-Slug"] = tenantSlug;
+
+    const url = `${httpClient.defaults.baseURL}${API_ENDPOINTS.COMMUNICATION.ATTACHMENTS(threadId)}`.replace(/([^:])\/\//g, "$1/");
+    const res = await fetch(url, { method: "POST", headers, body: formData, credentials: "include" });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw { response: { data: err } };
+    }
+    const data = await res.json();
+    return data.attachments ?? [];
+  }
+
   static async addMessage(
     threadId: string,
     payload: AddMessagePayload,
     files?: File[]
   ): Promise<{ message_id: string }> {
+    let attachments_info: object[] | undefined;
     if (files && files.length > 0) {
-      const formData = new FormData();
-      formData.append("body", payload.body);
-      formData.append("sender_type", payload.sender_type ?? "IA");
-      formData.append("source", payload.source ?? "COMPOSED");
-      formData.append("is_internal_note", String(payload.is_internal_note ?? false));
-      files.forEach((f) => formData.append("files", f));
-
-      // Use native fetch so the browser sets Content-Type: multipart/form-data; boundary=...
-      // axios rewrites Content-Type for FormData which breaks multipart parsing on the backend.
-      const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
-      const tenantSlug = typeof window !== "undefined" ? localStorage.getItem("simulatedTenantSlug") : null;
-      const headers: Record<string, string> = {};
-      if (token) headers["Authorization"] = `Bearer ${token}`;
-      if (tenantSlug) headers["X-Tenant-Slug"] = tenantSlug;
-
-      const uploadUrl = `${httpClient.defaults.baseURL}${API_ENDPOINTS.COMMUNICATION.MESSAGES(threadId)}/upload`.replace(/([^:])\/\//g, "$1/");
-      const fetchRes = await fetch(uploadUrl, { method: "POST", headers, body: formData, credentials: "include" });
-      if (!fetchRes.ok) {
-        const err = await fetchRes.json().catch(() => ({}));
-        throw { response: { data: err } };
-      }
-      return fetchRes.json();
+      attachments_info = await CommunicationService.uploadAttachments(threadId, files);
     }
 
     const res = await httpClient.post(API_ENDPOINTS.COMMUNICATION.MESSAGES(threadId), {
@@ -148,8 +148,14 @@ export class CommunicationService {
       sender_type: payload.sender_type ?? "IA",
       source: payload.source ?? "COMPOSED",
       is_internal_note: payload.is_internal_note ?? false,
+      ...(attachments_info ? { attachments_info } : {}),
     });
     return res.data;
+  }
+
+  static async getAttachmentUrl(key: string): Promise<string> {
+    const res = await httpClient.get(API_ENDPOINTS.STORAGE.URL, { params: { key } });
+    return res.data.url;
   }
 
   static async updateStatus(threadId: string, status: ThreadStatus): Promise<void> {
