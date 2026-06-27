@@ -148,6 +148,8 @@ export default function CommunicationPage() {
   const [newThreadOpen, setNewThreadOpen] = useState(false);
   const [clients, setClients] = useState<{ id: string; client_name: string; client_code: string }[]>([]);
   const [loadingClients, setLoadingClients] = useState(false);
+  const [clientDropdownOpen, setClientDropdownOpen] = useState(false);
+  const [clientInputValue, setClientInputValue] = useState("");
   const [newThread, setNewThread] = useState<CreateThreadPayload>({
     client_id: "",
     subject: "",
@@ -319,6 +321,8 @@ export default function CommunicationPage() {
       const result = await CommunicationService.createThread(newThread);
       setNewThreadOpen(false);
       setNewThread({ client_id: "", subject: "", body: "", thread_type: "GENERAL" });
+      setClientInputValue("");
+      setClientDropdownOpen(false);
       await loadThreads();
       loadStats();
       setSelectedThreadId(result.thread_id);
@@ -775,7 +779,10 @@ export default function CommunicationPage() {
       </div>
 
       {/* ── New Thread Dialog ── */}
-      <Dialog open={newThreadOpen} onOpenChange={setNewThreadOpen}>
+      <Dialog open={newThreadOpen} onOpenChange={(open) => {
+        setNewThreadOpen(open);
+        if (!open) { setClientInputValue(""); setClientDropdownOpen(false); }
+      }}>
         <DialogContent className="sm:max-w-[520px]">
           <DialogHeader>
             <DialogTitle>New Conversation</DialogTitle>
@@ -787,25 +794,67 @@ export default function CommunicationPage() {
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
               <Label className="text-xs">Client</Label>
-              <Select
-                value={newThread.client_id}
-                onValueChange={(v) => setNewThread((p) => ({ ...p, client_id: v }))}
-                disabled={loadingClients}
-              >
-                <SelectTrigger className="h-9 text-sm">
-                  <SelectValue placeholder={loadingClients ? "Loading clients..." : "Select a client"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {clients.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.client_name}
-                      {c.client_code && (
-                        <span className="text-muted-foreground ml-1.5 text-xs">#{c.client_code}</span>
+              <div className="relative">
+                <Input
+                  className="h-9 text-sm pr-8"
+                  placeholder={loadingClients ? "Loading clients..." : "Search by name or client code..."}
+                  disabled={loadingClients}
+                  value={clientInputValue}
+                  onChange={(e) => {
+                    setClientInputValue(e.target.value);
+                    setClientDropdownOpen(true);
+                    if (newThread.client_id) {
+                      setNewThread((p) => ({ ...p, client_id: "" }));
+                    }
+                  }}
+                  onFocus={() => setClientDropdownOpen(true)}
+                  onBlur={() => setTimeout(() => setClientDropdownOpen(false), 150)}
+                />
+                <Search className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                {clientDropdownOpen && (
+                  <div className="absolute z-50 top-full left-0 right-0 mt-1 rounded-md border border-border bg-popover shadow-md overflow-hidden">
+                    <div className="max-h-52 overflow-y-auto">
+                      {clients
+                        .filter((c) => {
+                          const q = clientInputValue.toLowerCase();
+                          return (
+                            !q ||
+                            c.client_name?.toLowerCase().includes(q) ||
+                            c.client_code?.toLowerCase().includes(q)
+                          );
+                        })
+                        .map((c) => (
+                          <button
+                            key={c.id}
+                            type="button"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              setNewThread((p) => ({ ...p, client_id: c.id }));
+                              setClientInputValue(c.client_name);
+                              setClientDropdownOpen(false);
+                            }}
+                            className={cn(
+                              "w-full text-left px-3 py-2 text-sm flex items-center justify-between",
+                              "hover:bg-accent transition-colors",
+                              newThread.client_id === c.id && "bg-primary/5 text-primary font-medium"
+                            )}
+                          >
+                            <span>{c.client_name}</span>
+                            {c.client_code && (
+                              <span className="text-muted-foreground text-xs">#{c.client_code}</span>
+                            )}
+                          </button>
+                        ))}
+                      {clients.filter((c) => {
+                        const q = clientInputValue.toLowerCase();
+                        return !q || c.client_name?.toLowerCase().includes(q) || c.client_code?.toLowerCase().includes(q);
+                      }).length === 0 && (
+                        <p className="text-xs text-muted-foreground text-center py-4">No clients found</p>
                       )}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="space-y-1.5">
