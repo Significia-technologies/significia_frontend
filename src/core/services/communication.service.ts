@@ -118,21 +118,26 @@ export class CommunicationService {
     payload: AddMessagePayload,
     files?: File[]
   ): Promise<{ message_id: string }> {
-    const formData = new FormData();
-    formData.append("body", payload.body);
-    formData.append("sender_type", payload.sender_type ?? "IA");
-    formData.append("source", payload.source ?? "COMPOSED");
-    formData.append("is_internal_note", String(payload.is_internal_note ?? false));
     if (files && files.length > 0) {
+      const formData = new FormData();
+      formData.append("body", payload.body);
+      formData.append("sender_type", payload.sender_type ?? "IA");
+      formData.append("source", payload.source ?? "COMPOSED");
+      formData.append("is_internal_note", String(payload.is_internal_note ?? false));
       files.forEach((f) => formData.append("files", f));
+      const res = await httpClient.post(
+        API_ENDPOINTS.COMMUNICATION.MESSAGES(threadId) + "/upload",
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+      return res.data;
     }
-    // axios 1.x converts FormData→JSON when Content-Type is application/json (the httpClient default).
-    // transformRequest bypasses that: delete the header so the browser sets multipart/form-data with boundary.
-    const res = await httpClient.post(API_ENDPOINTS.COMMUNICATION.MESSAGES(threadId), formData, {
-      transformRequest: [(data: FormData, headers: Record<string, unknown>) => {
-        delete headers["Content-Type"];
-        return data;
-      }],
+
+    const res = await httpClient.post(API_ENDPOINTS.COMMUNICATION.MESSAGES(threadId), {
+      body: payload.body,
+      sender_type: payload.sender_type ?? "IA",
+      source: payload.source ?? "COMPOSED",
+      is_internal_note: payload.is_internal_note ?? false,
     });
     return res.data;
   }
