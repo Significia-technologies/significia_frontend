@@ -420,6 +420,7 @@ export default function CommunicationPage() {
     if (!threadDetail?.client_email || !sendEmailForm.templateId) return;
     setSendingEmail(true);
     try {
+      const selectedTemplate = templates.find((t) => t.id === sendEmailForm.templateId);
       await EmailService.sendEmail({
         recipient_email: threadDetail.client_email,
         recipient_name: threadDetail.client_name ?? undefined,
@@ -432,10 +433,21 @@ export default function CommunicationPage() {
         context_type: "COMMUNICATION",
         context_id: threadDetail.id,
       });
+
+      // Log the email send as a thread message for full audit trail
+      const auditBody = `Formal email sent to client.\nSubject: ${sendEmailForm.subject}\nTemplate: ${selectedTemplate?.template_name ?? sendEmailForm.templateId}`;
+      await CommunicationService.addMessage(threadDetail.id, {
+        body: auditBody,
+        sender_type: "IA",
+        source: "COMPOSED",
+        is_internal_note: true,
+      });
+
       toast.success("Email sent to client");
       setSendEmailOpen(false);
       setSendEmailForm({ templateId: "", subject: "" });
       setSendEmailPreview("");
+      await loadThreadDetail(threadDetail.id);
     } catch (err: any) {
       toast.error(err?.response?.data?.detail || "Failed to send email");
     }
@@ -870,44 +882,6 @@ export default function CommunicationPage() {
                     Internal Note
                   </button>
 
-                  {/* Use Template */}
-                  <div className="ml-auto">
-                    <DropdownMenu onOpenChange={(open) => { if (open) loadTemplates(); }}>
-                      <DropdownMenuTrigger asChild>
-                        <button className="flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-md border border-border text-muted-foreground hover:bg-accent transition-colors">
-                          <FileText className="h-3 w-3" />
-                          Use Template
-                          <ChevronDown className="h-3 w-3" />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-60 max-h-64 overflow-y-auto">
-                        {loadingTemplates ? (
-                          <div className="flex justify-center py-4">
-                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                          </div>
-                        ) : templates.length === 0 ? (
-                          <div className="px-3 py-4 text-xs text-muted-foreground text-center">
-                            No templates found
-                          </div>
-                        ) : (
-                          templates.map((tpl) => (
-                            <DropdownMenuItem
-                              key={tpl.id}
-                              onClick={() => {
-                                const div = document.createElement("div");
-                                div.innerHTML = renderPreview(tpl.body_html);
-                                setMessageBody(div.innerText || div.textContent || tpl.body_html);
-                              }}
-                              className="flex flex-col items-start gap-0.5 py-2"
-                            >
-                              <span className="text-xs font-medium">{tpl.template_name}</span>
-                              <span className="text-[10px] text-muted-foreground truncate w-full">{tpl.subject}</span>
-                            </DropdownMenuItem>
-                          ))
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
                 </div>
 
                 {/* Helper text */}
