@@ -123,7 +123,7 @@ export class CommunicationService {
     if (token) headers["Authorization"] = `Bearer ${token}`;
     if (tenantSlug) headers["X-Tenant-Slug"] = tenantSlug;
 
-    const url = `${httpClient.defaults.baseURL}${API_ENDPOINTS.COMMUNICATION.ATTACHMENTS(threadId)}`.replace(/([^:])\/\//g, "$1/");
+    const url = API_ENDPOINTS.COMMUNICATION.ATTACHMENTS(threadId);
     const res = await fetch(url, { method: "POST", headers, body: formData, credentials: "include" });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
