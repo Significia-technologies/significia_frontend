@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import {
   MessageSquare,
@@ -22,6 +23,9 @@ import {
   Paperclip,
   X,
   FileText,
+  Mail,
+  Settings,
+  History,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -66,6 +70,11 @@ import {
 } from "@/core/services/communication.service";
 import httpClient from "@/core/api/http-client";
 import { API_ENDPOINTS } from "@/core/api/api-endpoints";
+import { EmailSmtpSettings } from "./components/EmailSmtpSettings";
+import { EmailTemplates } from "./components/EmailTemplates";
+import { EmailLogs } from "./components/EmailLogs";
+
+type CommTab = "inbox" | "templates" | "sent-emails" | "settings";
 
 // ── Helpers ────────────────────────────────────────────────────────────
 
@@ -125,6 +134,11 @@ function formatMessageTime(dateStr: string): string {
 // ── Component ──────────────────────────────────────────────────────────
 
 export default function CommunicationPage() {
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState<CommTab>(
+    (searchParams.get("tab") as CommTab) || "inbox"
+  );
+
   // ── State ────────────────────────────────────────────────────────
   const [threads, setThreads] = useState<ConversationThread[]>([]);
   const [totalThreads, setTotalThreads] = useState(0);
@@ -352,10 +366,17 @@ export default function CommunicationPage() {
 
   // ── Render ────────────────────────────────────────────────────
 
+  const TAB_ITEMS: { id: CommTab; label: string; icon: React.ElementType }[] = [
+    { id: "inbox", label: "Inbox", icon: Inbox },
+    { id: "templates", label: "Templates", icon: FileText },
+    { id: "sent-emails", label: "Sent Emails", icon: History },
+    { id: "settings", label: "Settings", icon: Settings },
+  ];
+
   return (
     <div className="flex h-[calc(100vh-4rem)] flex-col overflow-hidden">
       {/* ── Page Header ── */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-card shrink-0">
+      <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-card shrink-0">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-primary/10 rounded-lg">
             <MessageSquare className="h-5 w-5 text-primary" />
@@ -372,34 +393,68 @@ export default function CommunicationPage() {
             </Badge>
           )}
         </div>
-        <Button size="sm" onClick={handleOpenNewThread}>
-          <Plus className="h-4 w-4 mr-1.5" />
-          New Conversation
-        </Button>
+        <div className="flex items-center gap-3">
+          {/* Tab navigation */}
+          <div className="flex items-center gap-0.5 bg-muted/50 rounded-lg p-0.5 border border-border">
+            {TAB_ITEMS.map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                onClick={() => setActiveTab(id)}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
+                  activeTab === id
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {label}
+              </button>
+            ))}
+          </div>
+          {activeTab === "inbox" && (
+            <Button size="sm" onClick={handleOpenNewThread}>
+              <Plus className="h-4 w-4 mr-1.5" />
+              New Conversation
+            </Button>
+          )}
+        </div>
       </div>
 
-      {/* ── Stats Row ── */}
-      {stats && (
-        <div className="flex gap-4 px-6 py-2.5 border-b border-border bg-muted/30 shrink-0">
-          {(
-            [
-              { label: "Open", value: stats.open_count, color: "text-emerald-600" },
-              { label: "Awaiting IA", value: stats.pending_ia_count, color: "text-amber-600" },
-              { label: "Awaiting Client", value: stats.pending_client_count, color: "text-blue-600" },
-              { label: "Closed", value: stats.closed_count, color: "text-muted-foreground" },
-            ] as const
-          ).map(({ label, value, color }) => (
-            <div key={label} className="flex items-center gap-1.5 text-xs">
-              <span className={cn("font-semibold text-sm", color)}>{value}</span>
-              <span className="text-muted-foreground">{label}</span>
-              <span className="text-border mx-1">·</span>
-            </div>
-          ))}
+      {/* ── Non-inbox tabs: scrollable container ── */}
+      {activeTab !== "inbox" && (
+        <div className="flex-1 overflow-y-auto p-8 max-w-5xl mx-auto w-full pb-20">
+          {activeTab === "templates" && <EmailTemplates />}
+          {activeTab === "sent-emails" && <EmailLogs />}
+          {activeTab === "settings" && <EmailSmtpSettings />}
         </div>
       )}
 
-      {/* ── Two-pane Layout ── */}
-      <div className="flex flex-1 overflow-hidden">
+      {/* ── Inbox tab only ── */}
+      {activeTab === "inbox" && (
+        <>
+          {/* Stats Row */}
+          {stats && (
+            <div className="flex gap-4 px-6 py-2.5 border-b border-border bg-muted/30 shrink-0">
+              {(
+                [
+                  { label: "Open", value: stats.open_count, color: "text-emerald-600" },
+                  { label: "Awaiting IA", value: stats.pending_ia_count, color: "text-amber-600" },
+                  { label: "Awaiting Client", value: stats.pending_client_count, color: "text-blue-600" },
+                  { label: "Closed", value: stats.closed_count, color: "text-muted-foreground" },
+                ] as const
+              ).map(({ label, value, color }) => (
+                <div key={label} className="flex items-center gap-1.5 text-xs">
+                  <span className={cn("font-semibold text-sm", color)}>{value}</span>
+                  <span className="text-muted-foreground">{label}</span>
+                  <span className="text-border mx-1">·</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ── Two-pane Layout ── */}
+          <div className="flex flex-1 overflow-hidden">
         {/* ── Left: Thread List ── */}
         <div className="w-80 shrink-0 flex flex-col border-r border-border bg-card">
           {/* Filters */}
@@ -840,6 +895,8 @@ export default function CommunicationPage() {
           </div>
         ) : null}
       </div>
+        </>
+      )}
 
       {/* ── New Thread Dialog ── */}
       <Dialog open={newThreadOpen} onOpenChange={(open) => {

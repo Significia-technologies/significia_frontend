@@ -10,7 +10,6 @@ import {
   ShieldCheck,
   PieChart,
   FileCheck2,
-  Mail,
   ClipboardCheck,
   Users,
   TrendingUp,
@@ -163,12 +162,6 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 const BOTTOM_NAV_ITEMS = [
-  {
-    label: "Email",
-    href: "/settings/email",
-    icon: Mail,
-    minRole: "admin",
-  },
   {
     label: "Settings",
     href: "/settings",
