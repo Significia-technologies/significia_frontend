@@ -68,6 +68,7 @@ import {
   SenderType,
   CreateThreadPayload,
 } from "@/core/services/communication.service";
+import { EmailService, type EmailTemplate } from "@/core/services/email.service";
 import httpClient from "@/core/api/http-client";
 import { API_ENDPOINTS } from "@/core/api/api-endpoints";
 import { EmailSmtpSettings } from "./components/EmailSmtpSettings";
@@ -178,6 +179,16 @@ export default function CommunicationPage() {
   const [creatingThread, setCreatingThread] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Templates (lazy-loaded, shared by both features)
+  const [templates, setTemplates] = useState<EmailTemplate[]>([]);
+  const [loadingTemplates, setLoadingTemplates] = useState(false);
+
+  // Send Email dialog (Gap 2)
+  const [sendEmailOpen, setSendEmailOpen] = useState(false);
+  const [sendEmailForm, setSendEmailForm] = useState({ templateId: "", subject: "" });
+  const [sendEmailPreview, setSendEmailPreview] = useState("");
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   // ── Data Fetching ─────────────────────────────────────────────
 
@@ -362,6 +373,59 @@ export default function CommunicationPage() {
   const handleOpenNewThread = () => {
     setNewThreadOpen(true);
     loadClients();
+  };
+
+  const loadTemplates = useCallback(async () => {
+    if (templates.length > 0) return;
+    setLoadingTemplates(true);
+    try {
+      const data = await EmailService.listTemplates();
+      setTemplates(data || []);
+    } catch { /* ignore */ }
+    setLoadingTemplates(false);
+  }, [templates.length]);
+
+  const renderPreview = (html: string) => {
+    if (!threadDetail) return html;
+    return html.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, key: string) => {
+      const vars: Record<string, string> = {
+        client_name: threadDetail.client_name ?? "",
+        client_email: threadDetail.client_email ?? "",
+        subject: threadDetail.subject ?? "",
+      };
+      return vars[key] ?? `{{ ${key} }}`;
+    });
+  };
+
+  const handleSelectSendTemplate = (tpl: EmailTemplate) => {
+    setSendEmailForm({ templateId: tpl.id, subject: tpl.subject });
+    setSendEmailPreview(renderPreview(tpl.body_html));
+  };
+
+  const handleSendEmail = async () => {
+    if (!threadDetail?.client_email || !sendEmailForm.templateId) return;
+    setSendingEmail(true);
+    try {
+      await EmailService.sendEmail({
+        recipient_email: threadDetail.client_email,
+        recipient_name: threadDetail.client_name ?? undefined,
+        template_id: sendEmailForm.templateId,
+        subject: sendEmailForm.subject,
+        template_variables: {
+          client_name: threadDetail.client_name ?? "",
+          client_email: threadDetail.client_email ?? "",
+        },
+        context_type: "COMMUNICATION",
+        context_id: threadDetail.id,
+      });
+      toast.success("Email sent to client");
+      setSendEmailOpen(false);
+      setSendEmailForm({ templateId: "", subject: "" });
+      setSendEmailPreview("");
+    } catch (err: any) {
+      toast.error(err?.response?.data?.detail || "Failed to send email");
+    }
+    setSendingEmail(false);
   };
 
   // ── Render ────────────────────────────────────────────────────
@@ -629,6 +693,15 @@ export default function CommunicationPage() {
                 >
                   {THREAD_TYPE_LABELS[threadDetail.thread_type]}
                 </Badge>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  title="Send email using template"
+                  onClick={() => { setSendEmailOpen(true); loadTemplates(); }}
+                >
+                  <Mail className="h-3.5 w-3.5" />
+                </Button>
                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleExport} title="Export for SEBI audit">
                   <Download className="h-3.5 w-3.5" />
                 </Button>
@@ -782,6 +855,41 @@ export default function CommunicationPage() {
                     <StickyNote className="h-3 w-3" />
                     Internal Note
                   </button>
+
+                  {/* Use Template */}
+                  <div className="ml-auto">
+                    <DropdownMenu onOpenChange={(open) => { if (open) loadTemplates(); }}>
+                      <DropdownMenuTrigger asChild>
+                        <button className="flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-md border border-border text-muted-foreground hover:bg-accent transition-colors">
+                          <FileText className="h-3 w-3" />
+                          Use Template
+                          <ChevronDown className="h-3 w-3" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-60 max-h-64 overflow-y-auto">
+                        {loadingTemplates ? (
+                          <div className="flex justify-center py-4">
+                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                          </div>
+                        ) : templates.length === 0 ? (
+                          <div className="px-3 py-4 text-xs text-muted-foreground text-center">
+                            No templates found
+                          </div>
+                        ) : (
+                          templates.map((tpl) => (
+                            <DropdownMenuItem
+                              key={tpl.id}
+                              onClick={() => setMessageBody(tpl.body_html)}
+                              className="flex flex-col items-start gap-0.5 py-2"
+                            >
+                              <span className="text-xs font-medium">{tpl.template_name}</span>
+                              <span className="text-[10px] text-muted-foreground truncate w-full">{tpl.subject}</span>
+                            </DropdownMenuItem>
+                          ))
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </div>
 
                 {/* Helper text */}
@@ -897,6 +1005,92 @@ export default function CommunicationPage() {
       </div>
         </>
       )}
+
+      {/* ── Send Email Dialog (Gap 2) ── */}
+      <Dialog open={sendEmailOpen} onOpenChange={(open) => {
+        setSendEmailOpen(open);
+        if (!open) { setSendEmailForm({ templateId: "", subject: "" }); setSendEmailPreview(""); }
+      }}>
+        <DialogContent className="sm:max-w-[680px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="h-4 w-4" /> Send Email to {threadDetail?.client_name}
+            </DialogTitle>
+            <DialogDescription>
+              Pick a template, review the preview, then send directly to{" "}
+              <span className="font-medium text-foreground">{threadDetail?.client_email}</span>. This is logged in Sent Emails.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            {/* Template picker */}
+            <div className="space-y-1.5">
+              <Label className="text-xs">Template</Label>
+              <Select
+                value={sendEmailForm.templateId}
+                onValueChange={(id) => {
+                  const tpl = templates.find((t) => t.id === id);
+                  if (tpl) handleSelectSendTemplate(tpl);
+                }}
+              >
+                <SelectTrigger className="h-9 text-sm">
+                  <SelectValue placeholder={loadingTemplates ? "Loading templates…" : "Select a template"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {templates.map((tpl) => (
+                    <SelectItem key={tpl.id} value={tpl.id}>
+                      <span>{tpl.template_name}</span>
+                      <span className="ml-2 text-[10px] text-muted-foreground">{tpl.template_type}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Subject */}
+            <div className="space-y-1.5">
+              <Label className="text-xs">Subject</Label>
+              <Input
+                className="h-9 text-sm"
+                placeholder="Email subject"
+                value={sendEmailForm.subject}
+                onChange={(e) => setSendEmailForm((f) => ({ ...f, subject: e.target.value }))}
+              />
+            </div>
+
+            {/* HTML Preview */}
+            {sendEmailPreview && (
+              <div className="space-y-1.5">
+                <Label className="text-xs">Preview</Label>
+                <div className="border border-border rounded-md overflow-hidden max-h-64 overflow-y-auto bg-white">
+                  <iframe
+                    srcDoc={sendEmailPreview}
+                    className="w-full"
+                    style={{ height: "240px", border: "none" }}
+                    sandbox="allow-same-origin"
+                    title="Email preview"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSendEmailOpen(false)}>Cancel</Button>
+            <Button
+              onClick={handleSendEmail}
+              disabled={!sendEmailForm.templateId || !sendEmailForm.subject || sendingEmail}
+              className="gap-2"
+            >
+              {sendingEmail ? (
+                <><Loader2 className="h-4 w-4 animate-spin" /> Sending…</>
+              ) : (
+                <><Send className="h-4 w-4" /> Send Email</>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* ── New Thread Dialog ── */}
       <Dialog open={newThreadOpen} onOpenChange={(open) => {
