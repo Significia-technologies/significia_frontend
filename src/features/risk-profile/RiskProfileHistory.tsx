@@ -172,13 +172,14 @@ export function RiskProfileHistory({ onNewAssessment, onNewCustomAssessment, que
   const handleSaveToDrawer = async (item: any) => {
     setSaving(item.id);
     try {
+      const dateLabel = format(new Date(item.assessment_timestamp), "dd MMM yyyy");
       await saveReportToDrawer({
         clientId: item.client_id,
         endpoint: item.is_custom
           ? API_ENDPOINTS.RISK_PROFILE.CUSTOM_PDF(item.id)
           : API_ENDPOINTS.RISK_PROFILE.PDF(item.id),
-        fileName: `Risk_Profile_${item.client_code || item.id}.pdf`,
-        documentType: `Risk Profile - ${item.assigned_risk_tier || "Assessment"}`,
+        fileName: `Risk_Profile_${item.client_code || item.id}_${dateLabel.replace(/ /g, "_")}.pdf`,
+        documentType: `Risk Profile - ${item.assigned_risk_tier || "Assessment"} · ${dateLabel}`,
         category: "Risk Profile",
       });
       toast.success("Report saved to client drawer.");
@@ -486,9 +487,9 @@ export function RiskProfileHistory({ onNewAssessment, onNewCustomAssessment, que
                                           <FileText className="w-3.5 h-3.5" />
                                           <span className="text-[9px] font-black uppercase tracking-tight">Word</span>
                                         </Button>
-                                        <Button 
-                                          variant="ghost" 
-                                          size="sm" 
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
                                           className="h-8 px-2 gap-1 border border-primary/5 hover:bg-emerald-500/10 text-emerald-500 hover:border-emerald-500/20 rounded-md transition-all"
                                           onClick={(e) => {
                                             e.stopPropagation();
@@ -502,6 +503,23 @@ export function RiskProfileHistory({ onNewAssessment, onNewCustomAssessment, que
                                             <Send className="w-3.5 h-3.5" />
                                           )}
                                           <span className="text-[9px] font-black uppercase tracking-tight">Email</span>
+                                        </Button>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-8 px-2 gap-1 border border-primary/5 hover:bg-teal-500/10 text-teal-500 hover:border-teal-500/20 rounded-md transition-all"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleSaveToDrawer(historyItem);
+                                          }}
+                                          disabled={saving === historyItem.id}
+                                        >
+                                          {saving === historyItem.id ? (
+                                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                          ) : (
+                                            <FolderInput className="w-3.5 h-3.5" />
+                                          )}
+                                          <span className="text-[9px] font-black uppercase tracking-tight">Drawer</span>
                                         </Button>
                                       </div>
                                     </div>

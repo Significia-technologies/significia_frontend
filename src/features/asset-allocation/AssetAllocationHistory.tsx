@@ -174,11 +174,12 @@ export function AssetAllocationHistory({ onNewAllocation }: AssetAllocationHisto
   const handleSaveToDrawer = async (item: AssetAllocation) => {
     setSaving(item.id);
     try {
+      const dateLabel = format(new Date(item.created_at), "dd MMM yyyy");
       await saveReportToDrawer({
         clientId: item.client_id,
         endpoint: API_ENDPOINTS.ASSET_ALLOCATION.PDF(item.id),
-        fileName: `Asset_Allocation_${item.client_code || item.id}.pdf`,
-        documentType: `Asset Allocation - ${(item as any).assigned_risk_tier || "Report"}`,
+        fileName: `Asset_Allocation_${item.client_code || item.id}_${dateLabel.replace(/ /g, "_")}.pdf`,
+        documentType: `Asset Allocation - ${(item as any).assigned_risk_tier || "Report"} · ${dateLabel}`,
         category: "Risk Profile",
       });
       toast.success("Report saved to client drawer.");
@@ -569,9 +570,9 @@ export function AssetAllocationHistory({ onNewAllocation }: AssetAllocationHisto
                                             <FileText className="w-3.5 h-3.5" />
                                             <span className="text-[9px] font-black uppercase tracking-tight">Word</span>
                                           </Button>
-                                          <Button 
-                                            variant="ghost" 
-                                            size="sm" 
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
                                             className="h-8 px-2 gap-1 border border-primary/5 hover:bg-emerald-500/10 text-emerald-500 hover:border-emerald-500/20 rounded-md transition-all"
                                             onClick={(e) => {
                                               e.stopPropagation();
@@ -585,6 +586,23 @@ export function AssetAllocationHistory({ onNewAllocation }: AssetAllocationHisto
                                               <Send className="w-3.5 h-3.5" />
                                             )}
                                             <span className="text-[9px] font-black uppercase tracking-tight">Email</span>
+                                          </Button>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-8 px-2 gap-1 border border-primary/5 hover:bg-teal-500/10 text-teal-500 hover:border-teal-500/20 rounded-md transition-all"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleSaveToDrawer(historyItem);
+                                            }}
+                                            disabled={saving === historyItem.id}
+                                          >
+                                            {saving === historyItem.id ? (
+                                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                            ) : (
+                                              <FolderInput className="w-3.5 h-3.5" />
+                                            )}
+                                            <span className="text-[9px] font-black uppercase tracking-tight">Drawer</span>
                                           </Button>
                                         </div>
                                       </div>

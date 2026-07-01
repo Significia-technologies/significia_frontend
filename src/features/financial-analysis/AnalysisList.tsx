@@ -196,11 +196,12 @@ export function AnalysisList({ clientId, onSelectAnalysis, onCreateNew, onDownlo
   const handleSaveToDrawer = async (analysis: FinancialAnalysisResult, clientName: string) => {
     setSaving(analysis.id);
     try {
+      const dateLabel = format(new Date((analysis as any).created_at), "dd MMM yyyy");
       await saveReportToDrawer({
         clientId: analysis.client_id,
         endpoint: API_ENDPOINTS.FINANCIAL_ANALYSIS.PDF(analysis.id),
-        fileName: `Financial_Analysis_${clientName.replace(/\s+/g, "_")}.pdf`,
-        documentType: `Financial Analysis v${(analysis as any).version_number || "1"}`,
+        fileName: `Financial_Analysis_${clientName.replace(/\s+/g, "_")}_v${(analysis as any).version_number || "1"}.pdf`,
+        documentType: `Financial Analysis v${(analysis as any).version_number || "1"} · ${dateLabel}`,
         category: "Financial Goals",
       });
       toast.success("Report saved to client drawer.");
@@ -522,9 +523,9 @@ export function AnalysisList({ clientId, onSelectAnalysis, onCreateNew, onDownlo
                                             </Button>
 
                                             {/* Email to Client */}
-                                            <Button 
-                                              variant="ghost" 
-                                              size="sm" 
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
                                               className="h-8 px-2.5 gap-1.5 border border-emerald-500/10 hover:bg-emerald-500/10 text-emerald-500 hover:border-emerald-500/20 rounded-md transition-all font-bold text-[10px] uppercase tracking-wider"
                                               onClick={(e) => {
                                                 e.stopPropagation();
@@ -538,6 +539,25 @@ export function AnalysisList({ clientId, onSelectAnalysis, onCreateNew, onDownlo
                                                 <Mail className="w-3.5 h-3.5" />
                                               )}
                                               <span>Email</span>
+                                            </Button>
+
+                                            {/* Save to Drawer */}
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              className="h-8 px-2.5 gap-1.5 border border-teal-500/10 hover:bg-teal-500/10 text-teal-500 hover:border-teal-500/20 rounded-md transition-all font-bold text-[10px] uppercase tracking-wider"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleSaveToDrawer(historyItem, client?.client_name || "Client");
+                                              }}
+                                              disabled={saving === historyItem.id}
+                                            >
+                                              {saving === historyItem.id ? (
+                                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                              ) : (
+                                                <FolderInput className="w-3.5 h-3.5" />
+                                              )}
+                                              <span>Drawer</span>
                                             </Button>
                                           </div>
                                         </div>
