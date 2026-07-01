@@ -1,18 +1,19 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { 
-  ArrowLeftRight, 
-  Loader2, 
-  Download, 
-  AlertTriangle, 
-  ArrowRight, 
-  ChevronLeft, 
-  Search, 
-  Plus, 
-  History, 
+import {
+  ArrowLeftRight,
+  Loader2,
+  Download,
+  AlertTriangle,
+  ArrowRight,
+  ChevronLeft,
+  Search,
+  Plus,
+  History,
   Calendar,
-  CheckCircle2
+  CheckCircle2,
+  FolderInput,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -30,6 +31,8 @@ import { format } from "date-fns";
 import { ClientValidator } from "@/features/asset-allocation/ClientValidator";
 import { ExistingAssetAllocationService, ExistingAssetAllocation } from "@/core/services/existing-asset-allocation.service";
 import { AssetAllocationService, AssetAllocation, ClientValidateResponse } from "@/core/services/asset-allocation.service";
+import { saveReportToDrawer } from "@/lib/save-to-drawer";
+import { API_ENDPOINTS } from "@/core/api/api-endpoints";
 
 type StepType = "HISTORY" | "VALIDATE" | "COMPARE";
 
@@ -68,6 +71,8 @@ export default function AllocationComparisonPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSavingComparison, setIsSavingComparison] = useState(false);
   const [savedComparisonIds, setSavedComparisonIds] = useState<Set<string>>(new Set());
+  const [savingToDrawer, setSavingToDrawer] = useState<string | null>(null);
+  const [drawerSavedIds, setDrawerSavedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (user && hasExistingPerm && hasTargetPerm) {
@@ -192,6 +197,63 @@ export default function AllocationComparisonPage() {
     }
   };
 
+  const handleSaveCompareToDrawer = async () => {
+    if (!existingAlloc || !targetAlloc || !clientInfo?.client_id) return;
+    const sourceId = `compare-${existingAlloc.id}-${targetAlloc.id}`;
+    if (drawerSavedIds.has(sourceId)) return;
+    setSavingToDrawer(sourceId);
+    try {
+      const dateLabel = format(new Date(), "dd MMM yyyy");
+      await saveReportToDrawer({
+        clientId: clientInfo.client_id,
+        endpoint: API_ENDPOINTS.EXISTING_ASSET_ALLOCATION.COMPARE_PDF(existingAlloc.id, targetAlloc.id),
+        fileName: `Allocation_Comparison_${clientInfo.client_code}_${dateLabel.replace(/ /g, "_")}.pdf`,
+        documentType: `Allocation Comparison · ${dateLabel}`,
+        category: "Risk Profile",
+        sourceId,
+      });
+      setDrawerSavedIds((prev) => new Set(prev).add(sourceId));
+      toast.success("Comparison report saved to client drawer.");
+    } catch (err: any) {
+      if (err?.response?.status === 409) {
+        setDrawerSavedIds((prev) => new Set(prev).add(sourceId));
+        toast.info("Already saved to drawer.");
+      } else {
+        toast.error("Failed to save report to drawer.");
+      }
+    } finally {
+      setSavingToDrawer(null);
+    }
+  };
+
+  const handleSaveHistoryToDrawer = async (item: any) => {
+    const sourceId = `compare-${item.existing_allocation_id}-${item.target_allocation_id}`;
+    if (drawerSavedIds.has(sourceId)) return;
+    setSavingToDrawer(sourceId);
+    try {
+      const dateLabel = format(new Date(item.created_at), "dd MMM yyyy");
+      await saveReportToDrawer({
+        clientId: item.client_id,
+        endpoint: API_ENDPOINTS.EXISTING_ASSET_ALLOCATION.COMPARE_PDF(item.existing_allocation_id, item.target_allocation_id),
+        fileName: `Allocation_Comparison_${item.client_code}_${dateLabel.replace(/ /g, "_")}.pdf`,
+        documentType: `Allocation Comparison · ${dateLabel}`,
+        category: "Risk Profile",
+        sourceId,
+      });
+      setDrawerSavedIds((prev) => new Set(prev).add(sourceId));
+      toast.success("Comparison report saved to client drawer.");
+    } catch (err: any) {
+      if (err?.response?.status === 409) {
+        setDrawerSavedIds((prev) => new Set(prev).add(sourceId));
+        toast.info("Already saved to drawer.");
+      } else {
+        toast.error("Failed to save report to drawer.");
+      }
+    } finally {
+      setSavingToDrawer(null);
+    }
+  };
+
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat("en-IN", {
       style: "currency",
@@ -302,6 +364,27 @@ export default function AllocationComparisonPage() {
                 <span>{savedComparisonIds.has(`${existingAlloc.id}-${targetAlloc.id}`) ? "Saved" : "Save Comparison"}</span>
               </Button>
             )}
+
+            {/* Save to Drawer */}
+            {existingAlloc && targetAlloc && (() => {
+              const sourceId = `compare-${existingAlloc.id}-${targetAlloc.id}`;
+              const isSaved = drawerSavedIds.has(sourceId);
+              return (
+                <Button
+                  onClick={handleSaveCompareToDrawer}
+                  disabled={savingToDrawer === sourceId || isSaved}
+                  size="sm"
+                  variant="outline"
+                  className={cn(
+                    "gap-1.5 font-black uppercase text-[9px] tracking-widest h-8 px-3 transition-all",
+                    isSaved ? "border-teal-500/30 text-teal-500 bg-teal-500/5" : "border-teal-500/30 text-teal-500 hover:bg-teal-500/10"
+                  )}
+                >
+                  {savingToDrawer === sourceId ? <Loader2 className="w-3 h-3 animate-spin" /> : <FolderInput className="w-3 h-3" />}
+                  {isSaved ? "Saved ✓" : "Drawer"}
+                </Button>
+              );
+            })()}
 
             {/* Report PDF */}
             <Button
@@ -423,7 +506,7 @@ export default function AllocationComparisonPage() {
                               </div>
                             </TableCell>
                             <TableCell className="text-right">
-                              <div className="flex justify-end gap-2">
+                              <div className="flex justify-end gap-1.5">
                                 <Button
                                   variant="ghost"
                                   size="sm"
@@ -457,6 +540,26 @@ export default function AllocationComparisonPage() {
                                   <Download className="w-3.5 h-3.5 text-red-500" />
                                   <span className="text-[9px] font-black uppercase tracking-tight text-red-500">PDF</span>
                                 </Button>
+                                {(() => {
+                                  const sourceId = `compare-${item.existing_allocation_id}-${item.target_allocation_id}`;
+                                  const isSaved = drawerSavedIds.has(sourceId);
+                                  return (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={(e) => { e.stopPropagation(); handleSaveHistoryToDrawer(item); }}
+                                      disabled={savingToDrawer === sourceId || isSaved}
+                                      className={`h-8 px-2 gap-1 border rounded-md transition-all ${isSaved ? "border-teal-500/30 text-teal-500 bg-teal-500/5" : "border-primary/5 hover:bg-teal-500/10 text-teal-500 hover:border-teal-500/20"}`}
+                                    >
+                                      {savingToDrawer === sourceId ? (
+                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                      ) : (
+                                        <FolderInput className="w-3.5 h-3.5" />
+                                      )}
+                                      <span className="text-[9px] font-black uppercase tracking-tight">{isSaved ? "Saved ✓" : "Drawer"}</span>
+                                    </Button>
+                                  );
+                                })()}
                               </div>
                             </TableCell>
                           </TableRow>

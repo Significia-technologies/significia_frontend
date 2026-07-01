@@ -13,7 +13,8 @@ import {
   TrendingUp,
   Landmark,
   Gem,
-  Download
+  Download,
+  FolderInput,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +32,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ExistingAssetAllocationService, ExistingAssetAllocation } from "@/core/services/existing-asset-allocation.service";
+import { saveReportToDrawer } from "@/lib/save-to-drawer";
+import { API_ENDPOINTS } from "@/core/api/api-endpoints";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -57,6 +60,8 @@ export function ExistingAssetAllocationHistory({ onNewAllocation, onEditDraft }:
   const [expandedClient, setExpandedClient] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [saving, setSaving] = useState<string | null>(null);
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
 
   const downloadReport = async (item: ExistingAssetAllocation) => {
     setDownloadingId(item.id);
@@ -70,6 +75,33 @@ export function ExistingAssetAllocationHistory({ onNewAllocation, onEditDraft }:
       toast.error("Failed to download PDF report");
     } finally {
       setDownloadingId(null);
+    }
+  };
+
+  const handleSaveToDrawer = async (item: ExistingAssetAllocation) => {
+    if (savedIds.has(item.id)) return;
+    setSaving(item.id);
+    try {
+      const dateLabel = format(new Date(item.created_at), "dd MMM yyyy");
+      await saveReportToDrawer({
+        clientId: item.client_id,
+        endpoint: API_ENDPOINTS.EXISTING_ASSET_ALLOCATION.PDF(item.id),
+        fileName: `Existing_Asset_Allocation_${item.client_code || item.id}_${dateLabel.replace(/ /g, "_")}.pdf`,
+        documentType: `Existing Asset Allocation - ${item.assigned_risk_tier || "Report"} · ${dateLabel}`,
+        category: "Risk Profile",
+        sourceId: item.id,
+      });
+      setSavedIds((prev) => new Set(prev).add(item.id));
+      toast.success("Report saved to client drawer.");
+    } catch (err: any) {
+      if (err?.response?.status === 409) {
+        setSavedIds((prev) => new Set(prev).add(item.id));
+        toast.info("Already saved to drawer.");
+      } else {
+        toast.error("Failed to save report to drawer.");
+      }
+    } finally {
+      setSaving(null);
     }
   };
 
@@ -355,15 +387,26 @@ export function ExistingAssetAllocationHistory({ onNewAllocation, onEditDraft }:
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex justify-end">
+                          <div className="flex justify-end items-center gap-1.5">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className={`h-8 px-2 gap-1 border rounded-md transition-all ${savedIds.has(a.id) ? "border-teal-500/30 text-teal-500 bg-teal-500/5" : "border-primary/5 hover:bg-teal-500/10 text-teal-500 hover:border-teal-500/20"}`}
+                              onClick={(e) => { e.stopPropagation(); handleSaveToDrawer(a); }}
+                              disabled={saving === a.id || savedIds.has(a.id)}
+                            >
+                              {saving === a.id ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <FolderInput className="w-3.5 h-3.5" />
+                              )}
+                              <span className="text-[9px] font-black uppercase tracking-tight">{savedIds.has(a.id) ? "Saved ✓" : "Drawer"}</span>
+                            </Button>
                             <Button
                               variant="ghost"
                               size="sm"
                               className="h-8 px-2.5 gap-1.5 border border-primary/10 hover:bg-primary/5 text-muted-foreground"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                downloadReport(a);
-                              }}
+                              onClick={(e) => { e.stopPropagation(); downloadReport(a); }}
                               disabled={downloadingId !== null}
                             >
                               {downloadingId === a.id ? (
@@ -448,22 +491,16 @@ export function ExistingAssetAllocationHistory({ onNewAllocation, onEditDraft }:
                                               variant="outline"
                                               size="sm"
                                               className="h-8 px-3 gap-1 border border-amber-500/20 hover:bg-amber-500/10 text-amber-500 hover:border-amber-500/30 rounded-md transition-all text-[9px] font-black uppercase tracking-tight"
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                onEditDraft(historyItem);
-                                              }}
+                                              onClick={(e) => { e.stopPropagation(); onEditDraft(historyItem); }}
                                             >
                                               Edit Draft
                                             </Button>
                                           )}
-                                          <Button 
-                                            variant="ghost" 
-                                            size="sm" 
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
                                             className="h-8 px-2 gap-1 border border-primary/5 hover:bg-red-500/10 text-red-500 hover:border-red-500/20 rounded-md transition-all"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              downloadReport(historyItem);
-                                            }}
+                                            onClick={(e) => { e.stopPropagation(); downloadReport(historyItem); }}
                                             disabled={downloadingId !== null}
                                           >
                                             {downloadingId === historyItem.id ? (
@@ -472,6 +509,20 @@ export function ExistingAssetAllocationHistory({ onNewAllocation, onEditDraft }:
                                               <Download className="w-3.5 h-3.5" />
                                             )}
                                             <span className="text-[9px] font-black uppercase tracking-tight">PDF</span>
+                                          </Button>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className={`h-8 px-2 gap-1 border rounded-md transition-all ${savedIds.has(historyItem.id) ? "border-teal-500/30 text-teal-500 bg-teal-500/5" : "border-primary/5 hover:bg-teal-500/10 text-teal-500 hover:border-teal-500/20"}`}
+                                            onClick={(e) => { e.stopPropagation(); handleSaveToDrawer(historyItem); }}
+                                            disabled={saving === historyItem.id || savedIds.has(historyItem.id)}
+                                          >
+                                            {saving === historyItem.id ? (
+                                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                            ) : (
+                                              <FolderInput className="w-3.5 h-3.5" />
+                                            )}
+                                            <span className="text-[9px] font-black uppercase tracking-tight">{savedIds.has(historyItem.id) ? "Saved ✓" : "Drawer"}</span>
                                           </Button>
                                         </div>
                                       </div>
