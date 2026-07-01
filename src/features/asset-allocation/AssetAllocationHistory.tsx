@@ -431,7 +431,21 @@ export function AssetAllocationHistory({ onNewAllocation }: AssetAllocationHisto
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex justify-end">
+                          <div className="flex justify-end items-center gap-1.5">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className={`h-8 px-2 gap-1 border rounded-md transition-all ${savedIds.has(a.id) ? "border-teal-500/30 text-teal-500 bg-teal-500/5" : "border-primary/5 hover:bg-teal-500/10 text-teal-500 hover:border-teal-500/20"}`}
+                              onClick={() => handleSaveToDrawer(a)}
+                              disabled={saving === a.id || savedIds.has(a.id)}
+                            >
+                              {saving === a.id ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <FolderInput className="w-3.5 h-3.5" />
+                              )}
+                              <span className="text-[9px] font-black uppercase tracking-tight">{savedIds.has(a.id) ? "Saved ✓" : "Drawer"}</span>
+                            </Button>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="sm" className="h-8 w-8 p-0 border border-primary/10 hover:bg-primary/5 text-muted-foreground">
@@ -448,7 +462,6 @@ export function AssetAllocationHistory({ onNewAllocation }: AssetAllocationHisto
                                   <FileText className="w-4 h-4" />
                                   <span className="font-bold text-[10px] uppercase tracking-wider">Download PDF</span>
                                 </DropdownMenuItem>
-                                
                                 <DropdownMenuItem
                                   onClick={() => downloadFile(a, "DOCX")}
                                   disabled={!!downloading}
@@ -457,7 +470,6 @@ export function AssetAllocationHistory({ onNewAllocation }: AssetAllocationHisto
                                   <FileText className="w-4 h-4" />
                                   <span className="font-bold text-[10px] uppercase tracking-wider">Download Word</span>
                                 </DropdownMenuItem>
-                                
                                 <DropdownMenuItem
                                   onClick={() => handleEmail(a)}
                                   disabled={!!emailing || !!downloading}
@@ -469,18 +481,6 @@ export function AssetAllocationHistory({ onNewAllocation }: AssetAllocationHisto
                                     <Send className="w-4 h-4" />
                                   )}
                                   <span className="font-bold text-[10px] uppercase tracking-wider">Email Client</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => handleSaveToDrawer(a)}
-                                  disabled={!!saving || savedIds.has(a.id)}
-                                  className="gap-2 cursor-pointer text-teal-500 hover:text-teal-600 focus:text-teal-600 focus:bg-teal-500/10"
-                                >
-                                  {saving === a.id ? (
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                  ) : (
-                                    <FolderInput className="w-4 h-4" />
-                                  )}
-                                  <span className="font-bold text-[10px] uppercase tracking-wider">{savedIds.has(a.id) ? "Saved ✓" : "Save to Drawer"}</span>
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
