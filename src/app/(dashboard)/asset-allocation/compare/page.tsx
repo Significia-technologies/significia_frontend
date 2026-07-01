@@ -211,7 +211,7 @@ export default function AllocationComparisonPage() {
         endpoint: API_ENDPOINTS.EXISTING_ASSET_ALLOCATION.COMPARE_PDF(existingAlloc.id, targetAlloc.id),
         fileName: `Allocation_Comparison_${clientInfo.client_code}_${dateLabel.replace(/ /g, "_")}.pdf`,
         documentType: `Allocation Comparison · ${dateLabel}`,
-        category: "Risk Profile",
+        category: "Asset Allocation",
         sourceId,
       });
       setDrawerSavedIds((prev) => new Set(prev).add(sourceId));
@@ -239,7 +239,7 @@ export default function AllocationComparisonPage() {
         endpoint: API_ENDPOINTS.EXISTING_ASSET_ALLOCATION.COMPARE_PDF(item.existing_allocation_id, item.target_allocation_id),
         fileName: `Allocation_Comparison_${item.client_code}_${dateLabel.replace(/ /g, "_")}.pdf`,
         documentType: `Allocation Comparison · ${dateLabel}`,
-        category: "Risk Profile",
+        category: "Asset Allocation",
         sourceId,
       });
       setDrawerSavedIds((prev) => new Set(prev).add(sourceId));

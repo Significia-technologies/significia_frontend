@@ -30,6 +30,7 @@ const READ_ONLY_CATEGORIES = new Set(["KYC", "Rectification", "Reports"]);
 // Categories available for free-form IA uploads
 const UPLOAD_CATEGORIES = [
   "Risk Profile",
+  "Asset Allocation",
   "Financial Goals",
   "IPS",
   "Compliance",
@@ -38,18 +39,19 @@ const UPLOAD_CATEGORIES = [
 ];
 
 const CATEGORY_COLORS: Record<string, string> = {
-  KYC:              "border-amber-500/30 bg-amber-500/5",
-  Rectification:    "border-blue-500/30 bg-blue-500/5",
-  Reports:          "border-violet-500/30 bg-violet-500/5",
-  "Risk Profile":   "border-emerald-500/30 bg-emerald-500/5",
-  "Financial Goals":"border-cyan-500/30 bg-cyan-500/5",
-  IPS:              "border-indigo-500/30 bg-indigo-500/5",
-  Compliance:       "border-orange-500/30 bg-orange-500/5",
-  Agreements:       "border-rose-500/30 bg-rose-500/5",
-  Other:            "border-primary/20 bg-primary/5",
+  KYC:                "border-amber-500/30 bg-amber-500/5",
+  Rectification:      "border-blue-500/30 bg-blue-500/5",
+  Reports:            "border-violet-500/30 bg-violet-500/5",
+  "Risk Profile":     "border-emerald-500/30 bg-emerald-500/5",
+  "Asset Allocation": "border-teal-500/30 bg-teal-500/5",
+  "Financial Goals":  "border-cyan-500/30 bg-cyan-500/5",
+  IPS:                "border-indigo-500/30 bg-indigo-500/5",
+  Compliance:         "border-orange-500/30 bg-orange-500/5",
+  Agreements:         "border-rose-500/30 bg-rose-500/5",
+  Other:              "border-primary/20 bg-primary/5",
 };
 
-const FOLDER_CATEGORY_ORDER = ["KYC", "Rectification", "Reports", "Risk Profile", "Financial Goals", "IPS", "Compliance", "Agreements", "Other"];
+const FOLDER_CATEGORY_ORDER = ["KYC", "Rectification", "Reports", "Risk Profile", "Asset Allocation", "Financial Goals", "IPS", "Compliance", "Agreements", "Other"];
 
 async function downloadViaProxy(filePath: string, docType: string) {
   try {

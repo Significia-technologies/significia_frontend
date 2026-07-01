@@ -182,7 +182,7 @@ export function AssetAllocationHistory({ onNewAllocation }: AssetAllocationHisto
         endpoint: API_ENDPOINTS.ASSET_ALLOCATION.PDF(item.id),
         fileName: `Asset_Allocation_${item.client_code || item.id}_${dateLabel.replace(/ /g, "_")}.pdf`,
         documentType: `Asset Allocation - ${(item as any).assigned_risk_tier || "Report"} · ${dateLabel}`,
-        category: "Risk Profile",
+        category: "Asset Allocation",
         sourceId: item.id,
       });
       setSavedIds((prev) => new Set(prev).add(item.id));
