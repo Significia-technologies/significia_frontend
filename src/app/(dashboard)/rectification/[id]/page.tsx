@@ -628,7 +628,7 @@ export default function RectificationDetailsPage() {
         
         {/* PRINT HEADER - ONLY VISIBLE ON PRINT */}
         <div className="hidden print:block mb-8 border-b-2 border-black pb-6 text-center">
-            <h1 className="text-2xl font-black uppercase tracking-tight">
+            <h1 className="text-2xl font-bold tracking-tight">
               {rectification.module === 'DEACTIVATION' ? "Client Deactivation Authorization Form" : "Data Correction Authorization Form"}
             </h1>
             <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">

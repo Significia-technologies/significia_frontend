@@ -117,7 +117,7 @@ export default function ExistingAssetAllocationPage() {
               <PieChart className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-xl font-black tracking-tight text-foreground uppercase">
+              <h1 className="text-xl font-bold tracking-tight text-foreground">
                 {editingAllocation ? "Edit Draft Valuation" : step === "VALIDATE" ? "Validate Client" : "Valuation Setup"}
               </h1>
               <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40">

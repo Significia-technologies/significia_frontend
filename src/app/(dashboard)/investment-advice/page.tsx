@@ -79,7 +79,7 @@ export default function InvestmentAdviceDashboardPage() {
               <FileText className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-xl font-black tracking-tight text-foreground uppercase">
+              <h1 className="text-xl font-bold tracking-tight text-foreground">
                 {view === "VALIDATE_CLIENT" && "Prepare Advice Note — Step 1"}
                 {view === "CREATE_FORM" && "Prepare Advice Note — Step 2"}
                 {view === "EDIT_FORM" && "Edit Draft Advice Note"}

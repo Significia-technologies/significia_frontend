@@ -130,7 +130,7 @@ export function AllAdviceNotesList({ onCreateNew, onSelectNote, onEditDraft }: A
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-xl font-black tracking-tight text-primary uppercase">Investment Advice Vault</h2>
+          <h2 className="text-xl font-bold tracking-tight text-primary">Investment Advice Vault</h2>
           <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest opacity-60">
             Compliance logs and investment advice records across all clients
           </p>

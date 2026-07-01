@@ -82,7 +82,7 @@ export default function TargetPortfolioRoute() {
     <div className="max-w-7xl mx-auto py-4 px-4 space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div className="min-w-0">
-          <h2 className="text-2xl font-black tracking-tight text-primary uppercase truncate">Target Portfolio</h2>
+          <h2 className="text-2xl font-bold tracking-tight text-primary">Target Portfolio</h2>
           <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest opacity-60 truncate">Select a client to manage their target portfolio</p>
         </div>
         <div className="flex items-center gap-2 w-full lg:w-auto">

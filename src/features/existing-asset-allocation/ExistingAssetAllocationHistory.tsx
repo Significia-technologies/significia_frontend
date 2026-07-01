@@ -233,7 +233,7 @@ export function ExistingAssetAllocationHistory({ onNewAllocation, onEditDraft }:
             <PieChart className="w-8 h-8 text-primary" />
           </div>
           <div>
-            <h2 className="text-2xl font-black tracking-tight text-primary uppercase">
+            <h2 className="text-2xl font-bold tracking-tight text-primary">
               Existing Asset Allocation
             </h2>
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest opacity-60">

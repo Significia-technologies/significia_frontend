@@ -58,7 +58,7 @@ export default function NewTargetAdviceNotePage() {
               <FileText className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-xl font-black tracking-tight text-foreground uppercase">
+              <h1 className="text-xl font-bold tracking-tight text-foreground">
                 {headerTitle}
               </h1>
               <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40">

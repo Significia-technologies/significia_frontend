@@ -329,7 +329,7 @@ export default function AllocationComparisonPage() {
             <ArrowLeftRight className="w-4 h-4 text-primary" />
           </div>
           <div>
-            <h1 className="text-base font-black tracking-tight text-foreground uppercase leading-none">Allocation Comparison</h1>
+            <h1 className="text-base font-bold tracking-tight text-foreground leading-none">Allocation Comparison</h1>
             <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest opacity-40 mt-0.5">Existing vs Target allocation — percentage only</p>
           </div>
         </div>
@@ -590,7 +590,7 @@ export default function AllocationComparisonPage() {
       {step === "VALIDATE" && (
         <div className="max-w-2xl mx-auto rounded-xl border border-primary/10 bg-card/30 backdrop-blur-sm p-6 relative space-y-4">
           <div className="flex items-center justify-between border-b border-primary/5 pb-2">
-            <h3 className="text-sm font-black uppercase tracking-wider text-primary">Validate Client for Comparison</h3>
+            <h3 className="text-sm font-bold tracking-wider text-primary">Validate Client for Comparison</h3>
             <Button
               variant="ghost"
               size="sm"

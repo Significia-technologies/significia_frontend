@@ -233,7 +233,7 @@ export function AnalysisList({ clientId, onSelectAnalysis, onCreateNew, onDownlo
     <div className="space-y-6">
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div className="min-w-0">
-          <h2 className="text-2xl font-black tracking-tight text-primary uppercase truncate">Financial Goals Vault</h2>
+          <h2 className="text-2xl font-bold tracking-tight text-primary">Financial Goals Vault</h2>
           <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest opacity-60 truncate">Analyze client portfolios and generate professional reports</p>
         </div>
         <div className="flex flex-row items-center gap-2 w-full lg:w-auto shrink-0">

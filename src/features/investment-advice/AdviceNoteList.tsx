@@ -150,7 +150,7 @@ export function AdviceNoteList({ clientId, clientName, onSelectNote, onCreateNew
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-xl font-black tracking-tight text-primary uppercase">Investment Advice Notes</h2>
+          <h2 className="text-xl font-bold tracking-tight text-primary">Investment Advice Notes</h2>
           <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest opacity-60">
             SEBI-regulated advice history and compliance logs
           </p>

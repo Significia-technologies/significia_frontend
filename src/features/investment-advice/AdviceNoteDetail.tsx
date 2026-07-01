@@ -504,7 +504,7 @@ export function AdviceNoteDetail({ noteId, onBack, onEdit }: AdviceNoteDetailPro
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-black tracking-tight text-foreground uppercase">
+              <h1 className="text-xl font-bold tracking-tight text-foreground">
                 {note.advice_note_no}
               </h1>
               {note.is_locked ? (
