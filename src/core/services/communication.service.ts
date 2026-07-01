@@ -113,33 +113,15 @@ export class CommunicationService {
     return res.data;
   }
 
-  static uploadAttachments(threadId: string, files: File[]): Promise<{ name: string; key: string; content_type: string; size: number }[]> {
-    return new Promise((resolve, reject) => {
-      const formData = new FormData();
-      files.forEach((f) => formData.append("files", f));
-
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/v1";
-      const url = `${baseUrl}/communication/threads/${threadId}/attachments`;
-
-      const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
-      const tenantSlug = typeof window !== "undefined" ? localStorage.getItem("simulatedTenantSlug") : null;
-
-      const xhr = new XMLHttpRequest();
-      xhr.open("POST", url);
-      xhr.withCredentials = true;
-      if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
-      if (tenantSlug) xhr.setRequestHeader("X-Tenant-Slug", tenantSlug);
-      // Do NOT set Content-Type — browser sets multipart/form-data; boundary=... automatically
-      xhr.onload = () => {
-        try {
-          const data = JSON.parse(xhr.responseText);
-          if (xhr.status >= 200 && xhr.status < 300) resolve(data.attachments ?? []);
-          else reject({ response: { data } });
-        } catch { reject(new Error("Invalid response")); }
-      };
-      xhr.onerror = () => reject(new Error("Network error"));
-      xhr.send(formData);
-    });
+  static async uploadAttachments(threadId: string, files: File[]): Promise<{ name: string; key: string; content_type: string; size: number }[]> {
+    const formData = new FormData();
+    files.forEach((f) => formData.append("files", f));
+    const res = await httpClient.post(
+      API_ENDPOINTS.COMMUNICATION.ATTACHMENTS(threadId),
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } }
+    );
+    return res.data.attachments ?? [];
   }
 
   static async addMessage(
