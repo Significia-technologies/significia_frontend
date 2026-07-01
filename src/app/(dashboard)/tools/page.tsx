@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Wrench, FileText, Download, RefreshCcw, ShieldCheck } from "lucide-react";
+import { FileText, Download, RefreshCcw, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { FinancialAnalysisService } from "@/core/services/financial-analysis.service";
@@ -107,13 +107,8 @@ export default function ToolsPage() {
       {/* Header */}
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-3">
-            <span className="p-1.5 rounded-lg bg-primary/10">
-              <Wrench className="w-8 h-8 text-primary" />
-            </span>
-            Advisor Tools
-          </h1>
-          <p className="text-muted-foreground mt-1">Access utility tools and stationary for your practice.</p>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Advisor Tools</h1>
+          <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest opacity-60 mt-1">Access utility tools and stationary for your practice.</p>
         </div>
         <Button variant="outline" size="icon" onClick={fetchQuestionnaires} disabled={loading} className="hover:rotate-180 transition-transform duration-500">
           <RefreshCcw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
