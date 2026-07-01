@@ -15,7 +15,8 @@ import {
   History,
   CheckCircle2,
   Database,
-  Pencil
+  Pencil,
+  FolderInput,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -47,6 +48,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { InvestmentAdviceService, InvestmentAdviceNoteSummary } from "@/core/services/investment-advice.service";
+import { saveReportToDrawer } from "@/lib/save-to-drawer";
+import { API_ENDPOINTS } from "@/core/api/api-endpoints";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -62,6 +65,7 @@ export function AdviceNoteList({ clientId, clientName, onSelectNote, onCreateNew
   const [notes, setNotes] = useState<InvestmentAdviceNoteSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState<string | null>(null);
+  const [saving, setSaving] = useState<string | null>(null);
   const [lockingNote, setLockingNote] = useState<InvestmentAdviceNoteSummary | null>(null);
   const [isLocking, setIsLocking] = useState(false);
 
@@ -96,6 +100,24 @@ export function AdviceNoteList({ clientId, clientName, onSelectNote, onCreateNew
       toast.error(`Failed to download ${formatType.toUpperCase()}`);
     } finally {
       setDownloading(null);
+    }
+  };
+
+  const handleSaveToDrawer = async (note: InvestmentAdviceNoteSummary) => {
+    setSaving(note.id);
+    try {
+      await saveReportToDrawer({
+        clientId: clientId,
+        endpoint: API_ENDPOINTS.ADVISORY.PDF(note.id),
+        fileName: `Advice_Note_${note.advice_note_no}.pdf`,
+        documentType: `Investment Advice Note ${note.advice_note_no}`,
+        category: "Agreements",
+      });
+      toast.success("Report saved to client drawer.");
+    } catch {
+      toast.error("Failed to save report to drawer.");
+    } finally {
+      setSaving(null);
     }
   };
 
@@ -226,8 +248,8 @@ export function AdviceNoteList({ clientId, clientName, onSelectNote, onCreateNew
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-48 border-primary/20 bg-background/95 backdrop-blur-md">
-                                <DropdownMenuItem 
-                                  className="gap-2 cursor-pointer" 
+                                <DropdownMenuItem
+                                  className="gap-2 cursor-pointer"
                                   onClick={() => handleDownload(note.id, note.advice_note_no, 'pdf')}
                                   disabled={downloading === `${note.id}-pdf`}
                                 >
@@ -237,6 +259,18 @@ export function AdviceNoteList({ clientId, clientName, onSelectNote, onCreateNew
                                     <Download className="w-4 h-4 text-red-500" />
                                   )}
                                   Download PDF
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="gap-2 cursor-pointer text-teal-600 focus:text-teal-600 focus:bg-teal-50"
+                                  onClick={() => handleSaveToDrawer(note)}
+                                  disabled={!!saving}
+                                >
+                                  {saving === note.id ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                  ) : (
+                                    <FolderInput className="w-4 h-4" />
+                                  )}
+                                  Save to Drawer
                                 </DropdownMenuItem>
                                 
                                 {!isLocked && (

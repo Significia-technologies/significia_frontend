@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { 
-  FileText, 
-  Search, 
+  FileText,
+  Search,
   Download,
   Calendar,
   User,
@@ -17,7 +17,8 @@ import {
   RefreshCcw,
   PlusCircle,
   Settings,
-  MoreHorizontal
+  MoreHorizontal,
+  FolderInput,
 } from "lucide-react";
 import { 
   DropdownMenu, 
@@ -47,6 +48,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { RiskProfileService, RiskAssessment } from "@/core/services/risk-profile.service";
+import { saveReportToDrawer } from "@/lib/save-to-drawer";
+import { API_ENDPOINTS } from "@/core/api/api-endpoints";
 import { RectificationService } from "@/core/services/rectification.service";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -65,6 +68,7 @@ export function RiskProfileHistory({ onNewAssessment, onNewCustomAssessment, que
   const [assessments, setAssessments] = useState<RiskAssessment[]>([]);
   const [search, setSearch] = useState("");
   const [downloading, setDownloading] = useState<string | null>(null);
+  const [saving, setSaving] = useState<string | null>(null);
   const [emailing, setEmailing] = useState<string | null>(null);
   const [expandedClient, setExpandedClient] = useState<string | null>(null);
 
@@ -162,6 +166,26 @@ export function RiskProfileHistory({ onNewAssessment, onNewCustomAssessment, que
       toast.error("Failed to send email");
     } finally {
       setEmailing(null);
+    }
+  };
+
+  const handleSaveToDrawer = async (item: any) => {
+    setSaving(item.id);
+    try {
+      await saveReportToDrawer({
+        clientId: item.client_id,
+        endpoint: item.is_custom
+          ? API_ENDPOINTS.RISK_PROFILE.CUSTOM_PDF(item.id)
+          : API_ENDPOINTS.RISK_PROFILE.PDF(item.id),
+        fileName: `Risk_Profile_${item.client_code || item.id}.pdf`,
+        documentType: `Risk Profile - ${item.assigned_risk_tier || "Assessment"}`,
+        category: "Risk Profile",
+      });
+      toast.success("Report saved to client drawer.");
+    } catch {
+      toast.error("Failed to save report to drawer.");
+    } finally {
+      setSaving(null);
     }
   };
 
@@ -352,7 +376,7 @@ export function RiskProfileHistory({ onNewAssessment, onNewCustomAssessment, que
                               
                               <DropdownMenuSeparator className="bg-primary/10" />
                               
-                              <DropdownMenuItem 
+                              <DropdownMenuItem
                                 onClick={() => handleEmail(a)}
                                 disabled={!!emailing || !!downloading}
                                 className="cursor-pointer font-bold uppercase text-[10px] tracking-widest py-2.5 flex items-center gap-2 hover:text-emerald-500 transition-colors"
@@ -363,6 +387,19 @@ export function RiskProfileHistory({ onNewAssessment, onNewCustomAssessment, que
                                   <Send className="w-4 h-4 text-emerald-500 shrink-0" />
                                 )}
                                 <span>Email to Client</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator className="bg-primary/10" />
+                              <DropdownMenuItem
+                                onClick={() => handleSaveToDrawer(a)}
+                                disabled={!!saving}
+                                className="cursor-pointer font-bold uppercase text-[10px] tracking-widest py-2.5 flex items-center gap-2 hover:text-teal-500 transition-colors"
+                              >
+                                {saving === a.id ? (
+                                  <Loader2 className="w-4 h-4 animate-spin text-teal-500 shrink-0" />
+                                ) : (
+                                  <FolderInput className="w-4 h-4 text-teal-500 shrink-0" />
+                                )}
+                                <span>Save to Drawer</span>
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>

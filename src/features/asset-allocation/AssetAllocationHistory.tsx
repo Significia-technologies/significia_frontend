@@ -16,7 +16,8 @@ import {
   PlusCircle,
   RefreshCcw,
   PieChart,
-  MoreHorizontal
+  MoreHorizontal,
+  FolderInput,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +41,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { AssetAllocationService, AssetAllocation } from "@/core/services/asset-allocation.service";
+import { saveReportToDrawer } from "@/lib/save-to-drawer";
+import { API_ENDPOINTS } from "@/core/api/api-endpoints";
 import { RectificationService } from "@/core/services/rectification.service";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -57,6 +60,7 @@ export function AssetAllocationHistory({ onNewAllocation }: AssetAllocationHisto
   const [allocations, setAllocations] = useState<AssetAllocation[]>([]);
   const [search, setSearch] = useState("");
   const [downloading, setDownloading] = useState<string | null>(null);
+  const [saving, setSaving] = useState<string | null>(null);
   const [emailing, setEmailing] = useState<string | null>(null);
   const [initiating, setInitiating] = useState<string | null>(null);
   const [expandedClient, setExpandedClient] = useState<string | null>(null);
@@ -164,6 +168,24 @@ export function AssetAllocationHistory({ onNewAllocation }: AssetAllocationHisto
       toast.error("Failed to email allocation");
     } finally {
       setEmailing(null);
+    }
+  };
+
+  const handleSaveToDrawer = async (item: AssetAllocation) => {
+    setSaving(item.id);
+    try {
+      await saveReportToDrawer({
+        clientId: item.client_id,
+        endpoint: API_ENDPOINTS.ASSET_ALLOCATION.PDF(item.id),
+        fileName: `Asset_Allocation_${item.client_code || item.id}.pdf`,
+        documentType: `Asset Allocation - ${(item as any).assigned_risk_tier || "Report"}`,
+        category: "Risk Profile",
+      });
+      toast.success("Report saved to client drawer.");
+    } catch {
+      toast.error("Failed to save report to drawer.");
+    } finally {
+      setSaving(null);
     }
   };
 
@@ -437,6 +459,18 @@ export function AssetAllocationHistory({ onNewAllocation }: AssetAllocationHisto
                                     <Send className="w-4 h-4" />
                                   )}
                                   <span className="font-bold text-[10px] uppercase tracking-wider">Email Client</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => handleSaveToDrawer(a)}
+                                  disabled={!!saving}
+                                  className="gap-2 cursor-pointer text-teal-500 hover:text-teal-600 focus:text-teal-600 focus:bg-teal-500/10"
+                                >
+                                  {saving === a.id ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                  ) : (
+                                    <FolderInput className="w-4 h-4" />
+                                  )}
+                                  <span className="font-bold text-[10px] uppercase tracking-wider">Save to Drawer</span>
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>

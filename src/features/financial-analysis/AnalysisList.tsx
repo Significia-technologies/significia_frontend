@@ -5,19 +5,20 @@ import {
   PlusCircle, 
   Search, 
   Filter, 
-  MoreHorizontal, 
-  FileText, 
-  Eye, 
-  Download, 
-  TrendingUp, 
-  User, 
+  MoreHorizontal,
+  FileText,
+  Eye,
+  Download,
+  TrendingUp,
+  User,
   Calendar,
   ChevronRight,
   ChevronDown,
   Database,
   Mail,
   RefreshCcw,
-  Loader2
+  Loader2,
+  FolderInput,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,6 +40,8 @@ import {
   DropdownMenuSeparator 
 } from "@/components/ui/dropdown-menu";
 import { FinancialAnalysisService, FinancialAnalysisResult } from "@/core/services/financial-analysis.service";
+import { saveReportToDrawer } from "@/lib/save-to-drawer";
+import { API_ENDPOINTS } from "@/core/api/api-endpoints";
 import { MasterDataService, Client } from "@/core/services/master.service";
 import { RectificationService } from "@/core/services/rectification.service";
 import { SEBIService } from "@/core/services/sebi.service";
@@ -61,6 +64,7 @@ export function AnalysisList({ clientId, onSelectAnalysis, onCreateNew, onDownlo
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [downloading, setDownloading] = useState<string | null>(null);
+  const [saving, setSaving] = useState<string | null>(null);
   const [delivering, setDelivering] = useState<string | null>(null);
   const [initiating, setInitiating] = useState<string | null>(null);
   const [expandedClient, setExpandedClient] = useState<string | null>(null);
@@ -186,6 +190,24 @@ export function AnalysisList({ clientId, onSelectAnalysis, onCreateNew, onDownlo
       toast.error(err.response?.data?.detail || "Failed to send email. Please check SMTP settings.");
     } finally {
       setDelivering(null);
+    }
+  };
+
+  const handleSaveToDrawer = async (analysis: FinancialAnalysisResult, clientName: string) => {
+    setSaving(analysis.id);
+    try {
+      await saveReportToDrawer({
+        clientId: analysis.client_id,
+        endpoint: API_ENDPOINTS.FINANCIAL_ANALYSIS.PDF(analysis.id),
+        fileName: `Financial_Analysis_${clientName.replace(/\s+/g, "_")}.pdf`,
+        documentType: `Financial Analysis v${(analysis as any).version_number || "1"}`,
+        category: "Financial Goals",
+      });
+      toast.success("Report saved to client drawer.");
+    } catch {
+      toast.error("Failed to save report to drawer.");
+    } finally {
+      setSaving(null);
     }
   };
 
@@ -364,8 +386,8 @@ export function AnalysisList({ clientId, onSelectAnalysis, onCreateNew, onDownlo
                                     Download Word
                                   </DropdownMenuItem>
                                   <DropdownMenuSeparator />
-                                  <DropdownMenuItem 
-                                    className="gap-2 text-blue-600 focus:text-blue-600 focus:bg-blue-50" 
+                                  <DropdownMenuItem
+                                    className="gap-2 text-blue-600 focus:text-blue-600 focus:bg-blue-50"
                                     onClick={() => handleEmailReport(analysis.id)}
                                   >
                                     {delivering === analysis.id ? (
@@ -374,6 +396,19 @@ export function AnalysisList({ clientId, onSelectAnalysis, onCreateNew, onDownlo
                                       <Mail className="w-4 h-4" />
                                     )}
                                     Send via Email
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    className="gap-2 text-emerald-600 focus:text-emerald-600 focus:bg-emerald-50"
+                                    onClick={() => handleSaveToDrawer(analysis, client?.client_name || "Client")}
+                                    disabled={!!saving}
+                                  >
+                                    {saving === analysis.id ? (
+                                      <span className="w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+                                    ) : (
+                                      <FolderInput className="w-4 h-4" />
+                                    )}
+                                    Save to Drawer
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
