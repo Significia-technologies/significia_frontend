@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
-import { LogOut, Sun, Moon, Monitor, Settings } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { LogOut, Sun, Moon, Monitor, Settings, ExternalLink } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
@@ -19,13 +19,11 @@ interface SettingsDialogProps {
 }
 
 export function SettingsDialog({ collapsed = false }: SettingsDialogProps) {
-  const [open, setOpen] = useState(false);
   const { theme, setTheme } = useTheme();
   const { user, clearUser } = useAppStore();
   const router = useRouter();
 
   const handleLogout = async () => {
-    setOpen(false);
     try {
       await AuthService.logout();
     } finally {
@@ -44,14 +42,10 @@ export function SettingsDialog({ collapsed = false }: SettingsDialogProps) {
   const email = user?.email || "";
   const role = user?.role || "";
 
-  const trigger = collapsed ? (
+  const triggerButton = collapsed ? (
     <Tooltip delayDuration={0}>
       <TooltipTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="w-full h-9 rounded-md hover:bg-accent"
-        >
+        <Button variant="ghost" size="icon" className="w-full h-9 rounded-md hover:bg-accent">
           <Avatar className="h-6 w-6">
             <AvatarFallback className="text-[10px] font-bold bg-primary/10 text-primary">
               {initials}
@@ -79,16 +73,17 @@ export function SettingsDialog({ collapsed = false }: SettingsDialogProps) {
   );
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="sm:max-w-sm border-primary/20 bg-background/95 backdrop-blur-md p-0 overflow-hidden">
-        <DialogHeader className="px-5 pt-5 pb-4">
-          <DialogTitle className="text-xs font-black uppercase tracking-widest text-primary/60">Settings</DialogTitle>
-        </DialogHeader>
-
+    <Popover>
+      <PopoverTrigger asChild>{triggerButton}</PopoverTrigger>
+      <PopoverContent
+        side="right"
+        align="end"
+        sideOffset={12}
+        className="w-72 p-0 border-primary/20 bg-background/95 backdrop-blur-md shadow-xl overflow-hidden"
+      >
         {/* Profile */}
-        <div className="px-5 pb-4 flex items-center gap-3">
-          <Avatar className="h-12 w-12 shrink-0">
+        <div className="px-4 pt-4 pb-3 flex items-center gap-3">
+          <Avatar className="h-11 w-11 shrink-0">
             <AvatarFallback className="text-sm font-bold bg-primary/10 text-primary">
               {initials}
             </AvatarFallback>
@@ -106,26 +101,26 @@ export function SettingsDialog({ collapsed = false }: SettingsDialogProps) {
 
         <Separator />
 
-        {/* Theme */}
-        <div className="px-5 py-4 space-y-2.5">
-          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Appearance</p>
-          <div className="grid grid-cols-3 gap-2">
+        {/* Appearance */}
+        <div className="px-4 py-3 space-y-2">
+          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50">Appearance</p>
+          <div className="grid grid-cols-3 gap-1.5">
             {([
-              { value: "light", label: "Light", icon: Sun },
-              { value: "dark",  label: "Dark",  icon: Moon },
-              { value: "system",label: "System",icon: Monitor },
+              { value: "light",  label: "Light",  icon: Sun },
+              { value: "dark",   label: "Dark",   icon: Moon },
+              { value: "system", label: "System", icon: Monitor },
             ] as const).map(({ value, label, icon: Icon }) => (
               <button
                 key={value}
                 onClick={() => setTheme(value)}
                 className={cn(
-                  "flex flex-col items-center gap-1.5 rounded-lg border p-3 text-xs font-bold uppercase tracking-wider transition-all",
+                  "flex flex-col items-center gap-1.5 rounded-lg border py-2.5 text-xs font-bold uppercase tracking-wider transition-all",
                   theme === value
                     ? "border-primary bg-primary/10 text-primary"
-                    : "border-border text-muted-foreground hover:border-primary/40 hover:bg-accent"
+                    : "border-border text-muted-foreground hover:border-primary/30 hover:bg-accent"
                 )}
               >
-                <Icon className="h-4 w-4" />
+                <Icon className="h-3.5 w-3.5" />
                 {label}
               </button>
             ))}
@@ -134,18 +129,27 @@ export function SettingsDialog({ collapsed = false }: SettingsDialogProps) {
 
         <Separator />
 
-        {/* Logout */}
-        <div className="px-5 py-4">
+        {/* Actions */}
+        <div className="px-2 py-2 space-y-0.5">
           <Button
             variant="ghost"
-            className="w-full justify-start gap-2.5 text-destructive hover:text-destructive hover:bg-destructive/10 font-bold text-sm"
+            className="w-full justify-start gap-2.5 h-9 px-2.5 text-sm font-medium text-foreground hover:bg-accent rounded-md"
+            onClick={() => router.push("/settings")}
+          >
+            <Settings className="h-4 w-4 text-muted-foreground" />
+            Settings
+            <ExternalLink className="h-3 w-3 ml-auto text-muted-foreground/50" />
+          </Button>
+          <Button
+            variant="ghost"
+            className="w-full justify-start gap-2.5 h-9 px-2.5 text-sm font-medium text-destructive hover:text-destructive hover:bg-destructive/10 rounded-md"
             onClick={handleLogout}
           >
             <LogOut className="h-4 w-4" />
             Log out
           </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+      </PopoverContent>
+    </Popover>
   );
 }
