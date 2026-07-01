@@ -362,5 +362,6 @@ export const API_ENDPOINTS = {
   },
   STORAGE: {
     URL: `${API_BASE}/storage/url`,
+    FILE: `${API_BASE}/storage/file`,
   },
 };
