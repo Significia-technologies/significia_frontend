@@ -301,7 +301,7 @@ export function ExistingAssetAllocationHistory({ onNewAllocation, onEditDraft }:
                 <TableHead className="text-[10px] font-black uppercase tracking-widest text-primary/60">Total Valuation</TableHead>
                 <TableHead className="text-[10px] font-black uppercase tracking-widest text-primary/60">Holding Split</TableHead>
                 <TableHead className="text-[10px] font-black uppercase tracking-widest text-primary/60">Date</TableHead>
-                <TableHead className="text-[10px] font-black uppercase tracking-widest text-primary/60 text-right">Report</TableHead>
+                <TableHead className="text-[10px] font-black uppercase tracking-widest text-primary/60 text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -395,35 +395,42 @@ export function ExistingAssetAllocationHistory({ onNewAllocation, onEditDraft }:
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex justify-end items-center gap-1.5">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className={`h-8 px-2 gap-1 border rounded-md transition-all ${savedIds.has(a.id) ? "border-teal-500/30 text-teal-500 bg-teal-500/5" : "border-primary/5 hover:bg-teal-500/10 text-teal-500 hover:border-teal-500/20"}`}
-                              onClick={(e) => { e.stopPropagation(); handleSaveToDrawer(a); }}
-                              disabled={saving === a.id || savedIds.has(a.id)}
-                            >
-                              {saving === a.id ? (
-                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                              ) : (
-                                <FolderInput className="w-3.5 h-3.5" />
-                              )}
-                              <span className="text-[9px] font-black uppercase tracking-tight">{savedIds.has(a.id) ? "Saved ✓" : "Drawer"}</span>
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 px-2.5 gap-1.5 border border-primary/10 hover:bg-primary/5 text-muted-foreground"
-                              onClick={(e) => { e.stopPropagation(); downloadReport(a); }}
-                              disabled={downloadingId !== null}
-                            >
-                              {downloadingId === a.id ? (
-                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                              ) : (
-                                <Download className="w-3.5 h-3.5 text-red-500" />
-                              )}
-                              <span className="text-[9px] font-black uppercase tracking-tight text-red-500">Report</span>
-                            </Button>
+                          <div className="flex justify-end">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 border border-primary/10 hover:bg-primary/5 text-muted-foreground">
+                                  <MoreHorizontal className="w-4 h-4" />
+                                  <span className="sr-only">Open menu</span>
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-48 border-primary/20 bg-background/95 backdrop-blur-md">
+                                <DropdownMenuItem
+                                  className="gap-2 cursor-pointer"
+                                  onClick={(e) => { e.stopPropagation(); downloadReport(a); }}
+                                  disabled={downloadingId !== null}
+                                >
+                                  {downloadingId === a.id ? (
+                                    <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                                  ) : (
+                                    <Download className="w-4 h-4 text-red-500" />
+                                  )}
+                                  <span className="font-bold text-[10px] uppercase tracking-wider">Download PDF</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="gap-2 cursor-pointer text-teal-600 focus:text-teal-600 focus:bg-teal-50"
+                                  onClick={(e) => { e.stopPropagation(); handleSaveToDrawer(a); }}
+                                  disabled={saving === a.id || savedIds.has(a.id)}
+                                >
+                                  {saving === a.id ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                  ) : (
+                                    <FolderInput className="w-4 h-4" />
+                                  )}
+                                  <span className="font-bold text-[10px] uppercase tracking-wider">{savedIds.has(a.id) ? "Saved ✓" : "Save to Drawer"}</span>
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
                         </TableCell>
                       </TableRow>
