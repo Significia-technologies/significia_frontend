@@ -52,21 +52,21 @@ export function SEBIComplianceDashboard() {
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-9 w-9 shrink-0"
-            onClick={() => router.push("/master")}
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </Button>
-          <div>
+        <div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 shrink-0"
+              onClick={() => router.push("/master")}
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
             <h1 className="text-2xl font-bold tracking-tight text-foreground">Audit Log</h1>
-            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest opacity-60 mt-1">
-              Full audit trail, version control, and regulatory transparency for IA Master data.
-            </p>
           </div>
+          <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest opacity-60 mt-1 ml-9">
+            Full audit trail, version control, and regulatory transparency for IA Master data.
+          </p>
         </div>
 
         {/* Lock Status Indicator */}
