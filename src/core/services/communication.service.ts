@@ -86,6 +86,18 @@ export interface AddMessagePayload {
 // ── Service ────────────────────────────────────────────────────────────
 
 export class CommunicationService {
+  static async getInbox(params?: Partial<{
+    client_id: string;
+    status: string;
+    thread_type: string;
+    search: string;
+    limit: number;
+    offset: number;
+  }>): Promise<{ stats: CommunicationStats; total: number; items: ConversationThread[] }> {
+    const res = await httpClient.get(API_ENDPOINTS.COMMUNICATION.INBOX, { params });
+    return res.data;
+  }
+
   static async getStats(): Promise<CommunicationStats> {
     const res = await httpClient.get(API_ENDPOINTS.COMMUNICATION.STATS);
     return res.data;

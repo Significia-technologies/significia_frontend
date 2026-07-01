@@ -351,6 +351,7 @@ export const API_ENDPOINTS = {
 
   // ── IA–Investor Communication ────────────────────────────────
   COMMUNICATION: {
+    INBOX: `${API_BASE}/communication/inbox`,
     STATS: `${API_BASE}/communication/stats`,
     THREADS: `${API_BASE}/communication/threads`,
     THREAD: (id: string) => `${API_BASE}/communication/threads/${id}`,

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { Suspense, useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -137,7 +137,7 @@ function formatMessageTime(dateStr: string): string {
 
 // ── Component ──────────────────────────────────────────────────────────
 
-export default function CommunicationPage() {
+function CommunicationPage() {
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<CommTab>(
     (searchParams.get("tab") as CommTab) || "inbox"
@@ -210,25 +210,17 @@ export default function CommunicationPage() {
 
   // ── Data Fetching ─────────────────────────────────────────────
 
-  const loadStats = useCallback(async () => {
-    try {
-      const data = await CommunicationService.getStats();
-      setStats(data);
-    } catch {
-      // non-fatal
-    }
-  }, []);
-
-  const loadThreads = useCallback(async () => {
+  const loadInbox = useCallback(async () => {
     setLoadingThreads(true);
     try {
-        const data = await CommunicationService.listThreads({
+      const data = await CommunicationService.getInbox({
         limit: 100,
         offset: 0,
         ...(search && { search }),
         ...(filterStatus && filterStatus !== "all" && { status: filterStatus }),
         ...(filterType && filterType !== "all" && { thread_type: filterType }),
       });
+      setStats(data.stats);
       setThreads(data.items);
       setTotalThreads(data.total);
     } catch {
@@ -238,12 +230,20 @@ export default function CommunicationPage() {
     }
   }, [search, filterStatus, filterType]);
 
+  const loadStats = useCallback(async () => {
+    try {
+      const data = await CommunicationService.getStats();
+      setStats(data);
+    } catch {
+      // non-fatal
+    }
+  }, []);
+
   const loadThreadDetail = useCallback(async (threadId: string) => {
     setLoadingDetail(true);
     try {
       const data = await CommunicationService.getThread(threadId);
       setThreadDetail(data);
-      // Mark client messages as read silently
       if ((data.unread_count ?? 0) > 0) {
         await CommunicationService.markRead(threadId);
         loadStats();
@@ -273,10 +273,9 @@ export default function CommunicationPage() {
   }, []);
 
   useEffect(() => {
-    loadStats();
-    loadThreads();
+    loadInbox();
     IAMasterService.getLatest().then((data) => setIaMaster(data)).catch(() => {});
-  }, [loadStats, loadThreads]);
+  }, [loadInbox]);
 
   useEffect(() => {
     if (selectedThreadId) {
@@ -320,8 +319,7 @@ export default function CommunicationPage() {
       setIsInternalNote(false);
       setSenderType("IA");
       await loadThreadDetail(selectedThreadId);
-      loadThreads();
-      loadStats();
+      loadInbox();
       toast.success(
         isInternalNote
           ? "Internal note saved"
@@ -379,8 +377,7 @@ export default function CommunicationPage() {
       setNewThread({ client_id: "", subject: "", body: "", thread_type: "GENERAL" });
       setClientInputValue("");
       setClientDropdownOpen(false);
-      await loadThreads();
-      loadStats();
+      await loadInbox();
       setSelectedThreadId(result.thread_id);
       toast.success("Conversation started");
     } catch {
@@ -666,7 +663,7 @@ export default function CommunicationPage() {
                 variant="ghost"
                 size="icon"
                 className="h-7 w-7 shrink-0"
-                onClick={loadThreads}
+                onClick={loadInbox}
                 disabled={loadingThreads}
               >
                 <RefreshCw className={cn("h-3.5 w-3.5", loadingThreads && "animate-spin")} />
@@ -1469,5 +1466,13 @@ export default function CommunicationPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function CommunicationPageWrapper() {
+  return (
+    <Suspense>
+      <CommunicationPage />
+    </Suspense>
   );
 }
