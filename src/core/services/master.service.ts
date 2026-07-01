@@ -29,7 +29,9 @@ export interface ClientDocumentResponse {
   id: string;
   document_type: string;
   file_path: string;
-  category?: string; // e.g., KYC, Rectification, Reports
+  category?: string;
+  serial_no?: number;
+  uploaded_by_name?: string;
   uploaded_at: string;
 }
 
@@ -236,6 +238,25 @@ export class MasterDataService {
 
     const response = await httpClient.post<ClientDocumentResponse>(
       API_ENDPOINTS.MASTER.CLIENTS.UPLOAD_DOCUMENT(clientId),
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } }
+    );
+    return response.data;
+  }
+
+  static async addDocument(
+    clientId: string,
+    file: File,
+    documentType: string,
+    category: string
+  ): Promise<{ id: string; serial_no: number; key: string }> {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("document_type", documentType);
+    formData.append("category", category);
+
+    const response = await httpClient.post(
+      API_ENDPOINTS.MASTER.CLIENTS.ADD_DOCUMENT(clientId),
       formData,
       { headers: { "Content-Type": "multipart/form-data" } }
     );
