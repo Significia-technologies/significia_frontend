@@ -165,13 +165,13 @@ export default function CommunicationPage() {
   const [isInternalNote, setIsInternalNote] = useState(false);
   const [sendingMessage, setSendingMessage] = useState(false);
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Send email dialog attachments
   const [emailAttachedFiles, setEmailAttachedFiles] = useState<File[]>([]);
 
-  // Drawer picker (for email attachments)
+  // Drawer picker (shared between compose and email dialog)
   const [drawerPickerOpen, setDrawerPickerOpen] = useState(false);
+  const [drawerPickerTarget, setDrawerPickerTarget] = useState<"compose" | "email">("email");
   const [drawerDocuments, setDrawerDocuments] = useState<ClientDocumentResponse[]>([]);
   const [loadingDrawerDocs, setLoadingDrawerDocs] = useState(false);
   const [selectedDrawerKeys, setSelectedDrawerKeys] = useState<Set<string>>(new Set());
@@ -470,8 +470,9 @@ export default function CommunicationPage() {
     setSendingEmail(false);
   };
 
-  const handleOpenDrawerPicker = async () => {
+  const handleOpenDrawerPicker = async (target: "compose" | "email" = "email") => {
     if (!threadDetail?.client_id) return;
+    setDrawerPickerTarget(target);
     setDrawerPickerOpen(true);
     setSelectedDrawerKeys(new Set());
     setLoadingDrawerDocs(true);
@@ -498,7 +499,11 @@ export default function CommunicationPage() {
         const filename = doc.file_path.split("/").pop() || `${doc.document_type}.pdf`;
         files.push(new File([blob], filename, { type: blob.type || "application/octet-stream" }));
       }
-      setEmailAttachedFiles((prev) => [...prev, ...files]);
+      if (drawerPickerTarget === "compose") {
+        setAttachedFiles((prev) => [...prev, ...files]);
+      } else {
+        setEmailAttachedFiles((prev) => [...prev, ...files]);
+      }
       setDrawerPickerOpen(false);
     } catch {
       toast.error("Failed to fetch selected files");
@@ -1036,8 +1041,8 @@ export default function CommunicationPage() {
                       variant="outline"
                       size="sm"
                       className="px-2.5"
-                      onClick={() => fileInputRef.current?.click()}
-                      title="Attach files"
+                      onClick={() => handleOpenDrawerPicker("compose")}
+                      title="Attach from drawer"
                     >
                       <Paperclip className="h-4 w-4" />
                     </Button>
@@ -1082,18 +1087,6 @@ export default function CommunicationPage() {
                   </div>
                 )}
 
-                {/* Hidden file input */}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  multiple
-                  className="hidden"
-                  onChange={(e) => {
-                    const selected = Array.from(e.target.files ?? []);
-                    setAttachedFiles((prev) => [...prev, ...selected]);
-                    e.target.value = "";
-                  }}
-                />
 
                 <p className="text-[10px] text-muted-foreground/50">Ctrl+Enter to send</p>
               </div>
