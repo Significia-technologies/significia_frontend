@@ -14,6 +14,7 @@ import {
   Calendar,
   CheckCircle2,
   FolderInput,
+  MoreHorizontal,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -21,6 +22,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 
 import { toast } from "sonner";
 import { useAppStore } from "@/store/useAppStore";
@@ -506,7 +508,7 @@ export default function AllocationComparisonPage() {
                               </div>
                             </TableCell>
                             <TableCell className="text-right">
-                              <div className="flex justify-end gap-1.5">
+                              <div className="flex justify-end items-center gap-1.5">
                                 <Button
                                   variant="ghost"
                                   size="sm"
@@ -516,48 +518,60 @@ export default function AllocationComparisonPage() {
                                   <ArrowRight className="w-3.5 h-3.5" />
                                   <span className="text-[9px] font-black uppercase tracking-tight">View</span>
                                 </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={async (e) => {
-                                    e.stopPropagation();
-                                    setDownloading(true);
-                                    try {
-                                      await ExistingAssetAllocationService.downloadComparisonPDF(
-                                        item.existing_allocation_id,
-                                        item.target_allocation_id,
-                                        `Allocation_Comparison_${item.client_code}.pdf`
-                                      );
-                                      toast.success("PDF report downloaded successfully.");
-                                    } catch {
-                                      toast.error("Failed to download PDF.");
-                                    } finally {
-                                      setDownloading(false);
-                                    }
-                                  }}
-                                  className="h-8 px-2.5 gap-1.5 border border-primary/10 hover:bg-primary/5 text-muted-foreground"
-                                >
-                                  <Download className="w-3.5 h-3.5 text-red-500" />
-                                  <span className="text-[9px] font-black uppercase tracking-tight text-red-500">PDF</span>
-                                </Button>
                                 {(() => {
                                   const sourceId = `compare-${item.existing_allocation_id}-${item.target_allocation_id}`;
                                   const isSaved = drawerSavedIds.has(sourceId);
                                   return (
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={(e) => { e.stopPropagation(); handleSaveHistoryToDrawer(item); }}
-                                      disabled={savingToDrawer === sourceId || isSaved}
-                                      className={`h-8 px-2 gap-1 border rounded-md transition-all ${isSaved ? "border-teal-500/30 text-teal-500 bg-teal-500/5" : "border-primary/5 hover:bg-teal-500/10 text-teal-500 hover:border-teal-500/20"}`}
-                                    >
-                                      {savingToDrawer === sourceId ? (
-                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                      ) : (
-                                        <FolderInput className="w-3.5 h-3.5" />
-                                      )}
-                                      <span className="text-[9px] font-black uppercase tracking-tight">{isSaved ? "Saved ✓" : "Drawer"}</span>
-                                    </Button>
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 border border-primary/10 hover:bg-primary/5 text-muted-foreground">
+                                          <MoreHorizontal className="w-4 h-4" />
+                                          <span className="sr-only">Open menu</span>
+                                        </Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end" className="w-48 border-primary/20 bg-background/95 backdrop-blur-md">
+                                        <DropdownMenuItem
+                                          className="gap-2 cursor-pointer"
+                                          onClick={async (e) => {
+                                            e.stopPropagation();
+                                            setDownloading(true);
+                                            try {
+                                              await ExistingAssetAllocationService.downloadComparisonPDF(
+                                                item.existing_allocation_id,
+                                                item.target_allocation_id,
+                                                `Allocation_Comparison_${item.client_code}.pdf`
+                                              );
+                                              toast.success("PDF downloaded successfully.");
+                                            } catch {
+                                              toast.error("Failed to download PDF.");
+                                            } finally {
+                                              setDownloading(false);
+                                            }
+                                          }}
+                                          disabled={downloading}
+                                        >
+                                          {downloading ? (
+                                            <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                                          ) : (
+                                            <Download className="w-4 h-4 text-red-500" />
+                                          )}
+                                          <span className="font-bold text-[10px] uppercase tracking-wider">Download PDF</span>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem
+                                          className="gap-2 cursor-pointer text-teal-600 focus:text-teal-600 focus:bg-teal-50"
+                                          onClick={(e) => { e.stopPropagation(); handleSaveHistoryToDrawer(item); }}
+                                          disabled={savingToDrawer === sourceId || isSaved}
+                                        >
+                                          {savingToDrawer === sourceId ? (
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                          ) : (
+                                            <FolderInput className="w-4 h-4" />
+                                          )}
+                                          <span className="font-bold text-[10px] uppercase tracking-wider">{isSaved ? "Saved ✓" : "Save to Drawer"}</span>
+                                        </DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
                                   );
                                 })()}
                               </div>
