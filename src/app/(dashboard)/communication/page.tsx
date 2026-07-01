@@ -1046,8 +1046,8 @@ export default function CommunicationPage() {
         setSendEmailOpen(open);
         if (!open) { setSendEmailForm({ templateId: "", subject: "" }); setSendEmailPreview(""); setEmailAttachedFiles([]); }
       }}>
-        <DialogContent className="sm:max-w-[680px]">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-[680px] max-h-[90vh] flex flex-col">
+          <DialogHeader className="shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Mail className="h-4 w-4" /> Send Email to {threadDetail?.client_name}
             </DialogTitle>
@@ -1057,7 +1057,7 @@ export default function CommunicationPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-2">
+          <div className="flex-1 overflow-y-auto space-y-4 py-2 pr-1">
             {/* Template picker */}
             <div className="space-y-1.5">
               <Label className="text-xs">Template</Label>
@@ -1163,7 +1163,7 @@ export default function CommunicationPage() {
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="shrink-0">
             <Button variant="outline" onClick={() => setSendEmailOpen(false)}>Cancel</Button>
             <Button
               onClick={handleSendEmail}
