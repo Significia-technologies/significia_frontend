@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useAppStore } from "@/store/useAppStore";
 import { TenantLogo } from "@/components/shared/TenantLogo";
+import { SettingsDialog } from "@/components/shared/SettingsDialog";
 
 // ── Types ────────────────────────────────────────────
 interface NavChild {
@@ -458,42 +459,7 @@ export function SidebarContent() {
 
       {/* ── Bottom Nav ── */}
       <div className="border-t border-border px-2 py-3">
-        {BOTTOM_NAV_ITEMS.filter((item) => {
-          if ((item as any).minRole === "admin" && !(isIAOwner || isIAPartner || isSuperAdmin))
-            return false;
-          return true;
-        }).map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
-
-          const linkContent = (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 rounded-md px-2.5 py-2 text-sm font-medium transition-colors",
-                isActive
-                  ? "bg-primary text-primary-foreground"
-                  : "text-foreground hover:bg-accent hover:text-accent-foreground"
-              )}
-            >
-              <item.icon className="h-4 w-4 shrink-0" />
-              {!sidebarCollapsed && <span>{item.label}</span>}
-            </Link>
-          );
-
-          if (sidebarCollapsed) {
-            return (
-              <Tooltip key={item.href} delayDuration={0}>
-                <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
-                <TooltipContent side="right" className="font-medium">
-                  {item.label}
-                </TooltipContent>
-              </Tooltip>
-            );
-          }
-
-          return linkContent;
-        })}
+        <SettingsDialog collapsed={sidebarCollapsed} />
       </div>
     </>
   );

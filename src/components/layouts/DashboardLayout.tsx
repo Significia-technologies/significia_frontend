@@ -3,14 +3,14 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import { DashboardSidebar, SidebarContent } from "./DashboardSidebar";
-import { Topbar } from "./Topbar";
+// import { Topbar } from "./Topbar";
 import { useAppStore } from "@/store/useAppStore";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 import { useRouter, usePathname } from "next/navigation";
 import { AuthService } from "@/core/services/auth.service";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface DashboardLayoutProps {
@@ -144,8 +144,18 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             sidebarCollapsed ? "md:ml-[68px]" : "md:ml-60"
           )}
         >
-          {/* Top Navigation */}
-          <Topbar />
+          {/* <Topbar /> */}
+
+          {/* Mobile menu trigger — only visible when sidebar is hidden on small screens */}
+          <div className="flex items-center h-12 px-3 border-b border-border md:hidden">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setMobileMenuOpen(true)}
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+          </div>
 
           {/* Page Content */}
           <main className="flex-1 p-3 md:p-4">
