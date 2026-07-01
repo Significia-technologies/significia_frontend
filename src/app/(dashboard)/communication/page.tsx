@@ -26,6 +26,7 @@ import {
   Mail,
   Settings,
   History,
+  ArrowLeft,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -183,6 +184,8 @@ export default function CommunicationPage() {
   });
   const [creatingThread, setCreatingThread] = useState(false);
 
+  const [mobileShowDetail, setMobileShowDetail] = useState(false);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // IA Master (for template placeholder substitution)
@@ -284,6 +287,7 @@ export default function CommunicationPage() {
 
   const handleSelectThread = (thread: ConversationThread) => {
     setSelectedThreadId(thread.id);
+    setMobileShowDetail(true);
     setMessageBody("");
     setSenderType("IA");
     setIsInternalNote(false);
@@ -471,32 +475,41 @@ export default function CommunicationPage() {
   return (
     <div className="flex h-[calc(100vh-4rem)] flex-col overflow-hidden">
       {/* ── Page Header ── */}
-      <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-card shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-primary/10 rounded-lg">
-            <MessageSquare className="h-5 w-5 text-primary" />
+      <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between px-4 lg:px-6 py-3 border-b border-border bg-card shrink-0">
+        {/* Title row */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-primary/10 rounded-lg shrink-0">
+              <MessageSquare className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-lg font-semibold tracking-tight">Communication</h1>
+              <p className="text-xs text-muted-foreground hidden sm:block">
+                SEBI-compliant IA–Investor communication records
+              </p>
+            </div>
+            {stats && stats.total_unread_messages > 0 && (
+              <Badge className="bg-primary text-primary-foreground text-[10px] h-5 px-1.5">
+                {stats.total_unread_messages} unread
+              </Badge>
+            )}
           </div>
-          <div>
-            <h1 className="text-xl font-semibold tracking-tight">Communication</h1>
-            <p className="text-xs text-muted-foreground">
-              SEBI-compliant IA–Investor communication records
-            </p>
-          </div>
-          {stats && stats.total_unread_messages > 0 && (
-            <Badge className="bg-primary text-primary-foreground text-[10px] h-5 px-1.5">
-              {stats.total_unread_messages} unread
-            </Badge>
+          {/* New Conversation button — mobile only (icon only) */}
+          {activeTab === "inbox" && (
+            <Button size="sm" onClick={handleOpenNewThread} className="lg:hidden shrink-0">
+              <Plus className="h-4 w-4" />
+            </Button>
           )}
         </div>
+        {/* Tabs + desktop New button */}
         <div className="flex items-center gap-3">
-          {/* Tab navigation */}
-          <div className="flex items-center gap-0.5 bg-muted/50 rounded-lg p-0.5 border border-border">
+          <div className="flex items-center gap-0.5 bg-muted/50 rounded-lg p-0.5 border border-border overflow-x-auto flex-1 lg:flex-none">
             {TAB_ITEMS.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
                 onClick={() => setActiveTab(id)}
                 className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors whitespace-nowrap shrink-0",
                   activeTab === id
                     ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
@@ -508,7 +521,7 @@ export default function CommunicationPage() {
             ))}
           </div>
           {activeTab === "inbox" && (
-            <Button size="sm" onClick={handleOpenNewThread}>
+            <Button size="sm" onClick={handleOpenNewThread} className="hidden lg:flex shrink-0">
               <Plus className="h-4 w-4 mr-1.5" />
               New Conversation
             </Button>
@@ -530,7 +543,7 @@ export default function CommunicationPage() {
         <>
           {/* Stats Row */}
           {stats && (
-            <div className="flex gap-4 px-6 py-2.5 border-b border-border bg-muted/30 shrink-0">
+            <div className="flex gap-4 px-4 py-2.5 border-b border-border bg-muted/30 shrink-0 overflow-x-auto whitespace-nowrap">
               {(
                 [
                   { label: "Open", value: stats.open_count, color: "text-emerald-600" },
@@ -551,7 +564,10 @@ export default function CommunicationPage() {
           {/* ── Two-pane Layout ── */}
           <div className="flex flex-1 overflow-hidden">
         {/* ── Left: Thread List ── */}
-        <div className="w-80 shrink-0 flex flex-col border-r border-border bg-card">
+        <div className={cn(
+          "shrink-0 flex flex-col border-r border-border bg-card",
+          mobileShowDetail ? "hidden lg:flex lg:w-80" : "flex w-full lg:w-80"
+        )}>
           {/* Filters */}
           <div className="p-3 space-y-2 border-b border-border">
             <div className="relative">
@@ -675,6 +691,8 @@ export default function CommunicationPage() {
         </div>
 
         {/* ── Right: Thread Detail ── */}
+        {/* On mobile: hidden when thread list is showing; on desktop: always flex */}
+        <div className={cn("flex-1 overflow-hidden flex-col", mobileShowDetail ? "flex" : "hidden lg:flex")}>
         {!selectedThreadId ? (
           <div className="flex-1 flex flex-col items-center justify-center bg-muted/10 text-center p-8">
             <div className="p-4 bg-primary/5 rounded-2xl mb-4">
@@ -692,9 +710,18 @@ export default function CommunicationPage() {
         ) : threadDetail ? (
           <div className="flex-1 flex flex-col overflow-hidden">
             {/* Thread header */}
-            <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-card shrink-0">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+            <div className="flex items-center justify-between px-3 lg:px-5 py-3 border-b border-border bg-card shrink-0">
+              <div className="flex items-center gap-2 lg:gap-3 min-w-0">
+                {/* Back button — mobile/tablet only */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="lg:hidden h-7 w-7 shrink-0"
+                  onClick={() => { setMobileShowDetail(false); setSelectedThreadId(null); }}
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+                <div className="h-8 w-8 rounded-full bg-primary/10 items-center justify-center shrink-0 hidden lg:flex">
                   <UserCircle2 className="h-4 w-4 text-primary" />
                 </div>
                 <div className="min-w-0">
@@ -711,16 +738,16 @@ export default function CommunicationPage() {
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-1.5 shrink-0 overflow-x-auto">
                 <Badge
                   variant="outline"
-                  className={cn("text-[10px] h-5", STATUS_COLORS[threadDetail.status])}
+                  className={cn("text-[10px] h-5 hidden md:inline-flex", STATUS_COLORS[threadDetail.status])}
                 >
                   {STATUS_LABELS[threadDetail.status]}
                 </Badge>
                 <Badge
                   variant="outline"
-                  className={cn("text-[10px] h-5", THREAD_TYPE_COLORS[threadDetail.thread_type])}
+                  className={cn("text-[10px] h-5 hidden md:inline-flex", THREAD_TYPE_COLORS[threadDetail.thread_type])}
                 >
                   {THREAD_TYPE_LABELS[threadDetail.thread_type]}
                 </Badge>
@@ -887,7 +914,7 @@ export default function CommunicationPage() {
             {threadDetail.status !== "CLOSED" ? (
               <div className="shrink-0 border-t border-border bg-card p-4 space-y-3">
                 {/* Mode toggles */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <button
                     onClick={() => { setSenderType("IA"); setIsInternalNote(false); }}
                     className={cn(
@@ -1037,6 +1064,7 @@ export default function CommunicationPage() {
             )}
           </div>
         ) : null}
+        </div>
       </div>
         </>
       )}
