@@ -248,12 +248,14 @@ export class MasterDataService {
     clientId: string,
     file: File,
     documentType: string,
-    category: string
+    category: string,
+    sourceId?: string
   ): Promise<{ id: string; serial_no: number; key: string }> {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("document_type", documentType);
     formData.append("category", category);
+    if (sourceId) formData.append("source_id", sourceId);
 
     const response = await httpClient.post(
       API_ENDPOINTS.MASTER.CLIENTS.ADD_DOCUMENT(clientId),

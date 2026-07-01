@@ -65,6 +65,7 @@ export function AnalysisList({ clientId, onSelectAnalysis, onCreateNew, onDownlo
   const [searchTerm, setSearchTerm] = useState("");
   const [downloading, setDownloading] = useState<string | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
   const [delivering, setDelivering] = useState<string | null>(null);
   const [initiating, setInitiating] = useState<string | null>(null);
   const [expandedClient, setExpandedClient] = useState<string | null>(null);
@@ -194,6 +195,7 @@ export function AnalysisList({ clientId, onSelectAnalysis, onCreateNew, onDownlo
   };
 
   const handleSaveToDrawer = async (analysis: FinancialAnalysisResult, clientName: string) => {
+    if (savedIds.has(analysis.id)) return;
     setSaving(analysis.id);
     try {
       const dateLabel = format(new Date((analysis as any).created_at), "dd MMM yyyy");
@@ -203,10 +205,17 @@ export function AnalysisList({ clientId, onSelectAnalysis, onCreateNew, onDownlo
         fileName: `Financial_Analysis_${clientName.replace(/\s+/g, "_")}_v${(analysis as any).version_number || "1"}.pdf`,
         documentType: `Financial Analysis v${(analysis as any).version_number || "1"} · ${dateLabel}`,
         category: "Financial Goals",
+        sourceId: analysis.id,
       });
+      setSavedIds((prev) => new Set(prev).add(analysis.id));
       toast.success("Report saved to client drawer.");
-    } catch {
-      toast.error("Failed to save report to drawer.");
+    } catch (err: any) {
+      if (err?.response?.status === 409) {
+        setSavedIds((prev) => new Set(prev).add(analysis.id));
+        toast.info("Already saved to drawer.");
+      } else {
+        toast.error("Failed to save report to drawer.");
+      }
     } finally {
       setSaving(null);
     }
@@ -400,16 +409,16 @@ export function AnalysisList({ clientId, onSelectAnalysis, onCreateNew, onDownlo
                                   </DropdownMenuItem>
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem
-                                    className="gap-2 text-emerald-600 focus:text-emerald-600 focus:bg-emerald-50"
+                                    className={`gap-2 ${savedIds.has(analysis.id) ? "text-teal-600 focus:text-teal-600" : "text-emerald-600 focus:text-emerald-600 focus:bg-emerald-50"}`}
                                     onClick={() => handleSaveToDrawer(analysis, client?.client_name || "Client")}
-                                    disabled={!!saving}
+                                    disabled={!!saving || savedIds.has(analysis.id)}
                                   >
                                     {saving === analysis.id ? (
                                       <span className="w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
                                     ) : (
                                       <FolderInput className="w-4 h-4" />
                                     )}
-                                    Save to Drawer
+                                    {savedIds.has(analysis.id) ? "Saved ✓" : "Save to Drawer"}
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
@@ -545,19 +554,19 @@ export function AnalysisList({ clientId, onSelectAnalysis, onCreateNew, onDownlo
                                             <Button
                                               variant="ghost"
                                               size="sm"
-                                              className="h-8 px-2.5 gap-1.5 border border-teal-500/10 hover:bg-teal-500/10 text-teal-500 hover:border-teal-500/20 rounded-md transition-all font-bold text-[10px] uppercase tracking-wider"
+                                              className={`h-8 px-2.5 gap-1.5 border rounded-md transition-all font-bold text-[10px] uppercase tracking-wider ${savedIds.has(historyItem.id) ? "border-teal-500/30 text-teal-500 bg-teal-500/5" : "border-teal-500/10 hover:bg-teal-500/10 text-teal-500 hover:border-teal-500/20"}`}
                                               onClick={(e) => {
                                                 e.stopPropagation();
                                                 handleSaveToDrawer(historyItem, client?.client_name || "Client");
                                               }}
-                                              disabled={saving === historyItem.id}
+                                              disabled={saving === historyItem.id || savedIds.has(historyItem.id)}
                                             >
                                               {saving === historyItem.id ? (
                                                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                                               ) : (
                                                 <FolderInput className="w-3.5 h-3.5" />
                                               )}
-                                              <span>Drawer</span>
+                                              <span>{savedIds.has(historyItem.id) ? "Saved ✓" : "Drawer"}</span>
                                             </Button>
                                           </div>
                                         </div>

@@ -4,6 +4,7 @@ import { MasterDataService } from "@/core/services/master.service";
 /**
  * Fetches a generated report as a blob and saves it directly to the
  * client's drawer vault — no browser download involved.
+ * sourceId: the originating record's UUID — prevents duplicate saves.
  */
 export async function saveReportToDrawer({
   clientId,
@@ -11,6 +12,7 @@ export async function saveReportToDrawer({
   fileName,
   documentType,
   category,
+  sourceId,
   params,
 }: {
   clientId: string;
@@ -18,6 +20,7 @@ export async function saveReportToDrawer({
   fileName: string;
   documentType: string;
   category: string;
+  sourceId: string;
   params?: Record<string, string>;
 }): Promise<void> {
   const response = await httpClient.get(endpoint, {
@@ -29,5 +32,5 @@ export async function saveReportToDrawer({
     fileName,
     { type: "application/pdf" }
   );
-  await MasterDataService.addDocument(clientId, file, documentType, category);
+  await MasterDataService.addDocument(clientId, file, documentType, category, sourceId);
 }

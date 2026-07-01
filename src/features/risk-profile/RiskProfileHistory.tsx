@@ -69,6 +69,7 @@ export function RiskProfileHistory({ onNewAssessment, onNewCustomAssessment, que
   const [search, setSearch] = useState("");
   const [downloading, setDownloading] = useState<string | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
   const [emailing, setEmailing] = useState<string | null>(null);
   const [expandedClient, setExpandedClient] = useState<string | null>(null);
 
@@ -170,6 +171,7 @@ export function RiskProfileHistory({ onNewAssessment, onNewCustomAssessment, que
   };
 
   const handleSaveToDrawer = async (item: any) => {
+    if (savedIds.has(item.id)) return;
     setSaving(item.id);
     try {
       const dateLabel = format(new Date(item.assessment_timestamp), "dd MMM yyyy");
@@ -181,10 +183,17 @@ export function RiskProfileHistory({ onNewAssessment, onNewCustomAssessment, que
         fileName: `Risk_Profile_${item.client_code || item.id}_${dateLabel.replace(/ /g, "_")}.pdf`,
         documentType: `Risk Profile - ${item.assigned_risk_tier || "Assessment"} · ${dateLabel}`,
         category: "Risk Profile",
+        sourceId: item.id,
       });
+      setSavedIds((prev) => new Set(prev).add(item.id));
       toast.success("Report saved to client drawer.");
-    } catch {
-      toast.error("Failed to save report to drawer.");
+    } catch (err: any) {
+      if (err?.response?.status === 409) {
+        setSavedIds((prev) => new Set(prev).add(item.id));
+        toast.info("Already saved to drawer.");
+      } else {
+        toast.error("Failed to save report to drawer.");
+      }
     } finally {
       setSaving(null);
     }
@@ -392,7 +401,7 @@ export function RiskProfileHistory({ onNewAssessment, onNewCustomAssessment, que
                               <DropdownMenuSeparator className="bg-primary/10" />
                               <DropdownMenuItem
                                 onClick={() => handleSaveToDrawer(a)}
-                                disabled={!!saving}
+                                disabled={!!saving || savedIds.has(a.id)}
                                 className="cursor-pointer font-bold uppercase text-[10px] tracking-widest py-2.5 flex items-center gap-2 hover:text-teal-500 transition-colors"
                               >
                                 {saving === a.id ? (
@@ -400,7 +409,7 @@ export function RiskProfileHistory({ onNewAssessment, onNewCustomAssessment, que
                                 ) : (
                                   <FolderInput className="w-4 h-4 text-teal-500 shrink-0" />
                                 )}
-                                <span>Save to Drawer</span>
+                                <span>{savedIds.has(a.id) ? "Saved ✓" : "Save to Drawer"}</span>
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -507,19 +516,19 @@ export function RiskProfileHistory({ onNewAssessment, onNewCustomAssessment, que
                                         <Button
                                           variant="ghost"
                                           size="sm"
-                                          className="h-8 px-2 gap-1 border border-primary/5 hover:bg-teal-500/10 text-teal-500 hover:border-teal-500/20 rounded-md transition-all"
+                                          className={`h-8 px-2 gap-1 border rounded-md transition-all ${savedIds.has(historyItem.id) ? "border-teal-500/30 text-teal-500 bg-teal-500/5" : "border-primary/5 hover:bg-teal-500/10 text-teal-500 hover:border-teal-500/20"}`}
                                           onClick={(e) => {
                                             e.stopPropagation();
                                             handleSaveToDrawer(historyItem);
                                           }}
-                                          disabled={saving === historyItem.id}
+                                          disabled={saving === historyItem.id || savedIds.has(historyItem.id)}
                                         >
                                           {saving === historyItem.id ? (
                                             <Loader2 className="w-3.5 h-3.5 animate-spin" />
                                           ) : (
                                             <FolderInput className="w-3.5 h-3.5" />
                                           )}
-                                          <span className="text-[9px] font-black uppercase tracking-tight">Drawer</span>
+                                          <span className="text-[9px] font-black uppercase tracking-tight">{savedIds.has(historyItem.id) ? "Saved ✓" : "Drawer"}</span>
                                         </Button>
                                       </div>
                                     </div>

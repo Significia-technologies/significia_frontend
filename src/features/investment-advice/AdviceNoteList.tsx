@@ -66,6 +66,7 @@ export function AdviceNoteList({ clientId, clientName, onSelectNote, onCreateNew
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState<string | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
   const [lockingNote, setLockingNote] = useState<InvestmentAdviceNoteSummary | null>(null);
   const [isLocking, setIsLocking] = useState(false);
 
@@ -104,6 +105,7 @@ export function AdviceNoteList({ clientId, clientName, onSelectNote, onCreateNew
   };
 
   const handleSaveToDrawer = async (note: InvestmentAdviceNoteSummary) => {
+    if (savedIds.has(note.id)) return;
     setSaving(note.id);
     try {
       await saveReportToDrawer({
@@ -112,10 +114,17 @@ export function AdviceNoteList({ clientId, clientName, onSelectNote, onCreateNew
         fileName: `Advice_Note_${note.advice_note_no}.pdf`,
         documentType: `Investment Advice Note ${note.advice_note_no}`,
         category: "Agreements",
+        sourceId: note.id,
       });
+      setSavedIds((prev) => new Set(prev).add(note.id));
       toast.success("Report saved to client drawer.");
-    } catch {
-      toast.error("Failed to save report to drawer.");
+    } catch (err: any) {
+      if (err?.response?.status === 409) {
+        setSavedIds((prev) => new Set(prev).add(note.id));
+        toast.info("Already saved to drawer.");
+      } else {
+        toast.error("Failed to save report to drawer.");
+      }
     } finally {
       setSaving(null);
     }
@@ -263,14 +272,14 @@ export function AdviceNoteList({ clientId, clientName, onSelectNote, onCreateNew
                                 <DropdownMenuItem
                                   className="gap-2 cursor-pointer text-teal-600 focus:text-teal-600 focus:bg-teal-50"
                                   onClick={() => handleSaveToDrawer(note)}
-                                  disabled={!!saving}
+                                  disabled={!!saving || savedIds.has(note.id)}
                                 >
                                   {saving === note.id ? (
                                     <Loader2 className="w-4 h-4 animate-spin" />
                                   ) : (
                                     <FolderInput className="w-4 h-4" />
                                   )}
-                                  Save to Drawer
+                                  {savedIds.has(note.id) ? "Saved ✓" : "Save to Drawer"}
                                 </DropdownMenuItem>
                                 
                                 {!isLocked && (
