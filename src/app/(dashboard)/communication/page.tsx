@@ -71,6 +71,7 @@ import {
 } from "@/core/services/communication.service";
 import { EmailService, type EmailTemplate } from "@/core/services/email.service";
 import { IAMasterService, type IAMaster } from "@/core/services/ia-master.service";
+import { MasterDataService, type ClientDocumentResponse } from "@/core/services/master.service";
 import httpClient from "@/core/api/http-client";
 import { API_ENDPOINTS } from "@/core/api/api-endpoints";
 import { EmailSmtpSettings } from "./components/EmailSmtpSettings";
@@ -168,7 +169,13 @@ export default function CommunicationPage() {
 
   // Send email dialog attachments
   const [emailAttachedFiles, setEmailAttachedFiles] = useState<File[]>([]);
-  const emailFileInputRef = useRef<HTMLInputElement>(null);
+
+  // Drawer picker (for email attachments)
+  const [drawerPickerOpen, setDrawerPickerOpen] = useState(false);
+  const [drawerDocuments, setDrawerDocuments] = useState<ClientDocumentResponse[]>([]);
+  const [loadingDrawerDocs, setLoadingDrawerDocs] = useState(false);
+  const [selectedDrawerKeys, setSelectedDrawerKeys] = useState<Set<string>>(new Set());
+  const [fetchingDrawerFiles, setFetchingDrawerFiles] = useState(false);
 
   // New thread dialog
   const [newThreadOpen, setNewThreadOpen] = useState(false);
@@ -461,6 +468,43 @@ export default function CommunicationPage() {
       toast.error(err?.response?.data?.detail || "Failed to send email");
     }
     setSendingEmail(false);
+  };
+
+  const handleOpenDrawerPicker = async () => {
+    if (!threadDetail?.client_id) return;
+    setDrawerPickerOpen(true);
+    setSelectedDrawerKeys(new Set());
+    setLoadingDrawerDocs(true);
+    try {
+      const client = await MasterDataService.getClient(threadDetail.client_id);
+      setDrawerDocuments((client.documents ?? []).filter((d) => d.file_path));
+    } catch {
+      toast.error("Failed to load client drawer");
+    } finally {
+      setLoadingDrawerDocs(false);
+    }
+  };
+
+  const handleConfirmDrawerSelection = async () => {
+    if (selectedDrawerKeys.size === 0) return;
+    setFetchingDrawerFiles(true);
+    try {
+      const selected = drawerDocuments.filter((d) => selectedDrawerKeys.has(d.file_path));
+      const files: File[] = [];
+      for (const doc of selected) {
+        const url = await CommunicationService.getAttachmentUrl(doc.file_path);
+        const res = await fetch(url);
+        const blob = await res.blob();
+        const filename = doc.file_path.split("/").pop() || `${doc.document_type}.pdf`;
+        files.push(new File([blob], filename, { type: blob.type || "application/octet-stream" }));
+      }
+      setEmailAttachedFiles((prev) => [...prev, ...files]);
+      setDrawerPickerOpen(false);
+    } catch {
+      toast.error("Failed to fetch selected files");
+    } finally {
+      setFetchingDrawerFiles(false);
+    }
   };
 
   // ── Render ────────────────────────────────────────────────────
@@ -1137,7 +1181,7 @@ export default function CommunicationPage() {
               </div>
             )}
 
-            {/* Attachments */}
+            {/* Attachments from Drawer */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <Label className="text-xs">Attachments (optional)</Label>
@@ -1146,10 +1190,10 @@ export default function CommunicationPage() {
                   variant="outline"
                   size="sm"
                   className="h-7 text-xs gap-1.5"
-                  onClick={() => emailFileInputRef.current?.click()}
+                  onClick={handleOpenDrawerPicker}
                 >
                   <Paperclip className="h-3.5 w-3.5" />
-                  Add Files
+                  Add from Drawer
                 </Button>
               </div>
               {emailAttachedFiles.length > 0 && (
@@ -1177,17 +1221,6 @@ export default function CommunicationPage() {
                   ))}
                 </div>
               )}
-              <input
-                ref={emailFileInputRef}
-                type="file"
-                multiple
-                className="hidden"
-                onChange={(e) => {
-                  const selected = Array.from(e.target.files ?? []);
-                  setEmailAttachedFiles((prev) => [...prev, ...selected]);
-                  e.target.value = "";
-                }}
-              />
             </div>
           </div>
 
@@ -1343,6 +1376,91 @@ export default function CommunicationPage() {
                   <Send className="h-4 w-4 mr-2" />
                   Send &amp; Start Thread
                 </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Drawer Picker Dialog ── */}
+      <Dialog open={drawerPickerOpen} onOpenChange={(open) => { setDrawerPickerOpen(open); if (!open) setSelectedDrawerKeys(new Set()); }}>
+        <DialogContent className="sm:max-w-[540px] max-h-[80vh] flex flex-col">
+          <DialogHeader className="shrink-0">
+            <DialogTitle className="flex items-center gap-2">
+              <Paperclip className="h-4 w-4" /> Client Drawer
+            </DialogTitle>
+            <DialogDescription>
+              Select files from <span className="font-medium text-foreground">{threadDetail?.client_name}</span>&apos;s drawer to attach to this email.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex-1 overflow-y-auto py-2">
+            {loadingDrawerDocs ? (
+              <div className="flex justify-center py-10">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : drawerDocuments.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 text-center">
+                <FileText className="h-8 w-8 text-muted-foreground/30 mb-2" />
+                <p className="text-sm text-muted-foreground">No documents in this client&apos;s drawer</p>
+                <p className="text-xs text-muted-foreground/60 mt-0.5">Upload documents via the Drawers section first</p>
+              </div>
+            ) : (
+              (() => {
+                const groups: Record<string, ClientDocumentResponse[]> = {};
+                drawerDocuments.forEach((doc) => {
+                  const cat = doc.category ?? "Other";
+                  if (!groups[cat]) groups[cat] = [];
+                  groups[cat].push(doc);
+                });
+                return Object.entries(groups).map(([category, docs]) => (
+                  <div key={category} className="mb-4">
+                    <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide px-1 mb-1.5">{category}</p>
+                    <div className="space-y-1">
+                      {docs.map((doc) => {
+                        const isSelected = selectedDrawerKeys.has(doc.file_path);
+                        return (
+                          <button
+                            key={doc.id}
+                            type="button"
+                            onClick={() => setSelectedDrawerKeys((prev) => {
+                              const next = new Set(prev);
+                              isSelected ? next.delete(doc.file_path) : next.add(doc.file_path);
+                              return next;
+                            })}
+                            className={cn(
+                              "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border text-left transition-colors",
+                              isSelected
+                                ? "bg-primary/5 border-primary/30 text-primary"
+                                : "border-border hover:bg-accent text-foreground"
+                            )}
+                          >
+                            <FileText className="h-4 w-4 shrink-0 opacity-60" />
+                            <span className="flex-1 text-sm truncate">{doc.document_type}</span>
+                            {isSelected && (
+                              <CheckCheck className="h-3.5 w-3.5 shrink-0 text-primary" />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ));
+              })()
+            )}
+          </div>
+
+          <DialogFooter className="shrink-0">
+            <Button variant="outline" onClick={() => setDrawerPickerOpen(false)}>Cancel</Button>
+            <Button
+              onClick={handleConfirmDrawerSelection}
+              disabled={selectedDrawerKeys.size === 0 || fetchingDrawerFiles}
+              className="gap-2"
+            >
+              {fetchingDrawerFiles ? (
+                <><Loader2 className="h-4 w-4 animate-spin" /> Loading…</>
+              ) : (
+                <><Paperclip className="h-4 w-4" /> Attach {selectedDrawerKeys.size > 0 ? `${selectedDrawerKeys.size} file${selectedDrawerKeys.size > 1 ? "s" : ""}` : "Selected"}</>
               )}
             </Button>
           </DialogFooter>
