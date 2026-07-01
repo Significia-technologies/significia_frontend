@@ -64,7 +64,7 @@ export default function DrawersPage() {
             badge: "System",
           });
 
-          if (iaMasterData.employees?.length > 0) {
+          if (iaMasterData.employees && iaMasterData.employees.length > 0) {
             const partnerDocs: any[] = [];
             iaMasterData.employees.forEach((emp: any, i: number) => {
               if (emp.certificate_path) {
