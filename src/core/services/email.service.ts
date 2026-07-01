@@ -171,7 +171,24 @@ export class EmailService {
 
   // ── Send Email ─────────────────────────────────────────────
 
-  static async sendEmail(payload: SendEmailPayload): Promise<{ success: boolean; message: string; log_id?: string }> {
+  static async sendEmail(payload: SendEmailPayload, files?: File[]): Promise<{ success: boolean; message: string; log_id?: string }> {
+    if (files && files.length > 0) {
+      const formData = new FormData();
+      formData.append("recipient_email", payload.recipient_email);
+      if (payload.recipient_name) formData.append("recipient_name", payload.recipient_name);
+      if (payload.template_id) formData.append("template_id", payload.template_id);
+      if (payload.template_type) formData.append("template_type", payload.template_type);
+      if (payload.subject) formData.append("subject", payload.subject);
+      if (payload.body_html) formData.append("body_html", payload.body_html);
+      if (payload.context_type) formData.append("context_type", payload.context_type);
+      if (payload.context_id) formData.append("context_id", payload.context_id);
+      if (payload.template_variables) formData.append("template_variables", JSON.stringify(payload.template_variables));
+      files.forEach((f) => formData.append("files", f));
+      const response = await httpClient.post(API_ENDPOINTS.EMAIL.SEND, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return response.data;
+    }
     const response = await httpClient.post(API_ENDPOINTS.EMAIL.SEND, payload);
     return response.data;
   }

@@ -165,6 +165,10 @@ export default function CommunicationPage() {
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Send email dialog attachments
+  const [emailAttachedFiles, setEmailAttachedFiles] = useState<File[]>([]);
+  const emailFileInputRef = useRef<HTMLInputElement>(null);
+
   // New thread dialog
   const [newThreadOpen, setNewThreadOpen] = useState(false);
   const [clients, setClients] = useState<{ id: string; client_name: string; client_code: string }[]>([]);
@@ -432,7 +436,7 @@ export default function CommunicationPage() {
         },
         context_type: "COMMUNICATION",
         context_id: threadDetail.id,
-      });
+      }, emailAttachedFiles.length > 0 ? emailAttachedFiles : undefined);
 
       // Log the email send as a thread message for full audit trail
       const auditBody = `Formal email sent to client.\nSubject: ${sendEmailForm.subject}\nTemplate: ${selectedTemplate?.template_name ?? sendEmailForm.templateId}`;
@@ -447,6 +451,7 @@ export default function CommunicationPage() {
       setSendEmailOpen(false);
       setSendEmailForm({ templateId: "", subject: "" });
       setSendEmailPreview("");
+      setEmailAttachedFiles([]);
       await loadThreadDetail(threadDetail.id);
     } catch (err: any) {
       toast.error(err?.response?.data?.detail || "Failed to send email");
@@ -1039,7 +1044,7 @@ export default function CommunicationPage() {
       {/* ── Send Email Dialog (Gap 2) ── */}
       <Dialog open={sendEmailOpen} onOpenChange={(open) => {
         setSendEmailOpen(open);
-        if (!open) { setSendEmailForm({ templateId: "", subject: "" }); setSendEmailPreview(""); }
+        if (!open) { setSendEmailForm({ templateId: "", subject: "" }); setSendEmailPreview(""); setEmailAttachedFiles([]); }
       }}>
         <DialogContent className="sm:max-w-[680px]">
           <DialogHeader>
@@ -1103,6 +1108,59 @@ export default function CommunicationPage() {
                 </div>
               </div>
             )}
+
+            {/* Attachments */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">Attachments (optional)</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs gap-1.5"
+                  onClick={() => emailFileInputRef.current?.click()}
+                >
+                  <Paperclip className="h-3.5 w-3.5" />
+                  Add Files
+                </Button>
+              </div>
+              {emailAttachedFiles.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {emailAttachedFiles.map((file, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center gap-1.5 text-[11px] bg-muted rounded px-2 py-1 border border-border"
+                    >
+                      <FileText className="h-3 w-3 text-muted-foreground shrink-0" />
+                      <span className="max-w-[180px] truncate">{file.name}</span>
+                      <span className="text-muted-foreground">
+                        {file.size < 1024 * 1024
+                          ? `${Math.round(file.size / 1024)}KB`
+                          : `${(file.size / (1024 * 1024)).toFixed(1)}MB`}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setEmailAttachedFiles((prev) => prev.filter((_, j) => j !== i))}
+                        className="text-muted-foreground hover:text-destructive transition-colors ml-0.5"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <input
+                ref={emailFileInputRef}
+                type="file"
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                  const selected = Array.from(e.target.files ?? []);
+                  setEmailAttachedFiles((prev) => [...prev, ...selected]);
+                  e.target.value = "";
+                }}
+              />
+            </div>
           </div>
 
           <DialogFooter>
