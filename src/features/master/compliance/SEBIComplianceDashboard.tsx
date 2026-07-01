@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  Shield,
   History,
   FileText,
   Lock,
@@ -63,20 +62,9 @@ export function SEBIComplianceDashboard() {
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div>
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-                <Shield className="w-5 h-5 text-emerald-500" />
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-                Audit Log
-              </h1>
-              {/* <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/30 text-[10px] uppercase tracking-widest">
-                SAFE Design
-              </Badge> */}
-            </div>
-            <p className="text-sm text-muted-foreground mt-2 md:mt-1 md:ml-[52px]">
-              Full audit trail, version control, and regulatory transparency for
-              IA Master data.
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Audit Log</h1>
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest opacity-60 mt-1">
+              Full audit trail, version control, and regulatory transparency for IA Master data.
             </p>
           </div>
         </div>

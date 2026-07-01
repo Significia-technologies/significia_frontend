@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect } from "react";
-import { Shield, RefreshCcw } from "lucide-react";
+import { RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { IAMasterView } from "@/features/master/IAMasterView";
@@ -60,18 +60,9 @@ export default function MasterPage() {
     <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-primary/10 pb-6 mb-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-3">
-            <span className="p-1.5 rounded-lg bg-primary/10">
-              <Shield className="w-8 h-8 text-primary" />
-            </span>
-            Master Data
-          </h1>
-          <p className="text-muted-foreground mt-2 text-lg">
-            Secured by your{" "}
-            <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-              Bridge
-            </span>{" "}
-            — data stays on your server.
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Master Data</h1>
+          <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest opacity-60 mt-1">
+            Secured by your Bridge — data stays on your server.
           </p>
         </div>
         <Button
