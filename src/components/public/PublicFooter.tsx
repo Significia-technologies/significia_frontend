@@ -17,7 +17,7 @@ const FOOTER_LINKS = {
   Legal: [
     { label: "Privacy Policy", href: "/privacy" },
     { label: "Terms of Service", href: "/terms" },
-    { label: "SEBI Disclosure", href: "/sebi-disclosure" },
+    { label: "Regulatory Disclosure", href: "/disclosure" },
   ],
 };
 
@@ -44,7 +44,7 @@ export function PublicFooter() {
             </p>
             <div className="mt-4 flex items-center gap-1.5 text-xs text-muted-foreground">
               <Shield className="h-3.5 w-3.5 text-primary shrink-0" />
-              <span>SEBI Compliant Infrastructure</span>
+              <span>Regulation-Ready Infrastructure</span>
             </div>
           </div>
 
@@ -75,7 +75,7 @@ export function PublicFooter() {
         {/* Bottom section */}
         <div className="py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
           <span>© {new Date().getFullYear()} Significia. All rights reserved.</span>
-          <span>Built for SEBI-registered Investment Advisors in India.</span>
+          <span>Built for Investment Advisors in India.</span>
         </div>
       </div>
     </footer>
