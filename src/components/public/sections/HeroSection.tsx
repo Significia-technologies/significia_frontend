@@ -7,7 +7,7 @@ import { ArrowRight, ShieldCheck, ChevronRight } from "lucide-react";
 const STATS = [
   { value: "Bridge Model", label: "DB isolated on your server" },
   { value: "White-Label", label: "Your brand, zero Significia branding" },
-  { value: "SEBI-Ready", label: "Compliance built into the architecture" },
+  { value: "Compliance-Ready", label: "Built into the architecture" },
 ];
 
 export function HeroSection() {
@@ -44,19 +44,19 @@ export function HeroSection() {
 
         {/* Headline */}
         <h1 className="text-[44px] sm:text-[58px] lg:text-[68px] font-semibold tracking-tight text-white leading-[1.08] mb-6">
-          The complete platform
+          Your advisory, finally
           <br />
-          for{" "}
+          running like{" "}
           <span className="relative">
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-primary to-amber-500">
-              SEBI-compliant advisors
+              a real business
             </span>
           </span>
         </h1>
 
         {/* Subheadline */}
         <p className="text-[17px] sm:text-[18px] text-slate-400 max-w-2xl mx-auto leading-relaxed mb-10">
-          Significia gives every registered Investment Advisor a fully white-labeled client
+          Significia gives every Investment Advisor a fully white-labeled client
           portal — powered by the Bridge model so your database runs on{" "}
           <span className="text-slate-300 font-medium">your infrastructure</span>, not ours.
         </p>
