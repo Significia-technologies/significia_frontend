@@ -6,6 +6,8 @@ import {
   Palette,
   Users,
   FolderOpen,
+  TrendingUp,
+  FileCheck2,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -25,8 +27,15 @@ const FEATURES = [
     highlight: "Goal-based",
   },
   {
+    icon: TrendingUp,
+    title: "Portfolio Tracking",
+    description:
+      "Track client portfolios and asset allocation drift over time, with a security basket built for the Indian market.",
+    highlight: "Always up to date",
+  },
+  {
     icon: ShieldCheck,
-    title: "SEBI Compliance",
+    title: "Regulatory Compliance",
     description:
       "Audit trails, version history, lock management, and auto-generated compliance reports. Stay audit-ready always.",
     highlight: "Always audit-ready",
@@ -49,8 +58,15 @@ const FEATURES = [
     icon: FolderOpen,
     title: "Document Vault",
     description:
-      "Client certificates, signed reports, SEBI disclosures — securely stored in your own cloud storage bucket.",
+      "Client certificates, signed reports, and disclosures — securely stored in your own cloud storage bucket.",
     highlight: "Stored in your vault",
+  },
+  {
+    icon: FileCheck2,
+    title: "Audit Log",
+    description:
+      "Every change to every client record is logged with full version history — ready to produce whenever you need it.",
+    highlight: "Full transparency",
   },
 ];
 
@@ -67,12 +83,12 @@ export function FeaturesGrid() {
             Everything your advisory needs
           </h2>
           <p className="text-muted-foreground text-lg">
-            A complete operating system for SEBI-registered Investment Advisors — from client onboarding to compliance reports.
+            A complete operating system for Investment Advisors — from client onboarding to compliance reports.
           </p>
         </div>
 
         {/* Feature cards */}
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {FEATURES.map((feature) => {
             const Icon = feature.icon;
             return (
