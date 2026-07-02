@@ -5,19 +5,18 @@ import { Button } from "@/components/ui/button";
 
 export function CtaSection() {
   return (
-    <section className="py-24 px-4 relative overflow-hidden bg-slate-950">
+    <section className="py-24 px-4 relative overflow-hidden bg-background">
       {/* Background */}
       <div className="absolute inset-0 z-0 pointer-events-none">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_50%,rgba(191,149,63,0.12),transparent_70%)]" />
-        <div className="absolute top-0 right-0 h-[400px] w-[400px] bg-primary/6 blur-[100px]" />
-        <div className="absolute bottom-0 left-0 h-[300px] w-[300px] bg-amber-500/5 blur-[80px]" />
+        {/* Central glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[380px] w-[700px] bg-primary/10 blur-[140px] rounded-full" />
       </div>
 
       <div className="relative z-10 mx-auto max-w-3xl text-center">
-        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white mb-4">
+        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-foreground mb-4">
           Ready to go live?
         </h2>
-        <p className="text-lg text-slate-400 leading-relaxed mb-10 max-w-xl mx-auto">
+        <p className="text-lg text-muted-foreground leading-relaxed mb-10 max-w-xl mx-auto">
           Join Investment Advisors who run their practice on a platform
           where their data truly stays theirs.
         </p>
@@ -36,14 +35,14 @@ export function CtaSection() {
           <Button
             variant="outline"
             size="lg"
-            className="h-12 px-8 text-base border-white/20 text-white hover:bg-white/10 hover:text-white"
+            className="h-12 px-8 text-base"
             asChild
           >
             <Link href="/how-it-works">Learn how it works</Link>
           </Button>
         </div>
 
-        <p className="mt-8 text-sm text-slate-600">
+        <p className="mt-8 text-sm text-muted-foreground/70">
           The brain for your advisory. The vault stays yours.
         </p>
       </div>
