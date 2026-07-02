@@ -25,7 +25,7 @@ const ONBOARDING_STEPS = [
     title: "You set up your own database",
     who: "You (or your IT team)",
     description:
-      "You provision a PostgreSQL database on your own server or cloud account (AWS RDS, Azure Database, GCP Cloud SQL, etc.). This is your infrastructure — we have no involvement in this step. SEBI requires this.",
+      "You provision a PostgreSQL database on your own server or cloud account (AWS RDS, Azure Database, GCP Cloud SQL, etc.). This is your infrastructure — we have no involvement in this step. Indian advisory regulations require this.",
   },
   {
     number: "03",
