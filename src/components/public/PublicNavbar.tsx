@@ -29,14 +29,12 @@ export function PublicNavbar() {
     setIsMobileOpen(false);
   }, [pathname]);
 
-  const isOnDarkHero = !isScrolled && (pathname === "/" || pathname === "");
-
   return (
     <header
       className={cn(
         "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
         isScrolled
-          ? "bg-slate-950/95 backdrop-blur-xl border-b border-white/8 shadow-xl shadow-black/20"
+          ? "bg-background/95 backdrop-blur-xl border-b border-border shadow-xl shadow-black/5"
           : "bg-transparent"
       )}
     >
@@ -54,12 +52,7 @@ export function PublicNavbar() {
                 className="h-[30px] w-[30px] object-contain"
               />
             </div>
-            <span
-              className={cn(
-                "text-[17px] font-semibold tracking-tight transition-colors",
-                isOnDarkHero ? "text-white" : "text-foreground"
-              )}
-            >
+            <span className="text-[17px] font-semibold tracking-tight text-foreground">
               Significia
             </span>
           </Link>
@@ -74,8 +67,6 @@ export function PublicNavbar() {
                   "px-4 py-2 rounded-md text-[13.5px] font-medium transition-colors duration-150",
                   pathname === link.href
                     ? "text-primary"
-                    : isOnDarkHero
-                    ? "text-white/60 hover:text-white"
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
@@ -88,12 +79,7 @@ export function PublicNavbar() {
           <div className="hidden md:flex items-center gap-3">
             <Link
               href="/login"
-              className={cn(
-                "text-[13.5px] font-medium transition-colors duration-150 px-3 py-2",
-                isOnDarkHero
-                  ? "text-white/60 hover:text-white"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
+              className="text-[13.5px] font-medium transition-colors duration-150 px-3 py-2 text-muted-foreground hover:text-foreground"
             >
               Log in
             </Link>
@@ -108,12 +94,7 @@ export function PublicNavbar() {
 
           {/* Mobile Menu Toggle */}
           <button
-            className={cn(
-              "md:hidden p-2 rounded-md transition-colors",
-              isOnDarkHero
-                ? "text-white/60 hover:text-white"
-                : "text-muted-foreground hover:text-foreground"
-            )}
+            className="md:hidden p-2 rounded-md transition-colors text-muted-foreground hover:text-foreground"
             onClick={() => setIsMobileOpen(!isMobileOpen)}
             aria-label="Toggle menu"
           >
@@ -124,7 +105,7 @@ export function PublicNavbar() {
 
       {/* Mobile Menu */}
       {isMobileOpen && (
-        <div className="md:hidden border-t border-white/8 bg-slate-950/98 backdrop-blur-xl animate-in slide-in-from-top-2 duration-200">
+        <div className="md:hidden border-t border-border bg-background/98 backdrop-blur-xl animate-in slide-in-from-top-2 duration-200">
           <div className="px-4 pt-3 pb-5 space-y-1">
             {NAV_LINKS.map((link) => (
               <Link
@@ -134,7 +115,7 @@ export function PublicNavbar() {
                   "block px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
                   pathname === link.href
                     ? "text-primary bg-primary/10"
-                    : "text-white/60 hover:text-white hover:bg-white/5"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
                 )}
               >
                 {link.label}
@@ -143,7 +124,7 @@ export function PublicNavbar() {
             <div className="pt-3 flex flex-col gap-2">
               <Link
                 href="/login"
-                className="block w-full text-center rounded-lg border border-white/12 px-4 py-2.5 text-sm font-medium text-white/70 hover:text-white hover:border-white/25 transition-colors"
+                className="block w-full text-center rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
               >
                 Log in
               </Link>
