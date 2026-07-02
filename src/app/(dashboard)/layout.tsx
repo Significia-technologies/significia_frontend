@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { DashboardLayout } from "@/components/layouts/DashboardLayout";
-import DashboardNotFound from "./not-found";
+import { DomainNotFound } from "@/components/shared/DomainNotFound";
 
 // Public marketing routes — no auth wrapper
 const PUBLIC_PATHS = ["/", "/features", "/how-it-works", "/pricing", "/about", "/contact"];
@@ -46,7 +46,7 @@ export default function DashboardRouteLayout({
   // own not-found.tsx, it bubbles up past it) instead of full dashboard
   // chrome with no real tenant data behind it.
   if (blockedOnRootDomain) {
-    return <DashboardNotFound />;
+    return <DomainNotFound />;
   }
 
   return <DashboardLayout>{children}</DashboardLayout>;
