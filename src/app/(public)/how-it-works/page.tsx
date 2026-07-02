@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Database, Download, Rocket, ArrowRight, Lock, Eye, Power } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Reveal } from "@/components/public/Reveal";
 
 export const metadata = {
   title: "How It Works — Significia",
@@ -61,6 +62,8 @@ const ONBOARDING_STEPS = [
   },
 ];
 
+const ONBOARDING_DELAYS = [0, 100, 200, 300, 500, 700] as const;
+
 const DAILY_FLOW_STEPS = [
   { label: "Bunty clicks 'Generate Risk Report'", detail: "bunty.com browser action" },
   { label: "Significia Backend receives the request", detail: "Identifies tenant from domain" },
@@ -72,133 +75,151 @@ const DAILY_FLOW_STEPS = [
   { label: "Browser downloads from your storage", detail: "Request ends. Significia forgets everything." },
 ];
 
+const FLOW_DELAYS = [0, 75, 100, 150, 200, 300, 500, 700] as const;
+
+const SECURITY_GUARANTEES = [
+  {
+    icon: Lock,
+    title: "Query allowlist",
+    description:
+      "The Bridge only answers pre-approved query types. No bulk exports. No unauthorized access patterns.",
+  },
+  {
+    icon: Eye,
+    title: "Full query log",
+    description:
+      "Every request and response is logged on your own server. You have complete auditability — we have none of it.",
+  },
+  {
+    icon: Power,
+    title: "Kill switch",
+    description:
+      "Stop the Bridge at any time — instantly cutting Significia's access to your data. No delay, no process.",
+  },
+];
+
 export default function HowItWorksPage() {
   return (
     <div className="py-20 px-4">
       <div className="mx-auto max-w-5xl">
         {/* Header */}
-        <div className="text-center max-w-2xl mx-auto mb-20">
-          <Badge variant="outline" className="border-primary/30 bg-primary/10 text-primary mb-4">
-            The Bridge Model
-          </Badge>
-          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-4">
-            How Significia works
-          </h1>
-          <p className="text-muted-foreground text-lg leading-relaxed">
-            Your data lives in your house. We send questions to your Bridge. Your Bridge answers
-            from inside your house. We never have a copy of your key.
-          </p>
+        <div className="text-center max-w-2xl mx-auto mb-24">
+          <Reveal>
+            <Badge variant="outline" className="border-primary/30 bg-primary/10 text-primary mb-4">
+              The Bridge Model
+            </Badge>
+          </Reveal>
+          <Reveal delay={100}>
+            <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-4">
+              How Significia works
+            </h1>
+          </Reveal>
+          <Reveal delay={200}>
+            <p className="text-muted-foreground text-lg leading-relaxed">
+              Your data lives in your house. We send questions to your Bridge. Your Bridge answers
+              from inside your house. We never have a copy of your key.
+            </p>
+          </Reveal>
         </div>
 
         {/* Onboarding flow */}
-        <div className="mb-24">
-          <h2 className="text-2xl font-bold mb-2">Onboarding in 6 steps</h2>
-          <p className="text-muted-foreground mb-10">From zero to a live, branded portal.</p>
-          <div className="space-y-6">
+        <div className="mb-28">
+          <Reveal>
+            <h2 className="text-2xl font-bold mb-2">Onboarding in 6 steps</h2>
+            <p className="text-muted-foreground mb-12">From zero to a live, branded portal.</p>
+          </Reveal>
+
+          <div className="grid gap-5 sm:grid-cols-2">
             {ONBOARDING_STEPS.map((step, index) => {
               const Icon = step.icon;
               return (
-                <div key={step.number} className="flex gap-5">
-                  <div className="flex flex-col items-center">
-                    <div className="h-10 w-10 rounded-xl bg-primary/15 border border-primary/30 flex items-center justify-center shrink-0">
-                      <span className="text-xs font-bold text-primary">{step.number}</span>
+                <Reveal key={step.number} delay={ONBOARDING_DELAYS[index]}>
+                  <div className="h-full p-5 rounded-xl border border-border/50 bg-card/30 hover:border-primary/30 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="h-10 w-10 rounded-xl bg-primary/15 border border-primary/30 flex items-center justify-center">
+                        <Icon className="h-4 w-4 text-primary" />
+                      </div>
+                      <span className="text-xs font-mono text-primary/60">{step.number}</span>
                     </div>
-                    {index < ONBOARDING_STEPS.length - 1 && (
-                      <div className="flex-1 w-px bg-border/50 mt-2" />
-                    )}
-                  </div>
-                  <div className="pb-8">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                       <h3 className="font-semibold">{step.title}</h3>
-                      <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-                        {step.who}
-                      </span>
                     </div>
+                    <span className="inline-block text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full mb-3">
+                      {step.who}
+                    </span>
                     <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
                   </div>
-                </div>
+                </Reveal>
               );
             })}
           </div>
         </div>
 
         {/* Daily request flow */}
-        <div className="mb-24">
-          <h2 className="text-2xl font-bold mb-2">What happens on every request</h2>
-          <p className="text-muted-foreground mb-10">
-            When Bunty clicks "Generate Risk Report for Client X" — here is exactly what happens:
-          </p>
-          <div className="space-y-2">
+        <div className="mb-28">
+          <Reveal>
+            <h2 className="text-2xl font-bold mb-2">What happens on every request</h2>
+            <p className="text-muted-foreground mb-12">
+              When Bunty clicks "Generate Risk Report for Client X" — here is exactly what happens:
+            </p>
+          </Reveal>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {DAILY_FLOW_STEPS.map((step, i) => (
-              <div
-                key={i}
-                className="flex items-start gap-4 p-4 rounded-lg bg-card/30 border border-border/30"
-              >
-                <span className="text-xs font-mono text-primary/60 pt-0.5 shrink-0 w-6">
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                <div>
-                  <p className="text-sm font-medium">{step.label}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{step.detail}</p>
+              <Reveal key={i} delay={FLOW_DELAYS[i]}>
+                <div className="h-full p-4 rounded-lg bg-card/30 border border-border/30 hover:border-primary/25 hover:bg-card/50 transition-colors duration-200">
+                  <span className="inline-flex items-center justify-center h-7 w-7 rounded-full bg-primary/10 border border-primary/25 text-[11px] font-mono font-semibold text-primary mb-3">
+                    {i + 1}
+                  </span>
+                  <p className="text-sm font-medium leading-snug">{step.label}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{step.detail}</p>
                 </div>
-              </div>
+              </Reveal>
             ))}
           </div>
-          <div className="mt-6 p-4 rounded-lg border border-emerald-500/20 bg-emerald-500/5">
-            <p className="text-sm text-emerald-600 dark:text-emerald-400">
-              At no point does Significia: directly connect to your database, know your DB password,
-              store the report in Significia's own storage, or retain any client data after the request ends.
-            </p>
-          </div>
+
+          <Reveal delay={700}>
+            <div className="mt-6 p-4 rounded-lg border border-emerald-500/20 bg-emerald-500/5">
+              <p className="text-sm text-emerald-600 dark:text-emerald-400">
+                At no point does Significia: directly connect to your database, know your DB password,
+                store the report in Significia's own storage, or retain any client data after the request ends.
+              </p>
+            </div>
+          </Reveal>
         </div>
 
         {/* Security guarantees */}
         <div className="mb-24">
-          <h2 className="text-2xl font-bold mb-8">Your security guarantees</h2>
+          <Reveal>
+            <h2 className="text-2xl font-bold mb-8">Your security guarantees</h2>
+          </Reveal>
           <div className="grid sm:grid-cols-3 gap-6">
-            {[
-              {
-                icon: Lock,
-                title: "Query allowlist",
-                description:
-                  "The Bridge only answers pre-approved query types. No bulk exports. No unauthorized access patterns.",
-              },
-              {
-                icon: Eye,
-                title: "Full query log",
-                description:
-                  "Every request and response is logged on your own server. You have complete auditability — we have none of it.",
-              },
-              {
-                icon: Power,
-                title: "Kill switch",
-                description:
-                  "Stop the Bridge at any time — instantly cutting Significia's access to your data. No delay, no process.",
-              },
-            ].map((item) => {
+            {SECURITY_GUARANTEES.map((item, i) => {
               const Icon = item.icon;
               return (
-                <div key={item.title} className="p-5 rounded-xl border border-border/50 bg-card/30">
-                  <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center mb-3">
-                    <Icon className="h-4 w-4 text-primary" />
+                <Reveal key={item.title} delay={(i * 150) as 0 | 150 | 300}>
+                  <div className="h-full p-5 rounded-xl border border-border/50 bg-card/30 hover:border-primary/30 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300">
+                    <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center mb-3">
+                      <Icon className="h-4 w-4 text-primary" />
+                    </div>
+                    <h3 className="font-semibold text-sm mb-2">{item.title}</h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{item.description}</p>
                   </div>
-                  <h3 className="font-semibold text-sm mb-2">{item.title}</h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">{item.description}</p>
-                </div>
+                </Reveal>
               );
             })}
           </div>
         </div>
 
         {/* CTA */}
-        <div className="text-center">
+        <Reveal className="text-center">
           <p className="text-muted-foreground mb-6">
             Ready to see the Bridge in action?
           </p>
           <Button size="lg" className="bg-primary hover:bg-primary/90 shadow-xl shadow-primary/20" asChild>
             <Link href="/contact">Book a Demo</Link>
           </Button>
-        </div>
+        </Reveal>
       </div>
     </div>
   );
