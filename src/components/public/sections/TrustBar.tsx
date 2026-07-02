@@ -4,8 +4,8 @@ import { Shield, Lock, Paintbrush, Unlink } from "lucide-react";
 const TRUST_ITEMS = [
   {
     icon: Shield,
-    label: "SEBI Compliant",
-    description: "Fully aligned with SEBI infrastructure guidelines",
+    label: "Regulation Ready",
+    description: "Fully aligned with Indian advisory infrastructure guidelines",
   },
   {
     icon: Lock,
