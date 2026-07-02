@@ -22,7 +22,7 @@ const CONTACT_OPTIONS = [
   {
     icon: Mail,
     title: "General Enquiry",
-    description: "Any questions about the platform, SEBI compliance, or the Bridge model.",
+    description: "Any questions about the platform, regulatory compliance, or the Bridge model.",
   },
 ];
 
@@ -64,7 +64,7 @@ export default function ContactPage() {
             Let's talk
           </h1>
           <p className="text-muted-foreground text-lg leading-relaxed">
-            Whether you want a demo, have questions about SEBI compliance, or want to understand
+            Whether you want a demo, have questions about regulatory compliance, or want to understand
             the Bridge model — we're here.
           </p>
         </div>
