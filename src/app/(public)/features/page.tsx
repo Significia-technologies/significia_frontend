@@ -2,6 +2,7 @@ import React from "react";
 import {
   BarChart3, Target, ShieldCheck, Palette, Users, FolderOpen,
   FileText, Sliders, ClipboardList, AlertTriangle, Settings2, Key,
+  TrendingUp, Archive,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -32,7 +33,7 @@ const FEATURE_GROUPS = [
         icon: FolderOpen,
         title: "Document Vault",
         description:
-          "All certificates, signed reports, SEBI disclosures, and client documents stored securely in your own cloud storage bucket.",
+          "All certificates, signed reports, disclosures, and client documents stored securely in your own cloud storage bucket.",
       },
     ],
   },
@@ -53,6 +54,12 @@ const FEATURE_GROUPS = [
           "Slider-based allocation tool with history tracking. Set target allocations and track drift over time.",
       },
       {
+        icon: TrendingUp,
+        title: "Portfolio Tracking",
+        description:
+          "Track client portfolios with a security basket built for the Indian market, alongside performance over time.",
+      },
+      {
         icon: Target,
         title: "Financial Goals",
         description:
@@ -68,11 +75,11 @@ const FEATURE_GROUPS = [
   },
   {
     group: "Compliance & Audit",
-    description: "Stay SEBI-ready without manual effort.",
+    description: "Stay audit-ready without manual effort.",
     features: [
       {
         icon: ShieldCheck,
-        title: "SEBI Compliance Dashboard",
+        title: "Compliance Dashboard",
         description:
           "One-stop view of audit trails, version history, lock management, and compliance status across all clients.",
       },
@@ -86,7 +93,13 @@ const FEATURE_GROUPS = [
         icon: ClipboardList,
         title: "Compliance Report Generation",
         description:
-          "Automatically generate SEBI-required reports with your digital signature and firm details applied.",
+          "Automatically generate regulator-ready reports with your digital signature and firm details applied.",
+      },
+      {
+        icon: Archive,
+        title: "Document Drawers",
+        description:
+          "Organized storage for certificates, signatures, and firm documents — kept ready for whenever you need them.",
       },
     ],
   },
@@ -135,7 +148,7 @@ export default function FeaturesPage() {
             Every tool your advisory needs
           </h1>
           <p className="text-muted-foreground text-lg leading-relaxed">
-            A complete operating system for SEBI-registered Investment Advisors — from client onboarding
+            A complete operating system for Investment Advisors — from client onboarding
             to compliance reports, all under your brand.
           </p>
         </div>
