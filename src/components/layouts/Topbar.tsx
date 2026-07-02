@@ -41,6 +41,7 @@ export function Topbar({ showSearch = false, showLogo = false }: TopbarProps) {
   };
 
   const displayName = user ? user.company_name : null;
+  const homeHref = user?.role === "super_admin" ? "/admin" : "/dashboard";
 
   const initials = user && user.company_name
     ? user.company_name.substring(0, 2).toUpperCase()
@@ -61,7 +62,7 @@ export function Topbar({ showSearch = false, showLogo = false }: TopbarProps) {
 
         {/* ── Logo ── */}
         {showLogo && (
-          <Link href="/" className="flex items-center gap-2.5">
+          <Link href={homeHref} className="flex items-center gap-2.5">
             <Image 
               src="/logo.png" 
               alt="Significia Logo" 
