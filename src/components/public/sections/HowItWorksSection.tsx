@@ -7,8 +7,8 @@ const STEPS = [
     icon: Database,
     title: "Set up your own database",
     description:
-      "You provision a PostgreSQL database on your own server or cloud account (AWS, Azure, GCP). It's your infrastructure — we have no involvement. This is exactly what SEBI requires.",
-    note: "SEBI requirement satisfied",
+      "You provision a PostgreSQL database on your own server or cloud account (AWS, Azure, GCP). It's your infrastructure — we have no involvement. This is exactly what regulators require.",
+    note: "Regulatory requirement satisfied",
   },
   {
     number: "02",
@@ -41,7 +41,7 @@ export function HowItWorksSection() {
             Three steps to your own portal
           </h2>
           <p className="text-muted-foreground text-lg">
-            From zero to a fully branded, SEBI-compliant advisory platform — no technical degree required.
+            From zero to a fully branded, compliance-ready advisory platform — no technical degree required.
           </p>
         </div>
 
