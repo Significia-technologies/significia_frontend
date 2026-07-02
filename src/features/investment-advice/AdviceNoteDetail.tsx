@@ -828,7 +828,7 @@ export function AdviceNoteDetail({ noteId, onBack, onEdit }: AdviceNoteDetailPro
         <AlertDialogContent className="max-w-md border-primary/20 bg-background/95 backdrop-blur-md">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 text-amber-600">
-              <AlertTriangle className="w-5 h-5" /> Confirm SEBI Lock & Delivery
+              <AlertTriangle className="w-5 h-5" /> Confirm Lock & Delivery
             </AlertDialogTitle>
             <AlertDialogDescription className="space-y-3 pt-2 text-foreground">
               <p>

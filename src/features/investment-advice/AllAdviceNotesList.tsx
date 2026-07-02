@@ -102,7 +102,7 @@ export function AllAdviceNotesList({ onCreateNew, onSelectNote, onEditDraft }: A
     setIsLocking(true);
     try {
       await InvestmentAdviceService.lock(lockingNote.id);
-      toast.success("Advice Note successfully locked and registered for SEBI compliance.");
+      toast.success("Advice Note successfully locked and registered for compliance.");
       setLockingNote(null);
       fetchNotes();
     } catch (error) {
@@ -314,7 +314,7 @@ export function AllAdviceNotesList({ onCreateNew, onSelectNote, onEditDraft }: A
         <AlertDialogContent className="max-w-md border-primary/20">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 text-amber-600">
-              <AlertTriangle className="w-5 h-5" /> Confirm SEBI Lock & Delivery
+              <AlertTriangle className="w-5 h-5" /> Confirm Lock & Delivery
             </AlertDialogTitle>
             <AlertDialogDescription className="space-y-3 pt-2 text-foreground">
               <p>

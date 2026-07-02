@@ -1902,7 +1902,7 @@ export function AdviceNoteForm({ client, noteId, onSuccess, onCancel }: AdviceNo
 
               <div className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="conflict">Conflict of Interest Declarations (SEBI Reg 18)</Label>
+                  <Label htmlFor="conflict">Conflict of Interest Declarations </Label>
                   <Textarea 
                     id="conflict" 
                     className="min-h-24 text-xs leading-relaxed" 
@@ -1922,7 +1922,7 @@ export function AdviceNoteForm({ client, noteId, onSuccess, onCancel }: AdviceNo
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="ai_usage">AI Tools Usage Disclosure (December 2024 SEBI circular)</Label>
+                  <Label htmlFor="ai_usage">AI Tools Usage Disclosure</Label>
                   <Textarea 
                     id="ai_usage" 
                     className="min-h-24 text-xs leading-relaxed" 
