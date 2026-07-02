@@ -6,6 +6,9 @@ import {
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Reveal } from "@/components/public/Reveal";
+
+const CARD_DELAYS = [0, 75, 150, 200, 300, 500] as const;
 
 export const metadata = {
   title: "Features — Significia",
@@ -141,39 +144,47 @@ export default function FeaturesPage() {
       <div className="mx-auto max-w-7xl">
         {/* Header */}
         <div className="text-center max-w-2xl mx-auto mb-20">
-          <Badge variant="outline" className="border-primary/30 bg-primary/10 text-primary mb-4">
-            Platform Features
-          </Badge>
-          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-4">
-            Every tool your advisory needs
-          </h1>
-          <p className="text-muted-foreground text-lg leading-relaxed">
-            A complete operating system for Investment Advisors — from client onboarding
-            to compliance reports, all under your brand.
-          </p>
+          <Reveal>
+            <Badge variant="outline" className="border-primary/30 bg-primary/10 text-primary mb-4">
+              Platform Features
+            </Badge>
+          </Reveal>
+          <Reveal delay={100}>
+            <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-4">
+              Every tool your advisory needs
+            </h1>
+          </Reveal>
+          <Reveal delay={200}>
+            <p className="text-muted-foreground text-lg leading-relaxed">
+              A complete operating system for Investment Advisors — from client onboarding
+              to compliance reports, all under your brand.
+            </p>
+          </Reveal>
         </div>
 
         {/* Feature groups */}
         <div className="space-y-20">
           {FEATURE_GROUPS.map((group) => (
             <div key={group.group}>
-              <div className="mb-8">
+              <Reveal className="mb-8">
                 <h2 className="text-2xl font-bold mb-2">{group.group}</h2>
                 <p className="text-muted-foreground">{group.description}</p>
-              </div>
+              </Reveal>
               <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {group.features.map((feature) => {
+                {group.features.map((feature, i) => {
                   const Icon = feature.icon;
                   return (
-                    <Card key={feature.title} className="glass hover:border-primary/30 transition-all duration-300">
-                      <CardContent className="p-5">
-                        <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center mb-3">
-                          <Icon className="h-4 w-4 text-primary" />
-                        </div>
-                        <h3 className="font-semibold text-sm mb-2">{feature.title}</h3>
-                        <p className="text-xs text-muted-foreground leading-relaxed">{feature.description}</p>
-                      </CardContent>
-                    </Card>
+                    <Reveal key={feature.title} delay={CARD_DELAYS[i % CARD_DELAYS.length]}>
+                      <Card className="glass h-full hover:border-primary/30 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300">
+                        <CardContent className="p-5">
+                          <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center mb-3">
+                            <Icon className="h-4 w-4 text-primary" />
+                          </div>
+                          <h3 className="font-semibold text-sm mb-2">{feature.title}</h3>
+                          <p className="text-xs text-muted-foreground leading-relaxed">{feature.description}</p>
+                        </CardContent>
+                      </Card>
+                    </Reveal>
                   );
                 })}
               </div>
