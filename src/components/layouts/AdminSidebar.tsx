@@ -4,7 +4,6 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ShieldAlert, Users, History, LayoutDashboard } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
 interface AdminSidebarProps {
@@ -53,17 +52,6 @@ export function AdminSidebarContent() {
         >
           <History className="h-4 w-4" />
           Audit Logs
-        </Link>
-
-        <div className="py-4">
-          <Separator className="opacity-10" />
-        </div>
-
-        <Link
-          href="/dashboard"
-          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-primary hover:bg-accent/30"
-        >
-          &larr; Exit to Dashboard
         </Link>
       </nav>
     </div>
