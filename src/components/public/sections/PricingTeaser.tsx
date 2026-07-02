@@ -1,105 +1,57 @@
 import React from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Users } from "lucide-react";
+import { ArrowRight, ShieldCheck, Palette, Database } from "lucide-react";
 
-const TIERS = [
-  {
-    name: "Starter",
-    clients: "Up to 5 clients",
-    description: "Perfect for a solo advisor just getting started.",
-    badge: null,
-  },
-  {
-    name: "Growth",
-    clients: "Up to 20 clients",
-    description: "For growing practices ready to scale their operations.",
-    badge: "Most Popular",
-  },
-  {
-    name: "Pro",
-    clients: "Up to 100 clients",
-    description: "Built for established firms with a full advisory team.",
-    badge: null,
-  },
-  {
-    name: "Enterprise",
-    clients: "Unlimited clients",
-    description: "Custom deployment, SLA guarantees, and white-glove onboarding.",
-    badge: "Custom",
-  },
+const INCLUDED = [
+  { icon: Database, label: "Your own database and storage" },
+  { icon: Palette, label: "Complete white-labeling" },
+  { icon: ShieldCheck, label: "Compliance-ready infrastructure" },
 ];
 
 export function PricingTeaser() {
   return (
     <section className="py-24 px-4">
-      <div className="mx-auto max-w-7xl">
-        {/* Section header */}
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <p className="text-sm font-semibold text-primary uppercase tracking-widest mb-3">
-            Pricing
-          </p>
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4">
-            Simple, client-count based pricing
-          </h2>
-          <p className="text-muted-foreground text-lg">
-            Pay for the number of clients you serve. No hidden fees. Contact us for exact pricing.
-          </p>
-        </div>
+      <div className="mx-auto max-w-3xl">
+        <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-card/40 glass p-10 sm:p-14 text-center">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(191,149,63,0.10),transparent_70%)] pointer-events-none" />
 
-        {/* Tier cards */}
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-10">
-          {TIERS.map((tier) => (
-            <Card
-              key={tier.name}
-              className={`relative glass transition-all duration-300 hover:shadow-lg ${
-                tier.badge === "Most Popular"
-                  ? "border-primary/50 shadow-lg shadow-primary/10"
-                  : "hover:border-primary/20"
-              }`}
+          <div className="relative z-10">
+            <p className="text-sm font-semibold text-primary uppercase tracking-widest mb-3">
+              Pricing
+            </p>
+            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4">
+              Pricing built around your firm
+            </h2>
+            <p className="text-muted-foreground text-lg max-w-xl mx-auto mb-8">
+              We tailor pricing to the size and needs of your advisory practice.
+              Tell us about your firm and we'll get back to you with a plan that fits.
+            </p>
+
+            <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 mb-10">
+              {INCLUDED.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <div key={item.label} className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Icon className="h-4 w-4 text-primary shrink-0" />
+                    {item.label}
+                  </div>
+                );
+              })}
+            </div>
+
+            <Button
+              size="lg"
+              className="h-12 px-8 bg-primary hover:bg-primary/90 shadow-xl shadow-primary/20"
+              asChild
             >
-              {tier.badge && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <Badge className="bg-primary text-primary-foreground text-xs px-3">
-                    {tier.badge}
-                  </Badge>
-                </div>
-              )}
-              <CardHeader className="pb-2 pt-6">
-                <h3 className="font-bold text-lg">{tier.name}</h3>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-1.5 text-sm text-primary font-medium mb-3">
-                  <Users className="h-4 w-4" />
-                  {tier.clients}
-                </div>
-                <p className="text-sm text-muted-foreground leading-snug mb-5">
-                  {tier.description}
-                </p>
-                <Button
-                  variant={tier.badge === "Most Popular" ? "default" : "outline"}
-                  size="sm"
-                  className="w-full"
-                  asChild
-                >
-                  <Link href="/contact">
-                    Get Pricing
-                    <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
+              <Link href="/contact">
+                Request Pricing
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
         </div>
-
-        <p className="text-center text-sm text-muted-foreground">
-          All plans include SEBI-compliant infrastructure, white-labeling, and the Bridge model.{" "}
-          <Link href="/pricing" className="text-primary hover:underline">
-            View full pricing details →
-          </Link>
-        </p>
       </div>
     </section>
   );
