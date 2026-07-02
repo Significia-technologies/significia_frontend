@@ -16,7 +16,7 @@ export function HeroSection() {
       {/* Background */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         {/* Central glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 h-[700px] w-[900px] bg-primary/12 blur-[160px] rounded-full" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 h-[700px] w-[900px] bg-primary/12 blur-[160px] rounded-full animate-glow-pulse" />
       </div>
 
       {/* Content */}
@@ -24,7 +24,7 @@ export function HeroSection() {
         {/* Announcement pill */}
         <Link
           href="/contact"
-          className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/8 px-4 py-1.5 text-xs font-medium text-primary/90 hover:bg-primary/15 hover:border-primary/40 transition-all duration-200 mb-8"
+          className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/8 px-4 py-1.5 text-xs font-medium text-primary/90 hover:bg-primary/15 hover:border-primary/40 transition-all duration-200 mb-8 animate-in fade-in slide-in-from-bottom-2 duration-700 fill-mode-both"
         >
           <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
           <span>Now accepting early-access advisors</span>
@@ -32,7 +32,7 @@ export function HeroSection() {
         </Link>
 
         {/* Headline */}
-        <h1 className="text-[44px] sm:text-[58px] lg:text-[68px] font-semibold tracking-tight text-foreground leading-[1.08] mb-6">
+        <h1 className="text-[44px] sm:text-[58px] lg:text-[68px] font-semibold tracking-tight text-foreground leading-[1.08] mb-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100 fill-mode-both">
           Your advisory, finally
           <br />
           running like{" "}
@@ -44,14 +44,14 @@ export function HeroSection() {
         </h1>
 
         {/* Subheadline */}
-        <p className="text-[17px] sm:text-[18px] text-muted-foreground max-w-2xl mx-auto leading-relaxed mb-10">
+        <p className="text-[17px] sm:text-[18px] text-muted-foreground max-w-2xl mx-auto leading-relaxed mb-10 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200 fill-mode-both">
           Significia gives every Investment Advisor a fully white-labeled client
           portal — powered by the Bridge model so your database runs on{" "}
           <span className="text-foreground font-medium">your infrastructure</span>, not ours.
         </p>
 
         {/* CTAs */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-14">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-14 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300 fill-mode-both">
           <Link
             href="/contact"
             className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-[14px] font-semibold text-primary-foreground shadow-2xl shadow-primary/30 hover:bg-primary/90 hover:shadow-primary/45 transition-all duration-200 hover:-translate-y-px"
@@ -68,7 +68,7 @@ export function HeroSection() {
         </div>
 
         {/* Stats strip */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-8 sm:gap-12">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-8 sm:gap-12 animate-in fade-in duration-700 delay-500 fill-mode-both">
           {STATS.map((stat, i) => (
             <React.Fragment key={stat.value}>
               <div className="text-center">
