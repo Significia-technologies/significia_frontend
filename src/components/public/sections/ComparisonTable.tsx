@@ -4,7 +4,7 @@ import { Check, X } from "lucide-react";
 const ROWS = [
   { aspect: "Data location", traditional: "Vendor's shared database", significia: "Your own database, on your server" },
   { aspect: "Credential ownership", traditional: "Vendor holds your DB credentials", significia: "You hold credentials inside the Bridge" },
-  { aspect: "SEBI compliance", traditional: "Uncertain / requires custom work", significia: "Fully compliant by architecture" },
+  { aspect: "Regulatory compliance", traditional: "Uncertain / requires custom work", significia: "Fully compliant by architecture" },
   { aspect: "Data liability", traditional: "Vendor is responsible (and a risk)", significia: "You own and control your data" },
   { aspect: "Access control", traditional: "Vendor controls access", significia: "You have a kill switch" },
   { aspect: "Branding", traditional: "Vendor's brand visible to your clients", significia: "100% your brand, Significia invisible" },
