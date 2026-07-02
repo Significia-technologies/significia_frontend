@@ -18,7 +18,7 @@ export function CtaSection() {
           Ready to go live?
         </h2>
         <p className="text-lg text-slate-400 leading-relaxed mb-10 max-w-xl mx-auto">
-          Join SEBI-registered Investment Advisors who run their practice on a platform
+          Join Investment Advisors who run their practice on a platform
           where their data truly stays theirs.
         </p>
 
