@@ -107,7 +107,7 @@ export default function LoginPage() {
         setUser(authUser);
         setPublicBranding(null); // Force refetch of branding
 
-        router.push("/");
+        router.push("/dashboard");
       }
     } catch (err: unknown) {
       let message = "Invalid email or password. Please try again.";
