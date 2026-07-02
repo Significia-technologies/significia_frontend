@@ -85,6 +85,7 @@ export interface SendEmailPayload {
   recipient_email: string;
   recipient_name?: string;
   template_id?: string;
+  template_type?: string;
   subject?: string;
   body_html?: string;
   template_variables?: Record<string, string>;
