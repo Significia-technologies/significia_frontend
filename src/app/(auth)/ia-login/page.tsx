@@ -152,7 +152,7 @@ export default function IALoginPage() {
             <Shield className="w-4 h-4 mt-0.5 flex-shrink-0 text-emerald-500" />
             <p>
               Your credentials are verified securely within your own infrastructure,
-              never transmitted to or stored by Significia. SEBI compliant by design.
+              never transmitted to or stored by Significia. Compliant by design.
             </p>
           </div>
         </CardFooter>
