@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname, notFound } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { DashboardLayout } from "@/components/layouts/DashboardLayout";
+import DashboardNotFound from "./not-found";
 
 // Public marketing routes — no auth wrapper
 const PUBLIC_PATHS = ["/", "/features", "/how-it-works", "/pricing", "/about", "/contact"];
@@ -36,14 +37,16 @@ export default function DashboardRouteLayout({
     return <>{children}</>;
   }
 
-  // Tenant-only pages have no meaning on the root domain — 404 rather than
-  // rendering dashboard chrome with no real tenant behind it.
-  if (blockedOnRootDomain) {
-    notFound();
-  }
-
   if (!checked) {
     return null;
+  }
+
+  // Tenant-only pages have no meaning on the root domain — render the 404
+  // directly (calling notFound() from a layout doesn't reach this segment's
+  // own not-found.tsx, it bubbles up past it) instead of full dashboard
+  // chrome with no real tenant data behind it.
+  if (blockedOnRootDomain) {
+    return <DashboardNotFound />;
   }
 
   return <DashboardLayout>{children}</DashboardLayout>;
