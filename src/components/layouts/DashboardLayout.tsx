@@ -96,15 +96,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   React.useEffect(() => {
     if (isInitializing || !user) return;
 
-    // 1. Super Admin Redirection (Force to admin portal if they hit dashboard root)
-    if (user.role === "super_admin" && pathname === "/") {
+    // 1. Super Admin Redirection (Force to admin portal if they hit the tenant dashboard)
+    if (user.role === "super_admin" && pathname === "/dashboard") {
       router.push("/admin");
       return;
     }
 
     // 2. Tenant Profile Gate
     if (user.role !== "super_admin" && !user.is_profile_completed) {
-      if (!pathname.startsWith("/master") && pathname !== "/") {
+      if (!pathname.startsWith("/master") && pathname !== "/dashboard") {
         router.push("/master");
       }
     }
