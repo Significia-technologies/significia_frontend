@@ -9,6 +9,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 import { useRouter, usePathname } from "next/navigation";
+import axios from "axios";
 import { AuthService } from "@/core/services/auth.service";
 import { ShieldCheck, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -38,26 +39,25 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   // ── Session Restoration (Run only on mount) ──
   React.useEffect(() => {
     const restoreSession = async () => {
-      // 1. Handle URL tokens (from email links)
+      // 1. Handle URL tokens (from email links) — exchange them for httpOnly
+      // cookies immediately via the BFF instead of ever touching localStorage.
       if (typeof window !== "undefined") {
         const urlParams = new URLSearchParams(window.location.search);
         const urlToken = urlParams.get("token");
         const urlRefreshToken = urlParams.get("refreshToken");
-        
+
         if (urlToken) {
-          localStorage.setItem("accessToken", urlToken);
-          if (urlRefreshToken) {
-            localStorage.setItem("refreshToken", urlRefreshToken);
+          try {
+            await axios.post(
+              "/api/auth/exchange",
+              { accessToken: urlToken, refreshToken: urlRefreshToken || undefined },
+              { withCredentials: true }
+            );
+          } catch (err) {
+            console.error("Failed to exchange URL token", err);
           }
           window.history.replaceState({}, document.title, window.location.pathname);
         }
-      }
-
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
-        clearUser();
-        router.push("/login");
-        return;
       }
 
       // 2. Fetch user if not in store

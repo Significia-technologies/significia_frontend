@@ -1,25 +1,12 @@
 /**
- * Sanitizes and upgrades the API base URL to HTTPS if the frontend is served via HTTPS or if running in a secure Worker.
+ * Base URL for JSON API calls made from the browser. These are routed
+ * through the Next.js BFF proxy (see src/app/api/proxy/[...path]/route.ts)
+ * rather than hitting the backend directly — the proxy attaches the auth
+ * token from an httpOnly cookie server-side, so the browser never sees or
+ * stores a raw token. Same-origin by construction, so no protocol/CORS
+ * juggling is needed here anymore.
  */
-export const getApiBaseUrl = (): string => {
-  const envUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/v1";
-  
-  // Detect protocol in both window and worker contexts
-  const currentProtocol = typeof window !== "undefined" 
-    ? window.location.protocol 
-    : (typeof self !== "undefined" ? self.location.protocol : "http:");
-
-  if (
-    currentProtocol === "https:" && 
-    envUrl.startsWith("http://") && 
-    !envUrl.includes("127.0.0.1") && 
-    !envUrl.includes("localhost")
-  ) {
-    return envUrl.replace("http://", "https://");
-  }
-  
-  return envUrl;
-};
+export const getApiBaseUrl = (): string => "/api/proxy";
 
 /**
  * Constructs a full URL for an asset.

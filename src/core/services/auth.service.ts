@@ -1,5 +1,12 @@
+import axios from "axios";
 import httpClient from "@/core/api/http-client";
 import { API_ENDPOINTS } from "@/core/api/api-endpoints";
+
+// Plain axios (no auth interceptors) for the BFF's own auth routes —
+// login/logout/exchange calls that should never trigger the 401-redirect
+// interceptor in httpClient (e.g. a bad-password 401 on the login page
+// itself must not bounce the user back to /login).
+const authClient = axios.create({ withCredentials: true });
 
 // ── Types ─────────────────────────────────────────
 
@@ -71,21 +78,15 @@ export const AuthService = {
    * For Significia Super Admins only (app.significia.com)
    */
   async login(payload: LoginPayload): Promise<AuthResponse> {
-    const { data } = await httpClient.post(API_ENDPOINTS.AUTH.LOGIN, payload);
+    const { data } = await authClient.post("/api/auth/login", payload);
 
     if (data.status === "active_session_exists") {
       return data;
     }
 
-    const accessToken = data.access_token;
-    const refreshToken = data.refresh_token;
     const subdomain = data.subdomain;
-
-    localStorage.setItem("accessToken", accessToken);
-    localStorage.setItem("refreshToken", refreshToken);
-
     const user = await this.getCurrentUser();
-    return { user, accessToken, refreshToken, subdomain };
+    return { user, subdomain };
   },
 
   /**
@@ -94,8 +95,8 @@ export const AuthService = {
    * The backend resolves the tenant from the Host header (e.g. bunty.com)
    */
   async iaStaffLogin(payload: LoginPayload): Promise<IAStaffLoginResponse> {
-    const { data } = await httpClient.post<IAStaffLoginResponse>(
-      API_ENDPOINTS.IA_AUTH.LOGIN,
+    const { data } = await authClient.post<IAStaffLoginResponse>(
+      "/api/auth/ia-staff-login",
       payload
     );
 
@@ -103,8 +104,6 @@ export const AuthService = {
       return data;
     }
 
-    localStorage.setItem("accessToken", data.access_token!);
-    localStorage.setItem("refreshToken", data.refresh_token!);
     localStorage.setItem("userRole", data.user_role!);
     localStorage.setItem("tenantName", data.tenant_name!);
 
@@ -129,16 +128,14 @@ export const AuthService = {
    * For IA clients (investors) logging into the client portal
    */
   async clientLogin(payload: LoginPayload): Promise<AuthResponse> {
-    const { data } = await httpClient.post(API_ENDPOINTS.CLIENT_AUTH.LOGIN, payload);
-    
+    const { data } = await authClient.post("/api/auth/client-login", payload);
+
     if (data.status === "active_session_exists") {
       return data;
     }
-    
-    const accessToken = data.access_token;
-    localStorage.setItem("accessToken", accessToken);
+
     const user = await this.getCurrentClient();
-    return { user, accessToken, refreshToken: "", subdomain: null };
+    return { user, subdomain: null };
   },
 
   /**
@@ -176,9 +173,11 @@ export const AuthService = {
   }> {
     const headers: Record<string, string> = {};
     if (slug) {
-      headers["X-Tenant-Slug"] = slug;
+      // Dev-mode simulation override; real tenant resolution happens
+      // server-side in the proxy from the request's Host header.
+      headers["X-Simulated-Tenant-Slug"] = slug;
     }
-    
+
     // We use raw httpClient here because this route is unauthenticated
     const { data } = await httpClient.get(API_ENDPOINTS.PUBLIC.BRANDING, {
       headers,
@@ -199,20 +198,14 @@ export const AuthService = {
    * Logout — clears all stored tokens and notifies the backend to clear DB state
    */
   async logout(): Promise<void> {
+    const role = localStorage.getItem("userRole");
     try {
-      const role = localStorage.getItem("userRole");
-      if (role && role !== "super_admin") {
-        // Clear Bridge Silo session
-        await httpClient.post(API_ENDPOINTS.CLIENT_AUTH.LOGOUT);
-      } else {
-        // Clear Master Gateway session
-        await httpClient.post(API_ENDPOINTS.AUTH.LOGOUT);
-      }
+      // Clears the httpOnly cookies and best-effort notifies the backend
+      // (client/bridge session vs. master session) to invalidate server-side state.
+      await authClient.post("/api/auth/logout", { role });
     } catch (e) {
       console.warn("Backend logout failed or not supported:", e);
     }
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
     localStorage.removeItem("userRole");
     localStorage.removeItem("tenantName");
   },

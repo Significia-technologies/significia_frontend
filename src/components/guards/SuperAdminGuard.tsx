@@ -16,18 +16,14 @@ export function SuperAdminGuard({ children }: SuperAdminGuardProps) {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const token = localStorage.getItem("accessToken");
-      
-      if (!token) {
-        router.replace("/login");
-        return;
-      }
-
+      // Auth is cookie-based (httpOnly) now — there's no client-readable
+      // token to check for presence. Just ask the backend via /auth/me and
+      // let a 401 (handled by the http-client interceptor) redirect to login.
       if (!user) {
         try {
           const authUser = await AuthService.getCurrentUser();
           useAppStore.getState().setUser(authUser);
-          
+
           if (authUser.role === "super_admin") {
             setIsAuthorized(true);
           } else {
@@ -37,7 +33,7 @@ export function SuperAdminGuard({ children }: SuperAdminGuardProps) {
           router.replace("/login");
         }
       } else {
-        if (user.role === ("super_admin" as any)) {
+        if (user.role === "super_admin") {
           setIsAuthorized(true);
         } else {
           router.replace("/");
