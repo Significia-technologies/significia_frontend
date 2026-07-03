@@ -489,15 +489,13 @@ function CommunicationPage() {
     try {
       const selected = drawerDocuments.filter((d) => selectedDrawerKeys.has(d.file_path));
       const files: File[] = [];
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/v1";
-      const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
       const tenantSlug = typeof window !== "undefined" ? localStorage.getItem("simulatedTenantSlug") : null;
       for (const doc of selected) {
-        const fileUrl = `${baseUrl}/storage/file?key=${encodeURIComponent(doc.file_path)}`;
+        const fileUrl = `/api/proxy/storage/file?key=${encodeURIComponent(doc.file_path)}`;
         const res = await fetch(fileUrl, {
+          credentials: "include",
           headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-            ...(tenantSlug ? { "X-Tenant-Slug": tenantSlug } : {}),
+            ...(tenantSlug ? { "X-Simulated-Tenant-Slug": tenantSlug } : {}),
           },
         });
         if (!res.ok) throw new Error(`Failed to fetch ${doc.document_type}`);

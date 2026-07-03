@@ -1,5 +1,8 @@
 import { API_ENDPOINTS } from "../api/api-endpoints";
 import httpClient from "../api/http-client";
+import { getApiBaseUrl } from "../api/api-utils";
+
+const API_BASE = getApiBaseUrl();
 
 // ── Types ─────────────────────────────────────────
 
@@ -266,7 +269,7 @@ export class MasterDataService {
   }
 
   static async assignClient(clientId: string, staffId: string): Promise<void> {
-    await httpClient.patch(`/master/clients/${clientId}/assign`, null, {
+    await httpClient.patch(`${API_BASE}/master/clients/${clientId}/assign`, null, {
       params: { staff_id: staffId }
     });
   }

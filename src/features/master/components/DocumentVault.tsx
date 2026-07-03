@@ -55,14 +55,12 @@ const FOLDER_CATEGORY_ORDER = ["KYC", "Rectification", "Reports", "Risk Profile"
 
 async function downloadViaProxy(filePath: string, docType: string) {
   try {
-    const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
     const tenantSlug = typeof window !== "undefined" ? localStorage.getItem("simulatedTenantSlug") : null;
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/v1";
-    const url = `${baseUrl}/storage/file?key=${encodeURIComponent(filePath)}`;
+    const url = `/api/proxy/storage/file?key=${encodeURIComponent(filePath)}`;
     const res = await fetch(url, {
+      credentials: "include",
       headers: {
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...(tenantSlug ? { "X-Tenant-Slug": tenantSlug } : {}),
+        ...(tenantSlug ? { "X-Simulated-Tenant-Slug": tenantSlug } : {}),
       },
     });
     if (!res.ok) throw new Error("Download failed");

@@ -1,4 +1,7 @@
 import httpClient from "../api/http-client";
+import { getApiBaseUrl } from "../api/api-utils";
+
+const API_BASE = getApiBaseUrl();
 
 export interface Tenant {
   id: string;
@@ -19,7 +22,7 @@ export class TenantService {
    * Get the current tenant's profile and portal settings.
    */
   static async getMyTenant(): Promise<Tenant> {
-    const response = await httpClient.get<Tenant>("/tenants/me");
+    const response = await httpClient.get<Tenant>(`${API_BASE}/tenants/me`);
     return response.data;
   }
 
@@ -28,7 +31,7 @@ export class TenantService {
    * Only IA Owners can do this.
    */
   static async updatePortalSettings(data: TenantPortalUpdate): Promise<Tenant> {
-    const response = await httpClient.patch<Tenant>("/tenants/me/portal", data);
+    const response = await httpClient.patch<Tenant>(`${API_BASE}/tenants/me/portal`, data);
     return response.data;
   }
 }

@@ -1,4 +1,7 @@
 import httpClient from "@/core/api/http-client";
+import { getApiBaseUrl } from "@/core/api/api-utils";
+
+const API_BASE = getApiBaseUrl();
 
 export interface TeamMember {
   id: string;
@@ -67,7 +70,7 @@ export const TeamService = {
    * List all organizational team members (Partners, Staff, etc.)
    */
   async getTeamMembers(): Promise<TeamMember[]> {
-    const response = await httpClient.get("/team");
+    const response = await httpClient.get(`${API_BASE}/team`);
     return response.data;
   },
 
@@ -79,7 +82,7 @@ export const TeamService = {
     const config = data instanceof FormData ? {
       headers: { 'Content-Type': 'multipart/form-data' }
     } : {};
-    const response = await httpClient.post("/team", data, config);
+    const response = await httpClient.post(`${API_BASE}/team`, data, config);
     return response.data;
   },
 
@@ -87,7 +90,7 @@ export const TeamService = {
    * Update an existing team member's profile or status.
    */
   async updateTeamMember(id: string, data: Partial<CreateTeamMember>): Promise<TeamMember> {
-    const response = await httpClient.put(`/team/${id}`, data);
+    const response = await httpClient.put(`${API_BASE}/team/${id}`, data);
     return response.data;
   },
 
@@ -97,7 +100,7 @@ export const TeamService = {
   async uploadMemberSignature(id: string, file: File): Promise<any> {
     const formData = new FormData();
     formData.append("signature", file);
-    const response = await httpClient.post(`/team/${id}/signature`, formData, {
+    const response = await httpClient.post(`${API_BASE}/team/${id}/signature`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
     return response.data;
@@ -107,14 +110,14 @@ export const TeamService = {
    * Deactivate a team member (soft-delete).
    */
   async removeTeamMember(id: string): Promise<void> {
-    await httpClient.delete(`/team/${id}`);
+    await httpClient.delete(`${API_BASE}/team/${id}`);
   },
 
   /**
    * Get dynamic permissions for a team member.
    */
   async getMemberPermissions(id: string): Promise<ModulePermission[]> {
-    const response = await httpClient.get(`/team/${id}/permissions`);
+    const response = await httpClient.get(`${API_BASE}/team/${id}/permissions`);
     return response.data;
   },
 
@@ -122,6 +125,6 @@ export const TeamService = {
    * Save dynamic permissions for a team member.
    */
   async updateMemberPermissions(id: string, permissions: ModulePermission[]): Promise<void> {
-    await httpClient.put(`/team/${id}/permissions`, permissions);
+    await httpClient.put(`${API_BASE}/team/${id}/permissions`, permissions);
   },
 };

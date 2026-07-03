@@ -214,7 +214,9 @@ export class RectificationService {
    */
   static getStorageUrl(id: string, docType: "investor_request" | "signed_form" | "proposed_change", path: string): string {
     const filename = path.split('/').pop() || 'document';
-    return `${process.env.NEXT_PUBLIC_API_URL}${API_ENDPOINTS.RECTIFICATION.DOCUMENT(id)}?doc_type=${docType}&filename=${encodeURIComponent(filename)}`;
+    // Relative, same-origin proxy URL — the browser sends the httpOnly auth
+    // cookie automatically on direct navigation/embedding, no token needed.
+    return `${API_ENDPOINTS.RECTIFICATION.DOCUMENT(id)}?doc_type=${docType}&filename=${encodeURIComponent(filename)}`;
   }
 
   /**
