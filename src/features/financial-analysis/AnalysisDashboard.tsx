@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import DOMPurify from "dompurify";
 import { 
   TrendingUp, 
   ShieldCheck, 
@@ -307,8 +308,8 @@ export function AnalysisDashboard({ result, clientName, onEdit }: AnalysisDashbo
               </div>
             </CardHeader>
             <CardContent>
-              <div className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground leading-relaxed" 
-                   dangerouslySetInnerHTML={{ __html: result.ai_analysis?.executive_brief || "No Executive Summary available." }}>
+              <div className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground leading-relaxed"
+                   dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(result.ai_analysis?.executive_brief || "No Executive Summary available.") }}>
               </div>
             </CardContent>
           </Card>
