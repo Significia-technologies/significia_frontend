@@ -98,13 +98,24 @@ const MiniBarChart = ({ title, subtitle, data, yLabels, xLabel, maxVal = 25, min
   );
 };
 
-const QuestionWrapper = ({ title, children, number }: any) => (
-  <Card className="border-primary/10 overflow-hidden">
-    <CardHeader className="bg-primary/5 py-3 px-4 flex flex-row items-center gap-3">
-      <div className="w-6 h-6 rounded bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
-        {number}
+const QuestionWrapper = ({ title, children, number, isAnswered, showWarning }: any) => (
+  <Card className={`border-primary/10 overflow-hidden transition-all ${showWarning && !isAnswered ? 'border-red-500/80 bg-red-500/5 ring-1 ring-red-500/30' : ''}`}>
+    <CardHeader className="bg-primary/5 py-3 px-4 flex flex-row items-center justify-between">
+      <div className="flex items-center gap-3">
+        <div className="w-6 h-6 rounded bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
+          {number}
+        </div>
+        <CardTitle className="text-sm font-bold flex items-center gap-1.5">
+          {title} <span className="text-red-500 font-bold">*</span>
+        </CardTitle>
       </div>
-      <CardTitle className="text-sm font-bold">{title}</CardTitle>
+      {isAnswered ? (
+        <span className="text-xs font-semibold text-green-500 flex items-center gap-1">
+          <CheckCircle2 className="w-3.5 h-3.5" /> Answered
+        </span>
+      ) : showWarning ? (
+        <span className="text-[10px] font-bold text-red-500 uppercase tracking-wider">Required</span>
+      ) : null}
     </CardHeader>
     <CardContent className="pt-4 px-4 pb-4">
       {children}
@@ -215,7 +226,52 @@ export function RiskProfileForm({ clientId }: RiskProfileFormProps) {
     }));
   };
 
+  const [attemptedSubmit, setAttemptedSubmit] = useState(false);
+
+  const getMissingQuestions = (): string[] => {
+    const missing: string[] = [];
+    if (!answers.q1) missing.push("Q1 (Interest Statement)");
+    
+    const q2Codes = Q2_FACTORS.map(f => f.code);
+    const missingQ2 = q2Codes.filter(c => !answers.q2?.[c]);
+    if (missingQ2.length > 0) {
+      missing.push(`Q2 (${missingQ2.length} unrated factor${missingQ2.length > 1 ? 's' : ''})`);
+    }
+
+    const qTitles: Record<number, string> = {
+      3: "Asset Allocation Scenario",
+      4: "Portfolio Comparison",
+      5: "Loss Reaction",
+      6: "Market Reaction",
+      7: "Fund Choice",
+      8: "Experience Level",
+      9: "Time Horizon",
+      10: "Net Worth Range",
+      11: "Age Range",
+      12: "Annual Income",
+      13: "Annual Expenses",
+      14: "Dependents",
+      15: "Active Loan / EMI",
+      16: "Investment Objective",
+    };
+
+    for (let i = 3; i <= 16; i++) {
+      if (!answers[`q${i}`]) {
+        missing.push(`Q${i} (${qTitles[i]})`);
+      }
+    }
+
+    return missing;
+  };
+
   const calculateScore = async () => {
+    setAttemptedSubmit(true);
+    const missing = getMissingQuestions();
+    if (missing.length > 0) {
+      toast.error(`All questions are mandatory. Missing: ${missing.slice(0, 2).join(", ")}${missing.length > 2 ? ` and ${missing.length - 2} more` : ''}`);
+      return;
+    }
+
     setCalculating(true);
     try {
       const resp = await RiskProfileService.calculate({ answers });
@@ -238,6 +294,14 @@ export function RiskProfileForm({ clientId }: RiskProfileFormProps) {
       toast.error("Please identify a client first");
       return;
     }
+
+    setAttemptedSubmit(true);
+    const missing = getMissingQuestions();
+    if (missing.length > 0) {
+      toast.error(`All questions are mandatory. Missing: ${missing.slice(0, 2).join(", ")}${missing.length > 2 ? ` and ${missing.length - 2} more` : ''}`);
+      return;
+    }
+
     setLoading(true);
 
     // Concatenate standard disclaimer with custom disclaimer if present
@@ -315,7 +379,7 @@ export function RiskProfileForm({ clientId }: RiskProfileFormProps) {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Q1 */}
-        <QuestionWrapper number="1" title="Interest Statement">
+        <QuestionWrapper number="1" title="Interest Statement" isAnswered={!!answers.q1} showWarning={attemptedSubmit}>
           <p className="text-xs text-muted-foreground mb-4 font-medium italic">Which statement best describes your investment interest?</p>
           <div className="space-y-2">
             <RadioOption name="q1" value="a" label="a. Achieve high long-term return, accepting significant short-term swings." current={answers.q1} onChange={(v:any) => handleAnswerChange('q1', v)} />
@@ -325,7 +389,7 @@ export function RiskProfileForm({ clientId }: RiskProfileFormProps) {
         </QuestionWrapper>
 
         {/* Q2 */}
-        <QuestionWrapper number="2" title="Decision Factors">
+        <QuestionWrapper number="2" title="Decision Factors" isAnswered={Q2_FACTORS.every(f => !!answers.q2?.[f.code])} showWarning={attemptedSubmit}>
           <p className="text-xs text-muted-foreground mb-4 font-medium italic">Rate each factor as (A) Very, (B) Somewhat, or (C) Not at All Important</p>
           <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-primary/10">
             {Q2_FACTORS.map(f => (
@@ -353,7 +417,7 @@ export function RiskProfileForm({ clientId }: RiskProfileFormProps) {
         </QuestionWrapper>
 
         {/* Q3 */}
-        <QuestionWrapper number="3" title="Asset Allocation Scenario">
+        <QuestionWrapper number="3" title="Asset Allocation Scenario" isAnswered={!!answers.q3} showWarning={attemptedSubmit}>
           <p className="text-xs text-muted-foreground mb-4 font-medium italic">Which scenario would you choose for Rs 500,000 investment?</p>
           <div className="space-y-2">
             <RadioOption name="q3" value="a" label="a. 70% chance to double (1M) / 30% chance to lose it all" current={answers.q3} onChange={(v:any) => handleAnswerChange('q3', v)} />
@@ -363,7 +427,7 @@ export function RiskProfileForm({ clientId }: RiskProfileFormProps) {
         </QuestionWrapper>
 
         {/* Q4 */}
-        <QuestionWrapper number="4" title="Portfolio Comparison">
+        <QuestionWrapper number="4" title="Portfolio Comparison" isAnswered={!!answers.q4} showWarning={attemptedSubmit}>
           <p className="text-xs text-muted-foreground mb-4 font-medium italic">Based on 12-month asset returns, which portfolio would you choose?</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 h-[220px]">
              <MiniBarChart 
@@ -392,7 +456,7 @@ export function RiskProfileForm({ clientId }: RiskProfileFormProps) {
         </QuestionWrapper>
 
         {/* Q5 */}
-        <QuestionWrapper number="5" title="Loss Reaction">
+        <QuestionWrapper number="5" title="Loss Reaction" isAnswered={!!answers.q5} showWarning={attemptedSubmit}>
           <p className="text-xs text-muted-foreground mb-4 font-medium italic">You lost Rs 20,000 in an investment. Do you:</p>
           <div className="space-y-2">
             <RadioOption name="q5" value="a" label="a. Sell and take the immediate 100% loss." current={answers.q5} onChange={(v:any) => handleAnswerChange('q5', v)} />
@@ -402,7 +466,7 @@ export function RiskProfileForm({ clientId }: RiskProfileFormProps) {
         </QuestionWrapper>
 
         {/* Q6 */}
-        <QuestionWrapper number="6" title="Market Reaction">
+        <QuestionWrapper number="6" title="Market Reaction" isAnswered={!!answers.q6} showWarning={attemptedSubmit}>
           <p className="text-xs text-muted-foreground mb-4 font-medium italic">Your Rs 100,000 stock drops 15% in one week. Do you:</p>
           <div className="space-y-2">
             <RadioOption name="q6" value="a" label="a. Buy more." current={answers.q6} onChange={(v:any) => handleAnswerChange('q6', v)} />
@@ -414,7 +478,7 @@ export function RiskProfileForm({ clientId }: RiskProfileFormProps) {
         </QuestionWrapper>
 
         {/* Q7 */}
-        <QuestionWrapper number="7" title="Fund Choice">
+        <QuestionWrapper number="7" title="Fund Choice" isAnswered={!!answers.q7} showWarning={attemptedSubmit}>
           <p className="text-xs text-muted-foreground mb-4 font-medium italic">Based on quarterly returns, which fund would you choose?</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 h-[220px]">
              <MiniBarChart 
@@ -443,7 +507,7 @@ export function RiskProfileForm({ clientId }: RiskProfileFormProps) {
         </QuestionWrapper>
 
         {/* Q8 */}
-        <QuestionWrapper number="8" title="Experience Level">
+        <QuestionWrapper number="8" title="Experience Level" isAnswered={!!answers.q8} showWarning={attemptedSubmit}>
           <p className="text-xs text-muted-foreground mb-4 font-medium italic">How would you rate your investment experience?</p>
           <div className="space-y-2">
             <RadioOption name="q8" value="a" label="a. Extremely experienced." current={answers.q8} onChange={(v:any) => handleAnswerChange('q8', v)} />
@@ -456,7 +520,7 @@ export function RiskProfileForm({ clientId }: RiskProfileFormProps) {
 
         {/* Q9-Q16 Grid (Simplified for space) */}
         <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <QuestionWrapper number="9" title="Time Horizon">
+          <QuestionWrapper number="9" title="Time Horizon" isAnswered={!!answers.q9} showWarning={attemptedSubmit}>
             <div className="space-y-2">
               <RadioOption name="q9" value="a" label="a. < 1 year" current={answers.q9} onChange={(v:any) => handleAnswerChange('q9', v)} />
               <RadioOption name="q9" value="b" label="b. 1-3 years" current={answers.q9} onChange={(v:any) => handleAnswerChange('q9', v)} />
@@ -466,7 +530,7 @@ export function RiskProfileForm({ clientId }: RiskProfileFormProps) {
             </div>
           </QuestionWrapper>
 
-          <QuestionWrapper number="10" title="Net Worth Range">
+          <QuestionWrapper number="10" title="Net Worth Range" isAnswered={!!answers.q10} showWarning={attemptedSubmit}>
             <div className="space-y-2">
               <RadioOption name="q10" value="a" label="a. Upto Rs 50 lac" current={answers.q10} onChange={(v:any) => handleAnswerChange('q10', v)} />
               <RadioOption name="q10" value="b" label="b. Rs 51 lac - Rs 2 cr" current={answers.q10} onChange={(v:any) => handleAnswerChange('q10', v)} />
@@ -476,7 +540,7 @@ export function RiskProfileForm({ clientId }: RiskProfileFormProps) {
             </div>
           </QuestionWrapper>
 
-          <QuestionWrapper number="11" title="Age Range">
+          <QuestionWrapper number="11" title="Age Range" isAnswered={!!answers.q11} showWarning={attemptedSubmit}>
             <div className="space-y-2">
               <RadioOption name="q11" value="a" label="a. 18 - 30 years" current={answers.q11} onChange={(v:any) => handleAnswerChange('q11', v)} />
               <RadioOption name="q11" value="b" label="b. 31 - 45 years" current={answers.q11} onChange={(v:any) => handleAnswerChange('q11', v)} />
@@ -485,7 +549,7 @@ export function RiskProfileForm({ clientId }: RiskProfileFormProps) {
             </div>
           </QuestionWrapper>
 
-          <QuestionWrapper number="12" title="Annual Income">
+          <QuestionWrapper number="12" title="Annual Income" isAnswered={!!answers.q12} showWarning={attemptedSubmit}>
             <div className="space-y-2">
               <RadioOption name="q12" value="a" label="a. Upto Rs 12 lac" current={answers.q12} onChange={(v:any) => handleAnswerChange('q12', v)} />
               <RadioOption name="q12" value="b" label="b. Rs 13 lac - 25 lac" current={answers.q12} onChange={(v:any) => handleAnswerChange('q12', v)} />
@@ -494,7 +558,7 @@ export function RiskProfileForm({ clientId }: RiskProfileFormProps) {
             </div>
           </QuestionWrapper>
 
-          <QuestionWrapper number="13" title="Annual Expenses">
+          <QuestionWrapper number="13" title="Annual Expenses" isAnswered={!!answers.q13} showWarning={attemptedSubmit}>
             <div className="space-y-2">
               <RadioOption name="q13" value="a" label="a. Upto Rs 6 lac" current={answers.q13} onChange={(v:any) => handleAnswerChange('q13', v)} />
               <RadioOption name="q13" value="b" label="b. Rs 7 lac - 12 lac" current={answers.q13} onChange={(v:any) => handleAnswerChange('q13', v)} />
@@ -503,7 +567,7 @@ export function RiskProfileForm({ clientId }: RiskProfileFormProps) {
             </div>
           </QuestionWrapper>
 
-          <QuestionWrapper number="14" title="Dependents">
+          <QuestionWrapper number="14" title="Dependents" isAnswered={!!answers.q14} showWarning={attemptedSubmit}>
             <div className="space-y-2">
               <RadioOption name="q14" value="a" label="a. Upto 2" current={answers.q14} onChange={(v:any) => handleAnswerChange('q14', v)} />
               <RadioOption name="q14" value="b" label="b. 3 - 5" current={answers.q14} onChange={(v:any) => handleAnswerChange('q14', v)} />
@@ -511,14 +575,14 @@ export function RiskProfileForm({ clientId }: RiskProfileFormProps) {
             </div>
           </QuestionWrapper>
 
-          <QuestionWrapper number="15" title="Active Loan / EMI">
+          <QuestionWrapper number="15" title="Active Loan / EMI" isAnswered={!!answers.q15} showWarning={attemptedSubmit}>
             <div className="space-y-2">
               <RadioOption name="q15" value="a" label="a. Yes" current={answers.q15} onChange={(v:any) => handleAnswerChange('q15', v)} />
               <RadioOption name="q15" value="b" label="b. No" current={answers.q15} onChange={(v:any) => handleAnswerChange('q15', v)} />
             </div>
           </QuestionWrapper>
 
-          <QuestionWrapper number="16" title="Investment Objective">
+          <QuestionWrapper number="16" title="Investment Objective" isAnswered={!!answers.q16} showWarning={attemptedSubmit}>
             <div className="space-y-2">
               <RadioOption name="q16" value="a" label="a. Capital Growth" current={answers.q16} onChange={(v:any) => handleAnswerChange('q16', v)} />
               <RadioOption name="q16" value="b" label="b. Income" current={answers.q16} onChange={(v:any) => handleAnswerChange('q16', v)} />
