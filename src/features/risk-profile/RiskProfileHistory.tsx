@@ -345,7 +345,7 @@ export function RiskProfileHistory({ onNewAssessment, onNewCustomAssessment, que
                           </Badge>
                         </TableCell>
                         <TableCell className="text-center font-black text-primary/80">
-                          {a.calculated_score}
+                          {a.calculated_score} / {(a as any).max_score || ((a as any).is_custom ? (questionnaires.find(q => q.portfolio_name === a.form_name)?.max_possible_score || 'Max') : '100')}
                         </TableCell>
                         <TableCell className="font-bold text-[10px] text-primary/70 uppercase tracking-tight">
                           {a.form_name}
@@ -462,7 +462,7 @@ export function RiskProfileHistory({ onNewAssessment, onNewCustomAssessment, que
                                               {historyItem.assigned_risk_tier}
                                             </Badge>
                                             <span className="text-[10px] text-muted-foreground font-semibold">
-                                              Score: <span className="text-primary font-black">{historyItem.calculated_score}</span>
+                                              Score: <span className="text-primary font-black">{historyItem.calculated_score} / {(historyItem as any).max_score || ((historyItem as any).is_custom ? (questionnaires.find(q => q.portfolio_name === historyItem.form_name)?.max_possible_score || 'Max') : '100')}</span>
                                             </span>
                                           </div>
                                         </div>
