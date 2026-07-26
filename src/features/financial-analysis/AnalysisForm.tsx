@@ -187,6 +187,13 @@ export function AnalysisForm({ clientId, copyFromProfileId, onSuccess, onCancel 
     }
   }, [formData, step, draftKey]);
 
+  // Clear spouse occupation if spouse name is not present
+  useEffect(() => {
+    if (!formData.spouse_name && formData.spouse_occupation) {
+      setFormData(prev => ({ ...prev, spouse_occupation: "" }));
+    }
+  }, [formData.spouse_name, formData.spouse_occupation]);
+
   // Load initial data with correct precedence: Client Master -> Historical Profile
   useEffect(() => {
     const fetchData = async () => {
@@ -717,8 +724,13 @@ export function AnalysisForm({ clientId, copyFromProfileId, onSuccess, onCancel 
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label>Occupation/Status</Label>
-                    <Input value={formData.spouse_occupation} onChange={e => handleTopLevelChange('spouse_occupation', e.target.value)} />
+                    <Label className={!formData.spouse_name ? "opacity-60" : ""}>Occupation/Status</Label>
+                    <Input 
+                      value={formData.spouse_occupation} 
+                      onChange={e => handleTopLevelChange('spouse_occupation', e.target.value)} 
+                      disabled={!formData.spouse_name}
+                      placeholder={formData.spouse_name ? "Enter Occupation/Status" : "N/A (No Spouse record)"}
+                    />
                   </div>
                 </div>
               </div>
