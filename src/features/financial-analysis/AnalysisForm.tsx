@@ -208,6 +208,42 @@ export function AnalysisForm({ clientId, copyFromProfileId, onSuccess, onCancel 
     }
   }, [formData.children, formData.expenses.edu]);
 
+  // Clear Child Goals and Goal Allocation if no children exist
+  useEffect(() => {
+    const hasChildren = formData.children && formData.children.length > 0;
+    if (!hasChildren) {
+      if (
+        formData.assumptions.child_education_corpus ||
+        formData.assumptions.education_years ||
+        formData.assumptions.child_marriage_corpus ||
+        formData.assumptions.marriage_years ||
+        formData.education_investment_pct ||
+        formData.marriage_investment_pct
+      ) {
+        setFormData(prev => ({
+          ...prev,
+          education_investment_pct: 0,
+          marriage_investment_pct: 0,
+          assumptions: {
+            ...prev.assumptions,
+            child_education_corpus: 0,
+            education_years: 0,
+            child_marriage_corpus: 0,
+            marriage_years: 0,
+          }
+        }));
+      }
+    }
+  }, [
+    formData.children,
+    formData.assumptions.child_education_corpus,
+    formData.assumptions.education_years,
+    formData.assumptions.child_marriage_corpus,
+    formData.assumptions.marriage_years,
+    formData.education_investment_pct,
+    formData.marriage_investment_pct,
+  ]);
+
   // Load initial data with correct precedence: Client Master -> Historical Profile
   useEffect(() => {
     const fetchData = async () => {
@@ -1189,42 +1225,97 @@ export function AnalysisForm({ clientId, copyFromProfileId, onSuccess, onCancel 
               </div>
 
               {/* Section 10: Child Goals & 11. Allocation */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                <div className="space-y-6">
-                  <SectionHeader title="10. Child Goals" icon={GraduationCap} number="10" />
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <Label className="text-xs">Education Corpus Needed (Today)</Label>
-                      <Input type="number" min={0} placeholder="0" value={formData.assumptions.child_education_corpus === 0 ? "" : Math.round(formData.assumptions.child_education_corpus)} onChange={e => handleInputChange('assumptions.child_education_corpus', e.target.value === "" ? 0 : parseFloat(e.target.value))} />
+              {(() => {
+                const hasChildren = formData.children && formData.children.length > 0;
+                return (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                    <div className={`space-y-6 ${!hasChildren ? "opacity-60" : ""}`}>
+                      <SectionHeader title="10. Child Goals" icon={GraduationCap} number="10" />
+                      {!hasChildren && (
+                        <p className="text-xs italic text-muted-foreground -mt-4">Disabled because no children are added to this client profile.</p>
+                      )}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <Label className="text-xs">Education Corpus Needed (Today)</Label>
+                          <Input 
+                            type="number" 
+                            min={0} 
+                            disabled={!hasChildren}
+                            placeholder={!hasChildren ? "0 (No Children)" : "0"} 
+                            value={formData.assumptions.child_education_corpus === 0 ? "" : Math.round(formData.assumptions.child_education_corpus)} 
+                            onChange={e => handleInputChange('assumptions.child_education_corpus', e.target.value === "" ? 0 : parseFloat(e.target.value))} 
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Years to Education Goal</Label>
+                          <Input 
+                            type="number" 
+                            min={0} 
+                            disabled={!hasChildren}
+                            placeholder={!hasChildren ? "0 (No Children)" : "0"} 
+                            value={formData.assumptions.education_years === 0 ? "" : formData.assumptions.education_years} 
+                            onChange={e => handleInputChange('assumptions.education_years', e.target.value === "" ? 0 : parseInt(e.target.value))} 
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Marriage Corpus Needed (Today)</Label>
+                          <Input 
+                            type="number" 
+                            min={0} 
+                            disabled={!hasChildren}
+                            placeholder={!hasChildren ? "0 (No Children)" : "0"} 
+                            value={formData.assumptions.child_marriage_corpus === 0 ? "" : Math.round(formData.assumptions.child_marriage_corpus)} 
+                            onChange={e => handleInputChange('assumptions.child_marriage_corpus', e.target.value === "" ? 0 : parseFloat(e.target.value))} 
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Years to Marriage Goal</Label>
+                          <Input 
+                            type="number" 
+                            min={0} 
+                            disabled={!hasChildren}
+                            placeholder={!hasChildren ? "0 (No Children)" : "0"} 
+                            value={formData.assumptions.marriage_years === 0 ? "" : formData.assumptions.marriage_years} 
+                            onChange={e => handleInputChange('assumptions.marriage_years', e.target.value === "" ? 0 : parseInt(e.target.value))} 
+                          />
+                        </div>
+                      </div>
                     </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Years to Education Goal</Label>
-                      <Input type="number" min={0} placeholder="0" value={formData.assumptions.education_years === 0 ? "" : formData.assumptions.education_years} onChange={e => handleInputChange('assumptions.education_years', e.target.value === "" ? 0 : parseInt(e.target.value))} />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Marriage Corpus Needed (Today)</Label>
-                      <Input type="number" min={0} placeholder="0" value={formData.assumptions.child_marriage_corpus === 0 ? "" : Math.round(formData.assumptions.child_marriage_corpus)} onChange={e => handleInputChange('assumptions.child_marriage_corpus', e.target.value === "" ? 0 : parseFloat(e.target.value))} />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Years to Marriage Goal</Label>
-                      <Input type="number" min={0} placeholder="0" value={formData.assumptions.marriage_years === 0 ? "" : formData.assumptions.marriage_years} onChange={e => handleInputChange('assumptions.marriage_years', e.target.value === "" ? 0 : parseInt(e.target.value))} />
+                    <div className={`space-y-6 ${!hasChildren ? "opacity-60" : ""}`}>
+                      <SectionHeader title="11. Existing Goal Allocation (%)" icon={TrendingUp} number="11" />
+                      {!hasChildren && (
+                        <p className="text-xs italic text-muted-foreground -mt-4">Disabled because no children are added to this client profile.</p>
+                      )}
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label>Education Goal Allocation (%)</Label>
+                          <Input 
+                            type="number" 
+                            min={0} 
+                            max={100} 
+                            disabled={!hasChildren}
+                            placeholder={!hasChildren ? "0 (No Children)" : "0"} 
+                            value={formData.education_investment_pct === 0 ? "" : Math.round(formData.education_investment_pct)} 
+                            onChange={e => handleTopLevelChange('education_investment_pct', e.target.value === "" ? 0 : parseFloat(e.target.value))} 
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Marriage Goal Allocation (%)</Label>
+                          <Input 
+                            type="number" 
+                            min={0} 
+                            max={100} 
+                            disabled={!hasChildren}
+                            placeholder={!hasChildren ? "0 (No Children)" : "0"} 
+                            value={formData.marriage_investment_pct === 0 ? "" : Math.round(formData.marriage_investment_pct)} 
+                            onChange={e => handleTopLevelChange('marriage_investment_pct', e.target.value === "" ? 0 : parseFloat(e.target.value))} 
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="space-y-6">
-                  <SectionHeader title="11. Existing Goal Allocation (%)" icon={TrendingUp} number="11" />
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label>Education Goal Allocation (%)</Label>
-                      <Input type="number" min={0} max={100} placeholder="0" value={formData.education_investment_pct === 0 ? "" : Math.round(formData.education_investment_pct)} onChange={e => handleTopLevelChange('education_investment_pct', e.target.value === "" ? 0 : parseFloat(e.target.value))} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Marriage Goal Allocation (%)</Label>
-                      <Input type="number" min={0} max={100} placeholder="0" value={formData.marriage_investment_pct === 0 ? "" : Math.round(formData.marriage_investment_pct)} onChange={e => handleTopLevelChange('marriage_investment_pct', e.target.value === "" ? 0 : parseFloat(e.target.value))} />
-                    </div>
-                  </div>
-                </div>
-              </div>
+                );
+              })()}
             </div>
           )}
 
