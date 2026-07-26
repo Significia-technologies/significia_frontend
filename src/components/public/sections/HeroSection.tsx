@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowRight, ShieldCheck, ChevronRight } from "lucide-react";
 
 const STATS = [
-  { value: "Bridge Model", label: "DB isolated on your server" },
+  { value: "Bridge (Patent Applied) Model", label: "DB isolated on your server" },
   { value: "White-Label", label: "Your brand, zero Significia branding" },
   { value: "Compliance-Ready", label: "Built into the architecture" },
 ];
@@ -46,7 +46,7 @@ export function HeroSection() {
         {/* Subheadline */}
         <p className="text-[17px] sm:text-[18px] text-muted-foreground max-w-2xl mx-auto leading-relaxed mb-10 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200 fill-mode-both">
           Significia gives every Investment Advisor a fully white-labeled client
-          portal — powered by the Bridge model so your database runs on{" "}
+          portal — powered by the Bridge (Patent Applied) model so your database runs on{" "}
           <span className="text-foreground font-medium">your infrastructure</span>, not ours.
         </p>
 
@@ -63,7 +63,7 @@ export function HeroSection() {
             href="/how-it-works"
             className="inline-flex items-center gap-2 rounded-lg border border-border bg-card/50 px-6 py-3 text-[14px] font-medium text-muted-foreground hover:text-foreground hover:bg-card hover:border-primary/30 transition-all duration-200"
           >
-            How the Bridge works
+            How the Bridge (Patent Applied) works
           </Link>
         </div>
 

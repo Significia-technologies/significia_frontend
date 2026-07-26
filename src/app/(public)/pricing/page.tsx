@@ -11,7 +11,7 @@ export const metadata = {
 };
 
 const ALL_PLANS_INCLUDE = [
-  "Full Bridge infrastructure",
+  "Full Bridge (Patent Applied) infrastructure",
   "Your own database — no shared data",
   "Your own file storage (S3/GCS)",
   "Complete white-labeling",

@@ -19,7 +19,7 @@ const VALUES = [
   {
     title: "Compliance by design",
     description:
-      "The regulations aren't a checklist we tick at the end. They shaped the entire architecture. The Bridge model was born from those requirements, not around them.",
+      "The regulations aren't a checklist we tick at the end. They shaped the entire architecture. The Bridge (Patent Applied) model was born from those requirements, not around them.",
   },
   {
     title: "The advisor's brand, not ours",
@@ -62,10 +62,10 @@ export default function AboutPage() {
               without complex contractual arrangements.
             </p>
             <p>
-              We built Significia to solve this properly, not patch it. The Bridge model means every
-              IA's database runs on their own server. The Bridge software runs on their server too.
+              We built Significia to solve this properly, not patch it. The Bridge (Patent Applied) model means every
+              IA's database runs on their own server. The Bridge (Patent Applied) software runs on their server too.
               The database credentials never leave their infrastructure. We send structured queries
-              to the Bridge; the Bridge answers from inside the IA's own environment.
+              to the Bridge (Patent Applied); the Bridge (Patent Applied) answers from inside the IA's own environment.
             </p>
             <p>
               At the same time, we wanted IAs to have a fully branded, professional portal —

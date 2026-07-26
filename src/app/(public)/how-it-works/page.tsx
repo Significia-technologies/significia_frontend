@@ -8,7 +8,7 @@ import { Reveal } from "@/components/public/Reveal";
 export const metadata = {
   title: "How It Works — Significia",
   description:
-    "Understand the Significia Bridge model — how your data stays on your server while we power your portal.",
+    "Understand the Significia Bridge (Patent Applied) model — how your data stays on your server while we power your portal.",
 };
 
 const ONBOARDING_STEPS = [
@@ -18,7 +18,7 @@ const ONBOARDING_STEPS = [
     title: "Significia creates your tenant",
     who: "Significia team",
     description:
-      "Our team provisions your account on the platform. You receive a Bridge Registration Token — a one-time code that will allow your Bridge to identify itself.",
+      "Our team provisions your account on the platform. You receive a Bridge (Patent Applied) Registration Token — a one-time code that will allow your Bridge (Patent Applied) to identify itself.",
   },
   {
     number: "02",
@@ -39,18 +39,18 @@ const ONBOARDING_STEPS = [
   {
     number: "04",
     icon: Download,
-    title: "Install the Significia Bridge",
+    title: "Install the Significia Bridge (Patent Applied)",
     who: "You (one command)",
     description:
-      "Run one Docker command (or use our Windows/Linux installer) to install the Bridge on your server. During setup, provide your database credentials and storage credentials. These are stored locally — never sent to us.",
+      "Run one Docker command (or use our Windows/Linux installer) to install the Bridge (Patent Applied) on your server. During setup, provide your database credentials and storage credentials. These are stored locally — never sent to us.",
   },
   {
     number: "05",
     icon: ArrowRight,
-    title: "Bridge registers with Significia",
+    title: "Bridge (Patent Applied) registers with Significia",
     who: "Automatic",
     description:
-      "The Bridge sends a one-time \"I am ready\" signal to Significia. It provides its public URL and your registration token. Significia stores only: where to send questions. It does not know how to enter your database.",
+      "The Bridge (Patent Applied) sends a one-time \"I am ready\" signal to Significia. It provides its public URL and your registration token. Significia stores only: where to send questions. It does not know how to enter your database.",
   },
   {
     number: "06",
@@ -67,9 +67,9 @@ const ONBOARDING_DELAYS = [0, 100, 200, 300, 500, 700] as const;
 const DAILY_FLOW_STEPS = [
   { label: "Bunty clicks 'Generate Risk Report'", detail: "bunty.com browser action" },
   { label: "Significia Backend receives the request", detail: "Identifies tenant from domain" },
-  { label: "Backend sends query to Bridge", detail: "HTTPS encrypted, to Bridge URL only" },
-  { label: "Bridge validates and queries local DB", detail: "Pre-approved query types only" },
-  { label: "Bridge returns only the result", detail: "No raw DB access, no credentials" },
+  { label: "Backend sends query to Bridge (Patent Applied)", detail: "HTTPS encrypted, to Bridge (Patent Applied) URL only" },
+  { label: "Bridge (Patent Applied) validates and queries local DB", detail: "Pre-approved query types only" },
+  { label: "Bridge (Patent Applied) returns only the result", detail: "No raw DB access, no credentials" },
   { label: "Backend formats the result into a PDF", detail: "Processed in RAM, never stored" },
   { label: "PDF saved to your own S3 bucket", detail: "Bunty's cloud storage" },
   { label: "Browser downloads from your storage", detail: "Request ends. Significia forgets everything." },
@@ -82,7 +82,7 @@ const SECURITY_GUARANTEES = [
     icon: Lock,
     title: "Query allowlist",
     description:
-      "The Bridge only answers pre-approved query types. No bulk exports. No unauthorized access patterns.",
+      "The Bridge (Patent Applied) only answers pre-approved query types. No bulk exports. No unauthorized access patterns.",
   },
   {
     icon: Eye,
@@ -94,7 +94,7 @@ const SECURITY_GUARANTEES = [
     icon: Power,
     title: "Kill switch",
     description:
-      "Stop the Bridge at any time — instantly cutting Significia's access to your data. No delay, no process.",
+      "Stop the Bridge (Patent Applied) at any time — instantly cutting Significia's access to your data. No delay, no process.",
   },
 ];
 
@@ -106,7 +106,7 @@ export default function HowItWorksPage() {
         <div className="text-center max-w-2xl mx-auto mb-24">
           <Reveal>
             <Badge variant="outline" className="border-primary/30 bg-primary/10 text-primary mb-4">
-              The Bridge Model
+              The Bridge (Patent Applied) Model
             </Badge>
           </Reveal>
           <Reveal delay={100}>
@@ -116,7 +116,7 @@ export default function HowItWorksPage() {
           </Reveal>
           <Reveal delay={200}>
             <p className="text-muted-foreground text-lg leading-relaxed">
-              Your data lives in your house. We send questions to your Bridge. Your Bridge answers
+              Your data lives in your house. We send questions to your Bridge (Patent Applied). Your Bridge (Patent Applied) answers
               from inside your house. We never have a copy of your key.
             </p>
           </Reveal>
@@ -214,7 +214,7 @@ export default function HowItWorksPage() {
         {/* CTA */}
         <Reveal className="text-center">
           <p className="text-muted-foreground mb-6">
-            Ready to see the Bridge in action?
+            Ready to see the Bridge (Patent Applied) in action?
           </p>
           <Button size="lg" className="bg-primary hover:bg-primary/90 shadow-xl shadow-primary/20" asChild>
             <Link href="/contact">Book a Demo</Link>

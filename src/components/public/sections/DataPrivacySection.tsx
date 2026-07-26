@@ -12,19 +12,19 @@ const PRIVACY_POINTS = [
     icon: KeyRound,
     title: "Your password never leaves your server",
     description:
-      "The Bridge holds your database credentials locally. They are never transmitted to Significia. If our servers were hacked tomorrow, attackers would find no client data — because none was ever stored here.",
+      "The Bridge (Patent Applied) holds your database credentials locally. They are never transmitted to Significia. If our servers were hacked tomorrow, attackers would find no client data — because none was ever stored here.",
   },
   {
     icon: Eye,
     title: "We see answers, not raw data",
     description:
-      "We send structured questions to the Bridge (\"get risk profile for client X\"). The Bridge fetches the answer and returns only that. We never browse your database. We never see passwords or credentials.",
+      "We send structured questions to the Bridge (Patent Applied) (\"get risk profile for client X\"). The Bridge (Patent Applied) fetches the answer and returns only that. We never browse your database. We never see passwords or credentials.",
   },
   {
     icon: Power,
     title: "You have a kill switch",
     description:
-      "Stop the Bridge at any time — instantly cutting all of Significia's access to your data. Uninstall it and we are completely locked out. You own the database. Export, migrate, or delete independently.",
+      "Stop the Bridge (Patent Applied) at any time — instantly cutting all of Significia's access to your data. Uninstall it and we are completely locked out. You own the database. Export, migrate, or delete independently.",
   },
 ];
 
@@ -43,11 +43,11 @@ export function DataPrivacySection() {
             </h2>
             <p className="text-muted-foreground text-lg leading-relaxed mb-8">
               This isn't just marketing. It's the technical architecture. Every IA gets their own
-              database, their own storage, and their own Bridge — all on their own infrastructure.
+              database, their own storage, and their own Bridge (Patent Applied) — all on their own infrastructure.
               No shared database. No cross-IA data. No exceptions.
             </p>
             <blockquote className="border-l-2 border-primary/40 pl-4 text-sm text-muted-foreground italic">
-              "We send questions to your Bridge. Your Bridge answers from inside your house.
+              "We send questions to your Bridge (Patent Applied). Your Bridge (Patent Applied) answers from inside your house.
               We never have a copy of your key."
             </blockquote>
           </div>

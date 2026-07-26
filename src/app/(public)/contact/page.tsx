@@ -22,7 +22,7 @@ const CONTACT_OPTIONS = [
   {
     icon: Mail,
     title: "General Enquiry",
-    description: "Any questions about the platform, regulatory compliance, or the Bridge model.",
+    description: "Any questions about the platform, regulatory compliance, or the Bridge (Patent Applied) model.",
   },
 ];
 
@@ -65,7 +65,7 @@ export default function ContactPage() {
           </h1>
           <p className="text-muted-foreground text-lg leading-relaxed">
             Whether you want a demo, have questions about regulatory compliance, or want to understand
-            the Bridge model — we're here.
+            the Bridge (Patent Applied) model — we're here.
           </p>
         </div>
 

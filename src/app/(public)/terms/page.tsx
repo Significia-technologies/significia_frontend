@@ -18,7 +18,7 @@ const SECTIONS = [
   {
     title: "What Significia provides",
     body: [
-      "Significia is a white-labeled client portal and practice-management platform for Investment Advisors, built on the Bridge model: your database and file storage run on your own infrastructure, and the Significia Bridge connects our platform to it without transmitting your credentials to us.",
+      "Significia is a white-labeled client portal and practice-management platform for Investment Advisors, built on the Bridge (Patent Applied) model: your database and file storage run on your own infrastructure, and the Significia Bridge (Patent Applied) connects our platform to it without transmitting your credentials to us.",
       "We provide the software, the portal experience, and the compliance and workflow tooling. You remain responsible for the accuracy of the advice, data, and documents you produce using the platform.",
     ],
   },
@@ -39,15 +39,15 @@ const SECTIONS = [
   {
     title: "Acceptable use",
     body: [
-      "You agree not to misuse the platform — including attempting to bypass the Bridge's query allowlist, reverse-engineering the software, reselling access without authorization, or using the platform to store or transmit unlawful content.",
+      "You agree not to misuse the platform — including attempting to bypass the Bridge (Patent Applied)'s query allowlist, reverse-engineering the software, reselling access without authorization, or using the platform to store or transmit unlawful content.",
       "We may suspend or terminate accounts that violate these terms or that we reasonably believe pose a security or legal risk to the platform or other users.",
     ],
   },
   {
-    title: "Data and the Bridge model",
+    title: "Data and the Bridge (Patent Applied) model",
     body: [
       "Client data lives on your own database and storage, under your control. Significia does not hold a persistent copy of your client data. Our Privacy Policy describes in detail what information we do collect and how we use it.",
-      "You can disable the Bridge's access to your infrastructure at any time using the kill switch, which immediately cuts off Significia's ability to query your database.",
+      "You can disable the Bridge (Patent Applied)'s access to your infrastructure at any time using the kill switch, which immediately cuts off Significia's ability to query your database.",
     ],
   },
   {

@@ -130,9 +130,9 @@ const FEATURE_GROUPS = [
       },
       {
         icon: Key,
-        title: "Bridge Status & Control",
+        title: "Bridge (Patent Applied) Status & Control",
         description:
-          "Real-time visibility into your Bridge connection. Kill switch available at any time to instantly cut all access.",
+          "Real-time visibility into your Bridge (Patent Applied) connection. Kill switch available at any time to instantly cut all access.",
       },
     ],
   },

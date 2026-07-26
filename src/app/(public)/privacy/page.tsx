@@ -12,15 +12,15 @@ const SECTIONS = [
   {
     title: "The short version",
     body: [
-      "Significia is built around the Bridge model: your client data lives on your own database and your own storage, on infrastructure you control. We don't hold a copy of it, and in most cases we never see it at all.",
+      "Significia is built around the Bridge (Patent Applied) model: your client data lives on your own database and your own storage, on infrastructure you control. We don't hold a copy of it, and in most cases we never see it at all.",
       "This policy explains what information we do collect (mainly about you and your firm, not your clients), how we use it, and the choices you have.",
     ],
   },
   {
     title: "What we don't collect",
     body: [
-      "We do not store your clients' personal data, financial records, risk profiles, or documents on our servers. Under the Bridge model, that data is created, stored, and retrieved directly from your own database and cloud storage bucket.",
-      "When a report or query is requested, Significia sends a structured question to your Bridge, your Bridge answers from inside your own infrastructure, and the response passes through our systems only in memory — it is never written to our storage.",
+      "We do not store your clients' personal data, financial records, risk profiles, or documents on our servers. Under the Bridge (Patent Applied) model, that data is created, stored, and retrieved directly from your own database and cloud storage bucket.",
+      "When a report or query is requested, Significia sends a structured question to your Bridge (Patent Applied), your Bridge (Patent Applied) answers from inside your own infrastructure, and the response passes through our systems only in memory — it is never written to our storage.",
     ],
   },
   {
@@ -56,8 +56,8 @@ const SECTIONS = [
   {
     title: "Security",
     body: [
-      "Your database credentials are held locally by the Bridge on your own server and are never transmitted to or stored by Significia. Communication between your Bridge and our backend is encrypted in transit.",
-      "You control a kill switch that can instantly cut off Significia's access to your Bridge at any time.",
+      "Your database credentials are held locally by the Bridge (Patent Applied) on your own server and are never transmitted to or stored by Significia. Communication between your Bridge (Patent Applied) and our backend is encrypted in transit.",
+      "You control a kill switch that can instantly cut off Significia's access to your Bridge (Patent Applied) at any time.",
     ],
   },
   {

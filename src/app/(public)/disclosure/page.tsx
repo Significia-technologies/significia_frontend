@@ -32,7 +32,7 @@ const SECTIONS = [
   {
     title: "Data hosting and architecture",
     body: [
-      "Significia is built on the Bridge model: each advisor provisions their own database and file storage on infrastructure they control. Significia does not host, store, or retain a persistent copy of client data on its own servers — it sends structured queries to your Bridge, and your Bridge answers from inside your own environment.",
+      "Significia is built on the Bridge (Patent Applied) model: each advisor provisions their own database and file storage on infrastructure they control. Significia does not host, store, or retain a persistent copy of client data on its own servers — it sends structured queries to your Bridge (Patent Applied), and your Bridge (Patent Applied) answers from inside your own environment.",
       "This architecture is designed to support advisors who need to demonstrate independent control over where and how client data is hosted, as part of meeting their own regulatory obligations. It does not by itself constitute regulatory advice or a guarantee of compliance — that determination rests with you and your own compliance function.",
     ],
   },

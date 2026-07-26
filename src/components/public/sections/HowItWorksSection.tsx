@@ -13,9 +13,9 @@ const STEPS = [
   {
     number: "02",
     icon: Download,
-    title: "Install the Significia Bridge",
+    title: "Install the Significia Bridge (Patent Applied)",
     description:
-      "A lightweight Bridge application runs on your server alongside your database. It holds your database credentials locally — those credentials are never transmitted to Significia. We only know where to ask questions, not how to enter.",
+      "A lightweight Bridge (Patent Applied) application runs on your server alongside your database. It holds your database credentials locally — those credentials are never transmitted to Significia. We only know where to ask questions, not how to enter.",
     note: "Your password never leaves your server",
   },
   {
