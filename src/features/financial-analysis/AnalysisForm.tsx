@@ -194,6 +194,20 @@ export function AnalysisForm({ clientId, copyFromProfileId, onSuccess, onCancel 
     }
   }, [formData.spouse_name, formData.spouse_occupation]);
 
+  // Clear Children Education and Expenses if no children are added
+  useEffect(() => {
+    const hasChildren = formData.children && formData.children.length > 0;
+    if (!hasChildren && formData.expenses.edu) {
+      setFormData(prev => ({
+        ...prev,
+        expenses: {
+          ...prev.expenses,
+          edu: 0
+        }
+      }));
+    }
+  }, [formData.children, formData.expenses.edu]);
+
   // Load initial data with correct precedence: Client Master -> Historical Profile
   useEffect(() => {
     const fetchData = async () => {
@@ -825,22 +839,29 @@ export function AnalysisForm({ clientId, copyFromProfileId, onSuccess, onCancel 
                     { key: 'emi', label: 'Total EMI Paid' },
                     { key: 'savings', label: 'Savings/Investment Contribution' },
                     { key: 'misc', label: 'Miscellaneous' }
-                  ].map(item => (
-                    <div key={item.key} className="space-y-1">
-                      <Label className="text-xs opacity-70 font-bold">{item.label}</Label>
-                      <div className="relative">
-                        <span className="absolute left-2.5 top-1.5 text-[10px] opacity-40">₹</span>
-                        <Input 
-                          type="number"
-                          min={0}
-                          value={(formData.expenses as any)[item.key] === 0 ? "" : (formData.expenses as any)[item.key]} 
-                          onChange={e => handleInputChange(`expenses.${item.key}`, e.target.value === "" ? 0 : parseFloat(e.target.value))}
-                          placeholder="0"
-                          className="h-8 pl-6 text-sm"
-                        />
+                  ].map(item => {
+                    const isChildrenEdu = item.key === 'edu';
+                    const hasChildren = formData.children && formData.children.length > 0;
+                    const isDisabled = isChildrenEdu && !hasChildren;
+
+                    return (
+                      <div key={item.key} className="space-y-1">
+                        <Label className={`text-xs font-bold ${isDisabled ? "opacity-40" : "opacity-70"}`}>{item.label}</Label>
+                        <div className="relative">
+                          <span className={`absolute left-2.5 top-1.5 text-[10px] ${isDisabled ? "opacity-20" : "opacity-40"}`}>₹</span>
+                          <Input 
+                            type="number"
+                            min={0}
+                            disabled={isDisabled}
+                            value={(formData.expenses as any)[item.key] === 0 ? "" : (formData.expenses as any)[item.key]} 
+                            onChange={e => handleInputChange(`expenses.${item.key}`, e.target.value === "" ? 0 : parseFloat(e.target.value))}
+                            placeholder={isDisabled ? "0 (No Children)" : "0"}
+                            className="h-8 pl-6 text-sm"
+                          />
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
