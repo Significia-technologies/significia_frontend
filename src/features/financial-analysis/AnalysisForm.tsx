@@ -194,6 +194,19 @@ export function AnalysisForm({ clientId, copyFromProfileId, onSuccess, onCancel 
     }
   }, [formData.spouse_name, formData.spouse_occupation]);
 
+  // Clear Spouse Life Expectancy if no spouse is present
+  useEffect(() => {
+    if (!formData.spouse_name && formData.assumptions.le_spouse) {
+      setFormData(prev => ({
+        ...prev,
+        assumptions: {
+          ...prev.assumptions,
+          le_spouse: 0
+        }
+      }));
+    }
+  }, [formData.spouse_name, formData.assumptions.le_spouse]);
+
   // Clear Children Education and Expenses if no children are added
   useEffect(() => {
     const hasChildren = formData.children && formData.children.length > 0;
@@ -1190,8 +1203,15 @@ export function AnalysisForm({ clientId, copyFromProfileId, onSuccess, onCancel 
                     <Input type="number" min={0} placeholder="0" value={formData.assumptions.le_client === 0 ? "" : formData.assumptions.le_client} onChange={e => handleInputChange('assumptions.le_client', e.target.value === "" ? 0 : parseInt(e.target.value))} />
                   </div>
                   <div className="space-y-2">
-                    <Label>Life Expectancy - Spouse</Label>
-                    <Input type="number" min={0} placeholder="0" value={formData.assumptions.le_spouse === 0 ? "" : formData.assumptions.le_spouse} onChange={e => handleInputChange('assumptions.le_spouse', e.target.value === "" ? 0 : parseInt(e.target.value))} />
+                    <Label className={!formData.spouse_name ? "opacity-60" : ""}>Life Expectancy - Spouse</Label>
+                    <Input 
+                      type="number" 
+                      min={0} 
+                      disabled={!formData.spouse_name}
+                      placeholder={!formData.spouse_name ? "0 (No Spouse)" : "0"} 
+                      value={formData.assumptions.le_spouse === 0 ? "" : formData.assumptions.le_spouse} 
+                      onChange={e => handleInputChange('assumptions.le_spouse', e.target.value === "" ? 0 : parseInt(e.target.value))} 
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label>Income Increment Rate (%)</Label>
