@@ -351,12 +351,16 @@ export default function ClientRegistrationForm({
     }
   }, [employees, formData.ipv_done_by_id, formData.assigned_employee_id]);
 
-  // Reset Spouse DOB when Spouse Name is cleared
+  // Reset Spouse fields when Marital Status is not Married, or when Spouse Name is cleared
   React.useEffect(() => {
-    if (!formData.spouse_name && formData.spouse_dob) {
+    if (formData.marital_status !== "Married") {
+      if (formData.spouse_name || formData.spouse_dob) {
+        setFormData(prev => ({ ...prev, spouse_name: "", spouse_dob: "" }));
+      }
+    } else if (!formData.spouse_name && formData.spouse_dob) {
       setFormData(prev => ({ ...prev, spouse_dob: "" }));
     }
-  }, [formData.spouse_name]);
+  }, [formData.marital_status, formData.spouse_name, formData.spouse_dob]);
 
   // Auto-save form data to localStorage (only in create mode, debounced)
   React.useEffect(() => {
@@ -389,8 +393,8 @@ export default function ClientRegistrationForm({
   const isUnderage = formData.date_of_birth !== "" && currentAge < 18;
 
   const spouseAge = calculateAge(formData.spouse_dob || "");
-  const isSpouseUnderage = !!formData.spouse_name && !!formData.spouse_dob && spouseAge < 18;
-  const isSpouseDobMissing = !!formData.spouse_name && !formData.spouse_dob;
+  const isSpouseUnderage = formData.marital_status === "Married" && !!formData.spouse_name && !!formData.spouse_dob && spouseAge < 18;
+  const isSpouseDobMissing = formData.marital_status === "Married" && !!formData.spouse_name && !formData.spouse_dob;
   const isSpouseDobInvalid = isSpouseUnderage || isSpouseDobMissing;
 
   const passwordCriteria = {
@@ -1051,22 +1055,28 @@ export default function ClientRegistrationForm({
                       <Input name="mother_name" disabled={isFieldDisabled("mother_name")} value={formData.mother_name} onChange={handleChange} required />
                     </div>
                     <div className="space-y-2">
-                      <Label>Spouse Name</Label>
-                      <Input name="spouse_name" disabled={isFieldDisabled("spouse_name")} value={formData.spouse_name} onChange={handleChange} />
+                      <Label className={formData.marital_status !== "Married" ? "opacity-60" : ""}>Spouse Name</Label>
+                      <Input 
+                        name="spouse_name" 
+                        disabled={isFieldDisabled("spouse_name") || formData.marital_status !== "Married"} 
+                        value={formData.spouse_name} 
+                        onChange={handleChange} 
+                        placeholder={formData.marital_status === "Married" ? "Enter Spouse Name" : ""}
+                      />
                     </div>
                     <div className="space-y-2">
-                      <Label className={isSpouseDobInvalid ? "text-red-500" : ""}>
-                        Spouse DOB {formData.spouse_name && <span className="text-red-500">*</span>}
+                      <Label className={isSpouseDobInvalid ? "text-red-500" : (formData.marital_status !== "Married" || !formData.spouse_name) ? "opacity-60" : ""}>
+                        Spouse DOB {formData.marital_status === "Married" && formData.spouse_name && <span className="text-red-500">*</span>}
                       </Label>
                       <DatePicker 
                         date={formData.spouse_dob} 
                         onChange={(val) => setFormData(prev => ({ ...prev, spouse_dob: val }))}
-                        disabled={(isFieldDisabled("spouse_dob") && isFieldDisabled("spouse_name")) || !formData.spouse_name}
+                        disabled={(isFieldDisabled("spouse_dob") && isFieldDisabled("spouse_name")) || formData.marital_status !== "Married" || !formData.spouse_name}
                         placeholder="Select Spouse DOB"
                         fromYear={1930}
                         className={isSpouseDobInvalid ? "border-red-500 ring-offset-red-500 focus-visible:ring-red-500" : ""}
                       />
-                      {formData.spouse_name && (
+                      {formData.marital_status === "Married" && formData.spouse_name && (
                         <p className={`text-[10px] italic ${isSpouseDobInvalid ? "text-red-500 font-bold" : "text-muted-foreground"}`}>
                           {isSpouseDobMissing 
                             ? "Spouse Date of Birth is required." 
