@@ -92,6 +92,7 @@ export interface ClientCreate {
     relationship: string;
     dob: string;
     percentage: number;
+    guardian_name?: string;
   }[];
   previous_advisor_name?: string;
   referral_source?: string;

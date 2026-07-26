@@ -60,6 +60,28 @@ const REQUIRED_DOCUMENTS = [
   "Signature"
 ];
 
+const NOMINEE_RELATIONSHIPS = [
+  "Father",
+  "Mother",
+  "Spouse",
+  "Children",
+  "Relative Distant",
+  "Relative Friend",
+  "Partner"
+];
+
+const getEqualShares = (count: number): number[] => {
+  if (count <= 0) return [];
+  if (count === 1) return [100];
+  if (count === 2) return [50, 50];
+  if (count === 3) return [33.34, 33.33, 33.33];
+  const base = Math.floor((100 / count) * 100) / 100;
+  const shares = Array(count).fill(base);
+  const remainder = Math.round((100 - base * count) * 100) / 100;
+  shares[0] = Math.round((shares[0] + remainder) * 100) / 100;
+  return shares;
+};
+
 const STORAGE_KEY = "client_registration_draft";
 
 const DEFAULT_FORM_DATA: ClientCreate = {
@@ -485,9 +507,19 @@ export default function ClientRegistrationForm({
   const handleAddNominee = () => {
     setFormData(prev => {
       const currentNominees = prev.nominees || [];
+      if (currentNominees.length >= 3) {
+        toast.error("Maximum 3 nominees are allowed.");
+        return prev;
+      }
+      const newCount = currentNominees.length + 1;
+      const shares = getEqualShares(newCount);
+      const updated = [...currentNominees, { name: "", relationship: "", dob: "", percentage: 0 as any, guardian_name: "" }].map((nom, idx) => ({
+        ...nom,
+        percentage: shares[idx]
+      }));
       return {
         ...prev,
-        nominees: [...currentNominees, { name: "", relationship: "", dob: "", percentage: "" as any }]
+        nominees: updated
       };
     });
   };
@@ -495,9 +527,30 @@ export default function ClientRegistrationForm({
   const handleRemoveNominee = (index: number) => {
     setFormData(prev => {
       const currentNominees = prev.nominees || [];
+      const filtered = currentNominees.filter((_, i) => i !== index);
+      const shares = getEqualShares(filtered.length);
+      const updated = filtered.map((nom, idx) => ({
+        ...nom,
+        percentage: shares[idx]
+      }));
       return {
         ...prev,
-        nominees: currentNominees.filter((_, i) => i !== index)
+        nominees: updated
+      };
+    });
+  };
+
+  const handleResetEqualShares = () => {
+    setFormData(prev => {
+      const currentNominees = prev.nominees || [];
+      const shares = getEqualShares(currentNominees.length);
+      const updated = currentNominees.map((nom, idx) => ({
+        ...nom,
+        percentage: shares[idx]
+      }));
+      return {
+        ...prev,
+        nominees: updated
       };
     });
   };
@@ -506,13 +559,12 @@ export default function ClientRegistrationForm({
     setFormData(prev => {
       const currentNominees = [...(prev.nominees || [])];
       if (field === "percentage") {
-        // Clamp between 0 and 100, reject values > 100
         const num = value === "" ? "" : Math.min(100, Math.max(0, Number(value)));
         currentNominees[index] = {
           ...currentNominees[index],
           [field]: num as any
         };
-      } else if (field === "name" || field === "relationship") {
+      } else if (field === "name" || field === "guardian_name") {
         const cleaned = value.replace(/[^a-zA-Z\s]/g, '');
         currentNominees[index] = {
           ...currentNominees[index],
@@ -536,6 +588,9 @@ export default function ClientRegistrationForm({
     if (nominees.length === 0) {
       return "At least 1 nominee is required.";
     }
+    if (nominees.length > 3) {
+      return "Maximum 3 nominees are allowed.";
+    }
 
     let totalPercentage = 0;
     for (let i = 0; i < nominees.length; i++) {
@@ -552,14 +607,24 @@ export default function ClientRegistrationForm({
       if (new Date(nom.dob + "T00:00:00") > new Date()) {
         return `Date of Birth for Nominee #${i + 1} cannot be in the future.`;
       }
-      if (!nom.percentage || nom.percentage <= 0) {
+
+      // Minor validation: if under 18, Guardian Name is mandatory
+      const nomineeAge = calculateAge(nom.dob);
+      if (nomineeAge < 18) {
+        if (!nom.guardian_name || !nom.guardian_name.trim()) {
+          return `Guardian Name is required for Nominee #${i + 1} (${nom.name || 'Nominee'}) as they are a minor (under 18 years).`;
+        }
+      }
+
+      if (!nom.percentage || Number(nom.percentage) <= 0) {
         return `Allocation percentage for Nominee #${i + 1} must be greater than 0.`;
       }
       totalPercentage += Number(nom.percentage);
     }
 
-    if (totalPercentage !== 100) {
-      return `Total nominee allocation percentage must sum up to exactly 100% (currently ${totalPercentage}%).`;
+    const roundedTotal = Math.round(totalPercentage * 100) / 100;
+    if (roundedTotal !== 100) {
+      return `Total nominee allocation percentage must sum up to exactly 100% (currently ${roundedTotal}%).`;
     }
 
     return null;
@@ -1138,80 +1203,134 @@ export default function ClientRegistrationForm({
                     <div className="flex items-center justify-between border-b border-primary/10 pb-2">
                       <Label className="text-sm font-bold uppercase tracking-wider text-primary">Nominee Details <span className="text-red-500">*</span></Label>
                       {!isFieldDisabled("nominees") && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={handleAddNominee}
-                          className="border-primary/20 hover:bg-primary/5 text-primary text-xs h-8"
-                        >
-                          + Add Nominee
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          {(formData.nominees?.length || 0) > 1 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={handleResetEqualShares}
+                              className="text-xs h-8 text-muted-foreground hover:text-primary"
+                              title="Split share percentages equally"
+                            >
+                              Auto-Split Equal Shares
+                            </Button>
+                          )}
+                          {(formData.nominees?.length || 0) < 3 && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={handleAddNominee}
+                              className="border-primary/20 hover:bg-primary/5 text-primary text-xs h-8"
+                            >
+                              + Add Nominee ({formData.nominees?.length || 0}/3)
+                            </Button>
+                          )}
+                        </div>
                       )}
                     </div>
                     
-                    {formData.nominees && formData.nominees.map((nominee, index) => (
-                      <div key={index} className="p-4 rounded-xl border border-primary/10 bg-primary/5 space-y-4">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-primary">Nominee #{index + 1}</span>
-                          {formData.nominees && formData.nominees.length > 1 && !isFieldDisabled("nominees") && (
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveNominee(index)}
-                              className="text-red-500 hover:text-red-700 text-xs font-bold transition-colors"
-                            >
-                              Remove
-                            </button>
+                    {formData.nominees && formData.nominees.map((nominee, index) => {
+                      const isNomineeMinor = nominee.dob ? calculateAge(nominee.dob) < 18 : false;
+                      const nomineeAgeVal = nominee.dob ? calculateAge(nominee.dob) : null;
+                      return (
+                        <div key={index} className="p-4 rounded-xl border border-primary/10 bg-primary/5 space-y-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold text-primary">Nominee #{index + 1}</span>
+                              {isNomineeMinor && (
+                                <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                                  Minor ({nomineeAgeVal} yrs)
+                                </span>
+                              )}
+                            </div>
+                            {formData.nominees && formData.nominees.length > 1 && !isFieldDisabled("nominees") && (
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveNominee(index)}
+                                className="text-red-500 hover:text-red-700 text-xs font-bold transition-colors"
+                              >
+                                Remove
+                              </button>
+                            )}
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <div className="space-y-2">
+                              <Label>Nominee Name <span className="text-red-500">*</span></Label>
+                              <Input
+                                disabled={isFieldDisabled("nominees")}
+                                value={nominee.name}
+                                onChange={(e) => handleNomineeChange(index, "name", e.target.value)}
+                                placeholder="Full Name"
+                                required
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Relationship <span className="text-red-500">*</span></Label>
+                              <Select
+                                disabled={isFieldDisabled("nominees")}
+                                value={nominee.relationship}
+                                onValueChange={(val) => handleNomineeChange(index, "relationship", val)}
+                              >
+                                <SelectTrigger className="w-full">
+                                  <SelectValue placeholder="Select Relationship" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {NOMINEE_RELATIONSHIPS.map((rel) => (
+                                    <SelectItem key={rel} value={rel}>
+                                      {rel}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Nominee DOB <span className="text-red-500">*</span></Label>
+                              <DatePicker
+                                date={nominee.dob}
+                                onChange={(val) => handleNomineeChange(index, "dob", val)}
+                                disabled={isFieldDisabled("nominees")}
+                                placeholder="Select DOB"
+                                fromYear={1900}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Allocation Share (%) <span className="text-red-500">*</span></Label>
+                              <Input
+                                type="number"
+                                disabled={isFieldDisabled("nominees")}
+                                value={nominee.percentage}
+                                onChange={(e) => handleNomineeChange(index, "percentage", e.target.value)}
+                                placeholder="0"
+                                min={1}
+                                max={100}
+                                required
+                              />
+                            </div>
+                          </div>
+
+                          {/* Dynamic Guardian Name field if Nominee is Minor */}
+                          {isNomineeMinor && (
+                            <div className="space-y-2 pt-2 border-t border-amber-500/20">
+                              <Label className="text-amber-500 font-medium flex items-center gap-1.5 text-xs">
+                                Guardian Name <span className="text-red-500">*</span> 
+                                <span className="text-[10px] italic font-normal text-muted-foreground">(Mandatory because nominee is a minor under 18)</span>
+                              </Label>
+                              <Input
+                                disabled={isFieldDisabled("nominees")}
+                                value={nominee.guardian_name || ""}
+                                onChange={(e) => handleNomineeChange(index, "guardian_name", e.target.value)}
+                                placeholder="Enter Full Name of Guardian"
+                                className="border-amber-500/30 focus-visible:ring-amber-500"
+                                required
+                              />
+                            </div>
                           )}
                         </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                          <div className="space-y-2">
-                            <Label>Nominee Name <span className="text-red-500">*</span></Label>
-                            <Input
-                              disabled={isFieldDisabled("nominees")}
-                              value={nominee.name}
-                              onChange={(e) => handleNomineeChange(index, "name", e.target.value)}
-                              placeholder="Full Name"
-                              required
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label>Relationship <span className="text-red-500">*</span></Label>
-                            <Input
-                              disabled={isFieldDisabled("nominees")}
-                              value={nominee.relationship}
-                              onChange={(e) => handleNomineeChange(index, "relationship", e.target.value)}
-                              placeholder="e.g. Spouse, Son, Mother"
-                              required
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label>Nominee DOB <span className="text-red-500">*</span></Label>
-                            <DatePicker
-                              date={nominee.dob}
-                              onChange={(val) => handleNomineeChange(index, "dob", val)}
-                              disabled={isFieldDisabled("nominees")}
-                              placeholder="Select DOB"
-                              fromYear={1900}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label>Allocation Share (%) <span className="text-red-500">*</span></Label>
-                            <Input
-                              type="number"
-                              disabled={isFieldDisabled("nominees")}
-                              value={nominee.percentage}
-                              onChange={(e) => handleNomineeChange(index, "percentage", e.target.value)}
-                              placeholder="0"
-                              min={1}
-                              max={100}
-                              required
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
 
                     {/* Live total allocation indicator */}
                     {formData.nominees && formData.nominees.length > 0 && (() => {

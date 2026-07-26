@@ -165,9 +165,10 @@ export function RegistrationPreviewModal({
                         <div className="grid grid-cols-2 gap-4">
                           <PreviewItem label="Nominee Name" value={nom.name} />
                           <PreviewItem label="Relationship" value={nom.relationship} />
-                          <div className="col-span-2">
-                            <PreviewItem label="Nominee DOB" value={nom.dob} />
-                          </div>
+                          <PreviewItem label="Nominee DOB" value={nom.dob} />
+                          {nom.guardian_name && (
+                            <PreviewItem label="Guardian Name" value={nom.guardian_name} />
+                          )}
                         </div>
                       </div>
                     ))
