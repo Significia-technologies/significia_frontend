@@ -74,8 +74,7 @@ export function PublicFooter() {
 
         {/* Bottom section */}
         <div className="py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
-          <span>© {new Date().getFullYear()} Significia. All rights reserved.</span>
-          <span>Built for Investment Advisors in India.</span>
+          <span>© {new Date().getFullYear()} Significia is property of M/s RT Technologies copyright applicable. Patent applied.</span>
         </div>
       </div>
     </footer>
